@@ -58,8 +58,9 @@ namespace SqlDsl
 
     class Program
     {
-        static ISqlBuilder<QueryClass> Q() =>
-            Sql.Query.Sqlite<QueryClass>()
+        static ISqlBuilder<QueryClass> Q()
+        {
+            return Sql.Query.Sqlite<QueryClass>()
                 .From(nameof(Person), result => result.Person)
 
                 .LeftJoin(nameof(PersonClass), result => result.PersonClasses)
@@ -82,6 +83,7 @@ namespace SqlDsl
                 //     //ClassTags = x.Tags.Select(c => c.Name)
                 // })
                 ;
+        }
 
         static void Main(string[] args)
         {

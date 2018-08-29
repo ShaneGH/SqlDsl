@@ -11,7 +11,6 @@ namespace SqlDsl
     /// Interface to help with query building DSL
     /// </summary>
     public interface ITable<TResult>
-        where TResult: new()
     {
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table]
@@ -26,7 +25,6 @@ namespace SqlDsl
     /// Interface to help with query building DSL
     /// </summary>
     public interface ISqlBuilder<TResult>
-        where TResult: new()
     {
         /// <summary>
         /// Get a sql statement and corresponding sql paramaters from the query
@@ -46,7 +44,6 @@ namespace SqlDsl
     /// Interface to help with query building DSL
     /// </summary>
     public interface IResultMapper<TResult> : ISqlBuilder<TResult>
-        where TResult: new()
     {
         /// <summary>
         /// Map the result TResult to another type of object. Use this method to cherry pick the columns you want to return
@@ -54,14 +51,13 @@ namespace SqlDsl
         /// <param name="mapper">
         /// An expression to build a mapped object
         /// </param>
-        ISqlBuilder<TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper) where TMapped: new();
+        ISqlBuilder<TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper);
     }
     
     /// <summary>
     /// Interface to help with query building DSL
     /// </summary>
     public interface IFilter<TResult> : IResultMapper<TResult>
-        where TResult: new()
     {
         /// <summary>
         /// Set the WHERE clause of the query
@@ -76,7 +72,6 @@ namespace SqlDsl
     /// Interface to help with query building DSL
     /// </summary>
     public interface IQuery<TResult> : IFilter<TResult>
-        where TResult: new()
     {
         /// <summary>
         /// Join another table to the query using INNER JOIN
@@ -105,7 +100,6 @@ namespace SqlDsl
     /// Interface to help with query building DSL
     /// </summary>
     public interface IJoinBuilder<TResult, TJoin>
-        where TResult: new()
     {
         /// <summary>
         /// Define how a JOIN table joins to other tables in the query

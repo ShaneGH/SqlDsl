@@ -19,7 +19,6 @@ namespace SqlDsl.ObjectBuilders
         /// Compile a function to build an object from an object graph
         /// </summary>
         public static Func<ObjectGraph, T> CompileObjectBuilder<T>()
-            where T: new()
         {
             var type = typeof(T);
 
@@ -57,10 +56,9 @@ namespace SqlDsl.ObjectBuilders
         /// <param name="propSetters">A set of objects which can set the value of a property</param>
         /// <param name="vals">The values of the object</param>
         static T BuildObject<T>(Dictionary<string, (Action<T, IEnumerable<object>> setter, Type propertyType)> propSetters, ObjectGraph vals)
-            where T: new()
         {
             // Create output object
-            var obj = new T();
+            var obj = (T)ConstructObject(typeof(T));
             if (vals == null)
                 return obj;
 
@@ -91,6 +89,44 @@ namespace SqlDsl.ObjectBuilders
             }
 
             return obj;
+        }
+
+        /// <summary>
+        /// Create an object by calling its default constructor
+        /// </summary>
+        static object ConstructObject(Type type) => GetConstructorFromCache(type)();
+
+        /// <summary>
+        /// A cahce of object constructors
+        /// </summary>
+        static readonly ConcurrentDictionary<Type, Func<object>> Constructors = new ConcurrentDictionary<Type, Func<object>>();
+
+        /// <summary>
+        /// Get a cached constructor or build and add a new one to the cache
+        /// </summary>
+        static Func<object> GetConstructorFromCache(Type type)
+        {
+            // try get object from cache
+            if (Constructors.TryGetValue(type, out Func<object> constructor))
+                return constructor;
+
+            // get default constructor for object
+            var constr = type
+                .GetConstructors()
+                .Where(c => c.GetParameters().Length == 0)
+                .FirstOrDefault() ?? 
+                throw new InvalidOperationException($"Object {type} does not have a default constructor");
+
+            // compile expression for constructor
+            constructor = Expression
+                .Lambda<Func<object>>(
+                    Expression.Convert(
+                        Expression.New(constr),
+                        typeof(object)))
+                .Compile();
+
+            // add to cache and construct object
+            return Constructors.GetOrAdd(type, constructor);
         }
 
         /// <summary>

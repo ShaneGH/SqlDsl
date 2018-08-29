@@ -12,8 +12,6 @@ namespace SqlDsl.Query
 {
     public class QueryMapper<TSqlBuilder, TResult, TMapped> : ISqlBuilder<TMapped>
         where TSqlBuilder : ISqlBuilder, new()
-        where TResult : new()
-        where TMapped : new()
     {
         readonly QueryBuilder<TSqlBuilder, TResult> Query;
         readonly IEnumerable<(string from, int toIndex, Type toType)> Mapper;

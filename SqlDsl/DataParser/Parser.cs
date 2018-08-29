@@ -23,8 +23,7 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="primaryTable">The table from the [FROM] query clause. If null, will assume that there is a column named "##rowid" to group results by.</param>
-        public static IEnumerable<TResult> Parse<TResult>(this IEnumerable<Row> rows, string primaryTable = null)
-            where TResult: new() =>
+        public static IEnumerable<TResult> Parse<TResult>(this IEnumerable<Row> rows, string primaryTable = null) =>
             _Parse<TResult>(rows, primaryTable).Enumerate();
 
         /// <summary>
@@ -33,7 +32,6 @@ namespace SqlDsl.DataParser
         /// <param name="rows">The query results</param>
         /// <param name="primaryTable">The table from the [FROM] query clause. If null, will assume that there is a column named "##rowid" to group results by.</param>
         static IEnumerable<TResult> _Parse<TResult>(this IEnumerable<Row> rows, string primaryTable)
-            where TResult: new()
         {
             // group the results by the primary (SELECT) table
             var resultGroups = rows

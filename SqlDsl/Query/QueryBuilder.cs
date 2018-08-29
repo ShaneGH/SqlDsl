@@ -12,7 +12,6 @@ namespace SqlDsl.Query
 {
     public class QueryBuilder<TSqlBuilder, TResult> : ITable<TResult>, IQuery<TResult>
         where TSqlBuilder: ISqlBuilder, new()
-        where TResult: new()
     {
         string PrimaryTable;
         public MemberInfo PrimaryTableMember { get; private set; }
@@ -127,8 +126,8 @@ namespace SqlDsl.Query
             return (builder, param);
         }
 
-        public ISqlBuilder<TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper) 
-            where TMapped : new() => new QueryMapper<TSqlBuilder, TResult, TMapped>(this, mapper);
+        public ISqlBuilder<TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper) =>
+            new QueryMapper<TSqlBuilder, TResult, TMapped>(this, mapper);
 
         public async Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor) 
         {
