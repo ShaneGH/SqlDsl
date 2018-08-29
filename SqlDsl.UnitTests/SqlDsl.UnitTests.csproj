@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SqlDsl\SqlDsl.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NUnit3TestAdapter" Version="3.8.0" />
+    <packagereference Include="Microsoft.NET.Test.Sdk" Version="15.0.0"></packagereference>
+    <packagereference Include="NUnit" Version="3.6.1"></packagereference>
+  </ItemGroup>
+</Project>
