@@ -1,17 +1,8 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using SqlDsl.SqlBuilders;
-using SqlDsl.Utils;
 
 namespace SqlDsl.ObjectBuilders
 {
-    using Row = System.Collections.Generic.IEnumerable<(System.Collections.Generic.IEnumerable<string> column, object value)>;
-    
+
     /// <summary>
     /// A generic builder interface
     /// </summary>

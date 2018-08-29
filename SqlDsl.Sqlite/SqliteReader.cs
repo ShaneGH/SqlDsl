@@ -1,8 +1,8 @@
 ﻿
+using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
 
 namespace SqlDsl.Sqlite
 {

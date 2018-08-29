@@ -1,12 +1,12 @@
+using SqlDsl.DataParser;
+using SqlDsl.SqlBuilders;
+using SqlDsl.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using SqlDsl.DataParser;
-using SqlDsl.SqlBuilders;
-using SqlDsl.Utils;
 
 namespace SqlDsl.Query
 {

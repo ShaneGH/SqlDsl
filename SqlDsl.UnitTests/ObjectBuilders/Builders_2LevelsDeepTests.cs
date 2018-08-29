@@ -1,8 +1,7 @@
 using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using SqlDsl.ObjectBuilders;
+using System;
+using System.Linq;
 
 namespace SqlDsl.UnitTests.ObjectBuilders
 {

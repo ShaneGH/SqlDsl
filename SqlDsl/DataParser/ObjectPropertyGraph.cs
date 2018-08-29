@@ -1,12 +1,6 @@
-using System;
-using System.Collections.Concurrent;
+using SqlDsl.Utils;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using SqlDsl.ObjectBuilders;
-using SqlDsl.SqlBuilders;
-using SqlDsl.Utils;
 
 namespace SqlDsl.DataParser
 {
