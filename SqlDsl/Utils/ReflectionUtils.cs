@@ -57,7 +57,7 @@ namespace SqlDsl.Utils
         }
 
         /// <summary>
-        /// Get the T from an IEnumerable<T> type
+        /// Get the T from an IEnumerable<T> type, or null if the type is not IEnumerable
         /// </summary>
         public static Type GetIEnumerableType(Type t)
         {

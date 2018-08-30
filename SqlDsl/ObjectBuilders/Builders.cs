@@ -22,10 +22,6 @@ namespace SqlDsl.ObjectBuilders
             // try to get an existing builder
             if (!_Builders.TryGetValue(type, out IBuilder builder))
             {
-                // ensure the object has a default constructor
-                if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0))
-                    throw new InvalidOperationException($"Type {type} must have a paramaterless constructor.");
-
                 // use reflection to create an instance of a
                 // builder for the required type
                 builder = (IBuilder)typeof(Builder<>)

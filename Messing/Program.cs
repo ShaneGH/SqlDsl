@@ -101,7 +101,30 @@ namespace SqlDsl
                // ExecuteSql(conn, sql.sql, sql.paramaters).Wait();
 
 
-                var data = cmd
+                var data = Sql.Query.Sqlite<QueryClass>()
+                    .From(nameof(Person), result => result.Person)
+
+                    .LeftJoin(nameof(PersonClass), result => result.PersonClasses)
+                    .On((result, _class) => _class.PersonId == result.Person.Id)
+
+                    .InnerJoin(nameof(Class), result => result.Classes)
+                    .On((result, _class) => _class.Id == Sql.One(result.PersonClasses).ClassId)
+
+                    .InnerJoin(nameof(ClassTag), result => result.ClassTags)
+                    .On((result, classTag) => classTag.ClassId == Sql.One(result.Classes).Id)
+
+                    .InnerJoin(nameof(Tag), result => result.Tags)
+                    .On((result, tag) => tag.Id == Sql.One(result.ClassTags).TagId)
+
+                    .Where(result => result.Person.Id > 0)
+                    
+                    .Map(x => new ResultClass
+                    {
+                        PersonName = x.Person.Name,
+                        //ClassNames = x.Classes.Select(c => c.Name),
+                        //ClassTags = x.Tags.Select(c => c.Name)
+                    })
+                
                     .ExecuteAsync(new SqliteExecutor(conn));
 
                Console.WriteLine(JsonConvert.SerializeObject(data.Result, Formatting.Indented));

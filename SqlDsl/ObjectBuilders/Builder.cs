@@ -18,7 +18,6 @@ namespace SqlDsl.ObjectBuilders
     /// A compiled (at runtime) builder class which builds a concrete object from an object graph
     /// </summary>
     public class Builder<T> : IBuilder
-        where T: new()
     {
         /// <summary>
         /// Compiled function to build an object

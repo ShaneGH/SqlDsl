@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace SqlDsl.ObjectBuilders
 {
@@ -20,16 +21,19 @@ namespace SqlDsl.ObjectBuilders
         {
             var type = typeof(T);
 
+            // different process for creating anonymous objects
+            if (IsAnonymousType(type))
+                return AnonymousObjects.CompileAnonymousObjectBuilder<T>();
+            
             // get the default construcor
             var constructor = type
                 .GetConstructors()
                 .FirstOrDefault(c => !c.GetParameters().Any()) ??
                 throw new InvalidOperationException($"Object {type} must have a paramaterless constructor");
-
-            // expression input arg
+                
             var objectVar = Expression.Variable(type);
 
-            // use constructor
+            // var objectVar = newObj
             var createObject = Expression.Assign(objectVar, Expression.New(constructor));
 
             // get list of properties
@@ -46,6 +50,21 @@ namespace SqlDsl.ObjectBuilders
 
             T build(ObjectGraph vals) => BuildObject(propSetters, vals);
             return build;
+        }
+
+        /// <summary>
+        /// https://stackoverflow.com/questions/2483023/how-to-test-if-a-type-is-anonymous
+        /// </summary>
+        static bool IsAnonymousType(Type type)
+        {
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+
+            // HACK: The only way to detect anonymous types right now.
+            return Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute), false)
+                && type.IsGenericType && type.Name.Contains("AnonymousType")
+                && (type.Name.StartsWith("<>") || type.Name.StartsWith("VB$"))
+                && (type.Attributes & TypeAttributes.NotPublic) == TypeAttributes.NotPublic;
         }
 
         /// <summary>
@@ -179,6 +198,7 @@ namespace SqlDsl.ObjectBuilders
                 ));
             }
 
+            // objectParam.propertyName = valuesOfType
             var body = Expression.Assign(
                 Expression.PropertyOrField(objectParam, propertyName),
                 getter.builder);
