@@ -1,4 +1,6 @@
+using SqlDsl.Utils;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SqlDsl.ObjectBuilders
 {
@@ -17,5 +19,26 @@ namespace SqlDsl.ObjectBuilders
         /// Complex properties will have properties of their own
         /// </summary>
         public IEnumerable<(string name, IEnumerable<ObjectGraph> value)> ComplexProps { get; set; }
+
+        public override string ToString()
+        {
+            var simple = SimpleProps
+                .OrEmpty()
+                .Select(ps => $"{ps.name}: [{ps.value.Select(p => $"\n\t{p}").JoinString("")}\n\t]")
+                .JoinString("\n");
+
+            var complex = ComplexProps
+                .OrEmpty()
+                .Select(ps => 
+                {
+                    var propStrings = ps.value
+                        .Select(p => $"\n\t{p.ToString().Replace("\n", "\n\t")}");
+
+                    return $"{ps.name}: {{{propStrings.JoinString("")}\n\t}}";
+                })
+                .JoinString("\n");
+
+            return $"{simple}\n{complex}";
+        }
     }
 }

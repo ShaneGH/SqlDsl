@@ -26,15 +26,15 @@ namespace SqlDsl.ObjectBuilders
                 return AnonymousObjects.CompileAnonymousObjectBuilder<T>();
             
             // get the default construcor
-            var constructor = type
-                .GetConstructors()
-                .FirstOrDefault(c => !c.GetParameters().Any()) ??
-                throw new InvalidOperationException($"Object {type} must have a paramaterless constructor");
+            Func<T> constructor = () => (T)ConstructObject(type);
                 
             var objectVar = Expression.Variable(type);
 
-            // var objectVar = newObj
-            var createObject = Expression.Assign(objectVar, Expression.New(constructor));
+            // var objectVar = constructor()
+            var createObject = Expression.Assign(
+                objectVar, 
+                Expression.Invoke(
+                    Expression.Constant(constructor)));
 
             // get list of properties
             var pi = BindingFlags.Public | BindingFlags.Instance;
