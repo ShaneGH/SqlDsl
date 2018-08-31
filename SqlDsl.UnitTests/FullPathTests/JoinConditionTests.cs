@@ -13,33 +13,18 @@ using NUnit.Framework;
 using SqlDsl.Utils;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 using SqlDsl.Sqlite;
+using NUnit.Framework.Interfaces;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
     [TestFixture]
-    public class JoinConditionTests
+    public class JoinConditionTests : FullPathTestBase
     {
         class QueryClass
         {
             public Person Person { get; set; }
             public IEnumerable<PersonClass> PersonClasses { get; set; }
             public IEnumerable<ClassTag> ClassTags { get; set; }
-        }
-
-        SqliteConnection Connection;
-
-        [OneTimeSetUp]
-        public void OneTimeSetUp()
-        {
-            InitData.EnsureInit();
-            Connection = InitData.CreateConnection();
-            Connection.Open();
-        }
-
-        [OneTimeTearDown]
-        public void OneTimeTearDown()
-        {
-            Connection.Dispose();
         }
 
         void AssertSelect1SimpleJoin(IEnumerable<QueryClass> data)
@@ -65,7 +50,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From(nameof(Person), result => result.Person)
                 .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c) => q.Person.Id == c.PersonId)
-                .ExecuteAsync(new SqliteExecutor(Connection));
+                .ExecuteAsync(Executor);
 
             // assert
             AssertSelect1SimpleJoin(data);
@@ -74,37 +59,27 @@ namespace SqlDsl.UnitTests.FullPathTests
         [Test]
         public async Task Select2Joins_DoesNotDuplicateRecords()
         {
-            var testEx = new TestExecutor(new SqliteExecutor(Connection));
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<QueryClass>()
+                .From(nameof(Person), result => result.Person)
+                .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
+                    .On((q, c) => q.Person.Id == c.PersonId)
+                .InnerJoin<ClassTag>(nameof(ClassTag), result => result.ClassTags)
+                    .On((q, c) => Sql.One(q.PersonClasses).ClassId == c.ClassId)
+                .ExecuteAsync(Executor);
 
-            try
-            {
-                // arrange
-                // act
-                var data = await Sql.Query.Sqlite<QueryClass>()
-                    .From(nameof(Person), result => result.Person)
-                    .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
-                        .On((q, c) => q.Person.Id == c.PersonId)
-                    .InnerJoin<ClassTag>(nameof(ClassTag), result => result.ClassTags)
-                        .On((q, c) => Sql.One(q.PersonClasses).ClassId == c.ClassId)
-                    .ExecuteAsync(testEx);
+            // assert
+            AssertSelect1SimpleJoin(data);
+            
+            Assert.AreEqual(3, data.First().ClassTags.Count());
+            Assert.AreEqual(Data.ClassTags.TennisSport, data.First().ClassTags.ElementAt(0));
+            Assert.AreEqual(Data.ClassTags.TennisBallSport, data.First().ClassTags.ElementAt(1));
+            Assert.AreEqual(Data.ClassTags.ArcherySport, data.First().ClassTags.ElementAt(2));
 
-                // assert
-                AssertSelect1SimpleJoin(data);
-                
-                Assert.AreEqual(3, data.First().ClassTags.Count());
-                Assert.AreEqual(Data.ClassTags.TennisSport, data.First().ClassTags.ElementAt(0));
-                Assert.AreEqual(Data.ClassTags.TennisBallSport, data.First().ClassTags.ElementAt(1));
-                Assert.AreEqual(Data.ClassTags.ArcherySport, data.First().ClassTags.ElementAt(2));
-
-                Assert.AreEqual(2, data.ElementAt(1).ClassTags.Count());
-                Assert.AreEqual(Data.ClassTags.TennisSport, data.First().ClassTags.ElementAt(0));
-                Assert.AreEqual(Data.ClassTags.TennisBallSport, data.First().ClassTags.ElementAt(1));
-            }
-            catch
-            {
-                testEx.PrintSqlStatements();
-                throw;
-            }
+            Assert.AreEqual(2, data.ElementAt(1).ClassTags.Count());
+            Assert.AreEqual(Data.ClassTags.TennisSport, data.First().ClassTags.ElementAt(0));
+            Assert.AreEqual(Data.ClassTags.TennisBallSport, data.First().ClassTags.ElementAt(1));
         }
     }
 }

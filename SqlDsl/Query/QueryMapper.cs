@@ -36,12 +36,15 @@ namespace SqlDsl.Query
         
         public async Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor)
         {
+            if (Query.PrimaryTableMember == null)
+                throw new InvalidOperationException("You must set the FROM table before calling ToSql");
+
             var sql = ToSql();
 
             var reader = await executor.ExecuteAsync(sql.sql, sql.paramaters);
             var results = await reader.GetRowsAsync();
 
-            return results.Parse<TMapped>(Query.PrimaryTableMember.MemberName());
+            return results.Parse<TMapped>(Query.PrimaryTableMember.Value.name);
         }
 
         IEnumerable<MemberExpression> FindMapExpressions(Expression expr, ParameterExpression rootParam)

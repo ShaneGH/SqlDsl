@@ -13,11 +13,12 @@ using NUnit.Framework;
 using SqlDsl.Utils;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 using SqlDsl.Sqlite;
+using NUnit.Framework.Interfaces;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
     [TestFixture]
-    public class ObjectShapeTests
+    public class ObjectShapeTests : FullPathTestBase
     {
         class QueryClass1
         {
@@ -35,49 +36,19 @@ namespace SqlDsl.UnitTests.FullPathTests
             public List<QueryClass1> Inner { get; set; }
         }
 
-        class ZeroLevels : Person
-        {
-            public PersonClass[] PersonClasses { get; set; }
-        }
-
-        SqliteConnection Connection;
-
-        [OneTimeSetUp]
-        public void OneTimeSetUp()
-        {
-            InitData.EnsureInit();
-            Connection = InitData.CreateConnection();
-            Connection.Open();
-        }
-
-        [OneTimeTearDown]
-        public void OneTimeTearDown()
-        {
-            Connection.Dispose();
-        }
-
         [Test]
         public async Task SelectWith0Levels()
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<ZeroLevels>()
+            var data = await Sql.Query.Sqlite<Person>()
                 .From(result => result)
-                .InnerJoin<PersonClass>(p => p.PersonClasses)
-                .On((person, classes) => person.Id == classes.PersonId)
-                .ExecuteAsync(new SqliteExecutor(Connection));
-
+                .ExecuteAsync(Executor);
+                
             // assert
             Assert.AreEqual(2, data.Count());
             Assert.AreEqual(Data.People.John, data.First());
             Assert.AreEqual(Data.People.Mary, data.ElementAt(1));
-            
-            Assert.AreEqual(2, data.First().PersonClasses.Count());
-            Assert.AreEqual(Data.PersonClasses.JohnArchery, data.First().PersonClasses.First());
-            Assert.AreEqual(Data.PersonClasses.JohnArchery, data.First().PersonClasses.ElementAt(1));
-
-            Assert.AreEqual(1, data.ElementAt(1).PersonClasses.Count());
-            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1).PersonClasses.First());
         }
 
         [Test]
@@ -87,7 +58,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<QueryClass2>()
                 .From(result => result.Inner.Person)
-                .ExecuteAsync(new SqliteExecutor(Connection));
+                .ExecuteAsync(Executor);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -103,7 +74,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await Sql.Query.Sqlite<QueryClass2>()
                 .From(result => result.Inner.Person)
                 .Where(result => result.Inner.Person.Id == Data.People.Mary.Id)
-                .ExecuteAsync(new SqliteExecutor(Connection));
+                .ExecuteAsync(Executor);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -114,15 +85,13 @@ namespace SqlDsl.UnitTests.FullPathTests
         public async Task JoinWith2Levels()
         {
             // arrange
-            var ex = new TestExecutor(new SqliteExecutor(Connection));
-
             // act
             var data = await Sql.Query.Sqlite<QueryClass2>()
                 .From(result => result.Inner.Person)
                 .LeftJoin<PersonClass>(result => result.Inner.PersonClasses)
                     .On((r, pc) => r.Inner.Person.Id == pc.PersonId)
                 .Where(result => result.Inner.Person.Id == Data.People.Mary.Id)
-                .ExecuteAsync(ex);
+                .ExecuteAsync(Executor);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -135,15 +104,13 @@ namespace SqlDsl.UnitTests.FullPathTests
         public async Task JoinWith2LevelsAndList()
         {
             // arrange
-            var ex = new TestExecutor(new SqliteExecutor(Connection));
-
             // act
             var data = await Sql.Query.Sqlite<QueryClass3>()
                 .From(result => result.Inner.One().Person)
                 .LeftJoin<PersonClass>(result => result.Inner.One().PersonClasses)
                     .On((r, pc) => r.Inner.One().Person.Id == pc.PersonId)
                 .Where(result => result.Inner.One().Person.Id == Data.People.Mary.Id)
-                .ExecuteAsync(ex);
+                .ExecuteAsync(Executor);
 
             // assert
             Assert.AreEqual(1, data.Count());

@@ -14,12 +14,16 @@ namespace SqlDsl.Query
         where TSqlBuilder: ISqlBuilder, new()
     {
         string PrimaryTable;
-        public IEnumerable<MemberInfo> PrimaryTableMember { get; private set; }
+        public (string name, Type type)? PrimaryTableMember { get; private set; }
 
-        static IEnumerable<MemberInfo> CheckMemberExpression<T>(Expression<Func<TResult, T>> memberPointer)
+        static (string name, Type Type) CheckMemberExpression<T>(Expression<Func<TResult, T>> memberPointer)
         {
+            var body = ReflectionUtils.RemoveConvert(memberPointer.Body);
+            if (body == memberPointer.Parameters[0])
+                return (SqlBuilderBase.RootObjectAlias, memberPointer.Parameters[0].Type);
+
             var output = new List<MemberInfo>();
-            var expr = TryOne(memberPointer.Body) as MemberExpression;
+            var expr = TryOne(body) as MemberExpression;
             while (expr != null)
             {
                 output.Insert(0, expr.Member);
@@ -29,7 +33,7 @@ namespace SqlDsl.Query
             if (!output.Any() || output[0].DeclaringType != typeof(TResult))
                 throw new ArgumentException("This expression must point to a paramater on the query object.", nameof(memberPointer));
                 
-            return output;
+            return (output.MemberName(), GetPropertyOrFieldType(output.Last()));
 
             Expression TryOne(Expression val) => ReflectionUtils.IsOne(val) ?? val;
         }
@@ -109,18 +113,20 @@ namespace SqlDsl.Query
 
         internal (ISqlBuilder builder, IEnumerable<object> paramaters) ToSqlBuilder(IEnumerable<string> filterCols)
         {
+            if (PrimaryTableMember == null)
+                throw new InvalidOperationException("You must set the FROM table before calling ToSql");
+
             var param = new List<object>();
             var n = Environment.NewLine;
             var builder = new TSqlBuilder();
 
-            var primaryTableName = PrimaryTableMember.MemberName();
-            builder.SetPrimaryTable(PrimaryTable, primaryTableName);
+            builder.SetPrimaryTable(PrimaryTable, PrimaryTableMember.Value.name);
 
             var selectColumns = Joins
                 .SelectMany((x, i) => ColumnsOf(x.JoinExpression.joinParam.Type)
-                    .Select(y => (table: x.JoinResult.MemberName(), column: y)))
-                .Concat(ColumnsOf(GetPropertyOrFieldType(PrimaryTableMember.Last()))
-                    .Select(y => (table: primaryTableName, column: y)));
+                    .Select(y => (table: x.JoinResult.name, column: y)))
+                .Concat(ColumnsOf(PrimaryTableMember.Value.type)
+                    .Select(y => (table: PrimaryTableMember.Value.name, column: y)));
 
             if (filterCols != null)
             {
@@ -130,12 +136,10 @@ namespace SqlDsl.Query
             }
 
             foreach (var col in selectColumns)
-                builder.AddSelectColumn(col.column, col.table, $"{col.table}.{col.column}");
-
-            var tables = Joins
-                .Select(x => (x.JoinResult.MemberName(), x.JoinResult, x.JoinExpression.joinParam))
-                .Prepend((primaryTableName, PrimaryTableMember, null))
-                .Enumerate();
+            {
+                var alias = col.table == SqlBuilderBase.RootObjectAlias ? null : $"{col.table}.{col.column}";
+                builder.AddSelectColumn(col.column, col.table, alias);
+            }
 
             foreach (var join in Joins)
             {
@@ -146,7 +150,7 @@ namespace SqlDsl.Query
                     join.JoinExpression.joinParam,
                     join.JoinExpression.joinExpression,
                     param,
-                    join.JoinResult.MemberName());
+                    join.JoinResult.name);
             }
 
             if (WhereClause != null)
@@ -160,13 +164,16 @@ namespace SqlDsl.Query
 
         public async Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor) 
         {
+            if (PrimaryTableMember == null)
+                throw new InvalidOperationException("You must set the FROM table before calling ToSql");
+
             var sql = ToSql();
 
             var reader = await executor.ExecuteAsync(sql.sql, sql.paramaters);
             var results = await reader.GetRowsAsync();
 
             return results
-                .Parse<TResult>(PrimaryTableMember.MemberName());
+                .Parse<TResult>(PrimaryTableMember.Value.name);
         }
 
         class JoinBuilder<TJoin> : IJoinBuilder<TResult, TJoin>
@@ -189,13 +196,11 @@ namespace SqlDsl.Query
                 if (joinExpression == null)
                     throw new ArgumentNullException(nameof(joinExpression));
 
-                Query.Joins.Add(new Join
-                {
-                    JoinType = JoinType,
-                    TableName = TableName,
-                    JoinExpression = (joinExpression.Parameters[0], joinExpression.Parameters[1], joinExpression.Body),
-                    JoinResult = CheckMemberExpression(JoinResult)
-                });
+                Query.Joins.Add(new Join(
+                    JoinType,
+                    TableName,
+                    (joinExpression.Parameters[0], joinExpression.Parameters[1], joinExpression.Body),
+                    CheckMemberExpression(JoinResult)));
 
                 return Query;
             }

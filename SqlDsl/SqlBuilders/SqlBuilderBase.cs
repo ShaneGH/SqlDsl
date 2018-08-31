@@ -16,6 +16,7 @@ namespace SqlDsl.SqlBuilders
     public abstract class SqlBuilderBase : ISqlBuilder
     {
         public static readonly string RowIdName = "##rowid";
+        public static readonly string RootObjectAlias = "##root";
         
         static int _InnerQueryAlias = 0;
         public string InnerQueryAlias { get; private set; } = $"iq{++_InnerQueryAlias}";
@@ -66,14 +67,12 @@ namespace SqlDsl.SqlBuilders
         }
 
         readonly List<string> Select = new List<string>();
-        public void AddSelectColumn(string columnName, string tableName = null, string alias = null)
-        {
+        public void AddSelectColumn(string columnName, string tableName = null, string alias = null) =>
             Select.Add(BuildSelectColumn(columnName, tableName, alias));
-        }
 
         public virtual string BuildSelectColumn(string columnName, string tableName = null, string alias = null)
         {
-            alias = alias == null ? "" : $" as {WrapAlias(alias)}";
+            alias = alias == null || alias.StartsWith($"{RootObjectAlias}.") ? "" : $" AS {WrapAlias(alias)}";
 
             return tableName == null ? 
                 $"{WrapColumn(columnName)}{alias}" : 

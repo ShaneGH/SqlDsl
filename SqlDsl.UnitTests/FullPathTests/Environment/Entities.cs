@@ -36,6 +36,11 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             var person = p as Person;
             return person != null && person.Id == Id && person.Name == Name;
         }
+        
+        public override string ToString()
+        {
+            return $"{Id}: {Name}";
+        }
     }
     
     class PersonClass : EqComparer

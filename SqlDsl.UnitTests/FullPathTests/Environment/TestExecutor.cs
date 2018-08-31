@@ -12,30 +12,70 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
     class TestExecutor : IExecutor
     {
         readonly IExecutor Executor;
-        readonly List<string> SqlStatements = new List<string>();
+        readonly List<(string sql, List<List<(string key, object value)>> results)> SqlStatements = new List<(string sql, List<List<(string key, object value)>> results)>();
 
         public TestExecutor(IExecutor executor)
         {
             Executor = executor;
         }
 
-        public Task<IReader> ExecuteAsync(string sql, IEnumerable<object> paramaters)
+        public async Task<IReader> ExecuteAsync(string sql, IEnumerable<object> paramaters)
         {
             AddSqlStatement(sql, paramaters);
-            return Executor.ExecuteAsync(sql, paramaters);
+            return new TestReader(this, await Executor.ExecuteAsync(sql, paramaters), SqlStatements.Count - 1);
         }
 
         void AddSqlStatement(string sql, IEnumerable<object> paramaters)
         {
-            SqlStatements.Add(paramaters
+            SqlStatements.Add((paramaters
                 .OrEmpty()
                 .Select((p, i) => $"@p{i} = {p}")
                 .JoinString("\n") + "\n\n" +
-                sql);
+                sql, new List<List<(string key, object value)>>()));
+        }
+
+        string SqlStatementString((string sql, List<List<(string key, object value)>> results) statement)
+        {
+            var results = "[\n" + statement.results
+                .Select(row => "  {\n" + row
+                    .Select(cell => $"    {cell.key}: {cell.value}")
+                    .JoinString(",\n") + 
+                "\n  }")
+                .JoinString(",\n") + "\n]\n";
+
+            return statement.sql + "\n\nResults:\n" + results;
         }
 
         public void PrintSqlStatements() => Console.WriteLine("\n" + GetSqlStatements());
 
-        public string GetSqlStatements() => $"{SqlStatements.Count} SQL statement(s):\n" + SqlStatements.JoinString("\n\n");
+        public string GetSqlStatements() => $"{SqlStatements.Count} SQL statement(s):\n" + SqlStatements.Select(SqlStatementString).JoinString("\n\n");
+
+        public void RecordRow(int index, List<(string, object)> row)
+        {
+            SqlStatements[index].results.Add(row);
+        }
+    }
+
+    class TestReader : IReader
+    {
+        TestExecutor Executor;
+        IReader Reader;
+        int Index;
+
+        public TestReader(TestExecutor executor, IReader reader, int index)
+        {
+            Executor = executor;
+            Reader = reader;
+            Index = index;
+        }
+
+        public async Task<(bool hasRow, List<(string key, object value)> row)> GetRowAsync()
+        {
+            var row = await Reader.GetRowAsync();
+            if (row.hasRow)
+                Executor.RecordRow(Index, row.row);
+
+            return row;
+        }
     }
 }
