@@ -40,16 +40,21 @@ namespace SqlDsl.Query
             return this;
         }
 
+        public IQuery<TResult> From<TTable>(Expression<Func<TResult, TTable>> tableProperty) =>
+            From<TTable>(typeof(TTable).Name, tableProperty);
+
         readonly List<Join> Joins = new List<Join>();
-        public IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult)
-        {
-            return new JoinBuilder<TJoin>(this, JoinType.Inner, tableName, joinResult);
-        }
+        public IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
+            new JoinBuilder<TJoin>(this, JoinType.Inner, tableName, joinResult);
         
-        public IJoinBuilder<TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult)
-        {
-            return new JoinBuilder<TJoin>(this, JoinType.Left, tableName, joinResult);
-        }
+        public IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
+            InnerJoin<TJoin>(typeof(TJoin).Name, joinResult);
+        
+        public IJoinBuilder<TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
+            new JoinBuilder<TJoin>(this, JoinType.Left, tableName, joinResult);
+        
+        public IJoinBuilder<TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
+            LeftJoin<TJoin>(typeof(TJoin).Name, joinResult);
 
         (ParameterExpression queryRoot, Expression where)? WhereClause = null;
         public IResultMapper<TResult> Where(Expression<Func<TResult, bool>> filter)

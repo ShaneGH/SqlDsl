@@ -17,6 +17,21 @@ namespace SqlDsl
         /// An expression to map the selected table to a property on the result
         /// </param>
         IQuery<TResult> From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty);
+        
+
+        //TODO: this method should be implemented
+        // /// <summary>
+        // /// Set the [Table] in SELECT FROM [Table]
+        // /// </summary>
+        // /// <param name="resultProperty">
+        // /// An expression to map the selected table to a property on the result
+        // /// </param>
+        // IQuery<TResult> From<TTable>(string tableName, Expression<Func<TResult, IEnumerable<TTable>>> resultProperty);
+        
+        /// <summary>
+        /// Set the [Table] in SELECT FROM [Table].abstract Uses the class name of TTable as the sql table name
+        /// </summary>
+        IQuery<TResult> From<TTable>(Expression<Func<TResult, TTable>> resultProperty);
     }
     
     /// <summary>
@@ -83,6 +98,14 @@ namespace SqlDsl
         IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
         
         /// <summary>
+        /// Join another table to the query using INNER JOIN. Uses the name of the TJoin class as the join table name
+        /// </summary>
+        /// <param name="joinProperty">
+        /// The property of TResult to append the joined table to
+        /// </param>
+        IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
+        
+        /// <summary>
         /// Join another table to the query using LEFT JOIN
         /// </summary>
         /// <param name="tableName">
@@ -92,6 +115,14 @@ namespace SqlDsl
         /// The property of TResult to append the joined table to
         /// </param>
         IJoinBuilder<TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
+        
+        /// <summary>
+        /// Join another table to the query using LEFT JOIN. Uses the name of the TJoin class as the join table name
+        /// </summary>
+        /// <param name="joinProperty">
+        /// The property of TResult to append the joined table to
+        /// </param>
+        IJoinBuilder<TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
     }
     
     /// <summary>
