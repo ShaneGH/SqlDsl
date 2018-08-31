@@ -29,9 +29,19 @@ namespace SqlDsl
         // IQuery<TResult> From<TTable>(string tableName, Expression<Func<TResult, IEnumerable<TTable>>> resultProperty);
         
         /// <summary>
-        /// Set the [Table] in SELECT FROM [Table].abstract Uses the class name of TTable as the sql table name
+        /// Set the [Table] in SELECT FROM [Table]. Uses the class name of TTable as the sql table name
         /// </summary>
         IQuery<TResult> From<TTable>(Expression<Func<TResult, TTable>> resultProperty);
+        
+        /// <summary>
+        /// Set the [Table] in SELECT FROM [Table] to be TResult.
+        /// </summary>
+        IQuery<TResult> From(string tableName);
+        
+        /// <summary>
+        /// Set the [Table] in SELECT FROM [Table] to be TResult. Uses the class name of TResult as the sql table name
+        /// </summary>
+        IQuery<TResult> From();
     }
     
     /// <summary>

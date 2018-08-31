@@ -35,6 +35,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             public List<QueryClass1> Inner { get; set; }
         }
 
+        class ZeroLevels : Person
+        {
+            public PersonClass[] PersonClasses { get; set; }
+        }
+
         SqliteConnection Connection;
 
         [OneTimeSetUp]
@@ -49,6 +54,30 @@ namespace SqlDsl.UnitTests.FullPathTests
         public void OneTimeTearDown()
         {
             Connection.Dispose();
+        }
+
+        [Test]
+        public async Task SelectWith0Levels()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<ZeroLevels>()
+                .From(result => result)
+                .InnerJoin<PersonClass>(p => p.PersonClasses)
+                .On((person, classes) => person.Id == classes.PersonId)
+                .ExecuteAsync(new SqliteExecutor(Connection));
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John, data.First());
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1));
+            
+            Assert.AreEqual(2, data.First().PersonClasses.Count());
+            Assert.AreEqual(Data.PersonClasses.JohnArchery, data.First().PersonClasses.First());
+            Assert.AreEqual(Data.PersonClasses.JohnArchery, data.First().PersonClasses.ElementAt(1));
+
+            Assert.AreEqual(1, data.ElementAt(1).PersonClasses.Count());
+            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1).PersonClasses.First());
         }
 
         [Test]
@@ -110,15 +139,15 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             var data = await Sql.Query.Sqlite<QueryClass3>()
-                .From(result => Sql.One(result.Inner).Person)
-                .LeftJoin<PersonClass>(result => Sql.One(result.Inner).PersonClasses)
-                    .On((r, pc) => Sql.One(r.Inner).Person.Id == pc.PersonId)
-                .Where(result => Sql.One(result.Inner).Person.Id == Data.People.Mary.Id)
+                .From(result => result.Inner.One().Person)
+                .LeftJoin<PersonClass>(result => result.Inner.One().PersonClasses)
+                    .On((r, pc) => r.Inner.One().Person.Id == pc.PersonId)
+                .Where(result => result.Inner.One().Person.Id == Data.People.Mary.Id)
                 .ExecuteAsync(ex);
 
             // assert
             Assert.AreEqual(1, data.Count());
-            Assert.AreEqual(1, data.ElementAt(0).Inner.First().Person);
+            Assert.AreEqual(1, data.ElementAt(0).Inner.Count());
             Assert.AreEqual(Data.People.Mary, data.ElementAt(0).Inner.First().Person);
             Assert.AreEqual(1, data.First().Inner.First().PersonClasses.Count());
             Assert.AreEqual(Data.PersonClasses.MaryTennis, data.First().Inner.First().PersonClasses.First());

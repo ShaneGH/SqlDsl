@@ -239,7 +239,7 @@ namespace SqlDsl.SqlBuilders
                     (false, null, null);
             }
 
-            var oneOf = IsOne(member.Expression) as MemberExpression;
+            var oneOf = ReflectionUtils.IsOne(member.Expression) as MemberExpression;
             if (oneOf != null)
             {
                 var inner = GetMemberQueryObjectName(oneOf);
@@ -287,20 +287,6 @@ namespace SqlDsl.SqlBuilders
             }
 
             throw new InvalidOperationException($"Cannot find table for expression ${member}");
-        }
-
-        static readonly MethodInfo _One = typeof(Sql).GetMethod(nameof(Sql.One), BindingFlags.Public | BindingFlags.Static);
-        static Expression IsOne(Expression e)
-        {
-            var method = e as MethodCallExpression;
-            if (method == null)
-                return null;
-
-            if (!method.Method.IsGenericMethod ||
-                method.Method.GetGenericMethodDefinition() != _One)
-                return null;
-
-            return method.Arguments[0];
         }
 
         protected virtual string BuildConstantCondition(ConstantExpression constant, IList<object> paramaters) => 

@@ -19,17 +19,19 @@ namespace SqlDsl.Query
         static IEnumerable<MemberInfo> CheckMemberExpression<T>(Expression<Func<TResult, T>> memberPointer)
         {
             var output = new List<MemberInfo>();
-            var expr = memberPointer.Body as MemberExpression;
+            var expr = TryOne(memberPointer.Body) as MemberExpression;
             while (expr != null)
             {
                 output.Insert(0, expr.Member);
-                expr = expr.Expression as MemberExpression;
+                expr = TryOne(expr.Expression) as MemberExpression;
             }
 
             if (!output.Any() || output[0].DeclaringType != typeof(TResult))
                 throw new ArgumentException("This expression must point to a paramater on the query object.", nameof(memberPointer));
                 
             return output;
+
+            Expression TryOne(Expression val) => ReflectionUtils.IsOne(val) ?? val;
         }
 
         public IQuery<TResult> From<TTable>(string tableName, Expression<Func<TResult, TTable>> tableProperty)
@@ -42,6 +44,12 @@ namespace SqlDsl.Query
 
         public IQuery<TResult> From<TTable>(Expression<Func<TResult, TTable>> tableProperty) =>
             From<TTable>(typeof(TTable).Name, tableProperty);
+
+        public IQuery<TResult> From() =>
+            From(typeof(TResult).Name);
+
+        public IQuery<TResult> From(string tableName) =>
+            From<TResult>(tableName, x => x);
 
         readonly List<Join> Joins = new List<Join>();
         public IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
