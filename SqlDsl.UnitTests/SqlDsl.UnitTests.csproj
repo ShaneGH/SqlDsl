@@ -3,7 +3,7 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SqlDsl\SqlDsl.csproj" />
+    <ProjectReference Include="..\SqlDsl.Sqlite\SqlDsl.Sqlite.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit3TestAdapter" Version="3.8.0" />

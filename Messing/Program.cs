@@ -10,34 +10,81 @@ using SqlDsl.Utils;
 
 namespace SqlDsl
 {
-    class Person
+    abstract class EqComparer
+    {        
+        public static bool operator !=(EqComparer a, EqComparer b) => !(a == b);
+
+        public static bool operator ==(EqComparer a, EqComparer b)
+        {
+            return Object.ReferenceEquals(null, a) ?
+                Object.ReferenceEquals(null, b) :
+                a.Equals(b);
+        }
+    }
+    
+    class Person : EqComparer
     {
         public int Id { get; set; }
         public string Name { get; set; }
+
+        public override int GetHashCode() => $"{Id}.{Name}".GetHashCode();
+        public override bool Equals(object p)
+        {
+            var person = p as Person;
+            return person != null && person.Id == Id && person.Name == Name;
+        }
     }
     
-    class PersonClass
+    class PersonClass : EqComparer
     {
         public int PersonId { get; set; }
         public int ClassId { get; set; }
+
+        public override int GetHashCode() => $"{PersonId}.{ClassId}".GetHashCode();
+        public override bool Equals(object p)
+        {
+            var person = p as PersonClass;
+            return person != null && person.PersonId == PersonId && person.ClassId == ClassId;
+        }
     }
     
-    class Class
+    class Class : EqComparer
     {
         public int Id { get; set; }
         public string Name { get; set; }
+
+        public override int GetHashCode() => $"{Id}.{Name}".GetHashCode();
+        public override bool Equals(object p)
+        {
+            var person = p as Class;
+            return person != null && person.Id == Id && person.Name == Name;
+        }
     }
     
-    class Tag
+    class Tag : EqComparer
     {
         public int Id { get; set; }
         public string Name { get; set; }
+
+        public override int GetHashCode() => $"{Id}.{Name}".GetHashCode();
+        public override bool Equals(object p)
+        {
+            var person = p as Tag;
+            return person != null && person.Id == Id && person.Name == Name;
+        }
     }
     
-    class ClassTag
+    class ClassTag : EqComparer
     {
         public int ClassId { get; set; }
         public int TagId { get; set; }
+
+        public override int GetHashCode() => $"{ClassId}.{TagId}".GetHashCode();
+        public override bool Equals(object p)
+        {
+            var person = p as ClassTag;
+            return person != null && person.ClassId == ClassId && person.TagId == TagId;
+        }
     }
 
     class QueryClass
@@ -49,7 +96,7 @@ namespace SqlDsl
         public IEnumerable<Tag> Tags { get; set; }
     }
 
-    class ResultClass
+    class ResultClass : Object
     {
         public string PersonName { get; set; }
         // public IEnumerable<string> ClassNames { get; set; }
@@ -58,7 +105,7 @@ namespace SqlDsl
 
     class Program
     {
-        static ISqlBuilder<QueryClass> Q()
+        static ISqlBuilder<ResultClass> Q()
         {
             return Sql.Query.Sqlite<QueryClass>()
                 .From(nameof(Person), result => result.Person)
@@ -75,13 +122,13 @@ namespace SqlDsl
                 .InnerJoin(nameof(Tag), result => result.Tags)
                 .On((result, tag) => tag.Id == Sql.One(result.ClassTags).TagId)
 
-                .Where(result => result.Person.Id > 0)
-                // .Map(x => new ResultClass
-                // {
-                //     PersonName = x.Person.Name,
-                //     //ClassNames = x.Classes.Select(c => c.Name),
-                //     //ClassTags = x.Tags.Select(c => c.Name)
-                // })
+                .Where(result => result.Person.Id == 1)
+                .Map(x => new ResultClass
+                {
+                    PersonName = x.Person.Name,
+                    //ClassNames = x.Classes.Select(c => c.Name),
+                    //ClassTags = x.Tags.Select(c => c.Name)
+                })
                 ;
         }
 
@@ -101,30 +148,7 @@ namespace SqlDsl
                // ExecuteSql(conn, sql.sql, sql.paramaters).Wait();
 
 
-                var data = Sql.Query.Sqlite<QueryClass>()
-                    .From(nameof(Person), result => result.Person)
-
-                    .LeftJoin(nameof(PersonClass), result => result.PersonClasses)
-                    .On((result, _class) => _class.PersonId == result.Person.Id)
-
-                    .InnerJoin(nameof(Class), result => result.Classes)
-                    .On((result, _class) => _class.Id == Sql.One(result.PersonClasses).ClassId)
-
-                    .InnerJoin(nameof(ClassTag), result => result.ClassTags)
-                    .On((result, classTag) => classTag.ClassId == Sql.One(result.Classes).Id)
-
-                    .InnerJoin(nameof(Tag), result => result.Tags)
-                    .On((result, tag) => tag.Id == Sql.One(result.ClassTags).TagId)
-
-                    .Where(result => result.Person.Id > 0)
-                    
-                    .Map(x => new ResultClass
-                    {
-                        PersonName = x.Person.Name,
-                        //ClassNames = x.Classes.Select(c => c.Name),
-                        //ClassTags = x.Tags.Select(c => c.Name)
-                    })
-                
+                var data = Q()
                     .ExecuteAsync(new SqliteExecutor(conn));
 
                Console.WriteLine(JsonConvert.SerializeObject(data.Result, Formatting.Indented));

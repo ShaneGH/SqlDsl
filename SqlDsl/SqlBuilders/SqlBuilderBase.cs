@@ -193,10 +193,37 @@ namespace SqlDsl.SqlBuilders
         protected virtual string BuildGreaterThanEqualToCondition(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, BinaryExpression eq, IList<object> paramaters) =>
             $"({BuildCondition(tables, eq.Left, paramaters)} >= {BuildCondition(tables, eq.Right, paramaters)})";
 
+        (bool memberHasStaticValue, object memberStaticValue) GetMemberStaticObjectValue(MemberExpression member)
+        {
+            var m = member;
+            while (member != null)
+            {
+                // if static property, expression == null
+                if (member.Expression is ConstantExpression || member.Expression == null)
+                {
+                    var t = DateTime.Now;
+                    var valueGetter = Expression
+                        .Lambda<Func<object>>(
+                            Expression.Convert(
+                                m, typeof(object)))
+                        .Compile();
+
+                    return (true, valueGetter());
+                }
+
+                member = member.Expression as MemberExpression;
+            }
+
+            return (false, null);
+        }
+
         protected virtual string BuildMemberAccessCondition(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, MemberExpression member, IList<object> paramaters)
         {
             // e.g. if overall join expression is TQuery.Entity1.Id == Entity2.Id
             // then, "propertyExpression" input will be lhs -or- rhs of above
+            var staticValue = GetMemberStaticObjectValue(member);
+            if (staticValue.memberHasStaticValue)
+                return AddToParamaters(staticValue.memberStaticValue, paramaters);
 
             // propertyExpression is "TQuery.Entity1.Id" part
             var propertyExpression = member.Expression as MemberExpression;
@@ -264,9 +291,12 @@ namespace SqlDsl.SqlBuilders
             return null;
         }
 
-        protected virtual string BuildConstantCondition(ConstantExpression constant, IList<object> paramaters)
+        protected virtual string BuildConstantCondition(ConstantExpression constant, IList<object> paramaters) => 
+            AddToParamaters(constant.Value, paramaters);
+
+        string AddToParamaters(object value, IList<object> paramaters)
         {
-            paramaters.Add(constant.Value);
+            paramaters.Add(value);
             return $"@p{paramaters.Count - 1}";
         }
 
