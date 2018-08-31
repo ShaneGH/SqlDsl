@@ -14,15 +14,22 @@ namespace SqlDsl.Query
         where TSqlBuilder: ISqlBuilder, new()
     {
         string PrimaryTable;
-        public MemberInfo PrimaryTableMember { get; private set; }
+        public IEnumerable<MemberInfo> PrimaryTableMember { get; private set; }
 
-        static MemberInfo CheckMemberExpression<T>(Expression<Func<TResult, T>> memberPointer)
+        static IEnumerable<MemberInfo> CheckMemberExpression<T>(Expression<Func<TResult, T>> memberPointer)
         {
+            var output = new List<MemberInfo>();
             var expr = memberPointer.Body as MemberExpression;
-            if (expr == null || expr.Member.DeclaringType != typeof(TResult))
+            while (expr != null)
+            {
+                output.Insert(0, expr.Member);
+                expr = expr.Expression as MemberExpression;
+            }
+
+            if (!output.Any() || output[0].DeclaringType != typeof(TResult))
                 throw new ArgumentException("This expression must point to a paramater on the query object.", nameof(memberPointer));
                 
-            return expr.Member;
+            return output;
         }
 
         public IQuery<TResult> From<TTable>(string tableName, Expression<Func<TResult, TTable>> tableProperty)
@@ -44,10 +51,13 @@ namespace SqlDsl.Query
             return new JoinBuilder<TJoin>(this, JoinType.Left, tableName, joinResult);
         }
 
-        Expression WhereClause = null;
+        (ParameterExpression queryRoot, Expression where)? WhereClause = null;
         public IResultMapper<TResult> Where(Expression<Func<TResult, bool>> filter)
         {
-            WhereClause = filter?.Body ?? throw new ArgumentNullException(nameof(filter));
+            if (filter == null)
+                throw new ArgumentNullException(nameof(filter));
+
+            WhereClause = (filter.Parameters[0], filter.Body);
             return this;
         }
 
@@ -82,19 +92,22 @@ namespace SqlDsl.Query
             return ($"{sql.querySetupSql}\n{sql.querySql}", result.paramaters);
         }
 
+        
+
         internal (ISqlBuilder builder, IEnumerable<object> paramaters) ToSqlBuilder(IEnumerable<string> filterCols)
         {
             var param = new List<object>();
             var n = Environment.NewLine;
             var builder = new TSqlBuilder();
 
-            builder.SetPrimaryTable(PrimaryTable, PrimaryTableMember.Name);
+            var primaryTableName = PrimaryTableMember.MemberName();
+            builder.SetPrimaryTable(PrimaryTable, primaryTableName);
 
             var selectColumns = Joins
                 .SelectMany((x, i) => ColumnsOf(x.JoinExpression.joinParam.Type)
-                    .Select(y => (table: x.JoinResult.Name, column: y)))
-                .Concat(ColumnsOf(GetPropertyOrFieldType(PrimaryTableMember))
-                    .Select(y => (table: PrimaryTableMember.Name, column: y)));
+                    .Select(y => (table: x.JoinResult.MemberName(), column: y)))
+                .Concat(ColumnsOf(GetPropertyOrFieldType(PrimaryTableMember.Last()))
+                    .Select(y => (table: primaryTableName, column: y)));
 
             if (filterCols != null)
             {
@@ -107,8 +120,8 @@ namespace SqlDsl.Query
                 builder.AddSelectColumn(col.column, col.table, $"{col.table}.{col.column}");
 
             var tables = Joins
-                .Select(x => (x.JoinResult.Name, x.JoinResult, x.JoinExpression.joinParam))
-                .Prepend((PrimaryTableMember.Name, PrimaryTableMember, null))
+                .Select(x => (x.JoinResult.MemberName(), x.JoinResult, x.JoinExpression.joinParam))
+                .Prepend((primaryTableName, PrimaryTableMember, null))
                 .Enumerate();
 
             foreach (var join in Joins)
@@ -116,12 +129,15 @@ namespace SqlDsl.Query
                 builder.AddJoin(
                     join.JoinType, 
                     join.TableName, 
-                    (tables, join.JoinExpression.joinExpression, param),
-                    join.JoinResult.Name);
+                    join.JoinExpression.rootObjectParam,
+                    join.JoinExpression.joinParam,
+                    join.JoinExpression.joinExpression,
+                    param,
+                    join.JoinResult.MemberName());
             }
 
             if (WhereClause != null)
-                builder.SetWhere(tables, WhereClause, param);
+                builder.SetWhere(WhereClause.Value.queryRoot, WhereClause.Value.where, param);
 
             return (builder, param);
         }
@@ -136,7 +152,8 @@ namespace SqlDsl.Query
             var reader = await executor.ExecuteAsync(sql.sql, sql.paramaters);
             var results = await reader.GetRowsAsync();
 
-            return results.Parse<TResult>(PrimaryTableMember.Name);
+            return results
+                .Parse<TResult>(PrimaryTableMember.MemberName());
         }
 
         class JoinBuilder<TJoin> : IJoinBuilder<TResult, TJoin>
@@ -163,7 +180,7 @@ namespace SqlDsl.Query
                 {
                     JoinType = JoinType,
                     TableName = TableName,
-                    JoinExpression = (joinExpression.Parameters[1], joinExpression.Body),
+                    JoinExpression = (joinExpression.Parameters[0], joinExpression.Parameters[1], joinExpression.Body),
                     JoinResult = CheckMemberExpression(JoinResult)
                 });
 

@@ -22,10 +22,13 @@ namespace SqlDsl.SqlBuilders
         void AddJoin(
             JoinType joinType, 
             string joinTable, 
-            (IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, Expression equality, IList<object> paramaters) equalityStatement, 
-            string joinTableAlias = null);
+            ParameterExpression queryRootParam, 
+            ParameterExpression joinTableParam,
+            Expression equalityStatement, 
+            IList<object> paramaters, 
+            string joinTableAlias);
 
-        void SetWhere(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, Expression equality, IList<object> paramaters);
+        void SetWhere(ParameterExpression queryRoot, Expression equality, IList<object> paramaters);
 
         (string querySetupSql, string querySql) ToSqlString();
     }

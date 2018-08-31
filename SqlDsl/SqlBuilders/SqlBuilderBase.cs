@@ -8,6 +8,8 @@ using System.Reflection;
 
 namespace SqlDsl.SqlBuilders
 {
+    using OtherParams = IEnumerable<(ParameterExpression param, string alias)>;
+
     /// <summary>
     /// Base class for building sql statements. Inherit from this class to build different flavours of sql
     /// </summary>
@@ -21,13 +23,20 @@ namespace SqlDsl.SqlBuilders
         IEnumerable<(string alias, string sql)> ISqlBuilder.Joins => Joins.Skip(0);
 
         readonly List<(string alias, string sql)> Joins = new List<(string alias, string sql)>();
-        public void AddJoin(JoinType joinType, string joinTable, (IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, Expression equality, IList<object> paramaters) equalityStatement, string joinTableAlias = null)
+        public void AddJoin(
+            JoinType joinType, 
+            string joinTable, 
+            ParameterExpression queryRootParam, 
+            ParameterExpression joinTableParam,
+            Expression equalityStatement, 
+            IList<object> paramaters, 
+            string joinTableAlias)
         {
             Joins.Add((joinTableAlias,
                 BuildJoin(
                     joinType, 
                     joinTable, 
-                    BuildCondition(equalityStatement.tables, equalityStatement.equality, equalityStatement.paramaters),
+                    BuildCondition(queryRootParam, new[]{(joinTableParam, joinTableAlias)}, equalityStatement, paramaters),
                     joinTableAlias)));
         }
 
@@ -72,9 +81,9 @@ namespace SqlDsl.SqlBuilders
         }
 
         string Where = null;
-        public void SetWhere(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, Expression equality, IList<object> paramaters)
+        public void SetWhere(ParameterExpression queryRoot, Expression equality, IList<object> paramaters)
         {
-            Where = BuildCondition(tables, equality, paramaters);
+            Where = BuildCondition(queryRoot, Enumerable.Empty<(ParameterExpression, string)>(), equality, paramaters);
         }
 
         readonly List<string> BeforeStatements = new List<string>();
@@ -138,30 +147,30 @@ namespace SqlDsl.SqlBuilders
             return schema + $"{WrapTable(name)}";
         }
 
-        protected virtual string BuildCondition(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, Expression equality, IList<object> paramaters)
+        protected virtual string BuildCondition(ParameterExpression queryRoot, OtherParams otherParams, Expression equality, IList<object> paramaters)
         {
             switch (equality.NodeType)
             {
                 case ExpressionType.Convert:
-                    return BuildCondition(tables, (equality as UnaryExpression).Operand, paramaters);
+                    return BuildCondition(queryRoot, otherParams, (equality as UnaryExpression).Operand, paramaters);
                 case ExpressionType.AndAlso:
-                    return BuildAndCondition(tables, equality as BinaryExpression, paramaters);
+                    return BuildAndCondition(queryRoot, otherParams, equality as BinaryExpression, paramaters);
                 case ExpressionType.OrElse:
-                    return BuildOrCondition(tables, equality as BinaryExpression, paramaters);
+                    return BuildOrCondition(queryRoot, otherParams, equality as BinaryExpression, paramaters);
                 case ExpressionType.Equal:
-                    return BuildEqualityCondition(tables, equality as BinaryExpression, paramaters);
+                    return BuildEqualityCondition(queryRoot, otherParams, equality as BinaryExpression, paramaters);
                 case ExpressionType.NotEqual:
-                    return BuildNonEqualityCondition(tables, equality as BinaryExpression, paramaters);
+                    return BuildNonEqualityCondition(queryRoot, otherParams, equality as BinaryExpression, paramaters);
                 case ExpressionType.LessThan:
-                    return BuildLessThanCondition(tables, equality as BinaryExpression, paramaters);
+                    return BuildLessThanCondition(queryRoot, otherParams, equality as BinaryExpression, paramaters);
                 case ExpressionType.LessThanOrEqual:
-                    return BuildLessThanEqualToCondition(tables, equality as BinaryExpression, paramaters);
+                    return BuildLessThanEqualToCondition(queryRoot, otherParams, equality as BinaryExpression, paramaters);
                 case ExpressionType.GreaterThan:
-                    return BuildGreaterThanCondition(tables, equality as BinaryExpression, paramaters);
+                    return BuildGreaterThanCondition(queryRoot, otherParams, equality as BinaryExpression, paramaters);
                 case ExpressionType.GreaterThanOrEqual:
-                    return BuildGreaterThanEqualToCondition(tables, equality as BinaryExpression, paramaters);
+                    return BuildGreaterThanEqualToCondition(queryRoot, otherParams, equality as BinaryExpression, paramaters);
                 case ExpressionType.MemberAccess:
-                    return BuildMemberAccessCondition(tables, equality as MemberExpression, paramaters);
+                    return BuildMemberAccessCondition(queryRoot, otherParams, equality as MemberExpression, paramaters);
                 case ExpressionType.Constant:
                     return BuildConstantCondition(equality as ConstantExpression, paramaters);
                 default:
@@ -169,29 +178,29 @@ namespace SqlDsl.SqlBuilders
             }
         }
 
-        protected virtual string BuildAndCondition(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, BinaryExpression and, IList<object> paramaters) =>
-            $"({BuildCondition(tables, and.Left, paramaters)} AND {BuildCondition(tables, and.Right, paramaters)})";
+        protected virtual string BuildAndCondition(ParameterExpression queryRoot, OtherParams otherParams, BinaryExpression and, IList<object> paramaters) =>
+            $"({BuildCondition(queryRoot, otherParams, and.Left, paramaters)} AND {BuildCondition(queryRoot, otherParams, and.Right, paramaters)})";
 
-        protected virtual string BuildOrCondition(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, BinaryExpression or, IList<object> paramaters) =>
-            $"({BuildCondition(tables, or.Left, paramaters)} OR {BuildCondition(tables, or.Right, paramaters)})";
+        protected virtual string BuildOrCondition(ParameterExpression queryRoot, OtherParams otherParams, BinaryExpression or, IList<object> paramaters) =>
+            $"({BuildCondition(queryRoot, otherParams, or.Left, paramaters)} OR {BuildCondition(queryRoot, otherParams, or.Right, paramaters)})";
 
-        protected virtual string BuildEqualityCondition(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, BinaryExpression eq, IList<object> paramaters) =>
-            $"({BuildCondition(tables, eq.Left, paramaters)} = {BuildCondition(tables, eq.Right, paramaters)})";
+        protected virtual string BuildEqualityCondition(ParameterExpression queryRoot, OtherParams otherParams, BinaryExpression eq, IList<object> paramaters) =>
+            $"({BuildCondition(queryRoot, otherParams, eq.Left, paramaters)} = {BuildCondition(queryRoot, otherParams, eq.Right, paramaters)})";
 
-        protected virtual string BuildNonEqualityCondition(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, BinaryExpression eq, IList<object> paramaters) =>
-            $"({BuildCondition(tables, eq.Left, paramaters)} <> {BuildCondition(tables, eq.Right, paramaters)})";
+        protected virtual string BuildNonEqualityCondition(ParameterExpression queryRoot, OtherParams otherParams, BinaryExpression eq, IList<object> paramaters) =>
+            $"({BuildCondition(queryRoot, otherParams, eq.Left, paramaters)} <> {BuildCondition(queryRoot, otherParams, eq.Right, paramaters)})";
 
-        protected virtual string BuildLessThanCondition(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, BinaryExpression eq, IList<object> paramaters) =>
-            $"({BuildCondition(tables, eq.Left, paramaters)} < {BuildCondition(tables, eq.Right, paramaters)})";
+        protected virtual string BuildLessThanCondition(ParameterExpression queryRoot, OtherParams otherParams, BinaryExpression eq, IList<object> paramaters) =>
+            $"({BuildCondition(queryRoot, otherParams, eq.Left, paramaters)} < {BuildCondition(queryRoot, otherParams, eq.Right, paramaters)})";
 
-        protected virtual string BuildLessThanEqualToCondition(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, BinaryExpression eq, IList<object> paramaters) =>
-            $"({BuildCondition(tables, eq.Left, paramaters)} <= {BuildCondition(tables, eq.Right, paramaters)})";
+        protected virtual string BuildLessThanEqualToCondition(ParameterExpression queryRoot, OtherParams otherParams, BinaryExpression eq, IList<object> paramaters) =>
+            $"({BuildCondition(queryRoot, otherParams, eq.Left, paramaters)} <= {BuildCondition(queryRoot, otherParams, eq.Right, paramaters)})";
 
-        protected virtual string BuildGreaterThanCondition(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, BinaryExpression eq, IList<object> paramaters) =>
-            $"({BuildCondition(tables, eq.Left, paramaters)} > {BuildCondition(tables, eq.Right, paramaters)})";
+        protected virtual string BuildGreaterThanCondition(ParameterExpression queryRoot, OtherParams otherParams, BinaryExpression eq, IList<object> paramaters) =>
+            $"({BuildCondition(queryRoot, otherParams, eq.Left, paramaters)} > {BuildCondition(queryRoot, otherParams, eq.Right, paramaters)})";
 
-        protected virtual string BuildGreaterThanEqualToCondition(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, BinaryExpression eq, IList<object> paramaters) =>
-            $"({BuildCondition(tables, eq.Left, paramaters)} >= {BuildCondition(tables, eq.Right, paramaters)})";
+        protected virtual string BuildGreaterThanEqualToCondition(ParameterExpression queryRoot, OtherParams otherParams, BinaryExpression eq, IList<object> paramaters) =>
+            $"({BuildCondition(queryRoot, otherParams, eq.Left, paramaters)} >= {BuildCondition(queryRoot, otherParams, eq.Right, paramaters)})";
 
         (bool memberHasStaticValue, object memberStaticValue) GetMemberStaticObjectValue(MemberExpression member)
         {
@@ -217,58 +226,71 @@ namespace SqlDsl.SqlBuilders
             return (false, null);
         }
 
-        protected virtual string BuildMemberAccessCondition(IEnumerable<(string name, MemberInfo token, ParameterExpression reference)> tables, MemberExpression member, IList<object> paramaters)
+        (bool memberIsFromQueryObject, IEnumerable<string> memberQueryObjectParts, ParameterExpression rootParam) GetMemberQueryObjectName(MemberExpression member)
+        {
+            if (member.Expression is ParameterExpression)
+                return (true, new [] { member.Member.Name }, member.Expression as ParameterExpression);
+
+            if (member.Expression is MemberExpression)
+            {
+                var inner = GetMemberQueryObjectName(member.Expression as MemberExpression);
+                return inner.memberIsFromQueryObject ?
+                    (true, inner.memberQueryObjectParts.Concat(new[]{member.Member.Name}), inner.rootParam) :
+                    (false, null, null);
+            }
+
+            var oneOf = IsOne(member.Expression) as MemberExpression;
+            if (oneOf != null)
+            {
+                var inner = GetMemberQueryObjectName(oneOf);
+                return inner.memberIsFromQueryObject ?
+                    (true, inner.memberQueryObjectParts.Concat(new[]{member.Member.Name}), inner.rootParam) :
+                    (false, null, null);
+            }
+
+            return (false, null, null);
+        }
+
+        protected virtual string BuildMemberAccessCondition(
+            ParameterExpression queryRoot, 
+            OtherParams otherParams, 
+            MemberExpression member, 
+            IList<object> paramaters)
         {
             // e.g. if overall join expression is TQuery.Entity1.Id == Entity2.Id
             // then, "propertyExpression" input will be lhs -or- rhs of above
+
             var staticValue = GetMemberStaticObjectValue(member);
             if (staticValue.memberHasStaticValue)
                 return AddToParamaters(staticValue.memberStaticValue, paramaters);
 
             // propertyExpression is "TQuery.Entity1.Id" part
-            var propertyExpression = member.Expression as MemberExpression;
-            if (propertyExpression != null)
+            var tableValue = GetMemberQueryObjectName(member);
+            if (tableValue.memberIsFromQueryObject)
             {
-                foreach (var table in tables)
-                {
-                    if (table.token == propertyExpression.Member)
-                        return $"{WrapTable(table.name)}.{WrapColumn(member.Member.Name)}";
-                }
+                var parts = tableValue.memberQueryObjectParts.ToList();
+                var paramAlias = otherParams
+                    .Where(op => op.param == tableValue.rootParam)
+                    .Select(op => op.alias)
+                    .FirstOrDefault();
 
-                throw new InvalidOperationException($"Cannot find table for expression ${member}");
-            }
+                if (paramAlias != null)
+                    parts.Insert(0, paramAlias);
 
-            // propertyExpression is "TQuery.Entity1.Id" part wrapped in "Sql.One" (Sql.One(TQuery.Entity1).Id)
-            var oneMember = IsOne(member.Expression);
-            if (oneMember != null)
-            {
-                foreach (var table in tables)
-                {
-                    if (table.token == oneMember)
-                        return $"{WrapTable(table.name)}.{WrapColumn(member.Member.Name)}";
-                }
+                var table = parts.Count > 1 ? 
+                    WrapAlias(parts
+                        .Take(parts.Count - 1)
+                        .JoinString(".")) + "." :
+                    "";
 
-                throw new InvalidOperationException($"Cannot find table for expression ${member}");
-            }
-
-            // propertyExpression is "Entity2.Id" part
-            var paramExpression = member.Expression as ParameterExpression;
-            if (paramExpression != null)
-            {
-                foreach (var table in tables)
-                {
-                    if (table.reference == paramExpression)
-                        return $"{WrapTable(table.name)}.{WrapColumn(member.Member.Name)}";
-                }
-
-                throw new InvalidOperationException($"Cannot find table for expression ${member}");
+                return $"{table}{WrapColumn(parts.Last())}";
             }
 
             throw new InvalidOperationException($"Cannot find table for expression ${member}");
         }
 
         static readonly MethodInfo _One = typeof(Sql).GetMethod(nameof(Sql.One), BindingFlags.Public | BindingFlags.Static);
-        static MemberInfo IsOne(Expression e)
+        static Expression IsOne(Expression e)
         {
             var method = e as MethodCallExpression;
             if (method == null)
@@ -278,17 +300,7 @@ namespace SqlDsl.SqlBuilders
                 method.Method.GetGenericMethodDefinition() != _One)
                 return null;
 
-            var input = method.Arguments[0].NodeType == ExpressionType.Convert ? 
-                (method.Arguments[0] as UnaryExpression).Operand as MemberExpression :
-                method.Arguments[0] as MemberExpression;
-
-            if (input == null)
-                return null;
-
-            if (input.Expression is ParameterExpression)
-                return input.Member;
-
-            return null;
+            return method.Arguments[0];
         }
 
         protected virtual string BuildConstantCondition(ConstantExpression constant, IList<object> paramaters) => 

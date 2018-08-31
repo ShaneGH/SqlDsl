@@ -71,5 +71,13 @@ namespace SqlDsl.Utils
                 .Select(i => i.GetGenericArguments()[0])
                 .FirstOrDefault();
         }
+
+        /// <summary>
+        /// Joins a group of member names using "." as a delimiter
+        /// </summary>
+        public static string MemberName(this IEnumerable<MemberInfo> members) => members
+            .OrEmpty()
+            .Select(m => m.Name)
+            .JoinString(".");
     }
 }

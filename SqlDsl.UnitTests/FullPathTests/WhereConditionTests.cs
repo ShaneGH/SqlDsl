@@ -60,14 +60,23 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.Person)
-                .Where(result => result.Person.Id == Data.People.Mary.Id)
-                .ExecuteAsync(new SqliteExecutor(Connection));
+            var ex = new TestExecutor(new SqliteExecutor(Connection));
+            try
+            {
+                var data = await Sql.Query.Sqlite<QueryClass>()
+                    .From(nameof(Person), result => result.Person)
+                    .Where(result => result.Person.Id == Data.People.Mary.Id)
+                    .ExecuteAsync(ex);
 
-            // assert
-            Assert.AreEqual(1, data.Count());
-            Assert.AreEqual(Data.People.Mary, data.First().Person);
+                // assert
+                Assert.AreEqual(1, data.Count());
+                Assert.AreEqual(Data.People.Mary, data.First().Person);
+            }
+            catch 
+            {
+                ex.PrintSqlStatements();
+                throw;
+            }
         }
 
         [Test]

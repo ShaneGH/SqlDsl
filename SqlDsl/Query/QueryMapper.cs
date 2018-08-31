@@ -41,7 +41,7 @@ namespace SqlDsl.Query
             var reader = await executor.ExecuteAsync(sql.sql, sql.paramaters);
             var results = await reader.GetRowsAsync();
 
-            return results.Parse<TMapped>(Query.PrimaryTableMember.Name);
+            return results.Parse<TMapped>(Query.PrimaryTableMember.MemberName());
         }
 
         IEnumerable<MemberExpression> FindMapExpressions(Expression expr, ParameterExpression rootParam)

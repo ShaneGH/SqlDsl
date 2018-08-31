@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -7,8 +8,8 @@ namespace SqlDsl.Query
     {
         public JoinType JoinType { get; set; }
         public string TableName { get; set; }
-        public (ParameterExpression joinParam, Expression joinExpression) JoinExpression { get; set; }
-        public MemberInfo JoinResult { get; set; }
+        public (ParameterExpression rootObjectParam, ParameterExpression joinParam, Expression joinExpression) JoinExpression { get; set; }
+        public IEnumerable<MemberInfo> JoinResult { get; set; }
     }
     
     public enum JoinType
