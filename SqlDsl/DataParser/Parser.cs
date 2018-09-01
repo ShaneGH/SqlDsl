@@ -21,7 +21,7 @@ namespace SqlDsl.DataParser
         /// <param name="rows">The query results</param>
         /// <param name="columnNames">The query columns</param>
         /// <param name="primaryTable">The table from the [FROM] query clause. If null, will assume that there is a column named "##rowid" to group results by.</param>
-        public static IEnumerable<TResult> Parse<TResult>(this IEnumerable<Row> rows, string[] columnNames, string primaryTable = null) =>
+        public static IEnumerable<TResult> Parse<TResult>(this IEnumerable<Row> rows, IEnumerable<string> columnNames, string primaryTable = null) =>
             Parse<TResult>(rows, new ObjectPropertyGraph(columnNames), primaryTable);
             
         /// <summary>

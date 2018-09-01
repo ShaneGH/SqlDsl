@@ -194,7 +194,8 @@ namespace SqlDsl.Query
                 null :
                 PrimaryTableMember.Value.name;
 
-            return results.Parse<TResult>(sqlBuilder.builder.SelectColumns.ToArray(), primaryTableName);
+            // TODO: compile and cache ObjectProperty graph, and use as first arg
+            return results.Parse<TResult>(sqlBuilder.builder.SelectColumns, primaryTableName);
         }
 
         class JoinBuilder<TJoin> : IJoinBuilder<TResult, TJoin>

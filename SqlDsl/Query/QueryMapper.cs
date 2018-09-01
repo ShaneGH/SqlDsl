@@ -64,7 +64,8 @@ namespace SqlDsl.Query
                 null :
                 Query.PrimaryTableMember.Value.name;
 
-            return results.Parse<TMapped>(sqlBuilder.builder.SelectColumns.ToArray(), tableName);
+            // TODO: compile and cache ObjectProperty graph, and use as first arg
+            return results.Parse<TMapped>(sqlBuilder.builder.SelectColumns, tableName);
         }
 
         IEnumerable<(string from, string to)> BuildMap(Expression expr, ParameterExpression rootParam, string toPrefix = null)
