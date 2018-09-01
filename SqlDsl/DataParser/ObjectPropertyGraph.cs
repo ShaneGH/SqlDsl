@@ -25,8 +25,8 @@ namespace SqlDsl.DataParser
         /// <param name="colNames">
         /// The names of the columns returned in the query.
         /// </param>
-        public ObjectPropertyGraph(IEnumerable<(int index, string name)> colNames)
-            : this(colNames.Select(n => (n.index, n.name.Split('.').ToArray())))
+        public ObjectPropertyGraph(string[] colNames)
+            : this(colNames.Select((n, i) => (i, n.Split('.').ToArray())))
         {
         }
 

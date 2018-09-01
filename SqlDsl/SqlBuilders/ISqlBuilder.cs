@@ -13,6 +13,10 @@ namespace SqlDsl.SqlBuilders
         
         string InnerQueryAlias { get; }
 
+        IEnumerable<(string columnName, string tableName, string alias)> RowIdSelectColumns { get; }
+
+        IEnumerable<string> SelectColumns { get; }
+
         void SetPrimaryTable(string tableName, string alias);
         
         void SetPrimaryTable(ISqlBuilder table, string alias);

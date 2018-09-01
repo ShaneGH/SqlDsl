@@ -25,6 +25,18 @@ namespace SqlDsl.Query
 
         public (string sql, IEnumerable<object> paramaters) ToSql()
         {
+            var builder = ToSqlBuilder();
+            return (ToSql(builder.builder), builder.paramaters);
+        }
+
+        string ToSql(ISqlBuilder builder)
+        {            
+            var sql = builder.ToSqlString();
+            return $"{sql.querySetupSql}\n\n{sql.querySql}";
+        }
+
+        (ISqlBuilder builder, IEnumerable<object> paramaters) ToSqlBuilder()
+        {
             var wrappedSql = Query.ToSqlBuilder(Mapper.Select(m => m.from));
             var builder = new TSqlBuilder();
             builder.SetPrimaryTable(wrappedSql.builder, wrappedSql.builder.InnerQueryAlias);
@@ -34,7 +46,7 @@ namespace SqlDsl.Query
             
             var sql = builder.ToSqlString();
 
-            return ($"{sql.querySetupSql}\n{sql.querySql}", wrappedSql.paramaters);
+            return (builder, wrappedSql.paramaters);
         }
         
         public async Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor)
@@ -42,16 +54,17 @@ namespace SqlDsl.Query
             if (Query.PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
 
-            var sql = ToSql();
+            var sqlBuilder = ToSqlBuilder();
+            var sql = ToSql(sqlBuilder.builder);
 
-            var reader = await executor.ExecuteAsync(sql.sql, sql.paramaters);
+            var reader = await executor.ExecuteAsync(sql, sqlBuilder.paramaters);
             var results = await reader.GetRowsAsync();
 
             var tableName = Query.PrimaryTableMember.Value.name == SqlBuilderBase.RootObjectAlias ?
                 null :
                 Query.PrimaryTableMember.Value.name;
 
-            return results.Parse<TMapped>(tableName);
+            return results.Parse<TMapped>(sqlBuilder.builder.SelectColumns.ToArray(), tableName);
         }
 
         IEnumerable<(string from, string to)> BuildMap(Expression expr, ParameterExpression rootParam, string toPrefix = null)

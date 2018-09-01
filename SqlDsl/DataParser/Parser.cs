@@ -19,16 +19,25 @@ namespace SqlDsl.DataParser
         /// Parse the results of a sql query
         /// </summary>
         /// <param name="rows">The query results</param>
+        /// <param name="columnNames">The query columns</param>
         /// <param name="primaryTable">The table from the [FROM] query clause. If null, will assume that there is a column named "##rowid" to group results by.</param>
-        public static IEnumerable<TResult> Parse<TResult>(this IEnumerable<Row> rows, string primaryTable = null) =>
-            _Parse<TResult>(rows, primaryTable).Enumerate();
+        public static IEnumerable<TResult> Parse<TResult>(this IEnumerable<Row> rows, string[] columnNames, string primaryTable = null) =>
+            Parse<TResult>(rows, new ObjectPropertyGraph(columnNames), primaryTable);
+            
+        /// <summary>
+        /// Parse the results of a sql query
+        /// </summary>
+        /// <param name="rows">The query results</param>
+        /// <param name="primaryTable">The table from the [FROM] query clause. If null, will assume that there is a column named "##rowid" to group results by.</param>
+        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<Row> rows, ObjectPropertyGraph propertyGraph, string primaryTable = null) =>
+            _Parse<TResult>(rows, propertyGraph, primaryTable).Enumerate();
 
         /// <summary>
         /// Parse the results of a sql query
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="primaryTable">The table from the [FROM] query clause. If null, will assume that there is a column named "##rowid" to group results by.</param>
-        static IEnumerable<TResult> _Parse<TResult>(this IEnumerable<Row> rows, string primaryTable)
+        static IEnumerable<TResult> _Parse<TResult>(this IEnumerable<Row> rows, ObjectPropertyGraph propertyGraph, string primaryTable)
         {
             // group the results by the primary (SELECT) table
             var resultGroups = rows
@@ -40,20 +49,11 @@ namespace SqlDsl.DataParser
             if (!resultGroups.Any())
                 yield break;
 
-            // build an object graph from the column names
-            var colNames = resultGroups
-                .First()
-                .First()
-                .Select((cell, i) => (i, cell.key))
-                .Enumerate();
-
-            var objectGraph = new ObjectPropertyGraph(colNames);
-
             // return a new object for each group of rows
             foreach (var results in resultGroups)
                 yield return (TResult)Builders.Build(
                     typeof(TResult), 
-                    CreateObject(objectGraph, results).First());
+                    CreateObject(propertyGraph, results).First());
         }
         
         /// <summary>

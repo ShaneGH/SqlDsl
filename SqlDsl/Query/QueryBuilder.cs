@@ -111,17 +111,21 @@ namespace SqlDsl.Query
         
         public (string sql, IEnumerable<object> paramaters) ToSql()
         {
-            return ToSql(null);
+            return ToSql(filterCols: null);
         }
 
         public (string sql, IEnumerable<object> paramaters) ToSql(IEnumerable<string> filterCols)
         {
             var result = ToSqlBuilder(filterCols);
             var sql = result.builder.ToSqlString();
-            return ($"{sql.querySetupSql}\n{sql.querySql}", result.paramaters);
+            return (ToSql(result.builder), result.paramaters);
         }
 
-        
+        string ToSql(ISqlBuilder builder)
+        {
+            var sql = builder.ToSqlString();
+            return $"{sql.querySetupSql}\n\n{sql.querySql}";
+        }        
 
         internal (ISqlBuilder builder, IEnumerable<object> paramaters) ToSqlBuilder(IEnumerable<string> filterSelectCols)
         {
@@ -180,16 +184,17 @@ namespace SqlDsl.Query
             if (PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
 
-            var sql = ToSql();
+            var sqlBuilder = ToSqlBuilder(null);
+            var sql = ToSql(sqlBuilder.builder);
 
-            var reader = await executor.ExecuteAsync(sql.sql, sql.paramaters);
+            var reader = await executor.ExecuteAsync(sql, sqlBuilder.paramaters);
             var results = await reader.GetRowsAsync();
 
             var primaryTableName = PrimaryTableMember.Value.name == SqlBuilderBase.RootObjectAlias ?
                 null :
                 PrimaryTableMember.Value.name;
 
-            return results.Parse<TResult>(primaryTableName);
+            return results.Parse<TResult>(sqlBuilder.builder.SelectColumns.ToArray(), primaryTableName);
         }
 
         class JoinBuilder<TJoin> : IJoinBuilder<TResult, TJoin>
