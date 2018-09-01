@@ -24,7 +24,7 @@ namespace SqlDsl.ObjectBuilders
         {
             var simple = SimpleProps
                 .OrEmpty()
-                .Select(ps => $"{ps.name}: [{ps.value.Select(p => $"\n\t{p}").JoinString("")}\n\t]")
+                .Select(ps => $"S_{ps.name}:\n  [{ps.value.Select(p => $"\n    {p}").JoinString("")}\n  ]")
                 .JoinString("\n");
 
             var complex = ComplexProps
@@ -32,9 +32,10 @@ namespace SqlDsl.ObjectBuilders
                 .Select(ps => 
                 {
                     var propStrings = ps.value
-                        .Select(p => $"\n\t{p.ToString().Replace("\n", "\n\t")}");
+                        .Select(p => $"{p.ToString().Replace("\n", "\n    ")}")
+                        .JoinString("");
 
-                    return $"{ps.name}: {{{propStrings.JoinString("")}\n\t}}";
+                    return $"C_{ps.name}:\n  {{\n    {propStrings}\n  }}";
                 })
                 .JoinString("\n");
 

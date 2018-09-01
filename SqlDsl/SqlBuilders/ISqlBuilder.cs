@@ -13,6 +13,8 @@ namespace SqlDsl.SqlBuilders
         
         string InnerQueryAlias { get; }
 
+        IEnumerable<(string columnName, string rowIdColumnName)> RowIdMap { get; }
+
         IEnumerable<(string columnName, string tableName, string alias)> RowIdSelectColumns { get; }
 
         IEnumerable<string> SelectColumns { get; }

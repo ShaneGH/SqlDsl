@@ -64,8 +64,28 @@ namespace SqlDsl.Query
                 null :
                 Query.PrimaryTableMember.Value.name;
 
+            //TODO: copy pasted from QueryBuilder.ExecuteAsync
+            var selectColumns = sqlBuilder.builder.SelectColumns.ToArray();
+            var rowIdColumns = sqlBuilder.builder.RowIdMap.ToList();
+            var rowIdMap = selectColumns
+                .Select(c => 
+                {
+                    var op = rowIdColumns
+                        .Where(rid => rid.columnName == c)
+                        .Select(rid => rid.rowIdColumnName)
+                        .FirstOrDefault() ??
+                        throw new InvalidOperationException($"Cannot find row id for column {c}");
+
+                    var index = selectColumns.IndexOf(op);
+
+                    if (index == -1) throw new InvalidOperationException($"Cannot find row id for column {c}");
+
+                    return index;
+                })
+                .ToArray();
+
             // TODO: compile and cache ObjectProperty graph, and use as first arg
-            return results.Parse<TMapped>(sqlBuilder.builder.SelectColumns, tableName);
+            return results.Parse<TMapped>(sqlBuilder.builder.SelectColumns, rowIdMap, tableName);
         }
 
         IEnumerable<(string from, string to)> BuildMap(Expression expr, ParameterExpression rootParam, string toPrefix = null)

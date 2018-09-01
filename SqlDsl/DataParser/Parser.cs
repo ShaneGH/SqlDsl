@@ -17,26 +17,29 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="columnNames">The query columns</param>
+        /// <param name="rowNumberMap">A map of each column number -> the column number of it's row id</param>
         /// <param name="primaryTable">The table from the [FROM] query clause. If null, will assume that there is a column named "##rowid" to group results by.</param>
-        public static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, IEnumerable<string> columnNames, string primaryTable = null) =>
-            Parse<TResult>(rows, new RootObjectPropertyGraph(columnNames), primaryTable);
+        public static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, IEnumerable<string> columnNames, int[] rowNumberMap, string primaryTable = null) =>
+            Parse<TResult>(rows, new RootObjectPropertyGraph(columnNames), rowNumberMap, primaryTable);
             
         /// <summary>
         /// Parse the results of a sql query
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
+        /// <param name="rowNumberMap">A map of each column number -> the column number of it's row id</param>
         /// <param name="primaryTable">The table from the [FROM] query clause. If null, will assume that there is a column named "##rowid" to group results by.</param>
-        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, string primaryTable = null) =>
-            _Parse<TResult>(rows, propertyGraph, primaryTable).Enumerate();
+        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, int[] rowNumberMap, string primaryTable = null) =>
+            _Parse<TResult>(rows, propertyGraph, rowNumberMap, primaryTable).Enumerate();
 
         /// <summary>
         /// Parse the results of a sql query
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
+        /// <param name="rowNumberMap">A map of each column number -> the column number of it's row id</param>
         /// <param name="primaryTable">The table from the [FROM] query clause. If null, will assume that there is a column named "##rowid" to group results by.</param>
-        static IEnumerable<TResult> _Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, string primaryTable)
+        static IEnumerable<TResult> _Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, int[] rowNumberMap, string primaryTable)
         {
             // group the results by the primary (SELECT) table
             var resultGroups = rows
@@ -52,7 +55,14 @@ namespace SqlDsl.DataParser
             foreach (var results in resultGroups)
                 yield return (TResult)Builders.Build(
                     typeof(TResult), 
-                    CreateObject(propertyGraph, results).First());
+                    Print(CreateObject(propertyGraph, rowNumberMap, results).First()));
+
+            T Print<T>(T obj)
+            {
+                Console.WriteLine("PRINT");
+                Console.WriteLine(obj);
+                return obj;
+            }
         }
         
         /// <summary>
@@ -71,19 +81,17 @@ namespace SqlDsl.DataParser
         /// <summary>
         /// Map a group of rows to an object property graph to an object graph with properties
         /// </summary>
-        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> rows)
+        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, int[] rowNumberMap, IEnumerable<object[]> rows)
         {
             // Ensure IEnumerable is not enumerated multiple times
             rows = rows.Enumerate();
-
             if (!rows.Any())
                 yield break;
 
             // Get the id of the column with the row number for this object
             var rowNumberColumn = propertyGraph
                 .SimpleProps
-                .Where(c => c.name == SqlBuilderBase.RowIdName)
-                .Select(x => (int?)x.index)
+                .Select(x => (int?)rowNumberMap[x.index])
                 .FirstOrDefault();
 
             var ids = new HashSet<long>();
@@ -93,11 +101,11 @@ namespace SqlDsl.DataParser
                 var rowNumber = rowNumberColumn != null ? 
                     Convert.ToInt64(row[rowNumberColumn.Value]) : 
                     -1;
-
+                    
                 // This row is a duplicate
                 if (!ids.Add(rowNumber))
                     continue;
-
+                    
                 yield return new ObjectGraph
                 {
                     // simple prop values can be found by their column index
@@ -106,7 +114,7 @@ namespace SqlDsl.DataParser
                         .Enumerate(),
                     // complex prop values are build recursively
                     ComplexProps = propertyGraph.ComplexProps
-                        .Select(p => (p.name, CreateObject(p.value, rows)))
+                        .Select(p => (p.name, CreateObject(p.value, rowNumberMap, rows).Enumerate()))
                         .Enumerate()
                 };
 

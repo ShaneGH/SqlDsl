@@ -31,5 +31,35 @@ namespace SqlDsl.Utils
         /// </summary>
         public static IEnumerable<T> ToEnumerable<T>(this T x)
             where T: class => x == null ? Enumerable.Empty<T>() : new [] { x };
+        
+        /// <summary>
+        /// Return the index of an item, or -1
+        /// </summary>
+        public static int IndexOf<T>(this IEnumerable<T> xs, T val)
+        {
+            var i = 0;
+            if (val == null)
+            {
+                foreach (var x in xs)
+                {
+                    if (x == null)
+                        return i;
+
+                    i++;
+                }
+            }
+            else
+            {
+                foreach (var x in xs)
+                {
+                    if (val.Equals(x))
+                        return i;
+                        
+                    i++;
+                }
+            }
+
+            return -1;
+        }
     }
 }

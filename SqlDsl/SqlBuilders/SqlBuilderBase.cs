@@ -352,6 +352,49 @@ namespace SqlDsl.SqlBuilders
 
         string PrimaryTable;
         public string PrimaryTableAlias { get; private set; }
+
+        public IEnumerable<(string columnName, string rowIdColumnName)> RowIdMap => 
+            InnerQuery != null ?
+                GetRowIdMapForInnerQuery() :
+                GetRowIdMapForNonInnerQuery();
+
+        public IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMapForNonInnerQuery()
+        {
+            foreach (var col in Select)
+            {
+                foreach (var rid in RowIdSelectColumns)
+                {
+                    if (col.tableName == rid.tableName)
+                    {
+                        yield return (col.alias ?? col.columnName, rid.alias ?? rid.columnName);
+                        break;
+                    }
+                }
+            }
+            
+            foreach (var rid in RowIdSelectColumns)
+                yield return (rid.alias ?? rid.columnName, rid.alias ?? rid.columnName);
+        }
+
+        public IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMapForInnerQuery()
+        {
+            var innerMap = InnerQuery.RowIdMap.ToList();
+            foreach (var col in Select)
+            {
+                foreach (var rid in innerMap)
+                {
+                    if (col.columnName == rid.columnName)
+                    {
+                        yield return (col.alias ?? col.columnName, rid.rowIdColumnName);
+                        break;
+                    }
+                }
+            }
+            
+            foreach (var rid in innerMap.Select(x => x.rowIdColumnName).Distinct())
+                yield return (rid, rid);
+        }
+
         public void SetPrimaryTable(string tableName, string alias)
         {
             PrimaryTable = tableName;

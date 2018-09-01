@@ -35,19 +35,21 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             Connection.Dispose();
         }
-        
+
+        protected bool PrintStatusOnFailure;        
         internal TestExecutor Executor;
 
         [SetUp]
         public void SetUp()
         {
+            PrintStatusOnFailure = true;
             Executor = new TestExecutor(new SqliteExecutor(Connection));
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
+            if (PrintStatusOnFailure && TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
             {
                 Executor.PrintSqlStatements();
             }

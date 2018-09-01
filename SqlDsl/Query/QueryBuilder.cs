@@ -194,8 +194,27 @@ namespace SqlDsl.Query
                 null :
                 PrimaryTableMember.Value.name;
 
+            var selectColumns = sqlBuilder.builder.SelectColumns.ToArray();
+            var rowIdColumns = sqlBuilder.builder.RowIdMap.ToList();
+            var rowIdMap = selectColumns
+                .Select(c => 
+                {
+                    var op = rowIdColumns
+                        .Where(rid => rid.columnName == c)
+                        .Select(rid => rid.rowIdColumnName)
+                        .FirstOrDefault() ??
+                        throw new InvalidOperationException($"Cannot find row id for column {c}");
+
+                    var index = selectColumns.IndexOf(op);
+
+                    if (index == -1) throw new InvalidOperationException($"Cannot find row id for column {c}");
+
+                    return index;
+                })
+                .ToArray();
+
             // TODO: compile and cache ObjectProperty graph, and use as first arg
-            return results.Parse<TResult>(sqlBuilder.builder.SelectColumns, primaryTableName);
+            return results.Parse<TResult>(selectColumns, rowIdMap, primaryTableName);
         }
 
         class JoinBuilder<TJoin> : IJoinBuilder<TResult, TJoin>
