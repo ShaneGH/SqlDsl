@@ -14,7 +14,7 @@ namespace SqlDsl
         /// </summary>
         /// <returns> hasRow: if true, row will be populated, there may be more rows to read; 
         /// if false, row is null, there are no more rows to read
-        /// row: a group of key value pairs where the key is the column name and the value is the cell value
+        /// row: the data from a row, ordered as the database returned it
         /// </returns>
         Task<(bool hasRow, object[] row)> GetRowAsync();
     }
@@ -30,9 +30,7 @@ namespace SqlDsl
 
             (bool, object[]) row;
             while ((row = await reader.GetRowAsync()).Item1)
-            {
                 rows.Add(row.Item2);
-            }
 
             return rows;
         }
