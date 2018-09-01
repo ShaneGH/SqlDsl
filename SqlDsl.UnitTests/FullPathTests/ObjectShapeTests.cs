@@ -119,5 +119,43 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(1, data.First().Inner.First().PersonClasses.Count());
             Assert.AreEqual(Data.PersonClasses.MaryTennis, data.First().Inner.First().PersonClasses.First());
         }
+
+        class QueryClass5
+        {
+            public Person Person { get; set; }
+            public PersonClass PersonClass { get; set; }
+        }
+
+        [Test]
+        public async Task JoinTableIsNotList_1ResultReturned_MapsCorrectly()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<QueryClass5>()
+                .From(result => result.Person)
+                .LeftJoin<PersonClass>(result => result.PersonClass)
+                    .On((r, pc) => r.Person.Id == pc.PersonId)
+                .Where(result => result.Person.Id == Data.People.Mary.Id)
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            Assert.AreEqual(Data.People.Mary, data.First().Person);
+            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.First().PersonClass);
+        }
+
+        [Test]
+        public void JoinTableIsNotList_MoreThan1ResultReturned_ThrowsException()
+        {
+            // arrange
+            // act
+            // assert
+            Assert.ThrowsAsync(typeof(InvalidOperationException), () => Sql.Query.Sqlite<QueryClass5>()
+                .From(result => result.Person)
+                .LeftJoin<PersonClass>(result => result.PersonClass)
+                    .On((r, pc) => r.Person.Id == pc.PersonId)
+                .Where(result => result.Person.Id == Data.People.John.Id)
+                .ExecuteAsync(Executor));
+        }
     }
 }

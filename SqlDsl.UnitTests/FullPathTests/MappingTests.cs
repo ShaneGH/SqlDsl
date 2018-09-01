@@ -18,7 +18,7 @@ using NUnit.Framework.Interfaces;
 namespace SqlDsl.UnitTests.FullPathTests
 {
     [TestFixture]
-    public class WhereConditionTests : FullPathTestBase
+    public class MappingTests : FullPathTestBase
     {
         class QueryClass
         {
