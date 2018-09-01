@@ -109,5 +109,26 @@ namespace SqlDsl.Utils
                 
             return e;
         }
+
+        static readonly MethodInfo _Select = GetMethod(() => new object[0].Select(x => x)).GetGenericMethodDefinition();
+
+        /// <summary>
+        /// Determine whether an expression is a Select(...) where the mapper is an expression (not a Func)
+        /// </summary>
+        /// <returns>isSelect: success or failure,
+        /// enumerable: the enumerable it map
+        /// mapper: the mapping expression
+        /// </returns>
+        public static (bool isSelect, Expression enumerable, LambdaExpression mapper) IsSelectWithLambdaExpression(MethodCallExpression e)
+        {
+            if (!e.Method.IsGenericMethod || e.Method.GetGenericMethodDefinition() != _Select)
+                return (false, null, null);
+
+            var mapper = e.Arguments[1] as LambdaExpression;
+            if (mapper == null)
+                return (false, null, null);
+
+            return (true, e.Arguments[0], mapper);
+        }
     }
 }

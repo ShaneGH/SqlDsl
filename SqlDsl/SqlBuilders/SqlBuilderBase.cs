@@ -116,8 +116,11 @@ namespace SqlDsl.SqlBuilders
                     .JoinString("") :
                 InnerQuery.Joins
                     .Concat(new[] { (alias: InnerQuery.PrimaryTableAlias, "") })
-                    .Select(j => BuildSelectColumn($"{j.alias}.{RowIdName}", tableName: InnerQuery.InnerQueryAlias) + ",")
+                    .Select(j => BuildSelectColumn($"{Alias(j.alias)}{RowIdName}", tableName: InnerQuery.InnerQueryAlias) + ",")
                     .JoinString("");
+
+            string Alias(string actualAlias) =>
+                actualAlias == RootObjectAlias ? "" : (actualAlias + ".");
 
             var primaryTable = innerQuery != null ?
                 innerQuery.Value.querySql :

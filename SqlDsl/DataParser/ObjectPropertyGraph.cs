@@ -70,7 +70,7 @@ namespace SqlDsl.DataParser
         public override string ToString() =>
             SimpleProps
                 .Select(p => $"{p.name}: {p.index}")
-                .Concat(ComplexProps.Select(p => $"{p.name}: {p.value.ToString().Replace("\n", "\n\t")}"))
-                .JoinString(",\n");
+                .Concat(ComplexProps.Select(p => $"{p.name}:\n  {p.value.ToString().Replace("\n", "\n  ")}"))
+                .JoinString("\n");
     }
 }

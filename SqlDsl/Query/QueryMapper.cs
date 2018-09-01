@@ -13,12 +13,14 @@ namespace SqlDsl.Query
         where TSqlBuilder : ISqlBuilder, new()
     {
         readonly QueryBuilder<TSqlBuilder, TResult> Query;
-        readonly IEnumerable<(string from, int toIndex, Type toType)> Mapper;
+        readonly IEnumerable<(string from, string to)> Mapper;
 
         public QueryMapper(QueryBuilder<TSqlBuilder, TResult> query, Expression<Func<TResult, TMapped>> mapper)
         {
             Query = query ?? throw new ArgumentNullException(nameof(query));
-            Mapper = BuildMap(mapper ?? throw new ArgumentNullException(nameof(mapper)));
+            Mapper = BuildMap(
+                mapper?.Body ?? throw new ArgumentNullException(nameof(mapper)),
+                mapper.Parameters[0]);
         }
 
         public (string sql, IEnumerable<object> paramaters) ToSql()
@@ -28,9 +30,10 @@ namespace SqlDsl.Query
             builder.SetPrimaryTable(wrappedSql.builder, wrappedSql.builder.InnerQueryAlias);
 
             foreach (var col in Mapper)
-                builder.AddSelectColumn(col.from, tableName: wrappedSql.builder.InnerQueryAlias, alias: $"out{col.toIndex}");
+                builder.AddSelectColumn(col.from, tableName: wrappedSql.builder.InnerQueryAlias, alias: col.to);
             
             var sql = builder.ToSqlString();
+
             return ($"{sql.querySetupSql}\n{sql.querySql}", wrappedSql.paramaters);
         }
         
@@ -44,34 +47,58 @@ namespace SqlDsl.Query
             var reader = await executor.ExecuteAsync(sql.sql, sql.paramaters);
             var results = await reader.GetRowsAsync();
 
-            return results.Parse<TMapped>(Query.PrimaryTableMember.Value.name);
+            var tableName = Query.PrimaryTableMember.Value.name == SqlBuilderBase.RootObjectAlias ?
+                null :
+                Query.PrimaryTableMember.Value.name;
+
+            return results.Parse<TMapped>(tableName);
         }
 
-        IEnumerable<MemberExpression> FindMapExpressions(Expression expr, ParameterExpression rootParam)
+        IEnumerable<(string from, string to)> BuildMap(Expression expr, ParameterExpression rootParam, string toPrefix = null)
         {
             switch (expr.NodeType)
             {
                 case ExpressionType.MemberAccess:
                     var memberExpr = expr as MemberExpression;
                     return IsMemberAccessMapped(memberExpr, rootParam) ?
-                        new [] { memberExpr } :
-                        Enumerable.Empty<MemberExpression>();
+                        new [] { (CompileMemberName(memberExpr), toPrefix) } :
+                        Enumerable.Empty<(string, string)>();
                 case ExpressionType.Block:
                     return (expr as BlockExpression).Expressions
-                        .SelectMany(ex => FindMapExpressions(ex, rootParam));
+                        .SelectMany(ex => BuildMap(ex, rootParam, toPrefix));
                 case ExpressionType.New:
                     return (expr as NewExpression).Arguments
-                        .SelectMany(ex => FindMapExpressions(ex, rootParam));
+                        .SelectMany(ex => BuildMap(ex, rootParam, toPrefix));
                 case ExpressionType.MemberInit:
                     var init = expr as MemberInitExpression;
-                    return FindMapExpressions(init.NewExpression, rootParam)
+                    return BuildMap(init.NewExpression, rootParam, toPrefix)
                         .Concat(init.Bindings
                             .OfType<MemberAssignment>()
-                            .SelectMany(b => FindMapExpressions(b.Expression, rootParam)));
+                            .SelectMany(b => BuildMap(b.Expression, rootParam, b.Member.Name)
+                                .Select(x => (x.from, CombineStrings(toPrefix, x.to)))));
+                case ExpressionType.Call:
+                    var callExpr = ReflectionUtils.IsSelectWithLambdaExpression(expr as MethodCallExpression);
+                    if (!callExpr.isSelect)
+                        break;
+
+                    return BuildMap(callExpr.enumerable, rootParam, toPrefix)
+                        .SelectMany(r => BuildMap(callExpr.mapper.Body, callExpr.mapper.Parameters[0])
+                            .Select(m => (CombineStrings(r.from, m.from), r.to)));
             }
+
+            string CombineStrings(string s1, string s2) =>
+                s1 == null && s2 == null ?
+                    null :
+                    s1 != null && s2 != null ? 
+                        $"{s1}.{s2}" :
+                        $"{s1}{s2}";
 
             throw new InvalidOperationException($"Unsupported mapping expression \"{expr}\".");
         }
+
+        // object BuildCallMap()
+        // {
+        // }
 
         bool IsMemberAccessMapped(MemberExpression expr, ParameterExpression rootParam)
         {
@@ -90,13 +117,6 @@ namespace SqlDsl.Query
             return next != null ?
                 $"{CompileMemberName(next)}.{expr.Member.Name}" :
                 expr.Member.Name;
-        }
-
-        IEnumerable<(string from, int toIndex, Type toType)> BuildMap(Expression<Func<TResult, TMapped>> mapper)
-        {
-            return FindMapExpressions(mapper.Body, mapper.Parameters[0])
-                .Select((e, i) => (CompileMemberName(e), i, e.Type))
-                .Enumerate();
         }
 
         // static bool IsSelect(MethodCallExpression e) =>

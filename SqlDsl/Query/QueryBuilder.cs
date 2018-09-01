@@ -123,7 +123,7 @@ namespace SqlDsl.Query
 
         
 
-        internal (ISqlBuilder builder, IEnumerable<object> paramaters) ToSqlBuilder(IEnumerable<string> filterCols)
+        internal (ISqlBuilder builder, IEnumerable<object> paramaters) ToSqlBuilder(IEnumerable<string> filterSelectCols)
         {
             if (PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
@@ -140,10 +140,11 @@ namespace SqlDsl.Query
                 .Concat(ColumnsOf(PrimaryTableMember.Value.type)
                     .Select(y => (table: PrimaryTableMember.Value.name, column: y)));
 
-            if (filterCols != null)
+            if (filterSelectCols != null)
             {
-                var cols = new HashSet<string>(filterCols);
-                selectColumns = selectColumns.Where(c => 
+                var cols = new HashSet<string>(filterSelectCols);
+                selectColumns = selectColumns.Where(c => c.table == SqlBuilderBase.RootObjectAlias ?
+                    cols.Contains(c.column) :
                     cols.Contains($"{c.table}.{c.column}"));
             }
 
