@@ -91,6 +91,14 @@ namespace SqlDsl.Query
                             .SelectMany(b => BuildMap(b.Expression, rootParam, b.Member.Name)
                                 .Select(x => (x.from, CombineStrings(toPrefix, x.to)))));
                 case ExpressionType.Call:
+                    var toList = ReflectionUtils.IsToList(expr as MethodCallExpression);
+                    if (toList.isToList)
+                        return BuildMap(toList.enumerable, rootParam, toPrefix);
+                        
+                    var toArray = ReflectionUtils.IsToArray(expr as MethodCallExpression);
+                    if (toArray.isToArray)
+                        return BuildMap(toArray.enumerable, rootParam, toPrefix);
+
                     var callExpr = ReflectionUtils.IsSelectWithLambdaExpression(expr as MethodCallExpression);
                     if (!callExpr.isSelect)
                         break;

@@ -116,7 +116,7 @@ namespace SqlDsl.Utils
         /// Determine whether an expression is a Select(...) where the mapper is an expression (not a Func)
         /// </summary>
         /// <returns>isSelect: success or failure,
-        /// enumerable: the enumerable it map
+        /// enumerable: the enumerable it maps
         /// mapper: the mapping expression
         /// </returns>
         public static (bool isSelect, Expression enumerable, LambdaExpression mapper) IsSelectWithLambdaExpression(MethodCallExpression e)
@@ -129,6 +129,38 @@ namespace SqlDsl.Utils
                 return (false, null, null);
 
             return (true, e.Arguments[0], mapper);
+        }
+
+        static readonly MethodInfo _ToArray = GetMethod(() => new object[0].ToArray()).GetGenericMethodDefinition();
+
+        /// <summary>
+        /// Determine whether an expression is a ToArray().
+        /// </summary>
+        /// <returns>isToArray: success or failure,
+        /// enumerable: the enumerable it converts to an array
+        /// </returns>
+        public static (bool isToArray, Expression enumerable) IsToArray(MethodCallExpression e)
+        {
+            if (!e.Method.IsGenericMethod || e.Method.GetGenericMethodDefinition() != _ToArray)
+                return (false, null);
+
+            return (true, e.Arguments[0]);
+        }
+
+        static readonly MethodInfo _ToList = GetMethod(() => new object[0].ToList()).GetGenericMethodDefinition();
+
+        /// <summary>
+        /// Determine whether an expression is a ToList().
+        /// </summary>
+        /// <returns>isToList: success or failure,
+        /// enumerable: the enumerable it converts to a list
+        /// </returns>
+        public static (bool isToList, Expression enumerable) IsToList(MethodCallExpression e)
+        {
+            if (!e.Method.IsGenericMethod || e.Method.GetGenericMethodDefinition() != _ToList)
+                return (false, null);
+
+            return (true, e.Arguments[0]);
         }
     }
 }
