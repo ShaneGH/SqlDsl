@@ -16,7 +16,7 @@ namespace SqlDsl
         /// if false, row is null, there are no more rows to read
         /// row: a group of key value pairs where the key is the column name and the value is the cell value
         /// </returns>
-        Task<(bool hasRow, List<(string key, object value)> row)> GetRowAsync();
+        Task<(bool hasRow, object[] row)> GetRowAsync();
     }
 
     public static class IReaderUtils
@@ -24,14 +24,14 @@ namespace SqlDsl
         /// <summary>
         /// Read all rows from an IReader
         /// </summary>
-        public static async Task<IEnumerable<List<(string key, object value)>>> GetRowsAsync(this IReader reader)
+        public static async Task<IEnumerable<object[]>> GetRowsAsync(this IReader reader)
         {
-            var rows = new List<List<(string, object)>>();
+            var rows = new List<object[]>();
 
-            (bool, IEnumerable<(string, object)>) row;
+            (bool, object[]) row;
             while ((row = await reader.GetRowAsync()).Item1)
             {
-                rows.Add(row.Item2.ToList());
+                rows.Add(row.Item2);
             }
 
             return rows;

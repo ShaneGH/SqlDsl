@@ -28,7 +28,7 @@ namespace SqlDsl.Sqlite
         /// if false, row is null, there are no more rows to read
         /// row: a group of key value pairs where the key is the column name and the value is the cell value
         /// </returns>
-        public async Task<(bool hasRow, List<(string key, object value)> row)> GetRowAsync()
+        public async Task<(bool hasRow, object[] row)> GetRowAsync()
         {
             // read the next row
             if (!(await DataReader.ReadAsync()))
@@ -37,13 +37,8 @@ namespace SqlDsl.Sqlite
             // load row into array
             var vals = new object[DataReader.FieldCount];
             DataReader.GetValues(vals);
-            
-            // add row values to list along with column names
-            var output = new List<(string, object)>();
-            for (var i = 0; i < vals.Length; i++)
-                output.Add((DataReader.GetName(i), vals[i]));
                 
-            return (true, output);
+            return (true, vals);
         }
     }
 }

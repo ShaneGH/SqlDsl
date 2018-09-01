@@ -12,7 +12,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
     class TestExecutor : IExecutor
     {
         readonly IExecutor Executor;
-        readonly List<(string sql, List<List<(string key, object value)>> results)> SqlStatements = new List<(string sql, List<List<(string key, object value)>> results)>();
+        readonly List<(string sql, List<object[]> results)> SqlStatements = new List<(string sql, List<object[]> results)>();
 
         public TestExecutor(IExecutor executor)
         {
@@ -31,14 +31,14 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 .OrEmpty()
                 .Select((p, i) => $"@p{i} = {p}")
                 .JoinString("\n") + "\n\n" +
-                sql, new List<List<(string key, object value)>>()));
+                sql, new List<object[]>()));
         }
 
-        string SqlStatementString((string sql, List<List<(string key, object value)>> results) statement)
+        string SqlStatementString((string sql, List<object[]> results) statement)
         {
             var results = "[\n" + statement.results
                 .Select(row => "  {\n" + row
-                    .Select(cell => $"    {cell.key}: {cell.value}")
+                    .Select((cell, i) => $"    {i}: {cell}")
                     .JoinString(",\n") + 
                 "\n  }")
                 .JoinString(",\n") + "\n]\n";
@@ -50,7 +50,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
 
         public string GetSqlStatements() => $"{SqlStatements.Count} SQL statement(s):\n" + SqlStatements.Select(SqlStatementString).JoinString("\n\n");
 
-        public void RecordRow(int index, List<(string, object)> row)
+        public void RecordRow(int index, object[] row)
         {
             SqlStatements[index].results.Add(row);
         }
@@ -69,7 +69,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             Index = index;
         }
 
-        public async Task<(bool hasRow, List<(string key, object value)> row)> GetRowAsync()
+        public async Task<(bool hasRow, object[] row)> GetRowAsync()
         {
             var row = await Reader.GetRowAsync();
             if (row.hasRow)
