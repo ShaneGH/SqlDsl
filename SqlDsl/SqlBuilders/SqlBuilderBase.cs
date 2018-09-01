@@ -103,7 +103,7 @@ namespace SqlDsl.SqlBuilders
             {
                 foreach (var rowId in InnerQuery.RowIdSelectColumns)
                 {
-                    yield return (rowId.columnName, rowId.alias, null);
+                    yield return (rowId.alias ?? rowId.columnName, InnerQuery.InnerQueryAlias, null);
                 }
             }
             
