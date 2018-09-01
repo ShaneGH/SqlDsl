@@ -86,9 +86,6 @@ namespace SqlDsl.DataParser
                 .Select(x => (int?)x.index)
                 .FirstOrDefault();
 
-            Console.WriteLine();
-            Console.WriteLine(propertyGraph.ToString());
-
             var ids = new HashSet<long>();
             foreach (var row in rows)
             {
