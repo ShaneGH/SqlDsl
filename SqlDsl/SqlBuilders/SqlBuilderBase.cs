@@ -18,6 +18,7 @@ namespace SqlDsl.SqlBuilders
         public static readonly string RowIdName = "##rowid";
         public static readonly string RootObjectAlias = "##root";
         
+        //TODO: not thread safe
         static int _InnerQueryAlias = 0;
         public string InnerQueryAlias { get; private set; } = $"iq{++_InnerQueryAlias}";
 

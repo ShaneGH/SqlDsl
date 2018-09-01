@@ -42,13 +42,28 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleJoin()
+        public async Task Select1SimpleInnerJoin()
         {
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
                 .From(nameof(Person), result => result.Person)
                 .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
+                    .On((q, c) => q.Person.Id == c.PersonId)
+                .ExecuteAsync(Executor);
+
+            // assert
+            AssertSelect1SimpleJoin(data);
+        }
+
+        [Test]
+        public async Task Select1SimpleLeftJoin()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<QueryClass>()
+                .From(nameof(Person), result => result.Person)
+                .LeftJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c) => q.Person.Id == c.PersonId)
                 .ExecuteAsync(Executor);
 

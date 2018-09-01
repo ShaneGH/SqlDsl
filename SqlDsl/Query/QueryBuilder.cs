@@ -172,8 +172,11 @@ namespace SqlDsl.Query
             var reader = await executor.ExecuteAsync(sql.sql, sql.paramaters);
             var results = await reader.GetRowsAsync();
 
-            return results
-                .Parse<TResult>(PrimaryTableMember.Value.name);
+            var primaryTableName = PrimaryTableMember.Value.name == SqlBuilderBase.RootObjectAlias ?
+                null :
+                PrimaryTableMember.Value.name;
+
+            return results.Parse<TResult>(primaryTableName);
         }
 
         class JoinBuilder<TJoin> : IJoinBuilder<TResult, TJoin>
