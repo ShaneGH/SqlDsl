@@ -13,7 +13,15 @@ namespace SqlDsl.SqlBuilders
     /// </summary>
     public static class SqlStatementConstants
     {
+        /// <summary>
+        /// The column name for table row ids
+        /// </summary>
         public const string RowIdName = "##rowid";
+        
+        /// <summary>
+        /// A column prefix to use internally if the resulting columns should actually not have a prefix
+        /// (prevents naming clashes)
+        /// </summary>
         public const string RootObjectAlias = "##root";
     }
 }
