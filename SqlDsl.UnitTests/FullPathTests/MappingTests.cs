@@ -90,6 +90,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.Tags.Sport.Name, data.First().TheTagNames.ElementAt(0));
             Assert.AreEqual(Data.Tags.Sport.Name, data.First().TheTagNames.ElementAt(1));
             Assert.AreEqual(Data.Tags.BallSport.Name, data.First().TheTagNames.ElementAt(2));
+
+            Assert.Fail("Remember to uncomment ABOVE and below");
             
             // Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).TheName);
 
@@ -105,6 +107,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        [Ignore("TODO: this case")]
         public async Task MapOnTableWithJoinedTable()
         {
             // arrange
