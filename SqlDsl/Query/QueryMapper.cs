@@ -1,4 +1,5 @@
 using SqlDsl.DataParser;
+using SqlDsl.Dsl;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 using System;

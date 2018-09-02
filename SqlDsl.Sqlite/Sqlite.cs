@@ -1,3 +1,4 @@
+using SqlDsl.Dsl;
 using SqlDsl.Query;
 using SqlDsl.Sqlite;
 
@@ -14,6 +15,14 @@ namespace SqlDsl
         public static ITable<TResult> Sqlite<TResult>(this QueryBuilder builder)
         {
             return new QueryBuilder<SqliteBuilder, TResult>();
+        }
+
+        /// <summary>
+        /// Build a Sqlite query with args
+        /// </summary>
+        public static ITable<TArgs, TResult> Sqlite<TArgs, TResult>(this QueryBuilder builder)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }
