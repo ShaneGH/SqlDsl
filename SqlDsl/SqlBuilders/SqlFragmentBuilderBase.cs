@@ -16,7 +16,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
         /// </summary>
-        public abstract (string setupSql, string sql) GetUniqueIdSql(string tableName, string rowIdAlias);
+        public abstract (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias);
 
         /// <summary>
         /// Wrap a table name in parenthesis which protects against illegal characters: []

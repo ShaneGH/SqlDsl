@@ -10,7 +10,7 @@ namespace SqlDsl.Sqlite
         /// <summary>
         /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
         /// </summary>
-        public override (string setupSql, string sql) GetUniqueIdSql(string tableName, string rowIdAlias)
+        public override (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias)
         {
             var id = "tmp" + GetUniqueId();
             return (

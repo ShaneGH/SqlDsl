@@ -30,20 +30,20 @@ namespace SqlDsl.Query
             return (ToSql(builder.builder), builder.paramaters);
         }
 
-        string ToSql(ISqlBuilderOLD builder)
+        string ToSql(ISqlStatement builder)
         {            
             var sql = builder.ToSqlString();
             return $"{sql.querySetupSql}\n\n{sql.querySql}";
         }
 
-        (ISqlBuilderOLD builder, IEnumerable<object> paramaters) ToSqlBuilder()
+        (ISqlStatement builder, IEnumerable<object> paramaters) ToSqlBuilder()
         {
             var wrappedSql = Query.ToSqlBuilder(Mapper.Select(m => m.from));
             var builder = new SqlStatementBuilder<TSqlBuilder>();
-            builder.SetPrimaryTable(wrappedSql.builder, wrappedSql.builder.InnerQueryAlias);
+            builder.SetPrimaryTable(wrappedSql.builder, wrappedSql.builder.UniqueAlias);
 
             foreach (var col in Mapper)
-                builder.AddSelectColumn(col.from, tableName: wrappedSql.builder.InnerQueryAlias, alias: col.to);
+                builder.AddSelectColumn(col.from, tableName: wrappedSql.builder.UniqueAlias, alias: col.to);
             
             var sql = builder.ToSqlString();
 

@@ -122,13 +122,13 @@ namespace SqlDsl.Query
             return (ToSql(result.builder), result.paramaters);
         }
 
-        string ToSql(ISqlBuilderOLD builder)
+        string ToSql(ISqlStatement builder)
         {
             var sql = builder.ToSqlString();
             return $"{sql.querySetupSql}\n\n{sql.querySql}";
         }        
 
-        internal (ISqlBuilderOLD builder, IEnumerable<object> paramaters) ToSqlBuilder(IEnumerable<string> filterSelectCols)
+        internal (ISqlStatement builder, IEnumerable<object> paramaters) ToSqlBuilder(IEnumerable<string> filterSelectCols)
         {
             if (PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");

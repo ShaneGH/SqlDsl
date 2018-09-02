@@ -9,11 +9,28 @@ using System.Reflection;
 namespace SqlDsl.SqlBuilders
 {
     /// <summary>
-    /// 
+    /// A class to build sql statements
     /// </summary>
-    public class SqlStatementBuilder<TSqlBuilder> : ISqlBuilderOLD
+    public class SqlStatementBuilder<TSqlBuilder> : ISqlStatement
         where TSqlBuilder : ISqlFragmentBuilder, new()
     {
+        #region ISqlStatement
+
+        IEnumerable<string> ISqlStatement.SelectColumns
+             => GetAllSelectColumns().Select(c => c.alias ?? c.columnName);
+             
+        public IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> RowIdSelectColumns
+             => GetRowIdSelectColumns();
+
+        IEnumerable<(string columnName, string rowIdColumnName)> ISqlStatement.RowIdMap
+            => InnerQuery != null ?
+                GetRowIdMapForInnerQuery() :
+                GetRowIdMapForNonInnerQuery();
+                
+        public string UniqueAlias { get; private set; } = BuildInnerQueryAlias();
+        
+        #endregion
+
         ISqlFragmentBuilder SqlBuilder;
 
         public SqlStatementBuilder()
@@ -21,16 +38,34 @@ namespace SqlDsl.SqlBuilders
             SqlBuilder = new TSqlBuilder();
         }
 
+        /// <summary>
+        /// The name of the table in the SELECT clause
+        /// </summary>
         string PrimaryTable;
-        public string PrimaryTableAlias { get; private set; }
+        
+        /// <summary>
+        /// The alias of the table in the SELECT clause
+        /// </summary>
+        string PrimaryTableAlias;
+        
+        /// <summary>
+        /// Set the name and alias of the table in the SELECT clause. alias can be null
+        /// </summary>
         public void SetPrimaryTable(string tableName, string alias)
         {
             PrimaryTable = tableName;
             PrimaryTableAlias = alias;
         }
 
-        ISqlBuilderOLD InnerQuery;
-        public void SetPrimaryTable(ISqlBuilderOLD table, string alias)
+        /// <summary>
+        /// The inner query used in the SELECT clause
+        /// </summary>
+        ISqlStatement InnerQuery;
+        
+        /// <summary>
+        /// Set the inner query and is's alias in the SELECT clause. alias can be null
+        /// </summary>
+        public void SetPrimaryTable(ISqlStatement table, string alias)
         {
             InnerQuery = table;
             PrimaryTableAlias = alias;
@@ -38,7 +73,10 @@ namespace SqlDsl.SqlBuilders
         
         static int _InnerQueryAlias = 0;
         static readonly object InnerQueryLock = new object();
-        public string InnerQueryAlias { get; private set; } = BuildInnerQueryAlias();
+        
+        /// <summary>
+        /// Get a new 3 digit code for alias. Aliass' must be unique in the scope of a query only
+        /// </summary>
         static string BuildInnerQueryAlias()
         {
             lock (InnerQueryLock)
@@ -50,48 +88,45 @@ namespace SqlDsl.SqlBuilders
             }
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        IEnumerable<(string alias, string sql)> ISqlBuilderOLD.Joins => Joins.Select(x => (x.alias, x.sql));
-
+        /// <summary>
+        /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join
+        /// </summary>
         readonly List<(string alias, string sql, string setupSql)> Joins = new List<(string, string, string)>();
+        
+        /// <summary>
+        /// Add a JOIN to the query
+        /// </summary>
+        /// <param name="joinType">The type, e.g.abstract INNER, LEFT etc...</param>
+        /// <param name="joinTable">The table to join on</param>
+        /// <param name="queryRootParam">The parameter which represents the query object in the expression</param>
+        /// <param name="joinTableParam">The parameter which represents the join table in the expression</param>
+        /// <param name="equalityStatement">The ON part of the join</param>
+        /// <param name="parameters">A list of parameters which will be added to if a constant is found in the equalityStatement</param>
+        /// <param name="joinTableAlias">The alias of the join statement</param>
         public void AddJoin(
             JoinType joinType, 
             string joinTable, 
             ParameterExpression queryRootParam, 
             ParameterExpression joinTableParam,
             Expression equalityStatement, 
-            IList<object> paramaters, 
+            IList<object> parameters, 
             string joinTableAlias)
         {
-            var condition = SqlBuilder.BuildCondition(queryRootParam, new[]{(joinTableParam, joinTableAlias)}, equalityStatement, paramaters);
+            var condition = SqlBuilder.BuildCondition(queryRootParam, new[]{(joinTableParam, joinTableAlias)}, equalityStatement, parameters);
             var join = BuildJoin(joinType, joinTable, condition.sql, joinTableAlias);
 
             Joins.Add((
                 joinTableAlias, 
                 join.sql, 
+                // combine all setup sql statements
                 new [] { condition.setupSql, join.setupSql }
                     .RemoveNulls()
                     .JoinString(";\n")));
         }
 
-        // /// <summary>
-        // /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
-        // /// </summary>
-        // protected abstract string GetUniqueIdSql(string tableName, string rowIdAlias);
-
+        /// <summary>
+        /// Build JOIN sql
+        /// </summary>
         (string setupSql, string sql) BuildJoin(JoinType joinType, string joinTable, string equalityStatement, string joinTableAlias = null)
         {
             joinTableAlias = joinTableAlias == null ? "" : $" {SqlBuilder.WrapAlias(joinTableAlias)}";
@@ -109,64 +144,45 @@ namespace SqlDsl.SqlBuilders
                     throw new NotImplementedException($"Cannot use join type {joinType}");
             }
 
-            var sql = SqlBuilder.GetUniqueIdSql(joinTable, SqlStatementConstants.RowIdName);
+            var sql = SqlBuilder.GetSelectTableSqlWithRowId(joinTable, SqlStatementConstants.RowIdName);
             return (
                 sql.setupSql,
                 $"{join} JOIN ({sql.sql}){joinTableAlias} ON {equalityStatement}"
             );
         }
-        
-        public IEnumerable<string> SelectColumns => AllSelectColumns.Select(c => c.alias ?? c.columnName);
 
-        public IEnumerable<(string columnName, string tableName, string alias)> AllSelectColumns => GetAllSelectColumns();
-
-        public IEnumerable<(string columnName, string tableName, string alias)> RowIdSelectColumns => GetRowIdSelectColumns();
-
+        /// <summary>
+        /// A list of columns in the SELECT statement
+        /// </summary>
         readonly List<(string columnName, string tableName, string alias)> Select = new List<(string columnName, string tableName, string alias)>();
+        
+        /// <summary>
+        /// Add a column to the SELECT statement
+        /// </summary>
         public void AddSelectColumn(string columnName, string tableName = null, string alias = null) =>
             Select.Add((columnName, tableName, alias));
 
-        public virtual string BuildSelectColumn(string columnName, string tableName = null, string alias = null)
-        {
-            // TODO: RootObjectAlias should not be used in a virtual method (makes overriding more difficult)
-            alias = alias == null || alias.StartsWith($"{SqlStatementConstants.RootObjectAlias}.") ? "" : $" AS {SqlBuilder.WrapAlias(alias)}";
-
-            return tableName == null ? 
-                $"{SqlBuilder.WrapColumn(columnName)}{alias}" : 
-                $"{SqlBuilder.WrapTable(tableName)}.{SqlBuilder.WrapColumn(columnName)}{alias}";
-        }
-
-        IEnumerable<(string columnName, string tableName, string alias)> GetRowIdSelectColumns()
-        {
-            if (InnerQuery == null)
-            {
-                foreach (var join in Joins)
-                {
-                    yield return (SqlStatementConstants.RowIdName, join.alias, $"{join.alias}.{SqlStatementConstants.RowIdName}");
-                }
-
-                var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? null : $"{PrimaryTableAlias}.{SqlStatementConstants.RowIdName}";
-                yield return (SqlStatementConstants.RowIdName, PrimaryTableAlias, ptAlias);
-            }
-            else
-            {
-                foreach (var rowId in InnerQuery.RowIdSelectColumns)
-                {
-                    yield return (rowId.alias ?? rowId.columnName, InnerQuery.InnerQueryAlias, null);
-                }
-            }
-        }
-
-        IEnumerable<(string columnName, string tableName, string alias)> GetAllSelectColumns() =>
-            GetRowIdSelectColumns().Concat(Select);
-
+        /// <summary>
+        /// The WHERE statement, if necessary
+        /// </summary>
         (string setupSql, string sql)? Where = null;
-        public void SetWhere(ParameterExpression queryRoot, Expression equality, IList<object> paramaters)
+        
+        /// <summary>
+        /// The WHERE statement, if necessary
+        /// </summary>
+        /// <param name="queryRoot">The parameter which represents the query object in the expression</param>
+        /// <param name="equality">The condition in the WHERE statement</param>
+        /// <param name="parameters">A list of parameters which will be added to if a constant is found in the equalityStatement</param>
+        public void SetWhere(ParameterExpression queryRoot, Expression equality, IList<object> parameters)
         {
-            Where = SqlBuilder.BuildCondition(queryRoot, Enumerable.Empty<(ParameterExpression, string)>(), equality, paramaters);
+            Where = SqlBuilder.BuildCondition(queryRoot, Enumerable.Empty<(ParameterExpression, string)>(), equality, parameters);
         }
 
-        public virtual (string querySetupSql, string querySql) ToSqlString()
+        /// <summary>
+        /// Compile the sql statment to a script
+        /// </summary>
+        /// <returns>querySetupSql: sql which must be executed before the query is run. querySql: the query sql</returns>
+        public (string querySetupSql, string querySql) ToSqlString()
         {
             if (PrimaryTable != null && InnerQuery != null)
                 throw new InvalidOperationException("You can only call one overload of SetPrimaryTable.");
@@ -180,26 +196,32 @@ namespace SqlDsl.SqlBuilders
             if (!Select.Any())
                 throw new InvalidOperationException("You must set at least 1 select column before calling ToSqlString.");
 
+            // get the sql from the inner query if possible
             var innerQuery = InnerQuery?.ToSqlString();
 
+            // build SELECT columns (cols and row ids)
+            var select = GetAllSelectColumns()
+                .Select(s => BuildSelectColumn(s.columnName, s.tableName, s.alias));
+
+            // build WHERE part
+            var where = Where == null ? "" : $"WHERE {Where.Value.sql}";
+
+            // build FROM part
+            var primaryTable = innerQuery != null ?
+                (null, innerQuery.Value.querySql) :
+                SqlBuilder.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName);
+                
+            // concat all setup sql from all other parts
             var setupSql = Joins
                 .Select(j => j.setupSql)
                 .Concat(new [] 
                 {
                     Where?.setupSql,
-                    innerQuery?.querySetupSql
-                });
-
-            var select = AllSelectColumns
-                .Select(s => BuildSelectColumn(s.columnName, s.tableName, s.alias));
-
-            var where = Where == null ? "" : $"WHERE {Where.Value.sql}";
-
-            var primaryTable = innerQuery != null ?
-                (null, innerQuery.Value.querySql) :
-                SqlBuilder.GetUniqueIdSql(PrimaryTable, SqlStatementConstants.RowIdName);
-
-            setupSql = setupSql.Concat(new [] { primaryTable.setupSql });
+                    innerQuery?.querySetupSql,
+                    primaryTable.setupSql
+                })
+                .RemoveNulls()
+                .JoinString("\n");
 
             var query = new[]
             {
@@ -211,45 +233,86 @@ namespace SqlDsl.SqlBuilders
             .Where(x => !string.IsNullOrEmpty(x))
             .JoinString("\n");
 
-            return (
-                setupSql
-                    .RemoveNulls()
-                    .JoinString("\n"), 
-                query
-            );
+            return (setupSql, query);
         }
 
-        public virtual string TableName(string name, string schema = null)
+        /// <summary>
+        /// Build the string for a SELECT column
+        /// </summary>
+        string BuildSelectColumn(string columnName, string tableName = null, string alias = null)
         {
-            schema = schema == null ? "" : $"{SqlBuilder.WrapTable(schema)}.";
-            return schema + $"{SqlBuilder.WrapTable(name)}";
+            alias = alias == null || alias.StartsWith($"{SqlStatementConstants.RootObjectAlias}.") ? "" : $" AS {SqlBuilder.WrapAlias(alias)}";
+
+            return tableName == null ? 
+                $"{SqlBuilder.WrapColumn(columnName)}{alias}" : 
+                $"{SqlBuilder.WrapTable(tableName)}.{SqlBuilder.WrapColumn(columnName)}{alias}";
         }
 
-        public IEnumerable<(string columnName, string rowIdColumnName)> RowIdMap => 
-            InnerQuery != null ?
-                GetRowIdMapForInnerQuery() :
-                GetRowIdMapForNonInnerQuery();
-
-        public IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMapForNonInnerQuery()
+        /// <summary>
+        /// Get a list of row id colums, the alias of the table they are identifying, and the alias for the row id column (if any)
+        /// </summary>
+        IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns()
         {
+            // if there is no inner query, columns will come from SELECT and JOIN parts
+            if (InnerQuery == null)
+            {
+                // Get row id from each join
+                foreach (var join in Joins)
+                {
+                    yield return (SqlStatementConstants.RowIdName, join.alias, $"{join.alias}.{SqlStatementConstants.RowIdName}");
+                }
+
+                // Get row id from the SELECT
+                var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? null : $"{PrimaryTableAlias}.{SqlStatementConstants.RowIdName}";
+                yield return (SqlStatementConstants.RowIdName, PrimaryTableAlias, ptAlias);
+            }
+            else
+            {
+                // if there is an inner query, all columns will come from it
+                foreach (var rowId in InnerQuery.RowIdSelectColumns)
+                {
+                    // the only row id will be [inner query alias].[##rowid]
+                    yield return (rowId.rowIdColumnNameAlias ?? rowId.rowIdColumnName, InnerQuery.UniqueAlias, null);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Concat DB table columns with row id columns
+        /// </summary>
+        IEnumerable<(string columnName, string tableName, string alias)> GetAllSelectColumns() =>
+            GetRowIdSelectColumns().Concat(Select);
+
+        /// <summary>
+        /// Get a map of all columns to their respective row id column, if InnerQuery == null
+        /// </summary>
+        IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMapForNonInnerQuery()
+        {
+            // get a row id for each SELECT column
             foreach (var col in Select)
             {
                 foreach (var rid in RowIdSelectColumns)
                 {
-                    if (col.tableName == rid.tableName)
+                    if (col.tableName == rid.tableAlias)
                     {
-                        yield return (col.alias ?? col.columnName, rid.alias ?? rid.columnName);
+                        yield return (col.alias ?? col.columnName, rid.rowIdColumnNameAlias ?? rid.rowIdColumnName);
                         break;
                     }
                 }
             }
             
+            // foreach row id, return a reference to itself
             foreach (var rid in RowIdSelectColumns)
-                yield return (rid.alias ?? rid.columnName, rid.alias ?? rid.columnName);
+                yield return (rid.rowIdColumnNameAlias ?? rid.rowIdColumnName, rid.rowIdColumnNameAlias ?? rid.rowIdColumnName);
         }
 
-        public IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMapForInnerQuery()
+        /// <summary>
+        /// Get a map of all columns to their respective row id column, if InnerQuery != null
+        /// </summary>
+        IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMapForInnerQuery()
         {
+            // get the map fron the inner query, and 
+            // map the inner query columns to the outer query ones
             var innerMap = InnerQuery.RowIdMap.ToList();
             foreach (var col in Select)
             {
@@ -263,6 +326,7 @@ namespace SqlDsl.SqlBuilders
                 }
             }
             
+            // foreach row id, return a reference to itself
             foreach (var rid in innerMap.Select(x => x.rowIdColumnName).Distinct())
                 yield return (rid, rid);
         }
