@@ -12,7 +12,6 @@ namespace SqlDsl
         /// Build a Sqlite query
         /// </summary>
         public static ITable<TResult> Sqlite<TResult>(this QueryBuilder builder)
-            where TResult: new()
         {
             return new QueryBuilder<SqliteBuilder, TResult>();
         }
