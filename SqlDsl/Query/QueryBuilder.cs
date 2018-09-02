@@ -141,7 +141,7 @@ namespace SqlDsl.Query
 
             var selectColumns = Joins
                 .SelectMany((x, i) => ColumnsOf(x.JoinExpression.joinParam.Type)
-                    .Select(y => (table: x.JoinResult.name, column: y)))
+                    .Select(y => (table: x.JoinedTableProperty.name, column: y)))
                 .Concat(ColumnsOf(PrimaryTableMember.Value.type)
                     .Select(y => (table: PrimaryTableMember.Value.name, column: y)));
 
@@ -168,7 +168,7 @@ namespace SqlDsl.Query
                     join.JoinExpression.joinParam,
                     join.JoinExpression.joinExpression,
                     param,
-                    join.JoinResult.name);
+                    join.JoinedTableProperty.name);
             }
 
             if (WhereClause != null)
