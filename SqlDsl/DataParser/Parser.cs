@@ -70,7 +70,7 @@ namespace SqlDsl.DataParser
         /// </summary>
         static long ColumnId(this object[] row, string[] columnNames, string idPrefix = null)
         {
-            var rowId = idPrefix == null ? SqlBuilderBase.RowIdName : $"{idPrefix}.{SqlBuilderBase.RowIdName}";
+            var rowId = idPrefix == null ? SqlStatementConstants.RowIdName : $"{idPrefix}.{SqlStatementConstants.RowIdName}";
             for (var i = 0; i < columnNames.Length; i++)
                 if (columnNames[i] == rowId)
                     return Convert.ToInt64(row[i]);

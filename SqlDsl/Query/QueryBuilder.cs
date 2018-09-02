@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace SqlDsl.Query
 {
     public class QueryBuilder<TSqlBuilder, TResult> : ITable<TResult>, IQuery<TResult>
-        where TSqlBuilder: ISqlBuilder, new()
+        where TSqlBuilder: ISqlFragmentBuilder, new()
     {
         string PrimaryTable;
         public (string name, Type type)? PrimaryTableMember { get; private set; }
@@ -21,7 +21,7 @@ namespace SqlDsl.Query
         {
             body = ReflectionUtils.RemoveConvert(body);
             if (body == queryParameter)
-                return (SqlBuilderBase.RootObjectAlias, queryParameter.Type);
+                return (SqlStatementConstants.RootObjectAlias, queryParameter.Type);
 
             var output = new List<MemberInfo>();
             var expr = TryOne(body) as MemberExpression;
@@ -122,20 +122,20 @@ namespace SqlDsl.Query
             return (ToSql(result.builder), result.paramaters);
         }
 
-        string ToSql(ISqlBuilder builder)
+        string ToSql(ISqlBuilderOLD builder)
         {
             var sql = builder.ToSqlString();
             return $"{sql.querySetupSql}\n\n{sql.querySql}";
         }        
 
-        internal (ISqlBuilder builder, IEnumerable<object> paramaters) ToSqlBuilder(IEnumerable<string> filterSelectCols)
+        internal (ISqlBuilderOLD builder, IEnumerable<object> paramaters) ToSqlBuilder(IEnumerable<string> filterSelectCols)
         {
             if (PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
 
             var param = new List<object>();
             var n = Environment.NewLine;
-            var builder = new TSqlBuilder();
+            var builder = new SqlStatementBuilder<TSqlBuilder>();
 
             builder.SetPrimaryTable(PrimaryTable, PrimaryTableMember.Value.name);
 
@@ -148,14 +148,14 @@ namespace SqlDsl.Query
             if (filterSelectCols != null)
             {
                 var cols = new HashSet<string>(filterSelectCols);
-                selectColumns = selectColumns.Where(c => c.table == SqlBuilderBase.RootObjectAlias ?
+                selectColumns = selectColumns.Where(c => c.table == SqlStatementConstants.RootObjectAlias ?
                     cols.Contains(c.column) :
                     cols.Contains($"{c.table}.{c.column}"));
             }
 
             foreach (var col in selectColumns)
             {
-                var alias = col.table == SqlBuilderBase.RootObjectAlias ? null : $"{col.table}.{col.column}";
+                var alias = col.table == SqlStatementConstants.RootObjectAlias ? null : $"{col.table}.{col.column}";
                 builder.AddSelectColumn(col.column, col.table, alias);
             }
 
@@ -191,7 +191,7 @@ namespace SqlDsl.Query
             var reader = await executor.ExecuteAsync(sql, sqlBuilder.paramaters);
             var results = await reader.GetRowsAsync();
 
-            var primaryTableName = PrimaryTableMember.Value.name == SqlBuilderBase.RootObjectAlias ?
+            var primaryTableName = PrimaryTableMember.Value.name == SqlStatementConstants.RootObjectAlias ?
                 null :
                 PrimaryTableMember.Value.name;
 

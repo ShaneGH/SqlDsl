@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace SqlDsl.SqlBuilders
 {
-    public interface ISqlBuilder
+    public interface ISqlBuilderOLD
     {
         IEnumerable<(string alias, string sql)> Joins { get; }
         
@@ -21,7 +21,7 @@ namespace SqlDsl.SqlBuilders
 
         void SetPrimaryTable(string tableName, string alias);
         
-        void SetPrimaryTable(ISqlBuilder table, string alias);
+        void SetPrimaryTable(ISqlBuilderOLD table, string alias);
 
         void AddSelectColumn(string columnName, string tableName = null, string alias = null);
 

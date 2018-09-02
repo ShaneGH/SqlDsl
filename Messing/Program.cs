@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
+using SqlDsl.Dsl;
 using SqlDsl.Sqlite;
 using SqlDsl.Utils;
 
@@ -103,10 +104,38 @@ namespace SqlDsl
         // public IEnumerable<string> ClassTags { get; set; }
     }
 
+    class ArgsClass
+    {
+        public int PersonId { get; set; }
+    }
+
     class Program
     {
         static ISqlBuilder<ResultClass> Q()
         {
+            Sql.Query.Sqlite<ArgsClass, QueryClass>()
+                .From(nameof(Person), result => result.Person)
+
+                .LeftJoin(nameof(PersonClass), result => result.PersonClasses)
+                .On((result, _class) => _class.PersonId == result.Person.Id)
+
+                .InnerJoin(nameof(Class), result => result.Classes)
+                .On((result, _class) => _class.Id == Sql.One(result.PersonClasses).ClassId)
+
+                .InnerJoin(nameof(ClassTag), result => result.ClassTags)
+                .On((result, classTag) => classTag.ClassId == Sql.One(result.Classes).Id)
+
+                .InnerJoin(nameof(Tag), result => result.Tags)
+                .On((result, tag) => tag.Id == Sql.One(result.ClassTags).TagId)
+
+                .Where((result, args) => result.Person.Id == args.PersonId)
+                .Map(x => new ResultClass
+                {
+                    PersonName = x.Person.Name,
+                    //ClassNames = x.Classes.Select(c => c.Name),
+                    //ClassTags = x.Tags.Select(c => c.Name)
+                });
+
             return Sql.Query.Sqlite<QueryClass>()
                 .From(nameof(Person), result => result.Person)
 

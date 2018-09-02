@@ -21,6 +21,12 @@ namespace SqlDsl.Utils
             string.Join(separator, xs);
         
         /// <summary>
+        /// Alias for .Where(x => x != null)
+        /// </summary>
+        public static IEnumerable<T> RemoveNulls<T>(this IEnumerable<T> xs)
+            where T : class => xs.Where(x => x != null);
+        
+        /// <summary>
         /// If the input is null, return Empty instead
         /// </summary>
         public static IEnumerable<T> OrEmpty<T>(this IEnumerable<T> xs) =>

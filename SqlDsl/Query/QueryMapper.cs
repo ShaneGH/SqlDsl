@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace SqlDsl.Query
 {
     public class QueryMapper<TSqlBuilder, TResult, TMapped> : ISqlBuilder<TMapped>
-        where TSqlBuilder : ISqlBuilder, new()
+        where TSqlBuilder: ISqlFragmentBuilder, new()
     {
         readonly QueryBuilder<TSqlBuilder, TResult> Query;
         readonly IEnumerable<(string from, string to)> Mapper;
@@ -30,16 +30,16 @@ namespace SqlDsl.Query
             return (ToSql(builder.builder), builder.paramaters);
         }
 
-        string ToSql(ISqlBuilder builder)
+        string ToSql(ISqlBuilderOLD builder)
         {            
             var sql = builder.ToSqlString();
             return $"{sql.querySetupSql}\n\n{sql.querySql}";
         }
 
-        (ISqlBuilder builder, IEnumerable<object> paramaters) ToSqlBuilder()
+        (ISqlBuilderOLD builder, IEnumerable<object> paramaters) ToSqlBuilder()
         {
             var wrappedSql = Query.ToSqlBuilder(Mapper.Select(m => m.from));
-            var builder = new TSqlBuilder();
+            var builder = new SqlStatementBuilder<TSqlBuilder>();
             builder.SetPrimaryTable(wrappedSql.builder, wrappedSql.builder.InnerQueryAlias);
 
             foreach (var col in Mapper)
@@ -61,7 +61,7 @@ namespace SqlDsl.Query
             var reader = await executor.ExecuteAsync(sql, sqlBuilder.paramaters);
             var results = await reader.GetRowsAsync();
 
-            var tableName = Query.PrimaryTableMember.Value.name == SqlBuilderBase.RootObjectAlias ?
+            var tableName = Query.PrimaryTableMember.Value.name == SqlStatementConstants.RootObjectAlias ?
                 null :
                 Query.PrimaryTableMember.Value.name;
 
