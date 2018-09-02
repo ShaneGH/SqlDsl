@@ -12,24 +12,24 @@ namespace SqlDsl.Sqlite
         /// </summary>
         protected override string GetUniqueIdSql(string tableName, string rowIdAlias)
         {
-            var id = GetUniqueId();
+            var id = "tmp" + GetUniqueId();
 
-            AddStatementBefore($"CREATE TEMP TABLE tmp{id} AS SELECT * FROM {WrapTable(tableName)};");
-            return $"SELECT rowid AS {WrapAlias(rowIdAlias)}, * FROM {WrapTable("tmp" + id)}";
+            AddStatementBefore($"CREATE TEMP TABLE {id} AS SELECT * FROM {WrapTable(tableName)};");
+            return $"SELECT rowid AS {WrapAlias(rowIdAlias)}, * FROM {WrapTable(id)}";
         }
 
         /// <summary>
-        /// Wrap a table name in parenthesis whcih protect against illegal characters: []
+        /// Wrap a table name in parenthesis which protects against illegal characters: []
         /// </summary>
         protected override string WrapTable(string table) => $"[{table}]";
 
         /// <summary>
-        /// Wrap a column name in parenthesis whcih protect against illegal characters: []
+        /// Wrap a column name in parenthesis which protects against illegal characters: []
         /// </summary>
         protected override string WrapColumn(string column) => $"[{column}]";
 
         /// <summary>
-        /// Wrap a table or column alias in parenthesis whcih protect against illegal characters: []
+        /// Wrap a table or column alias in parenthesis which protects against illegal characters: []
         /// </summary>
         protected override string WrapAlias(string alias) => $"[{alias}]";
 
