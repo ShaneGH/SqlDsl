@@ -42,6 +42,7 @@ namespace SqlDsl.DataParser
         static IEnumerable<TResult> _Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, int[] rowNumberMap, string primaryTable)
         {
             // group the results by the primary (SELECT) table
+            // TODO: 2*O(N) complexity
             var resultGroups = rows
                 .OrEmpty()
                 .GroupBy(r => r.ColumnId(propertyGraph.ColumnNames, primaryTable))
