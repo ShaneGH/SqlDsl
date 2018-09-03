@@ -18,16 +18,6 @@ namespace SqlDsl.Dsl
         /// </param>
         IQuery<TResult> From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty);
         
-
-        //TODO: this method should be implemented
-        // /// <summary>
-        // /// Set the [Table] in SELECT FROM [Table]
-        // /// </summary>
-        // /// <param name="resultProperty">
-        // /// An expression to map the selected table to a property on the result
-        // /// </param>
-        // IQuery<TResult> From<TTable>(string tableName, Expression<Func<TResult, IEnumerable<TTable>>> resultProperty);
-        
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table]. Uses the class name of TTable as the sql table name
         /// </summary>
