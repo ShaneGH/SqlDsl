@@ -79,24 +79,33 @@ namespace SqlDsl.Utils
             .OrEmpty()
             .Select(m => m.Name)
             .JoinString(".");
-
             
-        static readonly MethodInfo _One = GetMethod(() => Sql.One<object>(null)).GetGenericMethodDefinition();
+        /// <summary>
+        /// A set of generic methods that can be used to reference a single property from a list of items.
+        /// TODO: test
+        /// </summary>
+        static readonly HashSet<MethodInfo> _One = new HashSet<MethodInfo>
+        {
+            GetMethod(() => Sql.One<object>(null)).GetGenericMethodDefinition(),
+            GetMethod(() => Enumerable.First<object>(null)).GetGenericMethodDefinition(),
+            GetMethod(() => Enumerable.Single<object>(null)).GetGenericMethodDefinition()
+        };
 
         /// <summary>
-        /// If the input expression represents a call to Sql.One([inner expr]), return [inner expr], otherwise return null
+        /// If the input expression represents a call to Sql.One([inner expr]), Enumerable.First([inner expr])
+        /// or Enumerable.Single([inner expr]), return [inner expr]; otherwise return null
         /// </summary>
         public static Expression IsOne(Expression e)
         {
             var method = RemoveConvert(e) as MethodCallExpression;
-            if (method == null)
+            if (method == null || !method.Method.IsGenericMethod)
                 return null;
 
-            if (!method.Method.IsGenericMethod ||
-                method.Method.GetGenericMethodDefinition() != _One)
-                return null;
+            var methodGeneric = method.Method.GetGenericMethodDefinition()
+            if (_One.Contains(methodGeneric))
+                return RemoveConvert(method.Arguments[0]);
 
-            return RemoveConvert(method.Arguments[0]);
+            return null;
         }
 
         /// <summary>
