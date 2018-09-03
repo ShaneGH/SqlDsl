@@ -101,7 +101,7 @@ namespace SqlDsl.Utils
             if (method == null || !method.Method.IsGenericMethod)
                 return null;
 
-            var methodGeneric = method.Method.GetGenericMethodDefinition()
+            var methodGeneric = method.Method.GetGenericMethodDefinition();
             if (_One.Contains(methodGeneric))
                 return RemoveConvert(method.Arguments[0]);
 
