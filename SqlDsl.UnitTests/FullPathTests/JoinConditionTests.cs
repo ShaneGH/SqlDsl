@@ -34,8 +34,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.People.Mary, data.ElementAt(1).Person);
 
             Assert.AreEqual(2, data.First().PersonClasses.Count());
-            Assert.AreEqual(Data.PersonClasses.JohnTennis, data.First().PersonClasses.ElementAt(0));
-            Assert.AreEqual(Data.PersonClasses.JohnArchery, data.First().PersonClasses.ElementAt(1));
+            Assert.Contains(Data.PersonClasses.JohnTennis, data.First().PersonClasses.ToList());
+            Assert.Contains(Data.PersonClasses.JohnArchery, data.First().PersonClasses.ToList());
 
             Assert.AreEqual(1, data.ElementAt(1).PersonClasses.Count());
             Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1).PersonClasses.ElementAt(0));
