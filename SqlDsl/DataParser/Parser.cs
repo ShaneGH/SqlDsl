@@ -95,6 +95,8 @@ namespace SqlDsl.DataParser
                 .Select(x => (int?)rowNumberMap[x.index])
                 .FirstOrDefault();
 
+            // TODO: change to First(...) and see which tests fail
+
             var ids = new HashSet<long>();
             foreach (var row in rows)
             {
