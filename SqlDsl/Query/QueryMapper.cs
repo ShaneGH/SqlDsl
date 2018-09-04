@@ -52,21 +52,22 @@ namespace SqlDsl.Query
         
         public async Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor)
         {
+            //TODO: mostly copy pasted from QueryBuilder.ExecuteAsync
+
             if (Query.PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
 
             var sqlBuilder = ToSqlBuilder();
             var sql = ToSql(sqlBuilder.builder);
+            var selectColumns = sqlBuilder.builder.SelectColumns.ToArray();
 
-            var reader = await executor.ExecuteAsync(sql, sqlBuilder.paramaters);
+            var reader = await executor.ExecuteDebugAsync(sql, sqlBuilder.paramaters, selectColumns);
             var results = await reader.GetRowsAsync();
 
             var tableName = Query.PrimaryTableMember.Value.name == SqlStatementConstants.RootObjectAlias ?
                 null :
                 Query.PrimaryTableMember.Value.name;
 
-            //TODO: copy pasted from QueryBuilder.ExecuteAsync
-            var selectColumns = sqlBuilder.builder.SelectColumns.ToArray();
             var rowIdColumns = sqlBuilder.builder.RowIdMap.ToList();
             var rowIdMap = selectColumns
                 .Select(c => 

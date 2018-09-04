@@ -9,36 +9,41 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests.Environment
 {
-    class TestExecutor : IExecutor
+    class TestExecutor : IDebugExecutor
     {
         readonly IExecutor Executor;
-        readonly List<(string sql, List<object[]> results)> SqlStatements = new List<(string sql, List<object[]> results)>();
+        readonly List<(string sql, string[] colNames, List<object[]> results)> SqlStatements = new List<(string, string[], List<object[]>)>();
 
         public TestExecutor(IExecutor executor)
         {
             Executor = executor;
         }
 
-        public async Task<IReader> ExecuteAsync(string sql, IEnumerable<object> paramaters)
+        public async Task<IReader> ExecuteAsync(string sql, IEnumerable<object> paramaters, string[] colNames)
         {
-            AddSqlStatement(sql, paramaters);
+            AddSqlStatement(sql, paramaters, colNames);
             return new TestReader(this, await Executor.ExecuteAsync(sql, paramaters), SqlStatements.Count - 1);
         }
 
-        void AddSqlStatement(string sql, IEnumerable<object> paramaters)
+        public Task<IReader> ExecuteAsync(string sql, IEnumerable<object> paramaters)
+        {
+            throw new NotImplementedException("Code should use overload with colNames");
+        }
+
+        void AddSqlStatement(string sql, IEnumerable<object> paramaters, string[] colNames)
         {
             SqlStatements.Add((paramaters
                 .OrEmpty()
                 .Select((p, i) => $"@p{i} = {p}")
                 .JoinString("\n") + "\n\n" +
-                sql, new List<object[]>()));
+                sql, colNames, new List<object[]>()));
         }
 
-        string SqlStatementString((string sql, List<object[]> results) statement)
+        string SqlStatementString((string sql, string[] colNames, List<object[]> results) statement)
         {
             var results = "[\n" + statement.results
                 .Select(row => "  {\n" + row
-                    .Select((cell, i) => $"    {i}: {cell}")
+                    .Select((cell, i) => $"    {statement.colNames[i]}: {cell}")
                     .JoinString(",\n") + 
                 "\n  }")
                 .JoinString(",\n") + "\n]\n";

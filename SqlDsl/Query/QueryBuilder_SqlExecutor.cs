@@ -30,7 +30,7 @@ namespace SqlDsl.Query
             var sql = ToSql(sqlBuilder.builder);
             var selectColumns = sqlBuilder.builder.SelectColumns.ToArray();
 
-            var reader = await Execute(executor, sql, sqlBuilder.paramaters, selectColumns);
+            var reader = await executor.ExecuteDebugAsync(sql, sqlBuilder.paramaters, selectColumns);
             var results = await reader.GetRowsAsync();
 
             var primaryTableName = PrimaryTableMember.Value.name == SqlStatementConstants.RootObjectAlias ?
@@ -58,13 +58,5 @@ namespace SqlDsl.Query
             // TODO: compile and cache ObjectProperty graph, and use as first arg
             return results.Parse<TResult>(selectColumns, rowIdMap, primaryTableName);
         }
-
-        /// <summary>
-        /// Execute the executor, or if it is an IDebugExecutor, execute it as that
-        /// </summary>
-        Task<IReader> Execute(IExecutor executor, string sql, IEnumerable<object> param, string[] columnNames) =>
-            executor is IDebugExecutor ?
-                (executor as IDebugExecutor).ExecuteAsync(sql, param, columnNames) :
-                executor.ExecuteAsync(sql, param);
     }
 }
