@@ -29,18 +29,23 @@ namespace SqlDsl.Query
         {
             var result = ToSqlBuilder(filterSelectCols);
             var sql = result.builder.ToSqlString();
-            return (ToSql(result.builder), result.paramaters);
+            return (result.builder.ToSql(), result.paramaters);
         }
 
         /// <summary>
-        /// Get a sql statement and corresponding sql paramaters from the builder
+        /// Execute the sql query and get a list of results
         /// </summary>
-        /// <param name="builder">The sql builder to use in order to render sql</param>
-        static string ToSql(ISqlStatement builder)
+        /// <param name="executor">
+        /// An expression to map the selected table to a property on the result
+        /// </param>
+        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor) 
         {
-            var sql = builder.ToSqlString();
-            return $"{sql.querySetupSql}\n\n{sql.querySql}";
-        }        
+            if (PrimaryTableMember == null)
+                throw new InvalidOperationException("You must set the FROM table before calling ToSql");
+
+            var sqlBuilder = ToSqlBuilder(null);
+            return executor.ExecuteAsync<TResult>(sqlBuilder.builder, sqlBuilder.paramaters, PrimaryTableMember.Value.name);
+        }
 
         /// <summary>
         /// Create a populated sql builder along with any constants specified in the query
