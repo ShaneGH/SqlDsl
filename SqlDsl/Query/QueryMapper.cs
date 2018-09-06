@@ -26,14 +26,9 @@ namespace SqlDsl.Query
 
         public (string sql, IEnumerable<object> paramaters) ToSql()
         {
-            var builder = ToSqlBuilder();
-            return (ToSql(builder.builder), builder.paramaters);
-        }
-
-        string ToSql(ISqlStatement builder)
-        {            
-            var sql = builder.ToSqlString();
-            return $"{sql.querySetupSql}\n\n{sql.querySql}";
+            var result = ToSqlBuilder();
+            var sql = result.builder.ToSqlString();
+            return (result.builder.ToSql(), result.paramaters);
         }
 
         (ISqlStatement builder, IEnumerable<object> paramaters) ToSqlBuilder()
@@ -50,44 +45,13 @@ namespace SqlDsl.Query
             return (builder, wrappedSql.paramaters);
         }
         
-        public async Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor)
-        {
-            //TODO: mostly copy pasted from QueryBuilder.ExecuteAsync
-
+        public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor)
+        {       
             if (Query.PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
 
             var sqlBuilder = ToSqlBuilder();
-            var sql = ToSql(sqlBuilder.builder);
-            var selectColumns = sqlBuilder.builder.SelectColumns.ToArray();
-
-            var reader = await executor.ExecuteDebugAsync(sql, sqlBuilder.paramaters, selectColumns);
-            var results = await reader.GetRowsAsync();
-
-            var tableName = Query.PrimaryTableMember.Value.name == SqlStatementConstants.RootObjectAlias ?
-                null :
-                Query.PrimaryTableMember.Value.name;
-
-            var rowIdColumns = sqlBuilder.builder.RowIdMap.ToList();
-            var rowIdMap = selectColumns
-                .Select(c => 
-                {
-                    var op = rowIdColumns
-                        .Where(rid => rid.columnName == c)
-                        .Select(rid => rid.rowIdColumnName)
-                        .FirstOrDefault() ??
-                        throw new InvalidOperationException($"Cannot find row id for column {c}");
-
-                    var index = selectColumns.IndexOf(op);
-
-                    if (index == -1) throw new InvalidOperationException($"Cannot find row id for column {c}");
-
-                    return index;
-                })
-                .ToArray();
-
-            // TODO: compile and cache ObjectProperty graph, and use as first arg
-            return results.Parse<TMapped>(sqlBuilder.builder.SelectColumns, rowIdMap, tableName);
+            return executor.ExecuteAsync<TMapped>(sqlBuilder.builder, sqlBuilder.paramaters, Query.PrimaryTableMember.Value.name);
         }
 
         IEnumerable<(string from, string to)> BuildMap(Expression expr, ParameterExpression rootParam, string toPrefix = null)
