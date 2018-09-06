@@ -18,9 +18,9 @@ namespace SqlDsl.DataParser
         /// <param name="rows">The query results</param>
         /// <param name="columnNames">The query columns</param>
         /// <param name="rowNumberMap">A map of each column number -> the column number of it's row id</param>
-        /// <param name="primaryTable">The table from the [FROM] query clause. If null, will assume that there is a column named "##rowid" to group results by.</param>
-        public static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, IEnumerable<string> columnNames, int[] rowNumberMap, string primaryTable = null) =>
-            Parse<TResult>(rows, new RootObjectPropertyGraph(columnNames), rowNumberMap, primaryTable);
+        /// <param name="primaryRowIdColumnNumber">The index of the column which contains the primary (non duplicatable) row number.</param>
+        public static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, IEnumerable<string> columnNames, int[] rowNumberMap, int primaryRowIdColumnNumber) =>
+            Parse<TResult>(rows, new RootObjectPropertyGraph(rowNumberMap, columnNames, typeof(TResult)), rowNumberMap, primaryRowIdColumnNumber);
             
         /// <summary>
         /// Parse the results of a sql query
@@ -28,9 +28,9 @@ namespace SqlDsl.DataParser
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
         /// <param name="rowNumberMap">A map of each column number -> the column number of it's row id</param>
-        /// <param name="primaryTable">The table from the [FROM] query clause. If null, will assume that there is a column named "##rowid" to group results by.</param>
-        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, int[] rowNumberMap, string primaryTable = null) =>
-            _Parse<TResult>(rows, propertyGraph, rowNumberMap, primaryTable).Enumerate();
+        /// <param name="primaryRowIdColumnNumber">The index of the column which contains the primary (non duplicatable) row number.</param>
+        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, int[] rowNumberMap, int primaryRowIdColumnNumber) =>
+            _Parse<TResult>(rows, propertyGraph, rowNumberMap, primaryRowIdColumnNumber).Enumerate();
 
         /// <summary>
         /// Parse the results of a sql query
@@ -38,32 +38,12 @@ namespace SqlDsl.DataParser
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
         /// <param name="rowNumberMap">A map of each column number -> the column number of it's row id</param>
-        /// <param name="primaryTable">The table from the [FROM] query clause. If null, will assume that there is a column named "##rowid" to group results by.</param>
-        static IEnumerable<TResult> _Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, int[] rowNumberMap, string primaryTable)
+        /// <param name="primaryRowIdColumnNumber">The index of the column which contains the primary (non duplicatable) row number.</param>
+        static IEnumerable<TResult> _Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, int[] rowNumberMap, int primaryRowIdColumnNumber)
         {
-            // group the results by the primary (SELECT) table
-            // TODO: 2*O(N) complexity
-            var resultGroups = rows
-                .OrEmpty()
-                .GroupBy(r => r.ColumnId(propertyGraph.ColumnNames, primaryTable))
-                .Select(IEnumerableUtils.Enumerate)
-                .Enumerate();
-
-            if (!resultGroups.Any())
-                yield break;
-
-            // return a new object for each group of rows
-            foreach (var results in resultGroups)
-                yield return (TResult)Builders.Build(
-                    typeof(TResult), 
-                    Print(CreateObject(propertyGraph, rowNumberMap, results).First()));
-
-            T Print<T>(T obj)
-            {
-                Console.WriteLine("PRINT");
-                Console.WriteLine(obj);
-                return obj;
-            }
+            foreach (var row in rows.GroupBy(r => r[primaryRowIdColumnNumber]))
+                foreach (var objValues in CreateObject(propertyGraph, rowNumberMap, row.ToEnumerable()))
+                    yield return (TResult)Builders.Build(typeof(TResult), objValues);
         }
         
         /// <summary>
@@ -78,53 +58,44 @@ namespace SqlDsl.DataParser
 
             throw new InvalidOperationException($"Cannot find row id for table {idPrefix}.");
         }
-        
+
         /// <summary>
         /// Map a group of rows to an object property graph to an object graph with properties
         /// </summary>
+        /// <param name="objects">A raw block of data, which has not been grouped into objects</param>
         static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, int[] rowNumberMap, IEnumerable<object[]> rows)
         {
-            // Ensure IEnumerable is not enumerated multiple times
-            rows = rows.Enumerate();
-            if (!rows.Any())
-                yield break;
+            // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
+            var objectsData = rows.GroupBy(r => 
+                propertyGraph.RowNumberColumnIds.Select(i => r[i]).ToArray(), 
+                ArrayComparer<object>.Instance);
 
-            // Get the id of the column with the row number for this object
-            var rowNumberColumn = propertyGraph
-                .SimpleProps
-                .Select(x => (int?)rowNumberMap[x.index])
-                .FirstOrDefault();
+            return CreateObject(propertyGraph, rowNumberMap, objectsData);
+        }
 
-            // TODO: change to First(...) and see which tests fail
-
-            var ids = new HashSet<long>();
-            foreach (var row in rows)
+        /// <summary>
+        /// Map a group of rows to an object property graph to an object graph with properties
+        /// </summary>
+        /// <param name="objects">An enumerable of objects. Each object can span multiple rows (corresponding to sub properties which are enumerable)</param>
+        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, int[] rowNumberMap, IEnumerable<IEnumerable<object[]>> objects)
+        {
+            foreach (var objectData in objects)
             {
-                // if there is no row number, assume that all rows point to one object
-                var rowNumber = rowNumberColumn != null ? 
-                    Convert.ToInt64(row[rowNumberColumn.Value]) : 
-                    -1;
-                    
-                // This row is a duplicate
-                if (!ids.Add(rowNumber))
-                    continue;
-                    
                 yield return new ObjectGraph
                 {
                     // simple prop values can be found by their column index
                     SimpleProps = propertyGraph.SimpleProps
-                        .Select(p => (p.name, new [] { row[p.index] }.Skip(0)))
+                        .Select(p => (p.name, p.isEnumerable ?
+                            // if is enumerable, the composite key will have 1 less element
+                            // so the objectData group will have less rows
+                            objectData.Select(o => o[p.index]).Enumerate() :
+                            objectData.Select(o => o[p.index]).First().ToEnumerable()))
                         .Enumerate(),
                     // complex prop values are build recursively
                     ComplexProps = propertyGraph.ComplexProps
-                        .Select(p => (p.name, CreateObject(p.value, rowNumberMap, rows).Enumerate()))
+                        .Select(p => (p.name, CreateObject(p.value, rowNumberMap, objectData).Enumerate()))
                         .Enumerate()
                 };
-
-                // Early out clause. Performs the same job as
-                // hashset check above
-                if (rowNumberColumn == null)
-                    break;
             }
         }
     }

@@ -52,6 +52,21 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public async Task SelectWith1Levels()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<QueryClass1>()
+                .From(result => result.Person)
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John, data.First().Person);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).Person);
+        }
+
+        [Test]
         public async Task SelectWith2Levels()
         {
             // arrange

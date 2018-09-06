@@ -53,7 +53,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO: this case")]
         public async Task MapOnTableWith1JoinedTable()
         {
             // arrange
@@ -75,6 +74,30 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(1, data.Count());
 
             Assert.AreEqual(Data.People.John.Name, data.First().TheName);
+            
+            Assert.AreEqual(2, data.First().TheClassIds.Count());
+            Assert.Contains(Data.Classes.Tennis.Id, data.First().TheClassIds.ToList());
+            Assert.Contains(Data.Classes.Archery.Id, data.First().TheClassIds.ToList());
+        }
+
+        [Test]
+        public async Task MapOnTableWith1JoinedTable_IgnorePrimaryTable()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.Person)
+                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                    .On((q, pc) => q.Person.Id == pc.PersonId)
+                .Where(q => q.Person.Id == 1)
+                .Map(p => new SimpleMapClass
+                { 
+                    TheClassIds = p.PersonClasses.Select(c => c.ClassId)
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
             
             Assert.AreEqual(2, data.First().TheClassIds.Count());
             Assert.Contains(Data.Classes.Tennis.Id, data.First().TheClassIds.ToList());

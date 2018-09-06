@@ -1,4 +1,5 @@
 using SqlDsl.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -20,8 +21,10 @@ namespace SqlDsl.DataParser
         /// <param name="colNames">
         /// The names of the columns returned in the query.
         /// </param>
-        public RootObjectPropertyGraph(IEnumerable<string> colNames)
-            : base(colNames)
+        /// <param name="rowNumberMap">A map from each column to the index of it's rown number column</param>
+        /// <param name="objectType">The type of the object which this graph represents</param>
+        public RootObjectPropertyGraph(int[] rowNumberMap, IEnumerable<string> colNames, Type objectType)
+            : base(rowNumberMap, colNames, objectType)
         {
             ColumnNames = colNames.ToArray();
         }

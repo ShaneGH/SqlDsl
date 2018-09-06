@@ -21,13 +21,24 @@ namespace SqlDsl.Query
         {
             var sql = ToSql(sqlBuilder);
             var selectColumns = sqlBuilder.SelectColumns.ToArray();
-
-            var reader = await executor.ExecuteDebugAsync(sql, parameters, selectColumns);
-            var results = await reader.GetRowsAsync();
-
+            
+            // remove no root object alias if necessary
             primaryTableName = primaryTableName == SqlStatementConstants.RootObjectAlias ?
                 null :
                 primaryTableName;
+
+            // get index of the column for row id of the primary table
+            var primaryRowIdName = primaryTableName == null ?
+                SqlStatementConstants.RowIdName :
+                 $"{primaryTableName}.{SqlStatementConstants.RowIdName}";
+
+            var primaryRowId = selectColumns.IndexOf(primaryRowIdName);
+            if (primaryRowId == -1)
+                throw new InvalidOperationException($"Could not find row id column for table {primaryTableName}");
+
+            // execute and get all rows
+            var reader = await executor.ExecuteDebugAsync(sql, parameters, selectColumns);
+            var results = await reader.GetRowsAsync();
 
             var rowIdColumns = sqlBuilder.RowIdMap.ToList();
             var rowIdMap = selectColumns
@@ -48,7 +59,7 @@ namespace SqlDsl.Query
                 .ToArray();
 
             // TODO: compile and cache ObjectProperty graph, and use as first arg
-            return results.Parse<TResult>(selectColumns, rowIdMap, primaryTableName);
+            return results.Parse<TResult>(selectColumns, rowIdMap, primaryRowId);
         }
 
         /// <summary>

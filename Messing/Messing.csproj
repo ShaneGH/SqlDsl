@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SqlDsl\SqlDsl.csproj" />
     <ProjectReference Include="..\SqlDsl.Sqlite\SqlDsl.Sqlite.csproj" />
+    <ProjectReference Include="..\SqlDsl.UnitTests\SqlDsl.UnitTests.csproj" />
   </ItemGroup>
 
   <ItemGroup>
