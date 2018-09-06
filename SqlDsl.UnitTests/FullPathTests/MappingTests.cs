@@ -25,6 +25,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             public string TheName { get; set; }
             public SimpleMapClass Inner { get; set; }
             public IEnumerable<int> TheClassIds { get; set; }
+            public IEnumerable<int> TheClassTagIds { get; set; }
         }
 
         [Test]
@@ -67,6 +68,52 @@ namespace SqlDsl.UnitTests.FullPathTests
                     TheName = p.Person.Name,
                     // TODO: new statement in select
                     TheClassIds = p.PersonClasses.Select(c => c.ClassId)
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+
+            Assert.AreEqual(Data.People.John.Name, data.First().TheName);
+            
+            Assert.AreEqual(2, data.First().TheClassIds.Count());
+            Assert.Contains(Data.Classes.Tennis.Id, data.First().TheClassIds.ToList());
+            Assert.Contains(Data.Classes.Archery.Id, data.First().TheClassIds.ToList());
+        }
+
+        [Test]
+        [Ignore("TODO: look at this case and throw better exception")]
+        public async Task Exploritory()
+        {
+            // arrange
+            // act
+            await Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.Person)
+                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                    .On((q, pc) => q.Person.Id == pc.PersonId)
+                .InnerJoin<ClassTag>(q => q.ClassTags)
+                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
+                .Where(q => q.Person.Id == 1)
+                .ExecuteAsync(Executor);
+        }
+
+        [Test]
+        public async Task MapOnTableWith2JoinedTables()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.Person)
+                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                    .On((q, pc) => q.Person.Id == pc.PersonId)
+                .InnerJoin<ClassTag>(q => q.ClassTags)
+                    .On((q, ct) => q.PersonClasses.One().ClassId == ct.ClassId)
+                .Where(q => q.Person.Id == 1)
+                .Map(p => new SimpleMapClass
+                { 
+                    TheName = p.Person.Name,
+                    TheClassIds = p.PersonClasses.Select(c => c.ClassId),
+                    TheClassTagIds = p.ClassTags.Select(c => c.TagId)
                 })
                 .ExecuteAsync(Executor);
 
@@ -161,7 +208,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         [Test]
         [Ignore("TODO: this case")]
-        public async Task MapOnTableWith2JoinedTables()
+        public async Task MapOnTableWith2JoinedTables_2()
         {
             // arrange
             PrintStatusOnFailure = false;
