@@ -85,17 +85,21 @@ namespace SqlDsl.DataParser
                 {
                     // simple prop values can be found by their column index
                     SimpleProps = propertyGraph.SimpleProps
-                        .Select(p => (p.name, p.isEnumerable ?
-                            // if is enumerable, the composite key will have 1 less element
-                            // so the objectData group will have less rows
-                            objectData.Select(o => o[p.index]).Enumerate() :
-                            objectData.Select(o => o[p.index]).First().ToEnumerable()))
+                        .Select(GetSimpleProp)
                         .Enumerate(),
                     // complex prop values are build recursively
                     ComplexProps = propertyGraph.ComplexProps
                         .Select(p => (p.name, CreateObject(p.value, rowNumberMap, objectData).Enumerate()))
                         .Enumerate()
                 };
+
+                (string name, IEnumerable<object> value) GetSimpleProp((int index, string name, bool isEnumerable, IEnumerable<int> rowNumberColumnIds) p)
+                {
+                    return (p.name, objectData
+                        .GroupBy(d => propertyGraph.GetUniqueIdForSimpleProp(d, p.rowNumberColumnIds))
+                        .Select(Enumerable.First)
+                        .Select(o => o[p.index]));
+                }
             }
         }
     }

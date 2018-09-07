@@ -96,5 +96,31 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.ClassTags.TennisSport, data.First().ClassTags.ElementAt(0));
             Assert.AreEqual(Data.ClassTags.TennisBallSport, data.First().ClassTags.ElementAt(1));
         }
+
+        [Test]
+        public async Task Select2Joins_backwards_DoesNotDuplicateRecords()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<QueryClass>()
+                .From(nameof(Person), result => result.Person)
+                .InnerJoin<ClassTag>(nameof(ClassTag), result => result.ClassTags)
+                    .On((q, c) => Sql.One(q.PersonClasses).ClassId == c.ClassId)
+                .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
+                    .On((q, c) => q.Person.Id == c.PersonId)
+                .ExecuteAsync(Executor);
+
+            // assert
+            AssertSelect1SimpleJoin(data);
+            
+            Assert.AreEqual(3, data.First().ClassTags.Count());
+            Assert.AreEqual(Data.ClassTags.TennisSport, data.First().ClassTags.ElementAt(0));
+            Assert.AreEqual(Data.ClassTags.TennisBallSport, data.First().ClassTags.ElementAt(1));
+            Assert.AreEqual(Data.ClassTags.ArcherySport, data.First().ClassTags.ElementAt(2));
+
+            Assert.AreEqual(2, data.ElementAt(1).ClassTags.Count());
+            Assert.AreEqual(Data.ClassTags.TennisSport, data.First().ClassTags.ElementAt(0));
+            Assert.AreEqual(Data.ClassTags.TennisBallSport, data.First().ClassTags.ElementAt(1));
+        }
     }
 }

@@ -13,7 +13,7 @@ namespace SqlDsl.DataParser
         /// <summary>
         /// Properties of an object with simple values like strings, ints etc... The index is the index of the column in the sql query resuts table.
         /// </summary>
-        public readonly IEnumerable<(int index, string name, bool isEnumerable)> SimpleProps;
+        public readonly IEnumerable<(int index, string name, bool isEnumerable, IEnumerable<int> rowNumberColumnIds)> SimpleProps;
         
         /// <summary>
         /// Properties of an object which have sub properies
@@ -48,7 +48,7 @@ namespace SqlDsl.DataParser
         /// <param name="objectType">The type of the object which this graph represents</param>
         ObjectPropertyGraph(int[] rowNumberMap, IEnumerable<(int index, string[] name)> colNames, Type objectType)
         {
-            var simpleProps = new HashSet<(int index, string propertyName, bool isEnumerable)>();
+            var simpleProps = new HashSet<(int index, string propertyName, bool isEnumerable, IEnumerable<int> rowNumberColumnIds)>();
             var complexProps = new List<(int index, string propertyName, IEnumerable<string> childProps, bool isEnumerable, Type propertyType)>();
 
             var typedColNames = objectType
@@ -77,7 +77,8 @@ namespace SqlDsl.DataParser
                 // if there is only one name, the property belongs to this object
                 if (col.name.Length == 1)
                 {
-                    simpleProps.Add((col.index, col.name[0], isEnumerable));
+                    // TODO: if a column has multiple row numbers (is a composite)?
+                    simpleProps.Add((col.index, col.name[0], isEnumerable, new[]{ rowNumberMap[col.index] }));
                 }
                 // if there are more than one, the property belongs to a child of this object
                 else if (col.name.Length > 1)
@@ -112,10 +113,52 @@ namespace SqlDsl.DataParser
                 .Enumerate();
         }
 
+        public string GetUniqueId(object[] row) => GetUniqueIdForSimpleProp(row, Enumerable.Empty<int>());
+
+        public string GetUniqueIdForSimpleProp(object[] row, IEnumerable<int> simplePropIndex)
+        {
+            Console.WriteLine("GUID");
+
+            // TODO: this method is used a lot.
+            // Can results be cached somewhere?
+            return RowNumberColumnIds
+                .Concat(simplePropIndex.OrEmpty())   
+                .Select(r => row[r].ToString())
+                .JoinString(";");
+        }
+
         public override string ToString() =>
             SimpleProps
                 .Select(p => $"{p.name}: {{ index: {p.index}, enumerable: {p.isEnumerable} }}")
                 .Concat(ComplexProps.Select(p => $"{p.name}:\n  {p.value.ToString().Replace("\n", "\n  ")}"))
                 .JoinString("\n");
+    }
+
+    public class SimpleProp
+    {
+        public readonly int index;
+        public readonly bool isEnumerable;
+        public readonly IEnumerable<int> rowNumberColumnIds;
+
+        public SimpleProp(int index, bool isEnumerable, IEnumerable<int> rowNumberColumnIds)
+        {
+            this.index = index;
+            this.isEnumerable = isEnumerable;
+            this.rowNumberColumnIds = rowNumberColumnIds;
+        }
+
+        public override string ToString()
+        {
+            return $"{{ index: {index}, colIds: {rowNumberColumnIds}}}";
+        }
+
+        public string GetUniqueId(object[] row)
+        {
+            // TODO: this method is used a lot.
+            // Can results be cached somewhere?
+            return rowNumberColumnIds
+                .Select(r => row[r].ToString())
+                .JoinString(";");
+        }
     }
 }
