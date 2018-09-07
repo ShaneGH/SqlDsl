@@ -96,6 +96,7 @@ namespace SqlDsl.DataParser
                 (string name, IEnumerable<object> value) GetSimpleProp((int index, string name, bool isEnumerable, IEnumerable<int> rowNumberColumnIds) p)
                 {
                     return (p.name, objectData
+                        // run a "Distinct" on the rowNumbers
                         .GroupBy(d => propertyGraph.GetUniqueIdForSimpleProp(d, p.rowNumberColumnIds))
                         .Select(Enumerable.First)
                         .Select(o => o[p.index]));

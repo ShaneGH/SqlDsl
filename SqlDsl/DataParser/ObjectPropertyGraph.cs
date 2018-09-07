@@ -48,7 +48,7 @@ namespace SqlDsl.DataParser
         /// <param name="objectType">The type of the object which this graph represents</param>
         ObjectPropertyGraph(int[] rowNumberMap, IEnumerable<(int index, string[] name)> colNames, Type objectType)
         {
-            var simpleProps = new HashSet<(int index, string propertyName, bool isEnumerable, IEnumerable<int> rowNumberColumnIds)>();
+            var simpleProps = new List<(int index, string propertyName, bool isEnumerable, IEnumerable<int> rowNumberColumnIds)>();
             var complexProps = new List<(int index, string propertyName, IEnumerable<string> childProps, bool isEnumerable, Type propertyType)>();
 
             var typedColNames = objectType
@@ -113,16 +113,20 @@ namespace SqlDsl.DataParser
                 .Enumerate();
         }
 
+        /// <summary>
+        /// Get the unique id of a row, in the context of this object
+        /// </summary>
         public string GetUniqueId(object[] row) => GetUniqueIdForSimpleProp(row, Enumerable.Empty<int>());
 
-        public string GetUniqueIdForSimpleProp(object[] row, IEnumerable<int> simplePropIndex)
+        /// <summary>
+        /// Get the unique id of a row, in the context of a simple prop of this object
+        /// </summary>
+        public string GetUniqueIdForSimpleProp(object[] row, IEnumerable<int> simplePropRowNumberColumnIds)
         {
-            Console.WriteLine("GUID");
-
             // TODO: this method is used a lot.
             // Can results be cached somewhere?
             return RowNumberColumnIds
-                .Concat(simplePropIndex.OrEmpty())   
+                .Concat(simplePropRowNumberColumnIds.OrEmpty())   
                 .Select(r => row[r].ToString())
                 .JoinString(";");
         }
@@ -132,33 +136,5 @@ namespace SqlDsl.DataParser
                 .Select(p => $"{p.name}: {{ index: {p.index}, enumerable: {p.isEnumerable} }}")
                 .Concat(ComplexProps.Select(p => $"{p.name}:\n  {p.value.ToString().Replace("\n", "\n  ")}"))
                 .JoinString("\n");
-    }
-
-    public class SimpleProp
-    {
-        public readonly int index;
-        public readonly bool isEnumerable;
-        public readonly IEnumerable<int> rowNumberColumnIds;
-
-        public SimpleProp(int index, bool isEnumerable, IEnumerable<int> rowNumberColumnIds)
-        {
-            this.index = index;
-            this.isEnumerable = isEnumerable;
-            this.rowNumberColumnIds = rowNumberColumnIds;
-        }
-
-        public override string ToString()
-        {
-            return $"{{ index: {index}, colIds: {rowNumberColumnIds}}}";
-        }
-
-        public string GetUniqueId(object[] row)
-        {
-            // TODO: this method is used a lot.
-            // Can results be cached somewhere?
-            return rowNumberColumnIds
-                .Select(r => row[r].ToString())
-                .JoinString(";");
-        }
     }
 }
