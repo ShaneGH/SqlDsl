@@ -124,7 +124,7 @@ namespace SqlDsl.DataParser
         public string GetUniqueIdForSimpleProp(object[] row, IEnumerable<int> simplePropRowNumberColumnIds)
         {
             // TODO: this method is used a lot.
-            // Can results be cached somewhere?
+            // Can results be cached or more efficient method used?
             return RowNumberColumnIds
                 .Concat(simplePropRowNumberColumnIds.OrEmpty())   
                 .Select(r => row[r].ToString())

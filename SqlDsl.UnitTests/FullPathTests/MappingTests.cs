@@ -120,11 +120,16 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.AreEqual(1, data.Count());
 
-            Assert.AreEqual(Data.People.John.Name, data.First().TheName);
+            var john = data.First();
+            Assert.AreEqual(Data.People.John.Name, john.TheName);
             
-            Assert.AreEqual(2, data.First().TheClassIds.Count());
-            Assert.Contains(Data.Classes.Tennis.Id, data.First().TheClassIds.ToList());
-            Assert.Contains(Data.Classes.Archery.Id, data.First().TheClassIds.ToList());
+            Assert.AreEqual(2, john.TheClassIds.Count());
+            Assert.Contains(Data.Classes.Tennis.Id, john.TheClassIds.ToList());
+            Assert.Contains(Data.Classes.Archery.Id, john.TheClassIds.ToList());
+            
+            Assert.AreEqual(3, john.TheClassTagIds.Count());
+            Assert.AreEqual(2, john.TheClassTagIds.Where(x => x == Data.Tags.Sport.Id).Count());
+            Assert.AreEqual(1, john.TheClassTagIds.Where(x => x == Data.Tags.BallSport.Id).Count());
         }
 
         [Test]
@@ -186,7 +191,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.Classes.Tennis.Name, data.First().TheClassNamesArray.ElementAt(0));
             Assert.AreEqual(Data.Classes.Archery.Name, data.First().TheClassNamesArray.ElementAt(1));
 
-            Assert.AreEqual(3, data.First().TheTagNames.Count());
+            Assert.AreEqual(3, data.First().TheTagNames.Count(), data.First().TheTagNames.JoinString(","));
             Assert.AreEqual(Data.Tags.Sport.Name, data.First().TheTagNames.ElementAt(0));
             Assert.AreEqual(Data.Tags.Sport.Name, data.First().TheTagNames.ElementAt(1));
             Assert.AreEqual(Data.Tags.BallSport.Name, data.First().TheTagNames.ElementAt(2));
@@ -207,6 +212,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        // [Ignore("TODO")]
         public async Task MapOnTableWith2JoinedTables_2()
         {
             // arrange
