@@ -56,6 +56,9 @@ namespace SqlDsl.Query
 
                     return index;
                 })
+                //TODO: this value should be a map down through the joins
+                .Select(IEnumerableUtils.ToEnumerableStruct)
+                .Select(Enumerable.ToArray)
                 .ToArray();
 
             // TODO: compile and cache ObjectProperty graph, and use as first arg

@@ -39,6 +39,12 @@ namespace SqlDsl.Utils
             where T: class => x == null ? Enumerable.Empty<T>() : new [] { x };
         
         /// <summary>
+        /// If x == null, return [], otherwise return [x]
+        /// </summary>
+        public static IEnumerable<T> ToEnumerableStruct<T>(this T x)
+            where T: struct => new [] { x };
+        
+        /// <summary>
         /// Return the index of an item, or -1
         /// </summary>
         public static int IndexOf<T>(this IEnumerable<T> xs, T val)

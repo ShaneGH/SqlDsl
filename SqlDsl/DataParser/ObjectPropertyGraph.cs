@@ -31,9 +31,9 @@ namespace SqlDsl.DataParser
         /// <param name="colNames">
         /// The names of the columns returned in the query.
         /// </param>
-        /// <param name="rowNumberMap">A map from each column to the index of it's rown number column</param>
+        /// <param name="rowNumberMap">A map from each column to the indexes of it's row number columns</param>
         /// <param name="objectType">The type of the object which this graph represents</param>
-        public ObjectPropertyGraph(int[] rowNumberMap, IEnumerable<string> colNames, Type objectType)
+        public ObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<string> colNames, Type objectType)
             : this(rowNumberMap, colNames.Select((n, i) => (i, n.Split('.').ToArray())), objectType)
         {
         }
@@ -44,9 +44,9 @@ namespace SqlDsl.DataParser
         /// <param name="colNames">
         /// The names of the columns returned in the query. Names are "." delimited to split a string into parts.
         /// </param>
-        /// <param name="rowNumberMap">A map from each column to the index of it's rown number column</param>
+        /// <param name="rowNumberMap">A map from each column to the indexes of it's row number columns</param>
         /// <param name="objectType">The type of the object which this graph represents</param>
-        ObjectPropertyGraph(int[] rowNumberMap, IEnumerable<(int index, string[] name)> colNames, Type objectType)
+        ObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<(int index, string[] name)> colNames, Type objectType)
         {
             var simpleProps = new List<(int index, string propertyName, bool isEnumerable, IEnumerable<int> rowNumberColumnIds)>();
             var complexProps = new List<(int index, string propertyName, IEnumerable<string> childProps, bool isEnumerable, Type propertyType)>();
@@ -78,7 +78,7 @@ namespace SqlDsl.DataParser
                 if (col.name.Length == 1)
                 {
                     // TODO: if a column has multiple row numbers (is a composite)?
-                    simpleProps.Add((col.index, col.name[0], isEnumerable, new[]{ rowNumberMap[col.index] }));
+                    simpleProps.Add((col.index, col.name[0], isEnumerable, rowNumberMap[col.index]));
                 }
                 // if there are more than one, the property belongs to a child of this object
                 else if (col.name.Length > 1)
@@ -107,7 +107,7 @@ namespace SqlDsl.DataParser
             // TODO: does ordering matter in a composite key?
             RowNumberColumnIds = SimpleProps
                 .Where(sp => !sp.isEnumerable)
-                .Select(sp => rowNumberMap[sp.index])
+                .SelectMany(sp => rowNumberMap[sp.index])
                 .Distinct()
                 .OrderBy(x => x)
                 .Enumerate();
