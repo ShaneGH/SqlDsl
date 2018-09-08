@@ -260,7 +260,10 @@ namespace SqlDsl.SqlBuilders
                 }
 
                 // Get row id from the SELECT
-                var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? null : $"{PrimaryTableAlias}.{SqlStatementConstants.RowIdName}";
+                var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? 
+                    null : 
+                    $"{PrimaryTableAlias}.{SqlStatementConstants.RowIdName}";
+                    
                 yield return (SqlStatementConstants.RowIdName, PrimaryTableAlias, ptAlias);
             }
             else
