@@ -212,7 +212,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        // [Ignore("TODO")]
+        [Ignore("TODO")]
         public async Task MapOnTableWith2JoinedTables_2()
         {
             // arrange

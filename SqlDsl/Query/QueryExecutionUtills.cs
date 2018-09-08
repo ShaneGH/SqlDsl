@@ -22,7 +22,7 @@ namespace SqlDsl.Query
             var sql = ToSql(sqlBuilder);
             var selectColumns = sqlBuilder.SelectColumns.ToArray();
             
-            // remove no root object alias if necessary
+            // remove "no root" object alias if necessary
             primaryTableName = primaryTableName == SqlStatementConstants.RootObjectAlias ?
                 null :
                 primaryTableName;
@@ -30,16 +30,9 @@ namespace SqlDsl.Query
             // get index of the column for row id of the primary table
             var primaryRowIdName = primaryTableName == null ?
                 SqlStatementConstants.RowIdName :
-                 $"{primaryTableName}.{SqlStatementConstants.RowIdName}";
+                $"{primaryTableName}.{SqlStatementConstants.RowIdName}";
 
-            var primaryRowId = selectColumns.IndexOf(primaryRowIdName);
-            if (primaryRowId == -1)
-                throw new InvalidOperationException($"Could not find row id column for table {primaryTableName}");
-
-            // execute and get all rows
-            var reader = await executor.ExecuteDebugAsync(sql, parameters, selectColumns);
-            var results = await reader.GetRowsAsync();
-
+            // build row ID map
             var rowIdColumns = sqlBuilder.RowIdMap.ToList();
             var rowIdMap = selectColumns
                 .Select(c => 
@@ -51,15 +44,22 @@ namespace SqlDsl.Query
                         throw new InvalidOperationException($"Cannot find row id for column {c}");
 
                     var index = selectColumns.IndexOf(op);
-
                     if (index == -1) throw new InvalidOperationException($"Cannot find row id for column {c}");
 
-                    return index;
+                    return index
+                        .ToEnumerableStruct()
+                        .ToArray();
                 })
-                //TODO: this value should be a map down through the joins
-                .Select(IEnumerableUtils.ToEnumerableStruct)
-                .Select(Enumerable.ToArray)
                 .ToArray();
+
+            // get primary row Id
+            var primaryRowId = selectColumns.IndexOf(primaryRowIdName);
+            if (primaryRowId == -1)
+                throw new InvalidOperationException($"Could not find row id column for table {primaryTableName}");
+
+            // execute and get all rows
+            var reader = await executor.ExecuteDebugAsync(sql, parameters, selectColumns);
+            var results = await reader.GetRowsAsync();
 
             // TODO: compile and cache ObjectProperty graph, and use as first arg
             return results.Parse<TResult>(selectColumns, rowIdMap, primaryRowId);

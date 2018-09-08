@@ -22,10 +22,7 @@ namespace SqlDsl.SqlBuilders
         public IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> RowIdSelectColumns
              => GetRowIdSelectColumns();
 
-        IEnumerable<(string columnName, string rowIdColumnName)> ISqlStatement.RowIdMap
-            => InnerQuery != null ?
-                GetRowIdMapForInnerQuery() :
-                GetRowIdMapForNonInnerQuery();
+        IEnumerable<(string columnName, string rowIdColumnName)> ISqlStatement.RowIdMap => GetRowIdMap();
                 
         public string UniqueAlias { get; private set; } = BuildInnerQueryAlias();
         
@@ -282,6 +279,10 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         IEnumerable<(string columnName, string tableName, string alias)> GetAllSelectColumns() =>
             GetRowIdSelectColumns().Concat(Select);
+
+        IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMap() => InnerQuery != null ?
+            GetRowIdMapForInnerQuery() :
+            GetRowIdMapForNonInnerQuery();
 
         /// <summary>
         /// Get a map of all columns to their respective row id column, if InnerQuery == null
