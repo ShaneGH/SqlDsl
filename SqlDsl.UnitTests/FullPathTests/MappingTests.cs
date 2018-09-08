@@ -66,7 +66,6 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(p => new SimpleMapClass
                 { 
                     TheName = p.Person.Name,
-                    // TODO: new statement in select
                     TheClassIds = p.PersonClasses.Select(c => c.ClassId)
                 })
                 .ExecuteAsync(Executor);
@@ -218,7 +217,6 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(p => new JoinedMapClass
                 { 
                     TheName = p.Person.Name,
-                    // TODO: new statement in select
                     TheClassNames = p.Classes.Select(c => c.Name),
                     TheClassNamesList = p.Classes.Select(c => c.Name).ToList(),
                     TheClassNamesArray = p.Classes.Select(c => c.Name).ToArray(),
@@ -262,6 +260,230 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             AssertMapOnTableWith2JoinedTables(data);
+        }
+
+        static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
+        {
+            return Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.Person)
+                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                    .On((q, pc) => q.Person.Id == pc.PersonId)
+                .InnerJoin<Class>(q => q.Classes)
+                    .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
+                .InnerJoin<ClassTag>(q => q.ClassTags)
+                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
+                .InnerJoin<Tag>(q => q.Tags)
+                    .On((q, t) => q.ClassTags.One().TagId == t.Id);
+        }
+
+        class SmartJoinedClass3
+        {
+            public SmartJoinedClass4[] FavouriteClasses;
+        }
+
+        class SmartJoinedClass4
+        {
+            public int[] TagIds;
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task JoinInMap_WithSimpleJoin()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(query => new SmartJoinedClass3
+                { 
+                    FavouriteClasses = query.Classes
+                        .Select(c => new SmartJoinedClass4
+                        {
+                            TagIds = c
+                                // TODO: test with (Where tag.name == "Sport") and apply to a non enumerable property (TagName)
+                                .Joined(() => query.ClassTags)
+                                .Select(t => t.TagId)
+                                .ToArray()
+                        })
+                        .ToArray()
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            var john = data.ElementAt(0);
+            var mary = data.ElementAt(1);
+
+            // John
+            Assert.AreEqual(2, john.FavouriteClasses.Length);
+            
+            Assert.AreEqual(2, john.FavouriteClasses[0].TagIds.Length);
+            Assert.AreEqual(Data.Tags.Sport.Id, john.FavouriteClasses[0].TagIds[0]);
+            Assert.AreEqual(Data.Tags.BallSport.Id, john.FavouriteClasses[0].TagIds[1]);
+            
+            Assert.AreEqual(1, john.FavouriteClasses[1].TagIds.Length);
+            Assert.AreEqual(Data.Tags.Sport.Id, john.FavouriteClasses[1].TagIds[0]);
+            
+            // Mary
+            Assert.AreEqual(1, mary.FavouriteClasses.Length);
+            
+            Assert.AreEqual(2, mary.FavouriteClasses[0].TagIds.Length);
+            Assert.AreEqual(Data.Tags.Sport.Id, mary.FavouriteClasses[0].TagIds[0]);
+            Assert.AreEqual(Data.Tags.BallSport.Id, mary.FavouriteClasses[0].TagIds[1]);
+        }
+
+        class SmartJoinedClass1
+        {
+            public string PersonName;
+            public SmartJoinedClass2[] FavouriteClasses;
+        }
+
+        class SmartJoinedClass2
+        {
+            public string ClassName;
+            public string[] TagNames;
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public void JoinInMap_WithInvalidJoin_ThrowsException()
+        {
+            // arrange
+            // act
+            FullyJoinedQuery()
+                .Map(query => new SmartJoinedClass1
+                { 
+                    PersonName = query.Person.Name,
+                    FavouriteClasses = query.Classes
+                        .Select(c => new SmartJoinedClass2
+                        {
+                            ClassName = c.Name,
+                            TagNames = c
+                                .Joined(() => query.Tags)
+                                .Select(t => t.Name)
+                                .ToArray()
+                        })
+                        .ToArray()
+                })
+                .ExecuteAsync(Executor);
+                
+            Assert.Fail("This test should throw an exception");
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task JoinInMap_With2LevelJoin()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(query => new SmartJoinedClass1
+                { 
+                    PersonName = query.Person.Name,
+                    FavouriteClasses = query.Classes
+                        .Select(c => new SmartJoinedClass2
+                        {
+                            ClassName = c.Name,
+                            TagNames = c
+                                // TODO: test with (Where tag.name == "Sport") and apply to a non enumerable property (TagName)
+                                .Joined(() => query.ClassTags)
+                                .One()
+                                .Joined(() => query.Tags)
+                                .Select(t => t.Name)
+                                .ToArray()
+                        })
+                        .ToArray()
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            var john = data.ElementAt(0);
+            var mary = data.ElementAt(1);
+
+            // John
+            Assert.AreEqual(Data.People.John.Name, john.PersonName);
+            
+            Assert.AreEqual(2, john.FavouriteClasses.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, john.FavouriteClasses[0].ClassName);
+            Assert.AreEqual(Data.Classes.Archery.Name, john.FavouriteClasses[1].ClassName);
+            
+            Assert.AreEqual(2, john.FavouriteClasses[0].TagNames.Length);
+            Assert.AreEqual(Data.Tags.Sport, john.FavouriteClasses[0].TagNames[0]);
+            Assert.AreEqual(Data.Tags.BallSport, john.FavouriteClasses[0].TagNames[1]);
+            
+            Assert.AreEqual(1, john.FavouriteClasses[1].TagNames.Length);
+            Assert.AreEqual(Data.Tags.Sport, john.FavouriteClasses[1].TagNames[0]);
+            
+            // Mary
+            Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);
+            
+            Assert.AreEqual(1, mary.FavouriteClasses.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, mary.FavouriteClasses[0].ClassName);
+            
+            Assert.AreEqual(2, mary.FavouriteClasses[0].TagNames.Length);
+            Assert.AreEqual(Data.Tags.Sport, mary.FavouriteClasses[0].TagNames[0]);
+            Assert.AreEqual(Data.Tags.BallSport, mary.FavouriteClasses[0].TagNames[1]);
+        }
+
+        class SmartJoinedClass5
+        {
+            public string PersonName;
+            public SmartJoinedClass6[] FavouriteClasses;
+        }
+
+        class SmartJoinedClass6
+        {
+            public string ClassName;
+            public string TagName;
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task JoinInMap_With2LevelJoin_WithSingularProperty()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Where(q => q.Tags.One().Name == Data.Tags.Sport.Name)
+                .Map(query => new SmartJoinedClass5
+                { 
+                    PersonName = query.Person.Name,
+                    FavouriteClasses = query.Classes
+                        .Select(c => new SmartJoinedClass6
+                        {
+                            ClassName = c.Name,
+                            TagName = c
+                                // TODO: test with (Where tag.name == "Sport") and apply to a non enumerable property (TagName)
+                                .Joined(() => query.ClassTags)
+                                .One()
+                                .Joined(() => query.Tags)
+                                .One()
+                                .Name
+                        })
+                        .ToArray()
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            var john = data.ElementAt(0);
+            var mary = data.ElementAt(1);
+
+            // John
+            Assert.AreEqual(Data.People.John.Name, john.PersonName);
+            
+            Assert.AreEqual(2, john.FavouriteClasses.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, john.FavouriteClasses[0].ClassName);
+            Assert.AreEqual(Data.Tags.Sport, john.FavouriteClasses[0].TagName);
+            Assert.AreEqual(Data.Classes.Archery.Name, john.FavouriteClasses[1].ClassName);
+            Assert.AreEqual(Data.Tags.Sport, john.FavouriteClasses[1].TagName);
+            
+            // Mary
+            Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);
+            
+            Assert.AreEqual(1, mary.FavouriteClasses.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, mary.FavouriteClasses[0].ClassName);
+            Assert.AreEqual(Data.Tags.Sport, mary.FavouriteClasses[0].TagName);
         }
     }
 }
