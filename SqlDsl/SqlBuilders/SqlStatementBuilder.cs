@@ -117,7 +117,7 @@ namespace SqlDsl.SqlBuilders
                 join.sql, 
                 // combine all setup sql statements
                 new [] { condition.setupSql, join.setupSql }
-                    .RemoveNulls()
+                    .RemoveNullOrEmpty()
                     .JoinString(";\n"),
                 condition.queryObjectReferences));
         }
