@@ -57,6 +57,20 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public void With1Join_MissingConnectingJoin_ThrowsError()
+        {
+            // arrange
+            // act
+            // assert
+            Assert.ThrowsAsync(typeof(InvalidOperationException), () =>
+                Sql.Query.Sqlite<QueryClass>()
+                    .From<Person>(x => x.Person)
+                    .InnerJoin<ClassTag>(q => q.ClassTags)
+                        .On((q, ct) => q.PersonClasses.One().ClassId == ct.ClassId)
+                    .ExecuteAsync(Executor));
+        }
+
+        [Test]
         public async Task Select1SimpleLeftJoin()
         {
             // arrange

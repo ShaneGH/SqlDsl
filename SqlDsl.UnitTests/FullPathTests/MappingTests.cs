@@ -82,21 +82,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Exploritory()
-        {
-            // arrange
-            // act
-            await Sql.Query.Sqlite<JoinedQueryClass>()
-                .From<Person>(x => x.Person)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
-                .InnerJoin<ClassTag>(q => q.ClassTags)
-                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
-                .Where(q => q.Person.Id == 1)
-                .ExecuteAsync(Executor);
-        }
-
-        [Test]
         public async Task MapOnTableWith2JoinedTables()
         {
             // arrange

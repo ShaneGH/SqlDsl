@@ -365,7 +365,9 @@ namespace SqlDsl.SqlBuilders
                         return i + 1;
                 }
                 
-                throw new InvalidOperationException($"Cannot find row id index for table alias \"{tableName}\".");
+                throw new InvalidOperationException(
+                    $"Cannot find row id index for table alias \"{tableName}\". " + 
+                    $"Have you added a Join to the \"{tableName}\" property of the query object?");
             }
         }
     }
