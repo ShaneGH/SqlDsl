@@ -176,43 +176,45 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         static void AssertMapOnTableWith2JoinedTables(IEnumerable<JoinedMapClass> data)
         {
-            //Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(1, data.Count());
+            Assert.AreEqual(2, data.Count());
 
-            Assert.AreEqual(Data.People.John.Name, data.First().TheName);
+            var john = data.First();
+            var mary = data.ElementAt(1);
+
+            // John
+            Assert.AreEqual(Data.People.John.Name, john.TheName);
             
-            Assert.AreEqual(2, data.First().TheClassNames.Count());
-            Assert.AreEqual(Data.Classes.Tennis.Name, data.First().TheClassNames.ElementAt(0));
-            Assert.AreEqual(Data.Classes.Archery.Name, data.First().TheClassNames.ElementAt(1));
-            Assert.AreEqual(2, data.First().TheClassNamesList.Count());
-            Assert.AreEqual(Data.Classes.Tennis.Name, data.First().TheClassNamesList.ElementAt(0));
-            Assert.AreEqual(Data.Classes.Archery.Name, data.First().TheClassNamesList.ElementAt(1));
-            Assert.AreEqual(2, data.First().TheClassNamesArray.Count());
-            Assert.AreEqual(Data.Classes.Tennis.Name, data.First().TheClassNamesArray.ElementAt(0));
-            Assert.AreEqual(Data.Classes.Archery.Name, data.First().TheClassNamesArray.ElementAt(1));
+            Assert.AreEqual(2, john.TheClassNames.Count());
+            Assert.AreEqual(Data.Classes.Tennis.Name, john.TheClassNames.ElementAt(0));
+            Assert.AreEqual(Data.Classes.Archery.Name, john.TheClassNames.ElementAt(1));
+            Assert.AreEqual(2, john.TheClassNamesList.Count());
+            Assert.AreEqual(Data.Classes.Tennis.Name, john.TheClassNamesList.ElementAt(0));
+            Assert.AreEqual(Data.Classes.Archery.Name, john.TheClassNamesList.ElementAt(1));
+            Assert.AreEqual(2, john.TheClassNamesArray.Count());
+            Assert.AreEqual(Data.Classes.Tennis.Name, john.TheClassNamesArray.ElementAt(0));
+            Assert.AreEqual(Data.Classes.Archery.Name, john.TheClassNamesArray.ElementAt(1));
 
-            Assert.AreEqual(3, data.First().TheTagNames.Count(), data.First().TheTagNames.JoinString(","));
-            Assert.AreEqual(Data.Tags.Sport.Name, data.First().TheTagNames.ElementAt(0));
-            Assert.AreEqual(Data.Tags.Sport.Name, data.First().TheTagNames.ElementAt(1));
-            Assert.AreEqual(Data.Tags.BallSport.Name, data.First().TheTagNames.ElementAt(2));
-
-            Assert.Fail("Remember to uncomment ABOVE and below");
+            Assert.AreEqual(3, john.TheTagNames.Count(), john.TheTagNames.JoinString(","));
+            Assert.AreEqual(Data.Tags.Sport.Name, john.TheTagNames.ElementAt(0));
+            Assert.AreEqual(Data.Tags.BallSport.Name, john.TheTagNames.ElementAt(1));
+            Assert.AreEqual(Data.Tags.Sport.Name, john.TheTagNames.ElementAt(2));
             
-            // Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).TheName);
+            // Mary
+            Assert.AreEqual(Data.People.Mary.Name, mary.TheName);
 
-            // Assert.AreEqual(1, data.ElementAt(1).TheClassNames.Count());
-            // Assert.AreEqual(Data.Classes.Tennis.Name, data.ElementAt(1).TheClassNames.ElementAt(0));
-            // Assert.AreEqual(1, data.ElementAt(1).TheClassNamesList.Count());
-            // Assert.AreEqual(Data.Classes.Tennis.Name, data.ElementAt(1).TheClassNamesList.ElementAt(0));
-            // Assert.AreEqual(1, data.ElementAt(1).TheClassNamesArray.Count());
-            // Assert.AreEqual(Data.Classes.Tennis.Name, data.ElementAt(1).TheClassNamesArray.ElementAt(0));
+            Assert.AreEqual(1, mary.TheClassNames.Count());
+            Assert.AreEqual(Data.Classes.Tennis.Name, mary.TheClassNames.ElementAt(0));
+            Assert.AreEqual(1, mary.TheClassNamesList.Count());
+            Assert.AreEqual(Data.Classes.Tennis.Name, mary.TheClassNamesList.ElementAt(0));
+            Assert.AreEqual(1, mary.TheClassNamesArray.Count());
+            Assert.AreEqual(Data.Classes.Tennis.Name, mary.TheClassNamesArray.ElementAt(0));
 
-            // Assert.AreEqual(3, data.ElementAt(1).TheTagNames.Count());
-            // Assert.AreEqual(Data.Tags.Sport.Name, data.ElementAt(1).TheTagNames.ElementAt(0));
+            Assert.AreEqual(2, mary.TheTagNames.Count());
+            Assert.AreEqual(Data.Tags.Sport.Name, mary.TheTagNames.ElementAt(0));
+            Assert.AreEqual(Data.Tags.BallSport.Name, mary.TheTagNames.ElementAt(1));
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task MapOnTableWith2JoinedTables_2()
         {
             // arrange
@@ -229,7 +231,6 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, ct) => q.Classes.One().Id == ct.ClassId)
                 .InnerJoin<Tag>(q => q.Tags)
                     .On((q, t) => q.ClassTags.One().TagId == t.Id)
-                .Where(q => q.Person.Id == 1)
                 .Map(p => new JoinedMapClass
                 { 
                     TheName = p.Person.Name,
@@ -251,7 +252,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO: this case")]
         public async Task MapOnTableWith2JoinedTables_DataIsOnInnerProperty()
         {
             // arrange
