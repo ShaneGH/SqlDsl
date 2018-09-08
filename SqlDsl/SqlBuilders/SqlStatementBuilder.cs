@@ -254,18 +254,18 @@ namespace SqlDsl.SqlBuilders
             // if there is no inner query, columns will come from SELECT and JOIN parts
             if (InnerQuery == null)
             {
-                // Get row id from each join
-                foreach (var join in Joins)
-                {
-                    yield return (SqlStatementConstants.RowIdName, join.alias, $"{join.alias}.{SqlStatementConstants.RowIdName}");
-                }
-
                 // Get row id from the SELECT
                 var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? 
                     null : 
                     $"{PrimaryTableAlias}.{SqlStatementConstants.RowIdName}";
 
                 yield return (SqlStatementConstants.RowIdName, PrimaryTableAlias, ptAlias);
+
+                // Get row id from each join
+                foreach (var join in Joins)
+                {
+                    yield return (SqlStatementConstants.RowIdName, join.alias, $"{join.alias}.{SqlStatementConstants.RowIdName}");
+                }
             }
             else
             {
@@ -334,6 +334,39 @@ namespace SqlDsl.SqlBuilders
             // foreach row id, return a reference to itself
             foreach (var rid in innerMap.Select(x => x.rowIdColumnName).Distinct())
                 yield return (rid, rid);
+        }
+
+        static readonly IEnumerable<int> EmptyInts = Enumerable.Empty<int>();
+
+        /// <summary>
+        /// Given a row id column index, return all of the column indexes for the row ids of the tables it need to join on
+        /// </summary>
+        public IEnumerable<int> GetDependantRowIds(int rowIdColumnIndex)
+        {
+            if (InnerQuery != null)
+                return InnerQuery.GetDependantRowIds(rowIdColumnIndex);
+
+            // 0 rowid means the primary table
+            if (rowIdColumnIndex == 0) return EmptyInts;
+
+            // account for primary table being first in list
+            var join = Joins[rowIdColumnIndex - 1];
+            return join.queryObjectReferences
+                .Select(GetRowIdColumnIndex);
+
+            int GetRowIdColumnIndex(string tableName)
+            {
+                if (PrimaryTableAlias == tableName)
+                    return 0;
+
+                for (var i = 0; i < Joins.Count; i++)
+                {
+                    if (Joins[i].alias == tableName)
+                        return i + 1;
+                }
+                
+                throw new InvalidOperationException($"Cannot find row id index for table alias \"{tableName}\".");
+            }
         }
     }
 }

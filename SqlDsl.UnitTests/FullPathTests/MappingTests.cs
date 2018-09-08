@@ -82,7 +82,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO: look at this case and throw better exception")]
         public async Task Exploritory()
         {
             // arrange

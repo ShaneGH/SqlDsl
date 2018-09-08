@@ -34,5 +34,10 @@ namespace SqlDsl.SqlBuilders
         /// Generate sql. Setup sql will be executd before querySql, but in the same sql script
         /// </summary>
         (string querySetupSql, string querySql) ToSqlString();
+
+        /// <summary>
+        /// Given a row id column index, return all of the column indexes for the row ids of the tables it need to join on
+        /// </summary>
+        IEnumerable<int> GetDependantRowIds(int rowId);
     }
 }

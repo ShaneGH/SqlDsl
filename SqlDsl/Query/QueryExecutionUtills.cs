@@ -46,8 +46,9 @@ namespace SqlDsl.Query
                     var index = selectColumns.IndexOf(op);
                     if (index == -1) throw new InvalidOperationException($"Cannot find row id for column {c}");
 
-                    return index
-                        .ToEnumerableStruct()
+                    return sqlBuilder
+                        .GetDependantRowIds(index)
+                        .Append(index)
                         .ToArray();
                 })
                 .ToArray();
