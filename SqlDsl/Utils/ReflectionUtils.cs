@@ -82,7 +82,6 @@ namespace SqlDsl.Utils
             
         /// <summary>
         /// A set of generic methods that can be used to reference a single property from a list of items.
-        /// TODO: test
         /// </summary>
         static readonly HashSet<MethodInfo> _One = new HashSet<MethodInfo>
         {

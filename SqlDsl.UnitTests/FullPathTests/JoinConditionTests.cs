@@ -95,7 +95,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c) => q.Person.Id == c.PersonId)
                 .InnerJoin<ClassTag>(nameof(ClassTag), result => result.ClassTags)
-                    .On((q, c) => Sql.One(q.PersonClasses).ClassId == c.ClassId)
+                    .On((q, c) => q.PersonClasses.First().ClassId == c.ClassId)
                 .ExecuteAsync(Executor);
 
             // assert
@@ -119,7 +119,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await Sql.Query.Sqlite<QueryClass>()
                 .From(nameof(Person), result => result.Person)
                 .InnerJoin<ClassTag>(nameof(ClassTag), result => result.ClassTags)
-                    .On((q, c) => Sql.One(q.PersonClasses).ClassId == c.ClassId)
+                    .On((q, c) => q.PersonClasses.Single().ClassId == c.ClassId)
                 .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c) => q.Person.Id == c.PersonId)
                 .ExecuteAsync(Executor);

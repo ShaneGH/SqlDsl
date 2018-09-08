@@ -9,7 +9,6 @@ namespace SqlDsl.ObjectBuilders
     /// </summary>
     public class ObjectGraph
     {   
-        // TODO: do these nee to be enumerable?
         /// <summary>
         /// Simple properties such as int, string, List&lt;int>, List&lt;string> etc...
         /// </summary>
