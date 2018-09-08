@@ -88,7 +88,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join
         /// </summary>
-        readonly List<(string alias, string sql, string setupSql)> Joins = new List<(string, string, string)>();
+        readonly List<(string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences)> Joins = new List<(string, string, string, IEnumerable<string>)>();
         
         /// <summary>
         /// Add a JOIN to the query
@@ -118,7 +118,8 @@ namespace SqlDsl.SqlBuilders
                 // combine all setup sql statements
                 new [] { condition.setupSql, join.setupSql }
                     .RemoveNulls()
-                    .JoinString(";\n")));
+                    .JoinString(";\n"),
+                condition.queryObjectReferences));
         }
 
         /// <summary>
@@ -263,7 +264,7 @@ namespace SqlDsl.SqlBuilders
                 var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? 
                     null : 
                     $"{PrimaryTableAlias}.{SqlStatementConstants.RowIdName}";
-                    
+
                 yield return (SqlStatementConstants.RowIdName, PrimaryTableAlias, ptAlias);
             }
             else
