@@ -20,6 +20,29 @@ namespace SqlDsl.UnitTests.FullPathTests
     [TestFixture]
     public class MappingTests : FullPathTestBase
     {
+        class JoinedQueryClass
+        {
+            public Person Person { get; set; }
+            public List<PersonClass> PersonClasses { get; set; }
+            public List<Class> Classes { get; set; }
+            public List<ClassTag> ClassTags { get; set; }
+            public List<Tag> Tags { get; set; }
+        }
+
+        static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
+        {
+            return Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.Person)
+                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                    .On((q, pc) => q.Person.Id == pc.PersonId)
+                .InnerJoin<Class>(q => q.Classes)
+                    .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
+                .InnerJoin<ClassTag>(q => q.ClassTags)
+                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
+                .InnerJoin<Tag>(q => q.Tags)
+                    .On((q, t) => q.ClassTags.One().TagId == t.Id);
+        }
+
         class SimpleMapClass
         {
             public string TheName { get; set; }
@@ -51,6 +74,57 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.People.John.Name, data.First().Inner.TheName);
             Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).TheName);
             Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).Inner.TheName);
+        }
+
+        class MapComplexObjectType1
+        {
+            public Person Person;
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task MapComplexObject1()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<Person>()
+                .From()
+                .Map(p => new MapComplexObjectType1
+                { 
+                    Person = p
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John.Name, data.First().Person);
+            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).Person);
+        }
+
+        class MapComplexObjectType2
+        {
+            public string PersonName;
+            public Person Person;
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task MapComplexObject2()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(p => new MapComplexObjectType2
+                { 
+                    PersonName = p.Person.Name,
+                    Person = p.Person
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John.Name, data.First().Person);
+            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).Person);
         }
 
         [Test]
@@ -137,15 +211,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, data.First().TheClassIds.Count());
             Assert.Contains(Data.Classes.Tennis.Id, data.First().TheClassIds.ToList());
             Assert.Contains(Data.Classes.Archery.Id, data.First().TheClassIds.ToList());
-        }
-
-        class JoinedQueryClass
-        {
-            public Person Person { get; set; }
-            public List<PersonClass> PersonClasses { get; set; }
-            public List<Class> Classes { get; set; }
-            public List<ClassTag> ClassTags { get; set; }
-            public List<Tag> Tags { get; set; }
         }
 
         class JoinedMapClass
@@ -260,20 +325,6 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             AssertMapOnTableWith2JoinedTables(data);
-        }
-
-        static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
-        {
-            return Sql.Query.Sqlite<JoinedQueryClass>()
-                .From<Person>(x => x.Person)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.Classes)
-                    .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.ClassTags)
-                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.Tags)
-                    .On((q, t) => q.ClassTags.One().TagId == t.Id);
         }
 
         class SmartJoinedClass3
