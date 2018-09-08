@@ -14,12 +14,12 @@ namespace SqlDsl.Query
         where TSqlBuilder: ISqlFragmentBuilder, new()
     {
         readonly QueryBuilder<TSqlBuilder, TResult> Query;
-        readonly IEnumerable<(string from, string to)> Mapper;
+        readonly IEnumerable<(string from, string to)> MappedValues;
 
         public QueryMapper(QueryBuilder<TSqlBuilder, TResult> query, Expression<Func<TResult, TMapped>> mapper)
         {
             Query = query ?? throw new ArgumentNullException(nameof(query));
-            Mapper = BuildMap(
+            MappedValues = BuildMap(
                 mapper?.Body ?? throw new ArgumentNullException(nameof(mapper)),
                 mapper.Parameters[0]);
         }
@@ -33,11 +33,11 @@ namespace SqlDsl.Query
 
         (ISqlStatement builder, IEnumerable<object> paramaters) ToSqlBuilder()
         {
-            var wrappedSql = Query.ToSqlBuilder(Mapper.Select(m => m.from));
+            var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
             var builder = new SqlStatementBuilder<TSqlBuilder>();
             builder.SetPrimaryTable(wrappedSql.builder, wrappedSql.builder.UniqueAlias);
 
-            foreach (var col in Mapper)
+            foreach (var col in MappedValues)
                 builder.AddSelectColumn(col.from, tableName: wrappedSql.builder.UniqueAlias, alias: col.to);
             
             var sql = builder.ToSqlString();
@@ -89,9 +89,12 @@ namespace SqlDsl.Query
                     if (!callExpr.isSelect)
                         break;
 
-                    return BuildMap(callExpr.enumerable, rootParam, toPrefix)
-                        .SelectMany(r => BuildMap(callExpr.mapper.Body, callExpr.mapper.Parameters[0])
-                            .Select(m => (CombineStrings(r.from, m.from), r.to)));
+                    var rootMap = BuildMap(callExpr.enumerable, rootParam, toPrefix);
+                    var innerMap = BuildMap(callExpr.mapper.Body, callExpr.mapper.Parameters[0]);
+
+                    return rootMap
+                        .SelectMany(r => innerMap
+                            .Select(m => (CombineStrings(r.from, m.from), CombineStrings(r.to, m.to))));
             }
 
             string CombineStrings(string s1, string s2) =>
