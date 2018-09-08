@@ -162,7 +162,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The WHERE statement, if necessary
         /// </summary>
-        (string setupSql, string sql)? Where = null;
+        (string setupSql, string sql, IEnumerable<string> queryObjectReferences)? Where = null;
         
         /// <summary>
         /// The WHERE statement, if necessary
