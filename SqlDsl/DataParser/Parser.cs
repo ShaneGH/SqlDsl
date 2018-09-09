@@ -45,19 +45,6 @@ namespace SqlDsl.DataParser
                 foreach (var objValues in CreateObject(propertyGraph, rowNumberMap, row.ToEnumerable()))
                     yield return (TResult)Builders.Build(typeof(TResult), objValues);
         }
-        
-        /// <summary>
-        /// Get the id of the current column. The idPrefix will point to the primary (SELECT FROM) table
-        /// </summary>
-        static long ColumnId(this object[] row, string[] columnNames, string idPrefix = null)
-        {
-            var rowId = idPrefix == null ? SqlStatementConstants.RowIdName : $"{idPrefix}.{SqlStatementConstants.RowIdName}";
-            for (var i = 0; i < columnNames.Length; i++)
-                if (columnNames[i] == rowId)
-                    return Convert.ToInt64(row[i]);
-
-            throw new InvalidOperationException($"Cannot find row id for table {idPrefix}.");
-        }
 
         /// <summary>
         /// Map a group of rows to an object property graph to an object graph with properties
