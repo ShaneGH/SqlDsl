@@ -13,12 +13,12 @@ namespace SqlDsl.DataParser
         /// <summary>
         /// Properties of an object with simple values like strings, ints etc... The index is the index of the column in the sql query resuts table.
         /// </summary>
-        public readonly IEnumerable<(int index, string name, bool isEnumerable, IEnumerable<int> rowNumberColumnIds)> SimpleProps;
+        public readonly IEnumerable<(int index, string name, IEnumerable<int> rowNumberColumnIds)> SimpleProps;
         
         /// <summary>
         /// Properties of an object which have sub properies
         /// </summary>
-        public readonly IEnumerable<(string name, ObjectPropertyGraph value, bool isEnumerable)> ComplexProps;
+        public readonly IEnumerable<(string name, ObjectPropertyGraph value)> ComplexProps;
         
         /// <summary>
         /// A composite of the row numbers which point to this object
@@ -48,8 +48,8 @@ namespace SqlDsl.DataParser
         /// <param name="objectType">The type of the object which this graph represents</param>
         ObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<(int index, string[] name)> colNames, Type objectType)
         {
-            var simpleProps = new List<(int index, string propertyName, bool isEnumerable, IEnumerable<int> rowNumberColumnIds)>();
-            var complexProps = new List<(int index, string propertyName, IEnumerable<string> childProps, bool isEnumerable, Type propertyType)>();
+            var simpleProps = new List<((int index, string propertyName, IEnumerable<int> rowNumberColumnIds) data, bool isEnumerable)>();
+            var complexProps = new List<(int index, string propertyName, IEnumerable<string> childProps, Type propertyType)>();
 
             var typedColNames = objectType
                 .GetFields()
@@ -72,13 +72,13 @@ namespace SqlDsl.DataParser
                     continue;
 
                 var enumerableType = ReflectionUtils.GetIEnumerableType(colType);
-                var isEnumerable = enumerableType != null;
                         
                 // if there is only one name, the property belongs to this object
                 if (col.name.Length == 1)
                 {
                     // TODO: if a column has multiple row numbers (is a composite)?
-                    simpleProps.Add((col.index, col.name[0], isEnumerable, rowNumberMap[col.index]));
+                    var isEnumerable = enumerableType != null;
+                    simpleProps.Add(((col.index, col.name[0], rowNumberMap[col.index]), isEnumerable));
                 }
                 // if there are more than one, the property belongs to a child of this object
                 else if (col.name.Length > 1)
@@ -87,7 +87,7 @@ namespace SqlDsl.DataParser
 
                     // separate the property from this object (index == 0) from the properties of
                     // child objects
-                    complexProps.Add((col.index, col.name[0], col.name.Skip(1), isEnumerable, propertyType));
+                    complexProps.Add((col.index, col.name[0], col.name.Skip(1), propertyType));
                 }
             }
 
@@ -97,17 +97,18 @@ namespace SqlDsl.DataParser
                 // build child property graph
                 .Select(group => (
                     group.Key, 
-                    new ObjectPropertyGraph(rowNumberMap, group.Select(x => (x.index, x.childProps.ToArray())), group.First().propertyType),
-                    group.First().isEnumerable
+                    new ObjectPropertyGraph(rowNumberMap, group.Select(x => (x.index, x.childProps.ToArray())), group.First().propertyType)
                 ));
             
-            SimpleProps = simpleProps;
+            SimpleProps = simpleProps
+                .Select(p => p.data)
+                .Enumerate();
             ComplexProps = cProps.Enumerate();
             
             // TODO: does ordering matter in a composite key?
-            RowNumberColumnIds = SimpleProps
+            RowNumberColumnIds = simpleProps
                 .Where(sp => !sp.isEnumerable)
-                .SelectMany(sp => rowNumberMap[sp.index])
+                .SelectMany(sp => rowNumberMap[sp.data.index])
                 .Distinct()
                 .OrderBy(x => x)
                 .Enumerate();
@@ -133,7 +134,7 @@ namespace SqlDsl.DataParser
 
         public override string ToString() =>
             SimpleProps
-                .Select(p => $"{p.name}: {{ index: {p.index}, enumerable: {p.isEnumerable} }}")
+                .Select(p => $"{p.name}: {{ index: {p.index} }}")
                 .Concat(ComplexProps.Select(p => $"{p.name}:\n  {p.value.ToString().Replace("\n", "\n  ")}"))
                 .JoinString("\n");
     }

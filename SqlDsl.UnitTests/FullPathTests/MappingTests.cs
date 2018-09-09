@@ -338,7 +338,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task JoinInMap_WithSimpleJoin()
         {
             // arrange

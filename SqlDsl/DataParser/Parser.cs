@@ -95,7 +95,7 @@ namespace SqlDsl.DataParser
                         .Enumerate()
                 };
 
-                (string name, IEnumerable<object> value) GetSimpleProp((int index, string name, bool isEnumerable, IEnumerable<int> rowNumberColumnIds) p)
+                (string name, IEnumerable<object> value) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds) p)
                 {
                     return (p.name, objectData
                         // run a "Distinct" on the rowNumbers
