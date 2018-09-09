@@ -133,6 +133,7 @@ namespace SqlDsl.DataParser
         }
 
         public override string ToString() =>
+            $"RowNumberColumnIds: [{RowNumberColumnIds.JoinString(",")}]\n" +
             SimpleProps
                 .Select(p => $"{p.name}: {{ index: {p.index} }}")
                 .Concat(ComplexProps.Select(p => $"{p.name}:\n  {p.value.ToString().Replace("\n", "\n  ")}"))

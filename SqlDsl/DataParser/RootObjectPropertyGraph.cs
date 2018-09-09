@@ -27,6 +27,11 @@ namespace SqlDsl.DataParser
             : base(rowNumberMap, colNames, objectType)
         {
             ColumnNames = colNames.ToArray();
+            Console.WriteLine(this);
         }
+
+        public override string ToString() =>
+            $"ColumnNames: [{ColumnNames.Select((c, i) => $"{i}-{c}").JoinString(", ")}]\n" +
+            base.ToString();
     }
 }
