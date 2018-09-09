@@ -22,7 +22,7 @@ namespace SqlDsl.UnitTests.FullPathTests
     {
         class JoinedQueryClass
         {
-            public Person Person { get; set; }
+            public Person ThePerson { get; set; }
             public List<PersonClass> PersonClasses { get; set; }
             public List<Class> Classes { get; set; }
             public List<ClassTag> ClassTags { get; set; }
@@ -32,9 +32,9 @@ namespace SqlDsl.UnitTests.FullPathTests
         static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
         {
             return Sql.Query.Sqlite<JoinedQueryClass>()
-                .From<Person>(x => x.Person)
+                .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.PersonClasses)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .InnerJoin<Class>(q => q.Classes)
                     .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
                 .InnerJoin<ClassTag>(q => q.ClassTags)
@@ -116,8 +116,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await FullyJoinedQuery()
                 .Map(p => new MapComplexObjectType2
                 { 
-                    PersonName = p.Person.Name,
-                    Person = p.Person
+                    PersonName = p.ThePerson.Name,
+                    Person = p.ThePerson
                 })
                 .ExecuteAsync(Executor);
 
@@ -133,13 +133,13 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<JoinedQueryClass>()
-                .From<Person>(x => x.Person)
+                .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.PersonClasses)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
-                .Where(q => q.Person.Id == 1)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                .Where(q => q.ThePerson.Id == 1)
                 .Map(p => new SimpleMapClass
                 { 
-                    TheName = p.Person.Name,
+                    TheName = p.ThePerson.Name,
                     TheClassIds = p.PersonClasses.Select(c => c.ClassId)
                 })
                 .ExecuteAsync(Executor);
@@ -160,15 +160,15 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<JoinedQueryClass>()
-                .From<Person>(x => x.Person)
+                .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.PersonClasses)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .InnerJoin<ClassTag>(q => q.ClassTags)
                     .On((q, ct) => q.PersonClasses.One().ClassId == ct.ClassId)
-                .Where(q => q.Person.Id == 1)
+                .Where(q => q.ThePerson.Id == 1)
                 .Map(p => new SimpleMapClass
                 { 
-                    TheName = p.Person.Name,
+                    TheName = p.ThePerson.Name,
                     TheClassIds = p.PersonClasses.Select(c => c.ClassId),
                     TheClassTagIds = p.ClassTags.Select(c => c.TagId)
                 })
@@ -195,10 +195,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<JoinedQueryClass>()
-                .From<Person>(x => x.Person)
+                .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.PersonClasses)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
-                .Where(q => q.Person.Id == 1)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                .Where(q => q.ThePerson.Id == 1)
                 .Map(p => new SimpleMapClass
                 { 
                     TheClassIds = p.PersonClasses.Select(c => c.ClassId)
@@ -270,9 +270,9 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             var data = await Sql.Query.Sqlite<JoinedQueryClass>()
-                .From<Person>(x => x.Person)
+                .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.PersonClasses)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .InnerJoin<Class>(q => q.Classes)
                     .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
                 .InnerJoin<ClassTag>(q => q.ClassTags)
@@ -281,7 +281,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, t) => q.ClassTags.One().TagId == t.Id)
                 .Map(p => new JoinedMapClass
                 { 
-                    TheName = p.Person.Name,
+                    TheName = p.ThePerson.Name,
                     TheClassNames = p.Classes.Select(c => c.Name),
                     TheClassNamesList = p.Classes.Select(c => c.Name).ToList(),
                     TheClassNamesArray = p.Classes.Select(c => c.Name).ToArray(),
@@ -304,9 +304,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<JoinedQueryClass2>()
-                .From<Person>(x => x.Query.Person)
+                .From<Person>(x => x.Query.ThePerson)
                 .InnerJoin<PersonClass>(q => q.Query.PersonClasses)
-                    .On((q, pc) => q.Query.Person.Id == pc.PersonId)
+                    .On((q, pc) => q.Query.ThePerson.Id == pc.PersonId)
                 .InnerJoin<Class>(q => q.Query.Classes)
                     .On((q, c) => q.Query.PersonClasses.One().ClassId == c.Id)
                 .InnerJoin<ClassTag>(q => q.Query.ClassTags)
@@ -315,7 +315,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, t) => q.Query.ClassTags.One().TagId == t.Id)
                 .Map(p => new JoinedMapClass
                 { 
-                    TheName = p.Query.Person.Name,
+                    TheName = p.Query.ThePerson.Name,
                     TheClassNames = p.Query.Classes.Select(c => c.Name),
                     TheClassNamesList = p.Query.Classes.Select(c => c.Name).ToList(),
                     TheClassNamesArray = p.Query.Classes.Select(c => c.Name).ToArray(),
@@ -349,7 +349,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         .Select(c => new SmartJoinedClass4
                         {
                             TagIds = c
-                                .Joined(() => query.ClassTags)
+                                .Joined(query.ClassTags)
                                 .Select(t => t.TagId)
                                 .ToArray()
                         })
@@ -401,13 +401,13 @@ namespace SqlDsl.UnitTests.FullPathTests
             FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass1
                 { 
-                    PersonName = query.Person.Name,
+                    PersonName = query.ThePerson.Name,
                     FavouriteClasses = query.Classes
                         .Select(c => new SmartJoinedClass2
                         {
                             ClassName = c.Name,
                             TagNames = c
-                                .Joined(() => query.Tags)
+                                .Joined(query.Tags)
                                 .Select(t => t.Name)
                                 .ToArray()
                         })
@@ -427,15 +427,15 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass1
                 { 
-                    PersonName = query.Person.Name,
+                    PersonName = query.ThePerson.Name,
                     FavouriteClasses = query.Classes
                         .Select(c => new SmartJoinedClass2
                         {
                             ClassName = c.Name,
                             TagNames = c
-                                .Joined(() => query.ClassTags)
+                                .Joined(query.ClassTags)
                                 .One()
-                                .Joined(() => query.Tags)
+                                .Joined(query.Tags)
                                 .Select(t => t.Name)
                                 .ToArray()
                         })
@@ -495,15 +495,15 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(q => q.Tags.One().Name == Data.Tags.Sport.Name)
                 .Map(query => new SmartJoinedClass5
                 { 
-                    PersonName = query.Person.Name,
+                    PersonName = query.ThePerson.Name,
                     FavouriteClasses = query.Classes
                         .Select(c => new SmartJoinedClass6
                         {
                             ClassName = c.Name,
                             TagName = c
-                                .Joined(() => query.ClassTags)
+                                .Joined(query.ClassTags)
                                 .One()
-                                .Joined(() => query.Tags)
+                                .Joined(query.Tags)
                                 .One()
                                 .Name
                         })

@@ -139,6 +139,23 @@ namespace SqlDsl.Utils
             return (true, e.Arguments[0], mapper);
         }
 
+        static readonly MethodInfo _Joined = GetMethod(() => new object[0].Joined(1)).GetGenericMethodDefinition();
+
+        /// <summary>
+        /// Determine whether an expression is a Joined(...).
+        /// </summary>
+        /// <returns>isJoined: success or failure,
+        /// joinedFrom: the joined from table
+        /// joinedTo: the table joined to
+        /// </returns>
+        public static (bool isJoined, Expression joinedFrom, Expression joinedTo) IsJoined(MethodCallExpression e)
+        {
+            if (!e.Method.IsGenericMethod || e.Method.GetGenericMethodDefinition() != _Joined)
+                return (false, null, null);
+
+            return (true, e.Arguments[0], e.Arguments[1]);
+        }
+
         static readonly MethodInfo _ToArray = GetMethod(() => new object[0].ToArray()).GetGenericMethodDefinition();
 
         /// <summary>
