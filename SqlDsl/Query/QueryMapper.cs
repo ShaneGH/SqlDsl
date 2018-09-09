@@ -86,26 +86,31 @@ namespace SqlDsl.Query
                         return BuildMap(toArray.enumerable, rootParam, toPrefix);
 
                     var callExpr = ReflectionUtils.IsSelectWithLambdaExpression(expr as MethodCallExpression);
-                    if (!callExpr.isSelect)
-                        break;
+                    if (callExpr.isSelect)
+                        return BuildMapForSelect(callExpr.enumerable, callExpr.mapper, rootParam, toPrefix);
 
-                    var rootMap = BuildMap(callExpr.enumerable, rootParam, toPrefix);
-                    var innerMap = BuildMap(callExpr.mapper.Body, callExpr.mapper.Parameters[0]);
-
-                    return rootMap
-                        .SelectMany(r => innerMap
-                            .Select(m => (CombineStrings(r.from, m.from), CombineStrings(r.to, m.to))));
+                    break;
             }
-
-            string CombineStrings(string s1, string s2) =>
-                s1 == null && s2 == null ?
-                    null :
-                    s1 != null && s2 != null ? 
-                        $"{s1}.{s2}" :
-                        $"{s1}{s2}";
 
             throw new InvalidOperationException($"Unsupported mapping expression \"{expr}\".");
         }
+
+        IEnumerable<(string from, string to)> BuildMapForSelect(Expression enumerable, LambdaExpression mapper, ParameterExpression rootParam, string toPrefix)
+        {
+            var rootMap = BuildMap(enumerable, rootParam, toPrefix);
+            var innerMap = BuildMap(mapper.Body, mapper.Parameters[0]);
+
+            return rootMap
+                .SelectMany(r => innerMap
+                    .Select(m => (CombineStrings(r.from, m.from), CombineStrings(r.to, m.to))));
+        }
+
+        static string CombineStrings(string s1, string s2) =>
+            s1 == null && s2 == null ?
+                null :
+                s1 != null && s2 != null ? 
+                    $"{s1}.{s2}" :
+                    $"{s1}{s2}";
 
         // object BuildCallMap()
         // {
