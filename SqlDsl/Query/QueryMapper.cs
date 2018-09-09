@@ -52,7 +52,7 @@ namespace SqlDsl.Query
                 builder.AddSelectColumn(col.from, tableName: wrappedSql.builder.UniqueAlias, alias: col.to);
 
             foreach (var col in RowIdPropertyMap)
-                builder.RowIdPropertyMap.Add((col.rowIdColumnName, col.resultClassProperty));
+                builder.RowIdsForMappedProperties.Add((col.rowIdColumnName, col.resultClassProperty));
             
             var sql = builder.ToSqlString();
 

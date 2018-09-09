@@ -571,6 +571,33 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.Tags.BallSport.Name, mary.FavouriteClasses[0].TagNames[1]);
         }
 
+        [Test]
+        [Ignore("TODO")]
+        public void JoinInMap_With2LevelJoin_JoinIsNotComplete_ThrowsException()
+        {
+            // arrange
+            // act
+            // assert
+            var tt = FullyJoinedQuery()
+                .Map(query => new SmartJoinedClass1
+                { 
+                    FavouriteClasses = query.Classes
+                        .Select(c => new SmartJoinedClass2
+                        {
+                            TagNames = c
+                                .Joined(query.Tags)
+                                .Select(t => t.Name)
+                                .ToArray()
+                        })
+                        .ToArray()
+                })
+                .ToSql();
+
+            Console.WriteLine(tt.sql);
+
+            Assert.Fail("Sould throw");
+        }
+
         class SmartJoinedClass5
         {
             public string PersonName;

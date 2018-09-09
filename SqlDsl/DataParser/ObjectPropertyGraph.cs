@@ -35,6 +35,7 @@ namespace SqlDsl.DataParser
         /// </param>
         /// <param name="rowNumberMap">A map from each column to the indexes of it's row number columns</param>
         /// <param name="objectType">The type of the object which this graph represents</param>
+        /// <param name="propertyRowNumberColMap">A list of properties along with the row number cols that define their uniqueness</param>
         public ObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<string> colNames, Type objectType, IEnumerable<(string name, IEnumerable<int> rowNumberCols)> propertyRowNumberColMap)
             : this(
                 rowNumberMap, 
@@ -53,6 +54,7 @@ namespace SqlDsl.DataParser
         /// </param>
         /// <param name="rowNumberMap">A map from each column to the indexes of it's row number columns</param>
         /// <param name="objectType">The type of the object which this graph represents</param>
+        /// <param name="propertyRowNumberColMap">A list of properties along with the row number cols that define their uniqueness</param>
         ObjectPropertyGraph(
             int[][] rowNumberMap, 
             IEnumerable<(int index, string[] name)> colNames, 
@@ -136,6 +138,7 @@ namespace SqlDsl.DataParser
             SimpleProps = simpleProps
                 .Select(p => p.data)
                 .Enumerate();
+                
             ComplexProps = cProps.Enumerate();
             
             // TODO: does ordering matter in a composite key?

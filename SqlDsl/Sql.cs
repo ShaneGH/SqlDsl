@@ -22,7 +22,7 @@ namespace SqlDsl
             throw new InvalidOperationException("This method is not meant to be called. It should be used in expressions only");
         }
 
-        // TODO: is this needed in conjunction with .Joined()
+        // TODO: is this may be needed in conjunction with .Joined()
         // /// <summary>
         // /// When used in a query expression, allows an object to be converted into an enumerable
         // /// </summary>

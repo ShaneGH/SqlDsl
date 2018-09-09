@@ -58,7 +58,8 @@ namespace SqlDsl.Query
             if (primaryRowId == -1)
                 throw new InvalidOperationException($"Could not find row id column for table {primaryTableName}");
 
-            var map = sqlBuilder.RowIdPropertyMap
+            // convert from mapped properties to property -> rowId pointer
+            var map = sqlBuilder.RowIdsForMappedProperties
                 .Select(ridm => (
                     prop: ridm.resultClassProperty, 
                     selectColumns
@@ -67,6 +68,7 @@ namespace SqlDsl.Query
                 )
                 .Enumerate();
 
+            // test previous step for errors
             foreach (var mapped in map)
                 if (mapped.Item2.First() == -1)
                     throw new InvalidOperationException("Could not find row id column for " + mapped.prop);
@@ -75,7 +77,7 @@ namespace SqlDsl.Query
             var reader = await executor.ExecuteDebugAsync(sql, parameters, selectColumns);
             var results = await reader.GetRowsAsync();
 
-            // TODO: compile and cache ObjectProperty graph, and use as first arg
+            // TODO: cache RootObjectPropertyGraph graph for reuse
             var propertyGraph = new RootObjectPropertyGraph(rowIdMap, selectColumns, typeof(TResult), map);
             return results.Parse<TResult>(propertyGraph, rowIdMap, primaryRowId);
         }
