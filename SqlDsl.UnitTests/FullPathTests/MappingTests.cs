@@ -334,7 +334,6 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class SmartJoinedClass4
         {
-            public string Name;
             public int[] TagIds;
         }
 
