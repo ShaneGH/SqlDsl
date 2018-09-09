@@ -349,7 +349,6 @@ namespace SqlDsl.UnitTests.FullPathTests
                         .Select(c => new SmartJoinedClass4
                         {
                             TagIds = c
-                                // TODO: test with (Where tag.name == "Sport") and apply to a non enumerable property (TagName)
                                 .Joined(() => query.ClassTags)
                                 .Select(t => t.TagId)
                                 .ToArray()
