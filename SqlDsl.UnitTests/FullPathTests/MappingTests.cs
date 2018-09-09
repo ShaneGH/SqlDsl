@@ -435,7 +435,6 @@ namespace SqlDsl.UnitTests.FullPathTests
                         {
                             ClassName = c.Name,
                             TagNames = c
-                                // TODO: test with (Where tag.name == "Sport") and apply to a non enumerable property (TagName)
                                 .Joined(() => query.ClassTags)
                                 .One()
                                 .Joined(() => query.Tags)
@@ -504,7 +503,6 @@ namespace SqlDsl.UnitTests.FullPathTests
                         {
                             ClassName = c.Name,
                             TagName = c
-                                // TODO: test with (Where tag.name == "Sport") and apply to a non enumerable property (TagName)
                                 .Joined(() => query.ClassTags)
                                 .One()
                                 .Joined(() => query.Tags)
