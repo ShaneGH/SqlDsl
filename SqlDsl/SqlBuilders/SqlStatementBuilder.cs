@@ -25,7 +25,9 @@ namespace SqlDsl.SqlBuilders
         IEnumerable<(string columnName, string rowIdColumnName)> ISqlStatement.RowIdMap => GetRowIdMap();
                 
         public string UniqueAlias { get; private set; } = BuildInnerQueryAlias();
-        
+
+        IEnumerable<(string rowIdColumnName, string resultClassProperty)> ISqlStatement.RowIdPropertyMap => RowIdPropertyMap.Skip(0);
+
         #endregion
 
         ISqlFragmentBuilder SqlBuilder;
@@ -84,6 +86,11 @@ namespace SqlDsl.SqlBuilders
                 return $"iq{++_InnerQueryAlias}";
             }
         }
+
+        /// <summary>
+        /// A map from a row id column to a location in a property graph
+        /// </summary>
+        public readonly List<(string rowIdColumnName, string resultClassProperty)> RowIdPropertyMap = new List<(string, string)>();
 
         /// <summary>
         /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join

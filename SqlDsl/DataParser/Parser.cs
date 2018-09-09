@@ -11,17 +11,7 @@ namespace SqlDsl.DataParser
     /// Utils to parse query results
     /// </summary>
     public static class Parser
-    {
-        /// <summary>
-        /// Parse the results of a sql query
-        /// </summary>
-        /// <param name="rows">The query results</param>
-        /// <param name="columnNames">The query columns</param>
-        /// <param name="rowNumberMap">A map from each column to the indexes of it's row number columns</param>
-        /// <param name="primaryRowIdColumnNumber">The index of the column which contains the primary (non duplicatable) row number.</param>
-        public static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, IEnumerable<string> columnNames, int[][] rowNumberMap, int primaryRowIdColumnNumber) =>
-            Parse<TResult>(rows, new RootObjectPropertyGraph(rowNumberMap, columnNames, typeof(TResult)), rowNumberMap, primaryRowIdColumnNumber);
-            
+    {            
         /// <summary>
         /// Parse the results of a sql query
         /// </summary>

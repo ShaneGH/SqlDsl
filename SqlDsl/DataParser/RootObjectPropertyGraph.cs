@@ -23,8 +23,8 @@ namespace SqlDsl.DataParser
         /// </param>
         /// <param name="rowNumberMap">A map from each column to the indexes of it's row number columns</param>
         /// <param name="objectType">The type of the object which this graph represents</param>
-        public RootObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<string> colNames, Type objectType)
-            : base(rowNumberMap, colNames, objectType)
+        public RootObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<string> colNames, Type objectType, IEnumerable<(string name, IEnumerable<int> rowNumberCols)> propertyRowNumberColMap)
+            : base(rowNumberMap, colNames, objectType, propertyRowNumberColMap)
         {
             ColumnNames = colNames.ToArray();
             Console.WriteLine(this);

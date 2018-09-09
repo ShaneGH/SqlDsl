@@ -49,6 +49,23 @@ namespace SqlDsl.Utils
         /// </summary>
         public static IEnumerable<T> ToEnumerableStruct<T>(this T x)
             where T: struct => new [] { x };
+
+        /// <summary>
+        /// Convert from IEnumerable<(IEnumerable&lt;T>, IEnumerable&lt;U>)> to (IEnumerable&lt;T>, IEnumerable&lt;U>)
+        /// </summary>
+        public static (IEnumerable<T>, IEnumerable<U>) AggregateTuple2<T, U>(this IEnumerable<(IEnumerable<T>, IEnumerable<U>)> xs)
+        {
+            var ys = new List<T>();
+            var zs = new List<U>();
+
+            foreach (var x in xs)
+            {
+                ys.AddRange(x.Item1);
+                zs.AddRange(x.Item2);
+            }
+
+            return (ys.Skip(0), zs.Skip(0));
+        }
         
         /// <summary>
         /// Return the index of an item, or -1

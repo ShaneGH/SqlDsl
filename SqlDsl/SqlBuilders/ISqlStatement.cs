@@ -21,6 +21,11 @@ namespace SqlDsl.SqlBuilders
         IEnumerable<(string columnName, string rowIdColumnName)> RowIdMap { get; }
 
         /// <summary>
+        /// A map from a row id column to a location in a property graph
+        /// </summary>
+        IEnumerable<(string rowIdColumnName, string resultClassProperty)> RowIdPropertyMap { get; }
+
+        /// <summary>
         /// A list of row id colums, the alias of the table they are identifying, and the alias for the row id column (if any)
         /// </summary>
         IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> RowIdSelectColumns { get; }

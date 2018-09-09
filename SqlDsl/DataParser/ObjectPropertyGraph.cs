@@ -5,6 +5,8 @@ using System.Linq;
 
 namespace SqlDsl.DataParser
 {
+    //TODO: this class needs a cleanup
+
     /// <summary>
     /// Represents an object with it's property names
     /// </summary>
@@ -33,8 +35,13 @@ namespace SqlDsl.DataParser
         /// </param>
         /// <param name="rowNumberMap">A map from each column to the indexes of it's row number columns</param>
         /// <param name="objectType">The type of the object which this graph represents</param>
-        public ObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<string> colNames, Type objectType)
-            : this(rowNumberMap, colNames.Select((n, i) => (i, n.Split('.').ToArray())), objectType)
+        public ObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<string> colNames, Type objectType, IEnumerable<(string name, IEnumerable<int> rowNumberCols)> propertyRowNumberColMap)
+            : this(
+                rowNumberMap, 
+                colNames.Select((n, i) => (i, n.Split('.').ToArray())), 
+                objectType, 
+                Enumerable.Empty<int>(),
+                propertyRowNumberColMap.Select(x => (x.name.Split('.').ToArray(), x.rowNumberCols)))
         {
         }
 
@@ -46,7 +53,12 @@ namespace SqlDsl.DataParser
         /// </param>
         /// <param name="rowNumberMap">A map from each column to the indexes of it's row number columns</param>
         /// <param name="objectType">The type of the object which this graph represents</param>
-        ObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<(int index, string[] name)> colNames, Type objectType)
+        ObjectPropertyGraph(
+            int[][] rowNumberMap, 
+            IEnumerable<(int index, string[] name)> colNames, 
+            Type objectType, 
+            IEnumerable<int> propertyRowNumberCols, 
+            IEnumerable<(string[] name, IEnumerable<int> rowNumberCols)> propertyRowNumberColMap)
         {
             var simpleProps = new List<((int index, string propertyName, IEnumerable<int> rowNumberColumnIds) data, bool isEnumerable)>();
             var complexProps = new List<(int index, string propertyName, IEnumerable<string> childProps, Type propertyType)>();
@@ -95,10 +107,31 @@ namespace SqlDsl.DataParser
                 // group properties by child property name
                 .GroupBy(x => x.propertyName)
                 // build child property graph
-                .Select(group => (
-                    group.Key, 
-                    new ObjectPropertyGraph(rowNumberMap, group.Select(x => (x.index, x.childProps.ToArray())), group.First().propertyType)
-                ));
+                .Select(group => 
+                {
+                    var gp = group.Enumerate();
+                    var rowNumberCols = propertyRowNumberColMap
+                        .Where(r => r.name.Length > 0 && r.name[0] == group.Key)
+                        .Enumerate();
+
+                    var forThisObj = rowNumberCols
+                        .Where(c => c.name.Length == 1)
+                        .SelectMany(c => c.rowNumberCols);
+
+                    var forChildren = rowNumberCols
+                        .Where(c => c.name.Length > 1)
+                        .Select(c => (c.name.Skip(1).ToArray(), c.rowNumberCols));
+
+                    return (
+                        group.Key, 
+                        new ObjectPropertyGraph(
+                            rowNumberMap, 
+                            gp.Select(x => (x.index, x.childProps.ToArray())), 
+                            gp.First().propertyType,
+                            forThisObj,
+                            forChildren)
+                    );
+                });
             
             SimpleProps = simpleProps
                 .Select(p => p.data)
@@ -109,6 +142,7 @@ namespace SqlDsl.DataParser
             RowNumberColumnIds = simpleProps
                 .Where(sp => !sp.isEnumerable)
                 .SelectMany(sp => rowNumberMap[sp.data.index])
+                .Concat(propertyRowNumberCols)
                 .Distinct()
                 .OrderBy(x => x)
                 .Enumerate();
