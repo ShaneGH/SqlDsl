@@ -76,7 +76,7 @@ namespace SqlDsl.DataParser
                     SimpleProps = propertyGraph.SimpleProps
                         .Select(GetSimpleProp)
                         .Enumerate(),
-                    // complex prop values are build recursively
+                    // complex prop values are built recursively
                     ComplexProps = propertyGraph.ComplexProps
                         .Select(p => (p.name, CreateObject(p.value, rowNumberMap, objectData).Enumerate()))
                         .Enumerate()
