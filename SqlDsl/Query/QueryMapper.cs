@@ -198,53 +198,6 @@ namespace SqlDsl.Query
                 $"{CompileMemberName(next)}.{expr.Member.Name}" :
                 expr.Member.Name;
         }
-
-        // static bool IsSelect(MethodCallExpression e) =>
-        //     e.Method.IsStatic && e.Method.Name == "Select" && e.Method.DeclaringType == typeof(Enumerable);
-
-        // (ParameterExpression, List<MemberInfo>) BuildExpression(Expression e)
-        // {
-        //     var props = new List<MemberInfo>();
-        //     while (!(e is ParameterExpression))
-        //     {
-        //         switch (e.NodeType)
-        //         {
-        //             case ExpressionType.Convert:
-        //                 e = (e as UnaryExpression).Operand;
-        //                 continue;
-        //             case ExpressionType.MemberAccess:
-        //                 var m = e as MemberExpression;
-        //                 props.Insert(0, m.Member);
-        //                 e = m.Expression;
-        //                 continue;
-        //             case ExpressionType.Call:
-        //                 var c = e as MethodCallExpression;
-        //                 if (!IsSelect(c))
-        //                     return (null, null);
-
-        //                 // TODO: dynamic is slow
-        //                 Expression body = ((dynamic)c.Arguments[1]).Body;
-        //                 if (body == null)
-        //                     return (null, null);
-                        
-        //                 if (body.NodeType == ExpressionType.Convert)
-        //                     body = (body as UnaryExpression).Operand;
-
-        //                 if (body.NodeType != ExpressionType.MemberAccess)
-        //                     return (null, null);
-
-        //                 props.Insert(0, (body as MemberExpression).Member);
-                            
-        //                 // .Select(...) is an extension method
-        //                 e = c.Arguments[0];
-        //                 continue;
-        //             default:
-        //                 return (null, null);
-        //         }
-        //     }
-
-        //     return (e as ParameterExpression, props);
-        // }
     }
 
     class Mapped
