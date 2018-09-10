@@ -266,7 +266,7 @@ namespace SqlDsl.SqlBuilders
                 .Select(op => op.alias)
                 .FirstOrDefault();
 
-            string referencedTable = null;
+            string referencedTableAlias = null;
             if (paramAlias != null)
             {
                 memberName.Insert(0, paramAlias);
@@ -275,7 +275,7 @@ namespace SqlDsl.SqlBuilders
             {
                 // param alias is null, the Expression
                 // references the query object
-                referencedTable = memberName.Count > 1 ? 
+                referencedTableAlias = memberName.Count > 1 ? 
                     memberName
                         .Take(memberName.Count - 1)
                         .JoinString("."):
@@ -293,7 +293,7 @@ namespace SqlDsl.SqlBuilders
             return (
                 null, 
                 $"{prefix}{sqlBuilder.WrapColumn(memberName.Last())}", 
-                referencedTable.ToEnumerable()
+                referencedTableAlias.ToEnumerable()
             );
         }
 

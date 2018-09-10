@@ -71,7 +71,6 @@ namespace SqlDsl.Query
         class BuildMapState
         {
             public readonly ParameterExpression QueryObject;
-            public readonly List<(ParameterExpression param, string queryName)> ParameterMap = new List<(ParameterExpression, string)>();
 
             public BuildMapState(ParameterExpression queryObject)
             {
@@ -134,31 +133,19 @@ namespace SqlDsl.Query
 
         (IEnumerable<Mapped> properties, IEnumerable<Mapped> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, LambdaExpression mapper, ParameterExpression rootParam, string toPrefix)
         {
+            var outerMap = BuildMap(state, enumerable, rootParam, toPrefix);
             var innerMap = BuildMap(state, mapper.Body, mapper.Parameters[0]);
-            var rootMap = BuildMap(state, enumerable, rootParam, toPrefix);
-            
-            // TODO: rootMap.properties enumerated many times
-
-            // add a map from this mapper.Parameters[0] to it's query alias
-            int tmp;
-            if ((tmp = rootMap.properties.Count()) > 1) 
-            {
-                throw new InvalidOperationException("Expecting zero or one result. Cannot map multiple results to one parameter.");
-            } 
-            else if (tmp == 1)
-            {
-                state.ParameterMap.Add((mapper.Parameters[0], rootMap.properties.First().From));
-            }
+            var rootMapProperties  = outerMap.properties.Enumerate();
             
             var newTableMap = enumerable is MemberExpression ?
                 new Mapped(CompileMemberName(enumerable as MemberExpression), null).ToEnumerable() :
                 EmptyMapped;
 
             return (
-                rootMap.properties
+                rootMapProperties
                     .SelectMany(r => innerMap.properties
                         .Select(m => new Mapped(CombineStrings(r.From, m.From), CombineStrings(r.To, m.To)))),
-                rootMap.tables
+                outerMap.tables
                     .Concat(innerMap.tables)
                     .Concat(newTableMap)
             );
