@@ -32,6 +32,29 @@ namespace SqlDsl.Query
                 SqlStatementConstants.RowIdName :
                 $"{primaryTableName}.{SqlStatementConstants.RowIdName}";
 
+            // get primary row Id
+            var primaryRowId = selectColumns.IndexOf(primaryRowIdName);
+            if (primaryRowId == -1)
+                throw new InvalidOperationException($"Could not find row id column for table {primaryTableName}");
+
+            // TODO: cache RootObjectPropertyGraph graph for reuse
+            var (propertyGraph, rowIdMap) = sqlBuilder.BuildObjetPropertyGraph(typeof(TResult));
+
+            // execute and get all rows
+            var reader = await executor.ExecuteDebugAsync(sql, parameters, selectColumns);
+            var results = await reader.GetRowsAsync();
+
+            return results.Parse<TResult>(propertyGraph, rowIdMap, primaryRowId);
+        }
+        /// <summary>
+        /// Build an object property graph from a sql builder
+        /// </summary>
+        /// <param name="sqlBuilder">The builder with all properties populated</param>
+        public static (RootObjectPropertyGraph graph, int[][]rowIdMap) BuildObjetPropertyGraph(this ISqlStatement sqlBuilder, Type objectType) 
+        {
+            var sql = ToSql(sqlBuilder);
+            var selectColumns = sqlBuilder.SelectColumns.ToArray();
+
             // build row ID map
             var rowIdColumns = sqlBuilder.RowIdMap.ToList();
             var rowIdMap = selectColumns
@@ -46,17 +69,14 @@ namespace SqlDsl.Query
                     var index = selectColumns.IndexOf(op);
                     if (index == -1) throw new InvalidOperationException($"Cannot find row id for column {c}");
 
+                    Console.WriteLine(c);
+
                     return sqlBuilder
                         .GetDependantRowIds(index)
                         .Append(index)
                         .ToArray();
                 })
                 .ToArray();
-
-            // get primary row Id
-            var primaryRowId = selectColumns.IndexOf(primaryRowIdName);
-            if (primaryRowId == -1)
-                throw new InvalidOperationException($"Could not find row id column for table {primaryTableName}");
 
             // convert from mapped properties to property -> rowId pointer
             var map = sqlBuilder.RowIdsForMappedProperties
@@ -73,13 +93,8 @@ namespace SqlDsl.Query
                 if (mapped.Item2.First() == -1)
                     throw new InvalidOperationException("Could not find row id column for " + mapped.prop);
 
-            // execute and get all rows
-            var reader = await executor.ExecuteDebugAsync(sql, parameters, selectColumns);
-            var results = await reader.GetRowsAsync();
-
-            // TODO: cache RootObjectPropertyGraph graph for reuse
-            var propertyGraph = new RootObjectPropertyGraph(rowIdMap, selectColumns, typeof(TResult), map);
-            return results.Parse<TResult>(propertyGraph, rowIdMap, primaryRowId);
+            var propertyGraph = new RootObjectPropertyGraph(rowIdMap, selectColumns, objectType, map);
+            return (propertyGraph, rowIdMap);
         }
 
         /// <summary>
