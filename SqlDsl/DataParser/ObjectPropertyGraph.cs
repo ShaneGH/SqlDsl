@@ -10,7 +10,7 @@ namespace SqlDsl.DataParser
     /// <summary>
     /// Represents an object with it's property names
     /// </summary>
-    class ObjectPropertyGraph
+    public class ObjectPropertyGraph
     {
         /// <summary>
         /// Properties of an object with simple values like strings, ints etc... The index is the index of the column in the sql query resuts table.

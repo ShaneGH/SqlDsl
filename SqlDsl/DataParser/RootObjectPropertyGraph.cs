@@ -8,7 +8,7 @@ namespace SqlDsl.DataParser
     /// <summary>
     /// Represents the root of a graph of an object with it's property names
     /// </summary>
-    class RootObjectPropertyGraph : ObjectPropertyGraph
+    public class RootObjectPropertyGraph : ObjectPropertyGraph
     {
         /// <summary>
         /// The column names that this graph is based on
