@@ -46,6 +46,7 @@ namespace SqlDsl.Query
 
             return results.Parse<TResult>(propertyGraph, rowIdMap, primaryRowId);
         }
+        
         /// <summary>
         /// Build an object property graph from a sql builder
         /// </summary>
