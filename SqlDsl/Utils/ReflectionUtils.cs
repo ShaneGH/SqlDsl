@@ -156,6 +156,34 @@ namespace SqlDsl.Utils
             return (true, e.Arguments[0], e.Arguments[1]);
         }
 
+        /// <summary>
+        /// If an expression is a property chain, return it's root and the property names, otherwise, return false for isPropertyChain
+        /// </summary>
+        public static (bool isPropertyChain, ParameterExpression root, IEnumerable<string> chain) GetPropertyChain(Expression e)
+        {
+            var op = new List<string>();
+            while (e != null)
+            {
+                switch (e.NodeType)
+                {
+                    case ExpressionType.Convert:
+                        e = (e as UnaryExpression).Operand;
+                        break;
+                    case ExpressionType.MemberAccess:
+                        var acc = e as MemberExpression;
+                        op.Insert(0, acc.Member.Name);
+                        e = acc.Expression;
+                        break;
+                    case ExpressionType.Parameter:
+                        return (true, e as ParameterExpression, op);
+                    default:
+                        return (false, null, null);
+                }
+            }
+            
+            return (false, null, null);
+        }
+
         static readonly MethodInfo _ToArray = GetMethod(() => new object[0].ToArray()).GetGenericMethodDefinition();
 
         /// <summary>

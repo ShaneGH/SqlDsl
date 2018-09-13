@@ -572,9 +572,10 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public void JoinInMap_With2LevelJoin_JoinIsNotComplete_ThrowsException()
         {
+            // TODO: test where 1 table joins to multiple others
+
             // arrange
             // act
             // assert

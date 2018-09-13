@@ -116,7 +116,15 @@ namespace SqlDsl.SqlBuilders
             IList<object> parameters, 
             string joinTableAlias)
         {
-            var condition = SqlBuilder.BuildCondition(queryRootParam, new[]{(joinTableParam, joinTableAlias)}, equalityStatement, parameters);
+            var condition = SqlBuilder.BuildCondition(
+                queryRootParam, 
+                new[]{ (joinTableParam, joinTableAlias) }, 
+                equalityStatement, 
+                parameters);
+
+            Console.WriteLine("'''''''''''''''");
+            Console.WriteLine(condition.queryObjectReferences.JoinString(","));
+
             var join = BuildJoin(joinType, joinTable, condition.sql, joinTableAlias);
 
             Joins.Add((
