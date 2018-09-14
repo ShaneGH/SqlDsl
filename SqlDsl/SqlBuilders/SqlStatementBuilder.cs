@@ -357,13 +357,6 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         IEnumerable<(string from, string to)> GetJoinedTables()
         {
-            Console.WriteLine("HHHH");
-            Joins
-                .SelectMany(j => j.queryObjectReferences.Select(o => (j.alias, o)))
-                .Distinct()
-                .ToList()
-                .ForEach(x => Console.WriteLine(x));
-
             // TDO: hacky
             // TODO; unify join table property and row id col numbers
             return Joins
