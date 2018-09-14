@@ -35,10 +35,11 @@ namespace SqlDsl.Query
         (ISqlStatement builder, IEnumerable<object> paramaters) ToSqlBuilder()
         {
             // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
+            // TODO: filter columns
             var (wrappedBuilder, parameters) = Query.ToSqlBuilder(null);
 
             var map = BuildMap(
-                new BuildMapState(Mapper.Parameters[0], null),
+                new BuildMapState(Mapper.Parameters[0], wrappedBuilder.JoinedTables),
                 Mapper.Body,
                 Mapper.Parameters[0]);
 
@@ -58,9 +59,7 @@ namespace SqlDsl.Query
 
             foreach (var col in rowIdPropertyMap)
                 builder.RowIdsForMappedProperties.Add((col.rowIdColumnName, col.resultClassProperty));
-            
-            var sql = builder.ToSqlString();
-
+                
             return (builder, parameters);
         }
         
@@ -77,9 +76,9 @@ namespace SqlDsl.Query
         {
             public readonly ParameterExpression QueryObject;
             public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
-            public readonly List<Mapped> ValidJoins = new List<Mapped>();
+            public readonly List<(string from, string to)> ValidJoins;
 
-            public BuildMapState(ParameterExpression queryObject, IEnumerable<Mapped> validJoins)
+            public BuildMapState(ParameterExpression queryObject, IEnumerable<(string from, string to)> validJoins)
             {
                 QueryObject = queryObject;
                 ValidJoins = validJoins.OrEmpty().ToList(); 
@@ -197,7 +196,7 @@ namespace SqlDsl.Query
                         throw new InvalidOperationException("Property joined from is invalid");
                         // TODO: better error message
 
-                    VerifyJoin(from_, to);
+                    VerifyJoin(state, from_, to);
 
                     break;
                 default:
@@ -212,8 +211,8 @@ namespace SqlDsl.Query
         static void VerifyJoin(BuildMapState state, string from, string to)
         {
             if (!state.ValidJoins.Any(j => 
-                (j.From == from && j.To == to) ||
-                (j.From == to && j.To == from)))
+                (j.from == from && j.to == to) ||
+                (j.from == to && j.to == from)))
 
                 throw new InvalidOperationException($"Property \"{from}\" does not join to property \"{to}\".");
         }

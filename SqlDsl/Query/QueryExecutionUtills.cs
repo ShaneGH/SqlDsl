@@ -70,8 +70,6 @@ namespace SqlDsl.Query
                     var index = selectColumns.IndexOf(op);
                     if (index == -1) throw new InvalidOperationException($"Cannot find row id for column {c}");
 
-                    Console.WriteLine(c);
-
                     return sqlBuilder
                         .GetDependantRowIds(index)
                         .Append(index)

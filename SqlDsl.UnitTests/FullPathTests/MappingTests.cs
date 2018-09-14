@@ -579,7 +579,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             // assert
-            var tt = FullyJoinedQuery()
+            Assert.Throws(typeof(InvalidOperationException), () => FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass1
                 { 
                     FavouriteClasses = query.Classes
@@ -592,11 +592,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ToSql();
-
-            Console.WriteLine(tt.sql);
-
-            Assert.Fail("Sould throw");
+                .ToSql());
         }
 
         class SmartJoinedClass5

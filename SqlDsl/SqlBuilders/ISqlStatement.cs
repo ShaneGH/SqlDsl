@@ -36,6 +36,11 @@ namespace SqlDsl.SqlBuilders
         IEnumerable<string> SelectColumns { get; }
 
         /// <summary>
+        /// A list of tables which have a join to one another
+        /// </summary>
+        IEnumerable<(string from, string to)> JoinedTables { get; }
+
+        /// <summary>
         /// Generate sql. Setup sql will be executd before querySql, but in the same sql script
         /// </summary>
         (string querySetupSql, string querySql) ToSqlString();

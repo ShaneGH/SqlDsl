@@ -28,6 +28,8 @@ namespace SqlDsl.SqlBuilders
 
         IEnumerable<(string rowIdColumnName, string resultClassProperty)> ISqlStatement.RowIdsForMappedProperties => RowIdsForMappedProperties.Skip(0);
 
+        IEnumerable<(string from, string to)> ISqlStatement.JoinedTables => GetJoinedTables();
+
         #endregion
 
         ISqlFragmentBuilder SqlBuilder;
@@ -121,9 +123,6 @@ namespace SqlDsl.SqlBuilders
                 new[]{ (joinTableParam, joinTableAlias) }, 
                 equalityStatement, 
                 parameters);
-
-            Console.WriteLine("'''''''''''''''");
-            Console.WriteLine(condition.queryObjectReferences.JoinString(","));
 
             var join = BuildJoin(joinType, joinTable, condition.sql, joinTableAlias);
 
@@ -352,6 +351,25 @@ namespace SqlDsl.SqlBuilders
         }
 
         static readonly IEnumerable<int> EmptyInts = Enumerable.Empty<int>();
+
+        /// <summary>
+        /// Get a list of tables which have a join to one another
+        /// </summary>
+        IEnumerable<(string from, string to)> GetJoinedTables()
+        {
+            Console.WriteLine("HHHH");
+            Joins
+                .SelectMany(j => j.queryObjectReferences.Select(o => (j.alias, o)))
+                .Distinct()
+                .ToList()
+                .ForEach(x => Console.WriteLine(x));
+
+            // TDO: hacky
+            // TODO; unify join table property and row id col numbers
+            return Joins
+                .SelectMany(j => j.queryObjectReferences.Select(o => (j.alias, o)))
+                .Distinct();
+        }
 
         /// <summary>
         /// Given a row id column index, return all of the column indexes for the row ids of the tables it need to join on
