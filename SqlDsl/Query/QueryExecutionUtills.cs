@@ -65,10 +65,10 @@ namespace SqlDsl.Query
                         .Where(rid => rid.columnName == c)
                         .Select(rid => rid.rowIdColumnName)
                         .FirstOrDefault() ??
-                        throw new InvalidOperationException($"Cannot find row id for column {c}");
+                        throw new InvalidOperationException($"Cannot find row id for column \"{c}\".");
 
                     var index = selectColumns.IndexOf(op);
-                    if (index == -1) throw new InvalidOperationException($"Cannot find row id for column {c}");
+                    if (index == -1) throw new InvalidOperationException($"Cannot find row id for column \"{c}\".");
 
                     return sqlBuilder
                         .GetDependantRowIds(index)
