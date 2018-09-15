@@ -100,7 +100,6 @@ namespace SqlDsl.Query
             }
 
             // add a where clause if specified
-
             if (WhereClause != null)
                 builder.SetWhere(WhereClause.Value.queryRoot, WhereClause.Value.where, param);
 
