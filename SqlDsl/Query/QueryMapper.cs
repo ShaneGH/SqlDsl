@@ -15,8 +15,7 @@ namespace SqlDsl.Query
     {
         readonly QueryBuilder<TSqlBuilder, TResult> Query;
         readonly Expression<Func<TResult, TMapped>> Mapper;
-
-
+        
         public QueryMapper(QueryBuilder<TSqlBuilder, TResult> query, Expression<Func<TResult, TMapped>> mapper)
         {
             Query = query ?? throw new ArgumentNullException(nameof(query));
@@ -67,19 +66,6 @@ namespace SqlDsl.Query
 
             var sqlBuilder = ToSqlBuilder();
             return executor.ExecuteAsync<TMapped>(sqlBuilder.builder, sqlBuilder.paramaters, Query.PrimaryTableMember.Value.name);
-        }
-
-        class BuildMapState
-        {
-            public readonly ParameterExpression QueryObject;
-            public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
-            public readonly List<(string from, string to)> ValidJoins;
-
-            public BuildMapState(ParameterExpression queryObject, IEnumerable<(string from, string to)> validJoins)
-            {
-                QueryObject = queryObject;
-                ValidJoins = validJoins.OrEmpty().ToList(); 
-            }
         }
 
         static readonly IEnumerable<Mapped> EmptyMapped = Enumerable.Empty<Mapped>();
@@ -299,6 +285,19 @@ namespace SqlDsl.Query
             return next != null ?
                 $"{CompileMemberName(next)}.{expr.Member.Name}" :
                 expr.Member.Name;
+        }
+    }
+
+    class BuildMapState
+    {
+        public readonly ParameterExpression QueryObject;
+        public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
+        public readonly List<(string from, string to)> ValidJoins;
+
+        public BuildMapState(ParameterExpression queryObject, IEnumerable<(string from, string to)> validJoins)
+        {
+            QueryObject = queryObject;
+            ValidJoins = validJoins.OrEmpty().ToList(); 
         }
     }
 

@@ -382,6 +382,52 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.Tags.BallSport.Id, mary.FavouriteClasses[0].TagIds[1]);
         }
 
+        [Test]
+        [Ignore("TODO")]
+        public async Task JoinInMap_WithAnonynouseObjects()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(query => new
+                { 
+                    FavouriteClasses = query.Classes
+                        .Select(c => new
+                        {
+                            TagIds = c
+                                .Joined(query.ClassTags)
+                                .Select(t => t.TagId)
+                                .ToArray()
+                        })
+                        .ToArray()
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            var john = data.ElementAt(0);
+            var mary = data.ElementAt(1);
+
+            // John
+            Assert.AreEqual(2, john.FavouriteClasses.Length);
+            
+            Assert.AreEqual(2, john.FavouriteClasses[0].TagIds.Length);
+            Assert.AreEqual(Data.Tags.Sport.Id, john.FavouriteClasses[0].TagIds[0]);
+            Assert.AreEqual(Data.Tags.BallSport.Id, john.FavouriteClasses[0].TagIds[1]);
+            
+            Assert.AreEqual(1, john.FavouriteClasses[1].TagIds.Length);
+            Assert.AreEqual(Data.Tags.Sport.Id, john.FavouriteClasses[1].TagIds[0]);
+            
+            // Mary
+            Assert.AreEqual(1, mary.FavouriteClasses.Length);
+            
+            Assert.AreEqual(2, mary.FavouriteClasses[0].TagIds.Length);
+            Assert.AreEqual(Data.Tags.Sport.Id, mary.FavouriteClasses[0].TagIds[0]);
+            Assert.AreEqual(Data.Tags.BallSport.Id, mary.FavouriteClasses[0].TagIds[1]);
+        }
+
         class SmartJoinedClass3_1
         {
             public SmartJoinedClass4_1[] FavouriteClasses;
@@ -482,12 +528,20 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class SmartJoinedClass1
         {
+            public SmartJoinedClass1() { }
+
+            public SmartJoinedClass1(string personName): this() { PersonName = personName; }
+
             public string PersonName;
             public SmartJoinedClass2[] FavouriteClasses;
         }
 
         class SmartJoinedClass2
         {
+            public SmartJoinedClass2() { }
+
+            public SmartJoinedClass2(string className): this() { ClassName = className; }
+
             public string ClassName;
             public string[] TagNames;
         }
@@ -531,6 +585,58 @@ namespace SqlDsl.UnitTests.FullPathTests
                         .Select(c => new SmartJoinedClass2
                         {
                             ClassName = c.Name,
+                            TagNames = c
+                                .Joined(query.ClassTags)
+                                .Joined(query.Tags)
+                                .Select(t => t.Name)
+                                .ToArray()
+                        })
+                        .ToArray()
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            var john = data.ElementAt(0);
+            var mary = data.ElementAt(1);
+
+            // John
+            Assert.AreEqual(Data.People.John.Name, john.PersonName);
+            
+            Assert.AreEqual(2, john.FavouriteClasses.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, john.FavouriteClasses[0].ClassName);
+            Assert.AreEqual(Data.Classes.Archery.Name, john.FavouriteClasses[1].ClassName);
+            
+            Assert.AreEqual(2, john.FavouriteClasses[0].TagNames.Length);
+            Assert.AreEqual(Data.Tags.Sport.Name, john.FavouriteClasses[0].TagNames[0]);
+            Assert.AreEqual(Data.Tags.BallSport.Name, john.FavouriteClasses[0].TagNames[1]);
+            
+            Assert.AreEqual(1, john.FavouriteClasses[1].TagNames.Length);
+            Assert.AreEqual(Data.Tags.Sport.Name, john.FavouriteClasses[1].TagNames[0]);
+            
+            // Mary
+            Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);
+            
+            Assert.AreEqual(1, mary.FavouriteClasses.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, mary.FavouriteClasses[0].ClassName);
+            
+            Assert.AreEqual(2, mary.FavouriteClasses[0].TagNames.Length);
+            Assert.AreEqual(Data.Tags.Sport.Name, mary.FavouriteClasses[0].TagNames[0]);
+            Assert.AreEqual(Data.Tags.BallSport.Name, mary.FavouriteClasses[0].TagNames[1]);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task JoinInMap_WithConstructorArgs()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(query => new SmartJoinedClass1(query.ThePerson.Name)
+                { 
+                    FavouriteClasses = query.Classes
+                        .Select(c => new SmartJoinedClass2(c.Name)
+                        {
                             TagNames = c
                                 .Joined(query.ClassTags)
                                 .Joined(query.Tags)

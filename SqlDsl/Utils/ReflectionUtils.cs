@@ -87,7 +87,9 @@ namespace SqlDsl.Utils
         {
             GetMethod(() => Sql.One<object>(null)).GetGenericMethodDefinition(),
             GetMethod(() => Enumerable.First<object>(null)).GetGenericMethodDefinition(),
-            GetMethod(() => Enumerable.Single<object>(null)).GetGenericMethodDefinition()
+            GetMethod(() => Enumerable.FirstOrDefault<object>(null)).GetGenericMethodDefinition(),
+            GetMethod(() => Enumerable.Single<object>(null)).GetGenericMethodDefinition(),
+            GetMethod(() => Enumerable.SingleOrDefault<object>(null)).GetGenericMethodDefinition()
         };
 
         /// <summary>

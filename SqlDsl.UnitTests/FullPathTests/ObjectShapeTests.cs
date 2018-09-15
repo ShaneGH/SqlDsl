@@ -121,9 +121,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass3>()
-                .From(result => result.Inner.One().Person)
+                .From(result => result.Inner.SingleOrDefault().Person)
                 .LeftJoin<PersonClass>(result => result.Inner.One().PersonClasses)
-                    .On((r, pc) => r.Inner.One().Person.Id == pc.PersonId)
+                    .On((r, pc) => r.Inner.FirstOrDefault().Person.Id == pc.PersonId)
                 .Where(result => result.Inner.One().Person.Id == Data.People.Mary.Id)
                 .ExecuteAsync(Executor);
 
