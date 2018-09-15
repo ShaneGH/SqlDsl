@@ -40,8 +40,7 @@ namespace SqlDsl.Query
 
             var map = BuildMap(
                 new BuildMapState(Mapper.Parameters[0], wrappedBuilder.JoinedTables),
-                Mapper.Body,
-                Mapper.Parameters[0]);
+                Mapper.Body);
 
             var rowIdPropertyMap = map.tables
                 .Select(t => (rowIdColumnName: $"{t.From}.{SqlStatementConstants.RowIdName}", resultClassProperty: t.To))
@@ -87,54 +86,79 @@ namespace SqlDsl.Query
 
         static readonly IEnumerable<Mapped> EmptyMapped = Enumerable.Empty<Mapped>();
 
-        static (IEnumerable<Mapped> properties, IEnumerable<Mapped> tables) BuildMap(BuildMapState state, Expression expr, ParameterExpression rootParam, string toPrefix = null)
+        static (IEnumerable<Mapped> properties, IEnumerable<Mapped> tables) BuildMap(BuildMapState state, Expression expr, string toPrefix = null)
         {
             switch (expr.NodeType)
             {
+                case ExpressionType.Parameter:
+                    var hasProperty =state.ParameterRepresentsProperty
+                        .Where(p => p.parameter == expr)
+                        .Select(p => p.property.JoinString("."));
+
+                    if (expr == state.QueryObject || hasProperty.Any())
+                    {
+                        return (
+                            new [] { new Mapped(null, toPrefix) },
+                            EmptyMapped
+                        );
+                    }
+
+                    break;
                 case ExpressionType.MemberAccess:
-                    var memberExpr = expr as MemberExpression;
-                    return IsMemberAccessMapped(memberExpr, rootParam) ?
-                        (new [] { new Mapped(CompileMemberName(memberExpr), toPrefix) }, EmptyMapped) :
-                        (EmptyMapped, EmptyMapped);
+                    var memExpr = expr as MemberExpression;
+                    var result = BuildMap(state, memExpr.Expression, toPrefix);
+
+                    return (
+                        result.properties
+                            .Select(p => new Mapped(
+                                CombineStrings(p.From, memExpr.Member.Name), 
+                                p.To))
+                            .Enumerate(),
+                        result.tables
+                    );
 
                 case ExpressionType.Block:
                     return (expr as BlockExpression).Expressions
-                        .Select(ex => BuildMap(state, ex, rootParam, toPrefix))
+                        .Select(ex => BuildMap(state, ex, toPrefix))
                         .AggregateTuple2();
 
                 case ExpressionType.New:
                     return (expr as NewExpression).Arguments
-                        .Select(ex => BuildMap(state, ex, rootParam, toPrefix))
+                        .Select(ex => BuildMap(state, ex, toPrefix))
                         .AggregateTuple2();
 
                 case ExpressionType.MemberInit:
                     var init = expr as MemberInitExpression;
-                    return BuildMap(state, init.NewExpression, rootParam, toPrefix)
+                    return BuildMap(state, init.NewExpression, toPrefix)
                         .ToEnumerableStruct()
                         .Concat(init.Bindings
                             .OfType<MemberAssignment>()
-                            .Select(b => (memberName: b.Member.Name, map: BuildMap(state, b.Expression, rootParam, b.Member.Name)))
+                            .Select(b => (memberName: b.Member.Name, map: BuildMap(state, b.Expression, b.Member.Name)))
                             .Select(m => (
                                 m.map.properties.Select(x => new Mapped(x.From, CombineStrings(toPrefix, x.To))),
                                 m.map.tables.Select(x => new Mapped(x.From, CombineStrings(m.memberName, x.To))))))
                         .AggregateTuple2();
 
                 case ExpressionType.Call:
+                    var oneExpr = ReflectionUtils.IsOne(expr as MethodCallExpression);
+                    if (oneExpr != null)
+                        return BuildMap(state, oneExpr, toPrefix);
+                        
                     var (isToList, enumerableL) = ReflectionUtils.IsToList(expr as MethodCallExpression);
                     if (isToList)
-                        return BuildMap(state, enumerableL, rootParam, toPrefix);
+                        return BuildMap(state, enumerableL, toPrefix);
                         
                     var (isToArray, enumerableA) = ReflectionUtils.IsToArray(expr as MethodCallExpression);
                     if (isToArray)
-                        return BuildMap(state, enumerableA, rootParam, toPrefix);
+                        return BuildMap(state, enumerableA, toPrefix);
 
                     var (isSelect, enumerableS, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(expr as MethodCallExpression);
                     if (isSelect)
-                        return BuildMapForSelect(state, enumerableS, mapper, rootParam, toPrefix);
+                        return BuildMapForSelect(state, enumerableS, mapper, toPrefix);
 
                     var (isJoined, joinedFrom, joinedTo) = ReflectionUtils.IsJoined(expr as MethodCallExpression);
                     if (isJoined)
-                        return BuildMapForJoined(state, joinedFrom, joinedTo, rootParam, toPrefix);
+                        return BuildMapForJoined(state, joinedFrom, joinedTo, toPrefix);
 
                     break;
             }
@@ -142,14 +166,33 @@ namespace SqlDsl.Query
             throw new InvalidOperationException($"Unsupported mapping expression \"{expr}\".");
         }
 
-        static (IEnumerable<Mapped> properties, IEnumerable<Mapped> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, LambdaExpression mapper, ParameterExpression rootParam, string toPrefix)
+        static void TryAddSelectStatementParameterToProperty(BuildMapState state, Expression enumerable, ParameterExpression parameter)
         {
             var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(enumerable);
-            if (isPropertyChain && root == state.QueryObject)
-                state.ParameterRepresentsProperty.Add((mapper.Parameters[0], chain));
+            if (isPropertyChain)
+            {
+                if (root == state.QueryObject)
+                    state.ParameterRepresentsProperty.Add((parameter, chain));
 
-            var outerMap = BuildMap(state, enumerable, rootParam, toPrefix);
-            var innerMap = BuildMap(state, mapper.Body, mapper.Parameters[0]);
+                return;
+            }
+
+            if (enumerable is MethodCallExpression)
+            {
+                var (isJoined, joinedFrom, joinedTo) = ReflectionUtils.IsJoined(enumerable as MethodCallExpression);
+                if (isJoined)
+                    TryAddSelectStatementParameterToProperty(state, joinedTo, parameter);
+
+                return;
+            }
+        }
+
+        static (IEnumerable<Mapped> properties, IEnumerable<Mapped> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, LambdaExpression mapper, string toPrefix)
+        {
+            TryAddSelectStatementParameterToProperty(state, enumerable, mapper.Parameters[0]);
+
+            var outerMap = BuildMap(state, enumerable, toPrefix);
+            var innerMap = BuildMap(state, mapper.Body);
             var outerMapProperties  = outerMap.properties.Enumerate();
             
             var newTableMap = enumerable is MemberExpression ?
@@ -217,9 +260,9 @@ namespace SqlDsl.Query
                 throw new InvalidOperationException($"Property \"{from}\" does not join to property \"{to}\".");
         }
 
-        static (IEnumerable<Mapped> properties, IEnumerable<Mapped> tables) BuildMapForJoined(BuildMapState state, Expression joinedFrom, Expression joinedTo, ParameterExpression rootParam, string toPrefix)
+        static (IEnumerable<Mapped> properties, IEnumerable<Mapped> tables) BuildMapForJoined(BuildMapState state, Expression joinedFrom, Expression joinedTo, string toPrefix)
         {
-            var op = BuildMap(state, joinedTo, state.QueryObject, toPrefix);
+            var op = BuildMap(state, joinedTo, toPrefix);
 
             var propsEnumerated = op.properties.ToList();
             if (propsEnumerated.Count != 1)
@@ -251,17 +294,6 @@ namespace SqlDsl.Query
             s != null && s.StartsWith(RootObjectAsPrefix) ?
                 s.Substring(RootObjectAsPrefix.Length) :
                 s;
-
-        static bool IsMemberAccessMapped(MemberExpression expr, ParameterExpression rootParam)
-        {
-            while (expr != null)
-            {
-                if (expr.Expression == rootParam) return true;
-                expr = expr.Expression as MemberExpression;
-            }
-
-            return false;
-        }
 
         static string CompileMemberName(MemberExpression expr)
         {
