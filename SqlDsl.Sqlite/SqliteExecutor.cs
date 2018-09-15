@@ -35,7 +35,8 @@ namespace SqlDsl.Sqlite
                 command.Parameters.Add(new SqliteParameter("p" + (i++), p));
             }
 
-            return new SqliteReader(await command.ExecuteReaderAsync());
+            return new SqliteReader(
+                await command.ExecuteReaderAsync());
         }
     }
 }
