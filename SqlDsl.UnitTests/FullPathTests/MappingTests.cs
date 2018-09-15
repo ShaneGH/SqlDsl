@@ -641,16 +641,16 @@ namespace SqlDsl.UnitTests.FullPathTests
             
             Assert.AreEqual(2, john.FavouriteClasses.Length);
             Assert.AreEqual(Data.Classes.Tennis.Name, john.FavouriteClasses[0].ClassName);
-            Assert.AreEqual(Data.Tags.Sport, john.FavouriteClasses[0].TagName);
+            Assert.AreEqual(Data.Tags.Sport.Name, john.FavouriteClasses[0].TagName);
             Assert.AreEqual(Data.Classes.Archery.Name, john.FavouriteClasses[1].ClassName);
-            Assert.AreEqual(Data.Tags.Sport, john.FavouriteClasses[1].TagName);
+            Assert.AreEqual(Data.Tags.Sport.Name, john.FavouriteClasses[1].TagName);
             
             // Mary
             Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);
             
             Assert.AreEqual(1, mary.FavouriteClasses.Length);
             Assert.AreEqual(Data.Classes.Tennis.Name, mary.FavouriteClasses[0].ClassName);
-            Assert.AreEqual(Data.Tags.Sport, mary.FavouriteClasses[0].TagName);
+            Assert.AreEqual(Data.Tags.Sport.Name, mary.FavouriteClasses[0].TagName);
         }
     }
 }
