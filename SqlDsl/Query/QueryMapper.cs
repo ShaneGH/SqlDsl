@@ -14,8 +14,6 @@ namespace SqlDsl.Query
         where TSqlBuilder: ISqlFragmentBuilder, new()
     {
         readonly QueryBuilder<TSqlBuilder, TResult> Query;
-        readonly IEnumerable<(string from, string to)> MappedValuesX;
-        readonly IEnumerable<(string rowIdColumnName, string resultClassProperty)> RowIdPropertyMapX;
         readonly Expression<Func<TResult, TMapped>> Mapper;
 
 
