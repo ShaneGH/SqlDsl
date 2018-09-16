@@ -172,5 +172,40 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(result => result.Person.Id == Data.People.John.Id)
                 .ExecuteAsync(Executor));
         }
+
+        class WhereErrorQueryClass
+        {
+            public Person Person1;
+            public Person Person2;
+        }
+
+        [Test]
+        public void Select_JoinComparrisonComparesComplexObjects_ThrowsError()
+        {
+            // arrange
+            // act
+            // assert
+            Assert.Throws(typeof(NotImplementedException), () =>
+                Sql.Query.Sqlite<WhereErrorQueryClass>()
+                    .From(result => result.Person1)
+                    .InnerJoin(result => result.Person2)
+                        .On((q, p) => q.Person1 == p)
+                    .Compile());
+        }
+
+        [Test]
+        public void Select_WhereComparrisonComparesComplexObjects_ThrowsError()
+        {
+            // arrange
+            // act
+            // assert
+            Assert.ThrowsAsync(typeof(SqliteException), () =>
+                Sql.Query.Sqlite<WhereErrorQueryClass>()
+                    .From(result => result.Person1)
+                    .InnerJoin(result => result.Person2)
+                        .On((q, p) => q.Person1.Id == p.Id)
+                    .Where(q => q.Person1 == q.Person2)
+                    .ExecuteAsync(Executor));
+        }
     }
 }

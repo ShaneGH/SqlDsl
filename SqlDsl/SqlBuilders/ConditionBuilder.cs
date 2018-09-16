@@ -57,7 +57,7 @@ namespace SqlDsl.SqlBuilders
                 case ExpressionType.Constant:
                     return BuildConstantCondition(equality as ConstantExpression, paramaters);
                 default:
-                    throw new NotImplementedException($"Cannot compile expression: {equality.NodeType} to SQL");
+                    throw new NotImplementedException($"Cannot compile expression \"{equality}\" to SQL");
             }
         }
 
