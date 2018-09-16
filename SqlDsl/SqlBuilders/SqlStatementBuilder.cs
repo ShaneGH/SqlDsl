@@ -76,13 +76,13 @@ namespace SqlDsl.SqlBuilders
         static readonly object InnerQueryLock = new object();
         
         /// <summary>
-        /// Get a new 3 digit code for alias. Aliass' must be unique in the scope of a query only
+        /// Get a new 4 digit code for alias. Aliass' must be unique in the scope of a query only
         /// </summary>
         static string BuildInnerQueryAlias()
         {
             lock (InnerQueryLock)
             {
-                if (_InnerQueryAlias >= 1000)
+                if (_InnerQueryAlias >= 10000)
                     _InnerQueryAlias = 0;
 
                 return $"iq{++_InnerQueryAlias}";
