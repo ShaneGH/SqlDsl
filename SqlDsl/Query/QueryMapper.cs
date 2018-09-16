@@ -248,7 +248,7 @@ namespace SqlDsl.Query
                 (j.from == from && j.to == to) ||
                 (j.from == to && j.to == from)))
 
-                throw new InvalidOperationException($"Property \"{from}\" does not join to property \"{to}\".");
+                throw new InvalidOperationException($"Error in mapping: property \"{from}\" does not join to property \"{to}\".");
         }
 
         static (IEnumerable<Mapped> properties, IEnumerable<Mapped> tables) BuildMapForJoined(BuildMapState state, Expression joinedFrom, Expression joinedTo, string toPrefix)

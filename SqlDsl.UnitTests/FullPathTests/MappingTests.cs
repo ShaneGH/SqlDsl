@@ -547,29 +547,28 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public void JoinInMap_WithInvalidJoin_ThrowsException()
         {
             // arrange
             // act
-            FullyJoinedQuery()
-                .Map(query => new SmartJoinedClass1
-                { 
-                    PersonName = query.ThePerson.Name,
-                    FavouriteClasses = query.Classes
-                        .Select(c => new SmartJoinedClass2
-                        {
-                            ClassName = c.Name,
-                            TagNames = c
-                                .Joined(query.Tags)
-                                .Select(t => t.Name)
-                                .ToArray()
-                        })
-                        .ToArray()
-                })
-                .ExecuteAsync(Executor);
-                
-            Assert.Fail("This test should throw an exception");
+            // assert
+            Assert.Throws(typeof(InvalidOperationException), () => 
+                FullyJoinedQuery()
+                    .Map(query => new SmartJoinedClass1
+                    { 
+                        PersonName = query.ThePerson.Name,
+                        FavouriteClasses = query.Classes
+                            .Select(c => new SmartJoinedClass2
+                            {
+                                ClassName = c.Name,
+                                TagNames = c
+                                    .Joined(query.Tags)
+                                    .Select(t => t.Name)
+                                    .ToArray()
+                            })
+                            .ToArray()
+                    })
+                    .Compile());
         }
 
         [Test]
