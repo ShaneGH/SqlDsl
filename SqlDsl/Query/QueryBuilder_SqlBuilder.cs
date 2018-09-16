@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 namespace SqlDsl.Query
 {
     public partial class QueryBuilder<TSqlBuilder, TResult>
-        where TSqlBuilder: ISqlFragmentBuilder, new()
     {        
         /// <summary>
         /// Get a sql statement and corresponding sql paramaters from the query

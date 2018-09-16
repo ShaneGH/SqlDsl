@@ -12,8 +12,7 @@ using System.Threading.Tasks;
 
 namespace SqlDsl.Query
 {
-    public partial class QueryBuilder<TSqlBuilder, TResult> : ITable<TResult>, IQuery<TResult>
-        where TSqlBuilder: ISqlFragmentBuilder, new()
+    public partial class QueryBuilder<TSqlBuilder, TResult>
     {
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table]
