@@ -11,13 +11,12 @@ namespace SqlDsl.Query
     public static class QueryExecutionUtils
     {
         /// <summary>
-        /// Execute the sql query and get a list of results
+        /// Compile a sqlBuilder into a query which can be executed multiple times
         /// </summary>
-        /// <param name="executor">The executor to execute sql</param>
         /// <param name="sqlBuilder">The builder with all properties populated</param>
         /// <param name="parameters">Any constant parameters in the statement</param>
         /// <param name="primaryTableName">The name of the table in the select statement</param>
-        public static async Task<IEnumerable<TResult>> ExecuteAsync<TResult>(this IExecutor executor, ISqlStatement sqlBuilder, IEnumerable<object> parameters, string primaryTableName) 
+        public static CompiledQuery<TResult> Compile<TResult>(this ISqlStatement sqlBuilder, IEnumerable<object> parameters, string primaryTableName) 
         {
             var sql = ToSql(sqlBuilder);
             var selectColumns = sqlBuilder.SelectColumns.ToArray();
@@ -40,11 +39,7 @@ namespace SqlDsl.Query
             // TODO: cache RootObjectPropertyGraph graph for reuse
             var (propertyGraph, rowIdMap) = sqlBuilder.BuildObjetPropertyGraph(typeof(TResult));
 
-            // execute and get all rows
-            var reader = await executor.ExecuteDebugAsync(sql, parameters, selectColumns);
-            var results = await reader.GetRowsAsync();
-
-            return results.Parse<TResult>(propertyGraph, rowIdMap, primaryRowId);
+            return new CompiledQuery<TResult>(sql, parameters, selectColumns, propertyGraph, rowIdMap, primaryRowId);
         }
         
         /// <summary>

@@ -22,6 +22,11 @@ namespace SqlDsl.Dsl
         /// An expression to map the selected table to a property on the result
         /// </param>
         Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor);
+        
+        /// <summary>
+        /// Compile the query into something which can be executed multiple times
+        /// </summary>
+        ICompiledQuery<TResult> Compile();
     }
     
     /// <summary>
@@ -41,5 +46,10 @@ namespace SqlDsl.Dsl
         /// An expression to map the selected table to a property on the result
         /// </param>
         Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor);
+        
+        /// <summary>
+        /// Compile the query into something which can be executed multiple times
+        /// </summary>
+        ICompiledQuery<TArgs, TResult> Compile();
     }
 }

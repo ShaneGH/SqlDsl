@@ -58,15 +58,22 @@ namespace SqlDsl.Query
                 
             return (builder, parameters);
         }
-        
-        public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor)
-        {       
+
+        /// <summary>
+        /// Compile the query into something which can be executed multiple times
+        /// </summary>
+        public ICompiledQuery<TMapped> Compile()
+        {
             if (Query.PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
 
             var sqlBuilder = ToSqlBuilder();
-            return executor.ExecuteAsync<TMapped>(sqlBuilder.builder, sqlBuilder.paramaters, Query.PrimaryTableMember.Value.name);
+            return sqlBuilder.builder
+                .Compile<TMapped>(sqlBuilder.paramaters, Query.PrimaryTableMember.Value.name);
         }
+        
+        public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor) =>
+            Compile().ExecuteAsync(executor);
 
         static readonly IEnumerable<Mapped> EmptyMapped = Enumerable.Empty<Mapped>();
 

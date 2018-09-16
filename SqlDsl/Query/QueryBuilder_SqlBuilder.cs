@@ -17,7 +17,7 @@ namespace SqlDsl.Query
         /// <summary>
         /// Get a sql statement and corresponding sql paramaters from the query
         /// </summary>
-        public (string sql, IEnumerable<object> paramaters) ToSql() =>
+        public (string sql, IEnumerable<object> paramaters) ToSql() =>  // FROM INTERFACE
             ToSql(filterSelectCols: null);
 
         /// <summary>
@@ -37,13 +37,20 @@ namespace SqlDsl.Query
         /// <param name="executor">
         /// An expression to map the selected table to a property on the result
         /// </param>
-        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor) 
+        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor) =>  // FROM INTERFACE
+            Compile().ExecuteAsync(executor);
+
+        /// <summary>
+        /// Compile the query into something which can be executed multiple times
+        /// </summary>
+        public ICompiledQuery<TResult> Compile()
         {
             if (PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
 
             var sqlBuilder = ToSqlBuilder(null);
-            return executor.ExecuteAsync<TResult>(sqlBuilder.builder, sqlBuilder.paramaters, PrimaryTableMember.Value.name);
+            return sqlBuilder.builder
+                .Compile<TResult>(sqlBuilder.paramaters, PrimaryTableMember.Value.name);
         }
 
         /// <summary>
