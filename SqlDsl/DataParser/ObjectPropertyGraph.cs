@@ -25,7 +25,7 @@ namespace SqlDsl.DataParser
         /// <summary>
         /// A composite of the row numbers which point to this object
         /// </summary>
-        public readonly IEnumerable<int> RowNumberColumnIds;
+        public readonly IEnumerable<int> RowIdColumnNumbers;
 
         /// <summary>
         /// Build an object graph
@@ -142,7 +142,7 @@ namespace SqlDsl.DataParser
             ComplexProps = cProps.Enumerate();
             
             // TODO: does ordering matter in a composite key?
-            RowNumberColumnIds = simpleProps
+            RowIdColumnNumbers = simpleProps
                 .Where(sp => !sp.isEnumerable)
                 .SelectMany(sp => rowNumberMap[sp.data.index])
                 .Concat(propertyRowNumberCols)
@@ -163,14 +163,14 @@ namespace SqlDsl.DataParser
         {
             // TODO: this method is used a lot.
             // Can results be cached or more efficient method used?
-            return RowNumberColumnIds
+            return RowIdColumnNumbers
                 .Concat(simplePropRowNumberColumnIds.OrEmpty())   
                 .Select(r => row[r].ToString())
                 .JoinString(";");
         }
 
         public override string ToString() =>
-            $"RowNumberColumnIds: [{RowNumberColumnIds.JoinString(",")}]\n" +
+            $"RowNumberColumnIds: [{RowIdColumnNumbers.JoinString(",")}]\n" +
             SimpleProps
                 .Select(p => $"{p.name}: {{ index: {p.index} }}")
                 .Concat(ComplexProps.Select(p => $"{p.name}:\n  {p.value.ToString().Replace("\n", "\n  ")}"))

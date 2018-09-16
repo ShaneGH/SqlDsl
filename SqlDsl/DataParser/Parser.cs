@@ -45,7 +45,7 @@ namespace SqlDsl.DataParser
         {
             // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
             var objectsData = rows.GroupBy(r => 
-                propertyGraph.RowNumberColumnIds.Select(i => r[i]).ToArray(), 
+                propertyGraph.RowIdColumnNumbers.Select(i => r[i]).ToArray(), 
                 ArrayComparer<object>.Instance);
 
             return CreateObject(propertyGraph, rowNumberMap, objectsData);

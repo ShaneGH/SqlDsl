@@ -439,7 +439,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task JoinInMap_WithSimpleJoin_JoinPropertyIsSingular_ThrowsException()
         {
             // arrange
@@ -459,7 +458,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         .ToArray()
                 })
                 .ExecuteAsync(Executor);
-
+                
             Assert.Fail("Should throw exn");
         }
 
