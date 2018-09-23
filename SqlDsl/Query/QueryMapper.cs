@@ -29,7 +29,7 @@ namespace SqlDsl.Query
             return (result.builder.ToSql(), result.paramaters);
         }
 
-        (ISqlStatement builder, IEnumerable<object> paramaters) ToSqlBuilder()
+        public (ISqlStatement builder, IEnumerable<object> paramaters) ToSqlBuilder()
         {
             // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
             // TODO: filter columns
@@ -210,12 +210,12 @@ namespace SqlDsl.Query
                 case ExpressionType.Call:
                     var (isJoined, joinedFrom, joinedTo) = ReflectionUtils.IsJoined(from as MethodCallExpression);
                     if (!isJoined)
-                        throw new InvalidOperationException("Property joined from is invalid");
+                        throw new InvalidOperationException($"Property joined from is invalid\nfrom: {from}, to: {to}");
                         // TODO: better error message
 
                     var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(joinedTo);
                     if (!isPropertyChain)
-                        throw new InvalidOperationException("Property joined from is invalid");
+                        throw new InvalidOperationException($"Property joined from is invalid\nfrom: {from}, to: {to}");
                         // TODO: better error message
 
                     VerifyJoin(state, joinedFrom, chain.JoinString("."));
@@ -227,14 +227,14 @@ namespace SqlDsl.Query
                         .FirstOrDefault();
 
                     if (from_ == null)
-                        throw new InvalidOperationException("Property joined from is invalid");
+                        throw new InvalidOperationException($"Property joined from is invalid\nfrom: {from}, to: {to}");
                         // TODO: better error message
 
                     VerifyJoin(state, from_, to);
 
                     break;
                 default:
-                    throw new InvalidOperationException("Property joined from is invalid");
+                    throw new InvalidOperationException($"{from.GetType()}         Property joined from is invalid\nfrom: {from}, to: {to}");
                     // TODO: better error message
             }
         }

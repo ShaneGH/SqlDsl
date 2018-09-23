@@ -45,18 +45,18 @@ namespace SqlDsl.UnitTests.DataParser
                     .On((q, t) => q.ClassTags.One().TagId == t.Id) as QueryBuilder<Sqlite.SqliteBuilder, JoinedQueryClass>;
         }
 
-        void Compare(ObjectPropertyGraph x, ObjectPropertyGraph y)
+        void Compare(ObjectPropertyGraph expected, ObjectPropertyGraph actual)
         {
-            if (x == null && y == null) return;
-            if (x == null || y == null) Fail();
+            if (expected == null && actual == null) return;
+            if (expected == null || actual == null) Fail();
 
-            CompareRowIdColumnNumbers(x, y);
+            CompareRowIdColumnNumbers(expected, actual);
 
-            if (x.SimpleProps.Count() != y.SimpleProps.Count()) Fail("Simple props count");
-            for (var i = 0; i < x.SimpleProps.Count(); i++)
+            if (expected.SimpleProps.Count() != actual.SimpleProps.Count()) Fail("Simple props count");
+            for (var i = 0; i < expected.SimpleProps.Count(); i++)
             {
-                var x_ = x.SimpleProps.ElementAt(i);
-                var y_ = y.SimpleProps.ElementAt(i);
+                var x_ = expected.SimpleProps.ElementAt(i);
+                var y_ = actual.SimpleProps.ElementAt(i);
 
                 if (x_.index != y_.index || 
                     x_.name != y_.name)
@@ -65,11 +65,11 @@ namespace SqlDsl.UnitTests.DataParser
                 CollectionAssert.AreEqual(x_.rowNumberColumnIds, y_.rowNumberColumnIds, ErrMessage("Simple prop " + i));
             }
 
-            if (x.ComplexProps.Count() != y.ComplexProps.Count()) Fail("Complex props count");
-            for (var i = 0; i < x.ComplexProps.Count(); i++)
+            if (expected.ComplexProps.Count() != actual.ComplexProps.Count()) Fail("Complex props count");
+            for (var i = 0; i < expected.ComplexProps.Count(); i++)
             {
-                var x_ = x.ComplexProps.ElementAt(i);
-                var y_ = y.ComplexProps.ElementAt(i);
+                var x_ = expected.ComplexProps.ElementAt(i);
+                var y_ = actual.ComplexProps.ElementAt(i);
 
                 if (x_.name != y_.name)
                     Fail("Complex prop " + i);
@@ -80,7 +80,7 @@ namespace SqlDsl.UnitTests.DataParser
             string ErrMessage(string message = null) 
             {
                 message = message == null ? "" : (" " + message);
-                return $"Objects are not equal:{message}\n{x}\n{y}";
+                return $"Objects are not equal:{message}\n\nexpected:\n{expected}\n\nactual:\n{actual}\n";
             }
 
             void Fail(string message = null) 
@@ -89,24 +89,24 @@ namespace SqlDsl.UnitTests.DataParser
             }
         }
 
-        void CompareRowIdColumnNumbers(ObjectPropertyGraph x, ObjectPropertyGraph y)
+        void CompareRowIdColumnNumbers(ObjectPropertyGraph expected, ObjectPropertyGraph actual)
         {
-            if (x == null && y == null) return;
-            if (x == null || y == null) Fail();
+            if (expected == null && actual == null) return;
+            if (expected == null || actual == null) Fail();
 
-            if (x.RowIdColumnNumbers.Count() != y.RowIdColumnNumbers.Count()) Fail("RowIdColumnNumbers count");
-            for (var i = 0; i < x.RowIdColumnNumbers.Count(); i++)
+            if (expected.RowIdColumnNumbers.Count() != actual.RowIdColumnNumbers.Count()) Fail("RowIdColumnNumbers count");
+            for (var i = 0; i < expected.RowIdColumnNumbers.Count(); i++)
             {
-                if (x.RowIdColumnNumbers.ElementAt(i) !=
-                    y.RowIdColumnNumbers.ElementAt(i))
+                if (expected.RowIdColumnNumbers.ElementAt(i) !=
+                    actual.RowIdColumnNumbers.ElementAt(i))
                     Fail("RowIdColumnNumber " + i);
             }
 
-            if (x.ComplexProps.Count() != y.ComplexProps.Count()) Fail("Complex props count");
-            for (var i = 0; i < x.ComplexProps.Count(); i++)
+            if (expected.ComplexProps.Count() != actual.ComplexProps.Count()) Fail("Complex props count");
+            for (var i = 0; i < expected.ComplexProps.Count(); i++)
             {
-                var x_ = x.ComplexProps.ElementAt(i);
-                var y_ = y.ComplexProps.ElementAt(i);
+                var x_ = expected.ComplexProps.ElementAt(i);
+                var y_ = actual.ComplexProps.ElementAt(i);
 
                 if (x_.name != y_.name)
                     Fail("Complex prop " + i);
@@ -114,15 +114,64 @@ namespace SqlDsl.UnitTests.DataParser
                 CompareRowIdColumnNumbers(x_.value, y_.value);
             }
 
-            void Fail(string message = null) 
+            string ErrMessage(string message = null) 
             {
                 message = message == null ? "" : (" " + message);
-                 Assert.Fail($"Objects are not equal:{message}\n{x}\n{y}");
+                return $"Objects are not equal:{message}\n\nexpected:\n{expected}\n\nactual:\n{actual}\n";
+            }
+
+            void Fail(string message = null) 
+            {
+                Assert.Fail(ErrMessage(message));
             }
         }
 
         [Test]
-        public void PropertyGraph_WithRootAndJoins_CreatesCorrectRowIdColumnNumbers()
+        public void SimplePropertyGraph_WithRootAndJoins_CreatesCorrectObjectPropertyGraph()
+        {
+            // arrange
+            // act
+            var actual = (Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.ThePerson)
+                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId) as QueryBuilder<Sqlite.SqliteBuilder, JoinedQueryClass>)
+                .ToSqlBuilder(null)
+                .builder
+                .BuildObjetPropertyGraph(typeof(JoinedQueryClass));
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                null, 
+                new[]
+                {
+                    ("ThePerson", new ObjectPropertyGraph(
+                        new[]
+                        {
+                            (0, "##rowid", new int[0].Skip(0)),
+                            (4, "Id", new int[0].Skip(0)),
+                            (5, "Name", new int[0].Skip(0))
+                        }, 
+                        null, 
+                        null)),
+                    ("PersonClasses", new ObjectPropertyGraph(
+                        new[]
+                        {
+                            (1, "##rowid", new int[0].Skip(0)),
+                            (2, "PersonId", new int[0].Skip(0)),
+                            (3, "ClassId", new int[0].Skip(0))
+                        }, 
+                        null, 
+                        new[]{1}))
+                }, 
+                new[] { 0 });
+
+                
+
+            Compare(expected, actual);
+        }
+
+        [Test]
+        public void PropertyGraph_WithRootAndJoins_CreatesCorrectObjectPropertyGraph()
         {
             // arrange
             // act
@@ -184,51 +233,202 @@ namespace SqlDsl.UnitTests.DataParser
                 }, 
                 new[] { 0 });
 
-                Console.WriteLine(actual);
+                
+
+            Compare(expected, actual);
+        }
+
+        class MappedClass
+        {
+            public string ClassName;
+            public IEnumerable<string> TagNames;
+        }
+
+        class MappedVersion 
+        {
+            public string PersonName;
+            public IEnumerable<MappedClass> MappedClasses;
+        }
+
+        [Test]
+        public void PropertyGraph_WithMapping_CreatesCorrectObjectPropertyGraph()
+        {
+            // arrange
+            // act
+            var actual = (FullyJoinedQuery()
+                .Map(x => new MappedVersion
+                {
+                    PersonName = x.ThePerson.Name
+                }) as QueryMapper<Sqlite.SqliteBuilder, JoinedQueryClass, MappedVersion>)
+                .ToSqlBuilder()
+                .builder
+                .BuildObjetPropertyGraph(typeof(MappedVersion));
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                new[]
+                {
+                    (5, "PersonName", new int[0].Skip(0))
+                },
+                null, 
+                new[] { 0 });
 
             Compare(expected, actual);
         }
 
         [Test]
-        public void SimplePropertyGraph_WithRootAndJoins_CreatesCorrectRowIdColumnNumbers()
+        public void PropertyGraph_WithMapping2_CreatesCorrectObjectPropertyGraph()
         {
             // arrange
             // act
-            var actual = (Sql.Query.Sqlite<JoinedQueryClass>()
-                .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
-                    .On((q, pc) => q.ThePerson.Id == pc.PersonId) as QueryBuilder<Sqlite.SqliteBuilder, JoinedQueryClass>)
-                .ToSqlBuilder(null)
+            var actual = (FullyJoinedQuery()
+                .Map(x => new MappedVersion
+                {
+                    PersonName = x.ThePerson.Name,
+                    MappedClasses = x.Classes
+                        .Select(c => new MappedClass
+                        {
+                            ClassName = c.Name
+                        })
+                }) as QueryMapper<Sqlite.SqliteBuilder, JoinedQueryClass, MappedVersion>)
+                .ToSqlBuilder()
                 .builder
-                .BuildObjetPropertyGraph(typeof(JoinedQueryClass));
+                .BuildObjetPropertyGraph(typeof(MappedVersion));
 
             // assert
             var expected = new ObjectPropertyGraph(
-                null, 
                 new[]
                 {
-                    ("ThePerson", new ObjectPropertyGraph(
+                    (5, "PersonName", new int[0].Skip(0))
+                },
+                new[]
+                {
+                    ("MappedClasses", new ObjectPropertyGraph(
                         new[]
                         {
-                            (0, "##rowid", new int[0].Skip(0)),
-                            (4, "Id", new int[0].Skip(0)),
-                            (5, "Name", new int[0].Skip(0))
+                            (6, "ClassName", new int[0].Skip(0))
                         }, 
                         null, 
-                        null)),
-                    ("PersonClasses", new ObjectPropertyGraph(
-                        new[]
-                        {
-                            (1, "##rowid", new int[0].Skip(0)),
-                            (2, "PersonId", new int[0].Skip(0)),
-                            (3, "ClassId", new int[0].Skip(0))
-                        }, 
-                        null, 
-                        new[]{1}))
+                        new[]{2}))
                 }, 
                 new[] { 0 });
 
-                Console.WriteLine(actual);
+            Compare(expected, actual);
+        }
+
+        [Test]
+        public void PropertyGraph_WithMapping3_CreatesCorrectObjectPropertyGraph()
+        {
+            // arrange
+            // act
+            var actual = (FullyJoinedQuery()
+                .Map(x => new MappedVersion
+                {
+                    PersonName = x.ThePerson.Name,
+                    MappedClasses = x.Classes
+                        .Select(c => new MappedClass
+                        {
+                            ClassName = c.Name,
+                            TagNames = c
+                                .Joined(x.ClassTags)
+                                .Joined(x.Tags)
+                                .Select(t => t.Name)
+
+                        })
+                }) as QueryMapper<Sqlite.SqliteBuilder, JoinedQueryClass, MappedVersion>)
+                .ToSqlBuilder()
+                .builder
+                .BuildObjetPropertyGraph(typeof(MappedVersion));
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                new[]
+                {
+                    (5, "PersonName", new int[0].Skip(0))
+                },
+                new[]
+                {
+                    ("MappedClasses", new ObjectPropertyGraph(
+                        new[]
+                        {
+                            (6, "ClassName", new int[0].Skip(0)),
+                            (7, "TagNames", new int[]{3, 4}.Skip(0))
+                        }, 
+                        null, 
+                        new[]{2}))
+                }, 
+                new[] { 0 });
+
+            Compare(expected, actual);
+        }
+
+        class Tag2
+        {
+            public string TagName;
+        }
+
+        class MappedClass2
+        {
+            public string ClassName;
+            public IEnumerable<Tag2> Tags;
+        }
+
+        class MappedVersion2
+        {
+            public string PersonName;
+            public IEnumerable<MappedClass2> MappedClasses;
+        }
+
+        [Test]
+        public void PropertyGraph_WithMapping4_CreatesCorrectObjectPropertyGraph()
+        {
+            // arrange
+            // act
+            var actual = (FullyJoinedQuery()
+                .Map(x => new MappedVersion2
+                {
+                    PersonName = x.ThePerson.Name,
+                    MappedClasses = x.Classes
+                        .Select(c => new MappedClass2
+                        {
+                            ClassName = c.Name,
+                            Tags = c
+                                .Joined(x.ClassTags)
+                                .Joined(x.Tags)
+                                .Select(t => new Tag2 { TagName = t.Name })
+
+                        })
+                }) as QueryMapper<Sqlite.SqliteBuilder, JoinedQueryClass, MappedVersion2>)
+                .ToSqlBuilder()
+                .builder
+                .BuildObjetPropertyGraph(typeof(MappedVersion));
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                new[]
+                {
+                    (5, "PersonName", new int[0].Skip(0))
+                },
+                new[]
+                {
+                    ("MappedClasses", new ObjectPropertyGraph(
+                        new[]
+                        {
+                            (6, "ClassName", new int[0].Skip(0))
+                        }, 
+                        new[]
+                        {
+                            ("Tags", new ObjectPropertyGraph(
+                                new[]
+                                {
+                                    (7, "TagName", new int[]{3, 4}.Skip(0))
+                                }, 
+                                null, 
+                                new[]{2}))
+                        }, 
+                        new[]{2}))
+                }, 
+                new[] { 0 });
 
             Compare(expected, actual);
         }
