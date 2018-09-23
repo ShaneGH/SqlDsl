@@ -15,17 +15,27 @@ namespace SqlDsl.DataParser
         /// </summary>
         public readonly string[] ColumnNames;
 
-        /// <summary>
-        /// Build an object graph
-        /// </summary>
-        /// <param name="colNames">
-        /// The names of the columns returned in the query.
-        /// </param>
-        /// <param name="rowNumberMap">A map from each column to the indexes of it's row number columns</param>
-        /// <param name="objectType">The type of the object which this graph represents</param>
-        /// <param name="propertyRowNumberColMap">A list of properties along with the row number cols that define their uniqueness</param>
-        public RootObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<string> colNames, Type objectType, IEnumerable<(string name, IEnumerable<int> rowNumberCols)> propertyRowNumberColMap)
-            : base(rowNumberMap, colNames, objectType, propertyRowNumberColMap)
+        // /// <summary>
+        // /// Build an object graph
+        // /// </summary>
+        // /// <param name="colNames">
+        // /// The names of the columns returned in the query.
+        // /// </param>
+        // /// <param name="rowNumberMap">A map from each column to the indexes of it's row number columns</param>
+        // /// <param name="objectType">The type of the object which this graph represents</param>
+        // /// <param name="propertyRowNumberColMap">A list of properties along with the row number cols that define their uniqueness</param>
+        // public RootObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<string> colNames, Type objectType, IEnumerable<(string name, IEnumerable<int> rowNumberCols)> propertyRowNumberColMap)
+        //     : base(rowNumberMap, colNames, objectType, propertyRowNumberColMap)
+        // {
+        //     ColumnNames = colNames.ToArray();
+        // }
+
+        public RootObjectPropertyGraph(
+            IEnumerable<string> colNames,
+            IEnumerable<(int index, string name, IEnumerable<int> rowNumberColumnIds)> simpleProps, 
+            IEnumerable<(string name, ObjectPropertyGraph value)> complexProps, 
+            IEnumerable<int> rowIdColumnNumbers)
+            : base(simpleProps, complexProps, rowIdColumnNumbers)
         {
             ColumnNames = colNames.ToArray();
         }

@@ -36,59 +36,78 @@ namespace SqlDsl.Query
             if (primaryRowId == -1)
                 throw new InvalidOperationException($"Could not find row id column for table {primaryTableName}");
 
-            // TODO: cache RootObjectPropertyGraph graph for reuse
-            var (propertyGraph, rowIdMap) = sqlBuilder.BuildObjetPropertyGraph(typeof(TResult));
-
-            return new CompiledQuery<TResult>(sql, parameters, selectColumns, propertyGraph, rowIdMap, primaryRowId);
+            var propertyGraph = sqlBuilder.BuildObjetPropertyGraph(typeof(TResult));
+            return new CompiledQuery<TResult>(sql, parameters, selectColumns, propertyGraph, primaryRowId);
         }
         
         /// <summary>
         /// Build an object property graph from a sql builder
         /// </summary>
         /// <param name="sqlBuilder">The builder with all properties populated</param>
-        public static (RootObjectPropertyGraph graph, int[][]rowIdMap) BuildObjetPropertyGraph(this ISqlStatement sqlBuilder, Type objectType) 
+        public static RootObjectPropertyGraph BuildObjetPropertyGraph(this ISqlStatement sqlBuilder, Type objectType) 
         {
-            var sql = ToSql(sqlBuilder);
-            var selectColumns = sqlBuilder.SelectColumns.ToArray();
-
-            // build row ID map
-            var rowIdColumns = sqlBuilder.RowIdMap.ToList();
-            var rowIdMap = selectColumns
-                .Select(c => 
+            // map each column to a chain of row id column numbers
+            var rowIdColumns = sqlBuilder
+                .RowIdMap
+                .Select((m, i) => 
                 {
-                    var op = rowIdColumns
-                        .Where(rid => rid.columnName == c)
-                        .Select(rid => rid.rowIdColumnName)
-                        .FirstOrDefault() ??
-                        throw new InvalidOperationException($"Cannot find row id for column \"{c}\".");
+                    // TODO: this should be part of builder?
 
-                    var index = selectColumns.IndexOf(op);
-                    if (index == -1) throw new InvalidOperationException($"Cannot find row id for column \"{c}\".");
+                    var ridI = sqlBuilder.SelectColumns.IndexOf(m.rowIdColumnName);
+                    if (ridI == -1)
+                        throw new InvalidOperationException($"Could not find index for column: {m.rowIdColumnName}");
 
-                    return sqlBuilder
-                        .GetDependantRowIds(index)
-                        .Append(index)
-                        .ToArray();
+                    var colIndex = sqlBuilder.SelectColumns.IndexOf(m.columnName);
+                    if (colIndex == -1)
+                        throw new InvalidOperationException($"Could not find index for column: {m.columnName}");
+
+                    var indexes = sqlBuilder.GetDependantRowIdChain(ridI);
+                    return (i: colIndex, n: m.columnName, ixs: indexes.ToArray());
                 })
-                .ToArray();
+                .OrderBy(x => x.i)
+                .Select(x => (x.n, x.ixs));
+                
+            return OPG.Build(objectType, rowIdColumns);
 
-            // convert from mapped properties to property -> rowId pointer
-            var map = sqlBuilder.RowIdsForMappedProperties
-                .Select(ridm => (
-                    prop: ridm.resultClassProperty, 
-                    selectColumns
-                        .IndexOf(ridm.rowIdColumnName)
-                        .ToEnumerableStruct())
-                )
-                .Enumerate();
 
-            // test previous step for errors
-            foreach (var mapped in map)
-                if (mapped.Item2.First() == -1)
-                    throw new InvalidOperationException("Could not find row id column for " + mapped.prop);
 
-            var propertyGraph = new RootObjectPropertyGraph(rowIdMap, selectColumns, objectType, map);
-            return (propertyGraph, rowIdMap);
+
+            // var rowIdMap = selectColumns
+            //     .Select(c => 
+            //     {
+            //         var op = rowIdColumns
+            //             .Where(rid => rid.columnName == c)
+            //             .Select(rid => rid.rowIdColumnName)
+            //             .FirstOrDefault() ??
+            //             throw new InvalidOperationException($"Cannot find row id for column \"{c}\".");
+
+            //         var index = selectColumns.IndexOf(op);
+            //         if (index == -1) throw new InvalidOperationException($"Cannot find row id for column \"{c}\".");
+
+            //         return sqlBuilder
+            //             .GetDependantRowIds(index)
+            //             .Append(index)
+            //             .ToArray();
+            //     })
+            //     .ToArray();
+
+            // // convert from mapped properties to property -> rowId pointer
+            // var map = sqlBuilder.RowIdsForMappedProperties
+            //     .Select(ridm => (
+            //         prop: ridm.resultClassProperty, 
+            //         selectColumns
+            //             .IndexOf(ridm.rowIdColumnName)
+            //             .ToEnumerableStruct())
+            //     )
+            //     .Enumerate();
+
+            // // test previous step for errors
+            // foreach (var mapped in map)
+            //     if (mapped.Item2.First() == -1)
+            //         throw new InvalidOperationException("Could not find row id column for " + mapped.prop);
+
+            // var propertyGraph = OPG.Build(objectType,  new RootObjectPropertyGraph(rowIdMap, selectColumns, objectType, map);
+            // return (propertyGraph, rowIdMap);
         }
 
         /// <summary>

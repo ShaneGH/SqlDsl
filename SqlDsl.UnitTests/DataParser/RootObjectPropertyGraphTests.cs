@@ -59,9 +59,10 @@ namespace SqlDsl.UnitTests.DataParser
                 var y_ = y.SimpleProps.ElementAt(i);
 
                 if (x_.index != y_.index || 
-                    x_.name != y_.name || 
-                    x_.rowNumberColumnIds != y_.rowNumberColumnIds)
+                    x_.name != y_.name)
                     Fail("Simple prop " + i);
+
+                CollectionAssert.AreEqual(x_.rowNumberColumnIds, y_.rowNumberColumnIds, ErrMessage("Simple prop " + i));
             }
 
             if (x.ComplexProps.Count() != y.ComplexProps.Count()) Fail("Complex props count");
@@ -76,10 +77,15 @@ namespace SqlDsl.UnitTests.DataParser
                 Compare(x_.value, y_.value);
             }
 
-            void Fail(string message = null) 
+            string ErrMessage(string message = null) 
             {
                 message = message == null ? "" : (" " + message);
-                 Assert.Fail($"Objects are not equal:{message}\n{x}\n{y}");
+                return $"Objects are not equal:{message}\n{x}\n{y}";
+            }
+
+            void Fail(string message = null) 
+            {
+                Assert.Fail(ErrMessage(message));
             }
         }
 
@@ -116,18 +122,71 @@ namespace SqlDsl.UnitTests.DataParser
         }
 
         [Test]
-        [Ignore("TODO")]
         public void PropertyGraph_WithRootAndJoins_CreatesCorrectRowIdColumnNumbers()
         {
             // arrange
             // act
-            var result = FullyJoinedQuery()
+            var actual = FullyJoinedQuery()
                 .ToSqlBuilder(null)
                 .builder
                 .BuildObjetPropertyGraph(typeof(JoinedQueryClass));
 
             // assert
-            CompareRowIdColumnNumbers(new ObjectPropertyGraph(null, null, null), result.graph);
+            var expected = new ObjectPropertyGraph(
+                null, 
+                new[]
+                {
+                    ("ThePerson", new ObjectPropertyGraph(
+                        new[]
+                        {
+                            (0, "##rowid", new int[0].Skip(0)),
+                            (13, "Id", new int[0].Skip(0)),
+                            (14, "Name", new int[0].Skip(0))
+                        }, 
+                        null, 
+                        null)),
+                    ("PersonClasses", new ObjectPropertyGraph(
+                        new[]
+                        {
+                            (1, "##rowid", new int[0].Skip(0)),
+                            (5, "PersonId", new int[0].Skip(0)),
+                            (6, "ClassId", new int[0].Skip(0))
+                        }, 
+                        null, 
+                        new[]{1})),
+                    ("Classes", new ObjectPropertyGraph(
+                        new[]
+                        {
+                            (2, "##rowid", new int[0].Skip(0)),
+                            (7, "Id", new int[0].Skip(0)),
+                            (8, "Name", new int[0].Skip(0))
+                        }, 
+                        null, 
+                        new[]{2})),
+                    ("ClassTags", new ObjectPropertyGraph(
+                        new[]
+                        {
+                            (3, "##rowid", new int[0].Skip(0)),
+                            (9, "ClassId", new int[0].Skip(0)),
+                            (10, "TagId", new int[0].Skip(0))
+                        }, 
+                        null, 
+                        new[]{3})),
+                    ("Tags", new ObjectPropertyGraph(
+                        new[]
+                        {
+                            (4, "##rowid", new int[0].Skip(0)),
+                            (11, "Id", new int[0].Skip(0)),
+                            (12, "Name", new int[0].Skip(0))
+                        }, 
+                        null, 
+                        new[]{4}))
+                }, 
+                new[] { 0 });
+
+                Console.WriteLine(actual);
+
+            Compare(expected, actual);
         }
     }
 }

@@ -66,6 +66,16 @@ namespace SqlDsl.Utils
 
             return (ys.Skip(0), zs.Skip(0));
         }
+
+        /// <summary>
+        /// Combine each item in an enumerable with it's index.
+        /// </summary>
+        public static IEnumerable<(int index, T item)> WithIndex<T>(this IEnumerable<T> items)
+        {
+            return items.Select(_WithIndex);
+
+            (int index, T item) _WithIndex(T item, int index) => (index, item);
+        }
         
         /// <summary>
         /// Return the index of an item, or -1

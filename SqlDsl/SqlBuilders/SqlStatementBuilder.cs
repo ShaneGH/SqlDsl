@@ -296,7 +296,7 @@ namespace SqlDsl.SqlBuilders
         /// Concat DB table columns with row id columns
         /// </summary>
         IEnumerable<(string columnName, string tableName, string alias)> GetAllSelectColumns() =>
-            GetRowIdSelectColumns().Concat(Select);
+            GetRowIdSelectColumns().Concat(Select); // TODO: should be Select.Concat(GetRowIdSelectColumns())
 
         IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMap() => InnerQuery != null ?
             GetRowIdMapForInnerQuery() :
@@ -365,36 +365,54 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <summary>
-        /// Given a row id column index, return all of the column indexes for the row ids of the tables it need to join on
+        /// Given a row id column index, return the column index for the row id of the table it needs to join on. Null means that the table has no dependant joins
         /// </summary>
-        public IEnumerable<int> GetDependantRowIds(int rowIdColumnIndex)
+        public int? GetDependantRowId(int rowIdColumnIndex)
         {
             if (InnerQuery != null)
-                return InnerQuery.GetDependantRowIds(rowIdColumnIndex);
+                return InnerQuery.GetDependantRowId(rowIdColumnIndex);
 
             // 0 rowid means the primary table
-            if (rowIdColumnIndex == 0) return EmptyInts;
+            if (rowIdColumnIndex == 0) return null;
 
             // account for primary table being first in list
             var join = Joins[rowIdColumnIndex - 1];
-            return join.queryObjectReferences
-                .Select(GetRowIdColumnIndex);
+            if (join.queryObjectReferences.Count() == 0)
+                return null;
 
-            int GetRowIdColumnIndex(string tableName)
-            {
-                if (PrimaryTableAlias == tableName)
-                    return 0;
-
-                for (var i = 0; i < Joins.Count; i++)
-                {
-                    if (Joins[i].alias == tableName)
-                        return i + 1;
-                }
+            if (join.queryObjectReferences.Count() > 1)
+                // TODO
+                throw new NotImplementedException("Cannot support joins on 2 seperate tables at the moment");
                 
-                throw new InvalidOperationException(
-                    $"Cannot find row id index for table alias \"{tableName}\". " + 
-                    $"Have you added a Join to the \"{tableName}\" property of the query object?");
+            var tableName = join.queryObjectReferences.First();
+            if (PrimaryTableAlias == tableName)
+                return 0;
+
+            for (var i = 0; i < Joins.Count; i++)
+            {
+                if (Joins[i].alias == tableName)
+                    return i + 1;
             }
+            
+            throw new InvalidOperationException(
+                $"Cannot find row id index for table alias \"{tableName}\". " + 
+                $"Have you added a Join to the \"{tableName}\" property of the query object?");
+        }
+
+        /// <summary>
+        /// Given a row id column index, return a chain of column indexes back to the root for the row id of the table it needs to join on.
+        /// </summary>
+        public IEnumerable<int> GetDependantRowIdChain(int rowId)
+        {
+            int? rid = rowId;
+            var result = new List<int>();
+            while (rid != null)
+            {
+                result.Insert(0, rid.Value);
+                rid = GetDependantRowId(rid.Value);
+            }
+
+            return result.Skip(0);
         }
     }
 }

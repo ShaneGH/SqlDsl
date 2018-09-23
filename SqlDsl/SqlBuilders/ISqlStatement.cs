@@ -46,8 +46,13 @@ namespace SqlDsl.SqlBuilders
         (string querySetupSql, string querySql) ToSqlString();
 
         /// <summary>
-        /// Given a row id column index, return all of the column indexes for the row ids of the tables it need to join on
+        /// Given a row id column index, return the column index for the row id of the table it needs to join on. Null means that the table has no dependant joins
         /// </summary>
-        IEnumerable<int> GetDependantRowIds(int rowId);
+        int? GetDependantRowId(int rowId);
+
+        /// <summary>
+        /// Given a row id column index, return a chain of column indexes back to the root for the row id of the table it needs to join on.
+        /// </summary>
+        IEnumerable<int> GetDependantRowIdChain(int rowId);
     }
 }
