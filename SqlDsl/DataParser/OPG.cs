@@ -72,31 +72,20 @@ namespace SqlDsl.DataParser
             (string, ObjectPropertyGraph) BuildComplexProp(IEnumerable<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType)> values)
             {
                 values = values.Enumerate();
+                var ridcn = values
+                    .Select(x => x.subPropRowIdColumnNumbers)
+                    .OrderedIntersection()
+                    .Enumerate();
+
+                // TODO: if this is incorrect, change it. If it is correct, it can be optimised
+                ridcn = ridcn.Any() ? ridcn.Last().ToEnumerableStruct() : ridcn;
                 return (
                     values.First().propertyName,
                     _Build(
                         values.First().propertyType,
-                        values.Select(x => x.subPropRowIdColumnNumbers).OrderedIntersection().ToArray(), // TODO: this .First() is incorrect
+                        ridcn.ToArray(),
                         values.Select(v => (v.index, v.subPropName, v.subPropRowIdColumnNumbers))));
             }
-
-
-            
-        // /// <summary>
-        // /// Properties of an object with simple values like strings, ints etc... The index is the index of the column in the sql query resuts table.
-        // /// </summary>
-        // public readonly IEnumerable<(int index, string name, IEnumerable<int> rowNumberColumnIds)> SimpleProps;
-        
-        // /// <summary>
-        // /// Properties of an object which have sub properies
-        // /// </summary>
-        // public readonly IEnumerable<(string name, ObjectPropertyGraph value)> ComplexProps;
-        
-        // /// <summary>
-        // /// A composite of the row numbers which point to this object
-        // /// </summary>
-        // public readonly IEnumerable<int> RowIdColumnNumbers;
-            
         }
 
         static IEnumerable<T> OrderedIntersection<T>(this IEnumerable<IEnumerable<T>> items)
@@ -105,11 +94,7 @@ namespace SqlDsl.DataParser
             items = items.Enumerate();
             if (!items.Any()) return Enumerable.Empty<T>();
 
-            var tt = items
-                .Aggregate(Intersect)
-                .ToArray();
-
-            return tt;
+            return items.Aggregate(Intersect);
 
             IEnumerable<T> Intersect(IEnumerable<T> x, IEnumerable<T> y)
             {

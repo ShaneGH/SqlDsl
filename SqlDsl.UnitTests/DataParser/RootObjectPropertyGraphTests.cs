@@ -188,5 +188,49 @@ namespace SqlDsl.UnitTests.DataParser
 
             Compare(expected, actual);
         }
+
+        [Test]
+        public void SimplePropertyGraph_WithRootAndJoins_CreatesCorrectRowIdColumnNumbers()
+        {
+            // arrange
+            // act
+            var actual = (Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.ThePerson)
+                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId) as QueryBuilder<Sqlite.SqliteBuilder, JoinedQueryClass>)
+                .ToSqlBuilder(null)
+                .builder
+                .BuildObjetPropertyGraph(typeof(JoinedQueryClass));
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                null, 
+                new[]
+                {
+                    ("ThePerson", new ObjectPropertyGraph(
+                        new[]
+                        {
+                            (0, "##rowid", new int[0].Skip(0)),
+                            (4, "Id", new int[0].Skip(0)),
+                            (5, "Name", new int[0].Skip(0))
+                        }, 
+                        null, 
+                        null)),
+                    ("PersonClasses", new ObjectPropertyGraph(
+                        new[]
+                        {
+                            (1, "##rowid", new int[0].Skip(0)),
+                            (2, "PersonId", new int[0].Skip(0)),
+                            (3, "ClassId", new int[0].Skip(0))
+                        }, 
+                        null, 
+                        new[]{1}))
+                }, 
+                new[] { 0 });
+
+                Console.WriteLine(actual);
+
+            Compare(expected, actual);
+        }
     }
 }
