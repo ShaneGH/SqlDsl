@@ -67,10 +67,10 @@ namespace SqlDsl.DataParser
         public ObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<string> colNames, Type objectType, IEnumerable<(string name, IEnumerable<int> rowNumberCols)> propertyRowNumberColMap)
             : this(
                 rowNumberMap, 
-                colNames.Select((n, i) => (i, n.Split('.').ToArray())), 
+                colNames.Select((n, i) => (i, n.Split('.'))), 
                 objectType, 
                 Enumerable.Empty<int>(),
-                propertyRowNumberColMap.Select(x => (x.name.Split('.').ToArray(), x.rowNumberCols)))
+                propertyRowNumberColMap.Select(x => (x.name.Split('.'), x.rowNumberCols)))
         {
         }
 
