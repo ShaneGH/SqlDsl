@@ -15,30 +15,14 @@ namespace SqlDsl.Query
         /// </summary>
         /// <param name="sqlBuilder">The builder with all properties populated</param>
         /// <param name="parameters">Any constant parameters in the statement</param>
-        /// <param name="primaryTableName">The name of the table in the select statement</param>
         /// <param name="queryParseType">Define the way results are to be parsed</param>
-        public static CompiledQuery<TResult> Compile<TResult>(this ISqlStatement sqlBuilder, IEnumerable<object> parameters, string primaryTableName, QueryParseType queryParseType) 
+        public static CompiledQuery<TResult> Compile<TResult>(this ISqlStatement sqlBuilder, IEnumerable<object> parameters, QueryParseType queryParseType) 
         {
             var sql = ToSql(sqlBuilder);
             var selectColumns = sqlBuilder.SelectColumns.ToArray();
-            
-            // remove "no root" object alias if necessary
-            primaryTableName = primaryTableName == SqlStatementConstants.RootObjectAlias ?
-                null :
-                primaryTableName;
-
-            // get index of the column for row id of the primary table
-            var primaryRowIdName = primaryTableName == null ?
-                SqlStatementConstants.RowIdName :
-                $"{primaryTableName}.{SqlStatementConstants.RowIdName}";
-
-            // get primary row Id
-            var primaryRowId = selectColumns.IndexOf(primaryRowIdName);
-            if (primaryRowId == -1)
-                throw new InvalidOperationException($"Could not find row id column for table {primaryTableName}");
-
             var propertyGraph = sqlBuilder.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
-            return new CompiledQuery<TResult>(sql, parameters, selectColumns, propertyGraph, primaryRowId);
+
+            return new CompiledQuery<TResult>(sql, parameters, selectColumns, propertyGraph);
         }
         
         /// <summary>

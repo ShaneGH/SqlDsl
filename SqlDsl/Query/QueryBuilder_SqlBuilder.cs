@@ -45,12 +45,9 @@ namespace SqlDsl.Query
         /// </summary>
         public ICompiledQuery<TResult> Compile()
         {
-            if (PrimaryTableMember == null)
-                throw new InvalidOperationException("You must set the FROM table before calling ToSql");
-
             var sqlBuilder = ToSqlBuilder(null);
             return sqlBuilder.builder
-                .Compile<TResult>(sqlBuilder.paramaters, PrimaryTableMember.Value.name, QueryParseType.DoNotDuplicate);
+                .Compile<TResult>(sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
         }
 
         /// <summary>

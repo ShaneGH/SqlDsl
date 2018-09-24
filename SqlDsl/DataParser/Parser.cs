@@ -17,21 +17,18 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
-        /// <param name="primaryRowIdColumnNumber">The index of the column which contains the primary (non duplicatable) row number.</param>
-        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, int primaryRowIdColumnNumber) =>
-            _Parse<TResult>(rows, propertyGraph, primaryRowIdColumnNumber).Enumerate();
+        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph) =>
+            _Parse<TResult>(rows, propertyGraph).Enumerate();
 
         /// <summary>
         /// Parse the results of a sql query
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
-        /// <param name="primaryRowIdColumnNumber">The index of the column which contains the primary (non duplicatable) row number.</param>
-        static IEnumerable<TResult> _Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, int primaryRowIdColumnNumber)
+        static IEnumerable<TResult> _Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph)
         {
-            foreach (var row in rows.GroupBy(r => r[primaryRowIdColumnNumber]))
-                foreach (var objValues in CreateObject(propertyGraph, row.ToEnumerable()))
-                    yield return (TResult)Builders.Build(typeof(TResult), objValues);
+            foreach (var obj in CreateObject(propertyGraph, rows))
+                yield return (TResult)Builders.Build(typeof(TResult), obj);
         }
 
         /// <summary>

@@ -33,20 +33,17 @@ namespace SqlDsl
         readonly IEnumerable<object> Parameters;
         readonly string[] SelectColumns;
         readonly RootObjectPropertyGraph PropertyGraph;
-        readonly int PrimaryRowId;
 
         public CompiledQuery(
             string sql, 
             IEnumerable<object> parameters, 
             string[] selectColumns,
-            RootObjectPropertyGraph propertyGraph, 
-            int primaryRowId)
+            RootObjectPropertyGraph propertyGraph)
         {
             Sql = sql;
             Parameters = parameters;
             SelectColumns = selectColumns;
             PropertyGraph = propertyGraph;
-            PrimaryRowId = primaryRowId;
         }
 
         public async Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor)
@@ -55,7 +52,7 @@ namespace SqlDsl
             var reader = await executor.ExecuteDebugAsync(Sql, Parameters, SelectColumns);
             var results = await reader.GetRowsAsync();
 
-            return results.Parse<TResult>(PropertyGraph, PrimaryRowId);
+            return results.Parse<TResult>(PropertyGraph);
         }
     }
 }

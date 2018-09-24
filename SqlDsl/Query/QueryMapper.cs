@@ -64,12 +64,9 @@ namespace SqlDsl.Query
         /// </summary>
         public ICompiledQuery<TMapped> Compile()
         {
-            if (Query.PrimaryTableMember == null)
-                throw new InvalidOperationException("You must set the FROM table before calling ToSql");
-
             var sqlBuilder = ToSqlBuilder();
             return sqlBuilder.builder
-                .Compile<TMapped>(sqlBuilder.paramaters, Query.PrimaryTableMember.Value.name, QueryParseType.ORM);
+                .Compile<TMapped>(sqlBuilder.paramaters, QueryParseType.ORM);
         }
         
         public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor) =>
