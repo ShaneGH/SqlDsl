@@ -16,7 +16,8 @@ namespace SqlDsl.Query
         /// <param name="sqlBuilder">The builder with all properties populated</param>
         /// <param name="parameters">Any constant parameters in the statement</param>
         /// <param name="primaryTableName">The name of the table in the select statement</param>
-        public static CompiledQuery<TResult> Compile<TResult>(this ISqlStatement sqlBuilder, IEnumerable<object> parameters, string primaryTableName) 
+        /// <param name="queryParseType">Define the way results are to be parsed</param>
+        public static CompiledQuery<TResult> Compile<TResult>(this ISqlStatement sqlBuilder, IEnumerable<object> parameters, string primaryTableName, QueryParseType queryParseType) 
         {
             var sql = ToSql(sqlBuilder);
             var selectColumns = sqlBuilder.SelectColumns.ToArray();
@@ -36,7 +37,7 @@ namespace SqlDsl.Query
             if (primaryRowId == -1)
                 throw new InvalidOperationException($"Could not find row id column for table {primaryTableName}");
 
-            var propertyGraph = sqlBuilder.BuildObjetPropertyGraph(typeof(TResult));
+            var propertyGraph = sqlBuilder.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
             return new CompiledQuery<TResult>(sql, parameters, selectColumns, propertyGraph, primaryRowId);
         }
         
@@ -44,7 +45,8 @@ namespace SqlDsl.Query
         /// Build an object property graph from a sql builder
         /// </summary>
         /// <param name="sqlBuilder">The builder with all properties populated</param>
-        public static RootObjectPropertyGraph BuildObjetPropertyGraph(this ISqlStatement sqlBuilder, Type objectType) 
+        /// <param name="queryParseType">Define the way results are to be parsed</param>
+        public static RootObjectPropertyGraph BuildObjetPropertyGraph(this ISqlStatement sqlBuilder, Type objectType, QueryParseType queryParseType) 
         {
             // map each column to a chain of row id column numbers
             var rowIdColumns = sqlBuilder
@@ -67,7 +69,7 @@ namespace SqlDsl.Query
                 .OrderBy(x => x.i)
                 .Select(x => (x.n, x.ixs));
                 
-            return OPG.Build(objectType, rowIdColumns);
+            return OPG.Build(objectType, rowIdColumns, queryParseType);
 
 
 

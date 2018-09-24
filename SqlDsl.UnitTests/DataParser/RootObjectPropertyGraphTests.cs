@@ -137,7 +137,7 @@ namespace SqlDsl.UnitTests.DataParser
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId) as QueryBuilder<Sqlite.SqliteBuilder, JoinedQueryClass>)
                 .ToSqlBuilder(null)
                 .builder
-                .BuildObjetPropertyGraph(typeof(JoinedQueryClass));
+                .BuildObjetPropertyGraph(typeof(JoinedQueryClass), QueryParseType.DoNotDuplicate);
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -178,7 +178,7 @@ namespace SqlDsl.UnitTests.DataParser
             var actual = FullyJoinedQuery()
                 .ToSqlBuilder(null)
                 .builder
-                .BuildObjetPropertyGraph(typeof(JoinedQueryClass));
+                .BuildObjetPropertyGraph(typeof(JoinedQueryClass), QueryParseType.DoNotDuplicate);
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -262,7 +262,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }) as QueryMapper<Sqlite.SqliteBuilder, JoinedQueryClass, MappedVersion>)
                 .ToSqlBuilder()
                 .builder
-                .BuildObjetPropertyGraph(typeof(MappedVersion));
+                .BuildObjetPropertyGraph(typeof(MappedVersion), QueryParseType.ORM);
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -293,7 +293,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }) as QueryMapper<Sqlite.SqliteBuilder, JoinedQueryClass, MappedVersion>)
                 .ToSqlBuilder()
                 .builder
-                .BuildObjetPropertyGraph(typeof(MappedVersion));
+                .BuildObjetPropertyGraph(typeof(MappedVersion), QueryParseType.ORM);
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -309,7 +309,7 @@ namespace SqlDsl.UnitTests.DataParser
                             (6, "ClassName", new int[0].Skip(0))
                         }, 
                         null, 
-                        new[]{2}))
+                        new[]{1,2}))
                 }, 
                 new[] { 0 });
 
@@ -338,7 +338,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }) as QueryMapper<Sqlite.SqliteBuilder, JoinedQueryClass, MappedVersion>)
                 .ToSqlBuilder()
                 .builder
-                .BuildObjetPropertyGraph(typeof(MappedVersion));
+                .BuildObjetPropertyGraph(typeof(MappedVersion), QueryParseType.ORM);
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -355,7 +355,7 @@ namespace SqlDsl.UnitTests.DataParser
                             (7, "TagNames", new int[]{3, 4}.Skip(0))
                         }, 
                         null, 
-                        new[]{2}))
+                        new[]{1,2}))
                 }, 
                 new[] { 0 });
 
@@ -401,7 +401,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }) as QueryMapper<Sqlite.SqliteBuilder, JoinedQueryClass, MappedVersion2>)
                 .ToSqlBuilder()
                 .builder
-                .BuildObjetPropertyGraph(typeof(MappedVersion));
+                .BuildObjetPropertyGraph(typeof(MappedVersion2), QueryParseType.ORM);
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -421,14 +421,16 @@ namespace SqlDsl.UnitTests.DataParser
                             ("Tags", new ObjectPropertyGraph(
                                 new[]
                                 {
-                                    (7, "TagName", new int[]{3, 4}.Skip(0))
+                                    (7, "TagName", new int[0].Skip(0))
                                 }, 
                                 null, 
-                                new[]{2}))
+                                new[]{3, 4}))
                         }, 
-                        new[]{2}))
+                        new[]{1,2}))
                 }, 
                 new[] { 0 });
+
+            Console.WriteLine(actual);
 
             Compare(expected, actual);
         }

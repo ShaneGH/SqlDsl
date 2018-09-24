@@ -50,7 +50,7 @@ namespace SqlDsl.Query
 
             var sqlBuilder = ToSqlBuilder(null);
             return sqlBuilder.builder
-                .Compile<TResult>(sqlBuilder.paramaters, PrimaryTableMember.Value.name);
+                .Compile<TResult>(sqlBuilder.paramaters, PrimaryTableMember.Value.name, QueryParseType.DoNotDuplicate);
         }
 
         /// <summary>

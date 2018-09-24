@@ -69,7 +69,7 @@ namespace SqlDsl.Query
 
             var sqlBuilder = ToSqlBuilder();
             return sqlBuilder.builder
-                .Compile<TMapped>(sqlBuilder.paramaters, Query.PrimaryTableMember.Value.name);
+                .Compile<TMapped>(sqlBuilder.paramaters, Query.PrimaryTableMember.Value.name, QueryParseType.ORM);
         }
         
         public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor) =>

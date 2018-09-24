@@ -13,12 +13,13 @@ namespace SqlDsl.DataParser
     /// </summary>
     public static class OPG
     {
-        public static RootObjectPropertyGraph Build(Type objectType, IEnumerable<(string name, int[] rowIdColumnMap)> columns)
+        public static RootObjectPropertyGraph Build(Type objectType, IEnumerable<(string name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
         {
             var opg = _Build(
                 objectType, 
                 new [] { 0 },
-                columns.Select((c, i) => (i, c.name.Split('.'), c.rowIdColumnMap)));
+                columns.Select((c, i) => (i, c.name.Split('.'), c.rowIdColumnMap)), 
+                queryParseType);
 
             return new RootObjectPropertyGraph(
                 columns.Select(x => x.name), 
@@ -27,7 +28,7 @@ namespace SqlDsl.DataParser
                 opg.RowIdColumnNumbers);
         }
 
-        static ObjectPropertyGraph _Build(Type objectType, int[] rowIdColumnNumbers, IEnumerable<(int index, string[] name, int[] rowIdColumnMap)> columns)
+        static ObjectPropertyGraph _Build(Type objectType, int[] rowIdColumnNumbers, IEnumerable<(int index, string[] name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
         {
             // TODO: rowIdColumnNumbers should be int[]
             var simpleProps = new List<(int index, string propertyName, IEnumerable<int> rowIdColumnNumbers)>();
@@ -39,7 +40,12 @@ namespace SqlDsl.DataParser
                 // if there is only one name, the property belongs to this object
                 if (col.name.Length == 1)
                 {
-                    simpleProps.Add((col.index, col.name[0], RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap)));
+                    simpleProps.Add((
+                        col.index, 
+                        col.name[0], 
+                        FilterRowIdColumnNumbers(
+                            RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap))
+                    ));
                 }
                 // if there are more than one, the property belongs to a child of this object
                 else if (col.name.Length > 1 && typedColNames.ContainsKey(col.name[0]))
@@ -77,14 +83,26 @@ namespace SqlDsl.DataParser
                     .OrderedIntersection()
                     .Enumerate();
 
-                // TODO: if this is incorrect, change it. If it is correct, it can be optimised
-                ridcn = ridcn.Any() ? ridcn.Last().ToEnumerableStruct() : ridcn;
                 return (
                     values.First().propertyName,
                     _Build(
                         values.First().propertyType,
-                        ridcn.ToArray(),
-                        values.Select(v => (v.index, v.subPropName, v.subPropRowIdColumnNumbers))));
+                        FilterRowIdColumnNumbers(ridcn).ToArray(),
+                        values.Select(v => (v.index, v.subPropName, v.subPropRowIdColumnNumbers)),
+                        queryParseType));
+            }
+
+            IEnumerable<int> FilterRowIdColumnNumbers(IEnumerable<int> numbers)
+            {
+                switch (queryParseType)
+                {
+                    case QueryParseType.ORM:
+                        return numbers;
+                    case QueryParseType.DoNotDuplicate:
+                        return numbers.Any() ? numbers.Last().ToEnumerableStruct() : numbers;
+                    default:
+                        throw new NotImplementedException($"QueryParseType \"[{queryParseType}]\" is not supported");
+                }
             }
         }
 
