@@ -430,9 +430,57 @@ namespace SqlDsl.UnitTests.DataParser
                 }, 
                 new[] { 0 });
 
-            Console.WriteLine(actual);
-
             Compare(expected, actual);
+        }
+
+        class DifficultScenario
+        {
+            public DifficultScenarioInner[] FavouriteClasses;
+        }
+
+        class DifficultScenarioInner
+        {
+            public int[] TagIds;
+        }
+
+        [Test]
+        public void PropertyGraph_WithMapping_DifficultScenario_CreatesCorrectObjectPropertyGraph()
+        {
+            // arrange
+            // act
+            var actual = (FullyJoinedQuery()
+                .Map(query => new DifficultScenario
+                { 
+                    FavouriteClasses = query.Classes
+                        .Select(c => new DifficultScenarioInner
+                        {
+                            TagIds = c
+                                .Joined(query.ClassTags)
+                                .Select(t => t.TagId)
+                                .ToArray()
+                        })
+                        .ToArray()
+                }) as QueryMapper<Sqlite.SqliteBuilder, JoinedQueryClass, DifficultScenario>)
+                .ToSqlBuilder()
+                .builder
+                .BuildObjetPropertyGraph(typeof(DifficultScenario), QueryParseType.ORM);
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                null,
+                new[]
+                {
+                    ("FavouriteClasses", new ObjectPropertyGraph(
+                        new[]
+                        {
+                            (5, "TagIds", new int[]{3}.Skip(0))
+                        }, 
+                        null, 
+                        new[]{1,2}))
+                }, 
+                new[] { 0 });
+
+            //Compare(expected, actual);
         }
     }
 }
