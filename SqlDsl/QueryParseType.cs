@@ -15,7 +15,7 @@ namespace SqlDsl
         ORM = 1,
 
         /// <summary>
-        /// Ensure that results are not duplicated
+        /// Ensure that results are not duplicated. There will only be 1 copy of each row returned
         /// </summary>
         DoNotDuplicate
     }
