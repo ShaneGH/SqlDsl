@@ -480,7 +480,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }, 
                 new[] { 0 });
 
-            //Compare(expected, actual);
+            Compare(expected, actual);
         }
     }
 }
