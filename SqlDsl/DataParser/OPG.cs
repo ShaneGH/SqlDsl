@@ -13,13 +13,14 @@ namespace SqlDsl.DataParser
     /// </summary>
     public static class OPG
     {
-        public static RootObjectPropertyGraph Build(Type objectType, IEnumerable<(string name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
+        public static RootObjectPropertyGraph Build(Type objectType, IEnumerable<(string name, int[] rowIdColumnMap)> properties, IEnumerable<(string name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
         {
             columns = columns.Enumerate();
 
             var opg = _Build(
                 objectType, 
                 new [] { 0 },
+                properties.Select(c => (c.name.Split('.'), c.rowIdColumnMap)),
                 columns.Select((c, i) => (i, c.name.Split('.'), c.rowIdColumnMap)), 
                 queryParseType);
 
@@ -30,11 +31,16 @@ namespace SqlDsl.DataParser
                 opg.RowIdColumnNumbers);
         }
 
-        static ObjectPropertyGraph _Build(Type objectType, int[] rowIdColumnNumbers, IEnumerable<(int index, string[] name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
+        static ObjectPropertyGraph _Build(Type objectType, int[] rowIdColumnNumbers, IEnumerable<(string[] name, int[] rowIdColumnMap)> properties, IEnumerable<(int index, string[] name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
         {
             // TODO: rowIdColumnNumbers should be int[]
             var simpleProps = new List<(int index, string propertyName, IEnumerable<int> rowIdColumnNumbers)>();
             var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType)>();
+
+            properties = properties.Select(p => (
+                p.name, 
+                RemoveBeforePattern(rowIdColumnNumbers, p.rowIdColumnMap)
+            ));
 
             var typedColNames = GetProperties(objectType);
             foreach (var col in columns)
@@ -80,16 +86,21 @@ namespace SqlDsl.DataParser
             (string, ObjectPropertyGraph) BuildComplexProp(IEnumerable<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType)> values)
             {
                 values = values.Enumerate();
-                var ridcn = values
-                    .Select(x => x.subPropRowIdColumnNumbers)
-                    .OrderedIntersection()
-                    .Enumerate();
+                var propertyName = values.First().propertyName;
+
+                var property = properties
+                    .Where(p => p.name.Length == 1 && p.name[0] == propertyName)
+                    .ToArray();
+
+                if (property.Length == 0)
+                    throw new InvalidOperationException($"Could not find property for {propertyName}.");
 
                 return (
-                    values.First().propertyName,
+                    propertyName,
                     _Build(
                         values.First().propertyType,
-                        FilterRowIdColumnNumbers(ridcn).ToArray(),
+                        FilterRowIdColumnNumbers(property[0].rowIdColumnMap).ToArray(),
+                        properties.Where(p => p.name.Length > 1).Select(p => (p.name.Skip(1).ToArray(), p.rowIdColumnMap)),
                         values.Select(v => (v.index, v.subPropName, v.subPropRowIdColumnNumbers)),
                         queryParseType));
             }
