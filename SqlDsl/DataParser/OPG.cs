@@ -15,6 +15,8 @@ namespace SqlDsl.DataParser
     {
         public static RootObjectPropertyGraph Build(Type objectType, IEnumerable<(string name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
         {
+            columns = columns.Enumerate();
+
             var opg = _Build(
                 objectType, 
                 new [] { 0 },
