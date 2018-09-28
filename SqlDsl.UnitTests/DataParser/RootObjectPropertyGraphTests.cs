@@ -515,5 +515,80 @@ namespace SqlDsl.UnitTests.DataParser
 
             Compare(expected, actual);
         }
+
+        class DeepJoinedClass
+        {
+            public DeepJoinedClass Inner;
+
+            public DeepJoinedClassData[] FavouriteClasses;
+        }
+
+        class DeepJoinedClassData
+        {
+            public int[] TagIds;
+        }
+
+        [Test]
+        public void PropertyGraph_WithMapping_DifficultScenario_CreatesCorrectObjectPropertyGraph3()
+        {
+            // arrange
+            // act
+            var actual = (FullyJoinedQuery()
+                .Map(query => new DeepJoinedClass
+                { 
+                    Inner = new DeepJoinedClass
+                    {
+                        Inner = new DeepJoinedClass
+                        {
+                            FavouriteClasses = query.Classes
+                                .Select(c => new DeepJoinedClassData
+                                {
+                                    TagIds = c
+                                        .Joined(query.ClassTags)
+                                        .Select(t => t.TagId)
+                                        .ToArray()
+                                })
+                                .ToArray()
+                        }
+                    }
+                }) as QueryMapper<Sqlite.SqliteBuilder, JoinedQueryClass, DeepJoinedClass>)
+                .ToSqlBuilder()
+                .builder
+                .BuildObjetPropertyGraph(typeof(DeepJoinedClass), QueryParseType.ORM);
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                null,
+                new []
+                {
+                    ("Inner", new ObjectPropertyGraph(
+                        null,
+                        new []
+                        {
+                            ("Inner", new ObjectPropertyGraph
+                            (
+                                null,
+                                new []
+                                {
+                                    ("FavouriteClasses", new ObjectPropertyGraph
+                                    (
+                                        new[] 
+                                        {
+                                            (5, "TagIds", new int[]{3}.Skip(0))
+                                        },
+                                        null,
+                                        new[]{1, 2}
+                                    ))
+                                },
+                                null
+                            ))
+                        },
+                        null
+                    ))
+                },
+                new[] { 0 });
+
+            Compare(expected, actual);
+        }
     }
 }

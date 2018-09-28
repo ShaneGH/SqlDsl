@@ -37,10 +37,12 @@ namespace SqlDsl.DataParser
             var simpleProps = new List<(int index, string propertyName, IEnumerable<int> rowIdColumnNumbers)>();
             var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType)>();
 
-            mappedTableProperties = mappedTableProperties.Select(p => (
-                p.name, 
-                RemoveBeforePattern(rowIdColumnNumbers, p.rowIdColumnMap)
-            ));
+            mappedTableProperties = mappedTableProperties
+                .Select(p => (
+                    p.name, 
+                    RemoveBeforePattern(rowIdColumnNumbers, p.rowIdColumnMap, throwErrorIfPatternNotFound: false)
+                ))
+                .Enumerate();
 
             var typedColNames = GetProperties(objectType);
             foreach (var col in columns)
@@ -100,6 +102,7 @@ namespace SqlDsl.DataParser
                 if (propertyTableMap == null)
                 {
                     propertyTableMap = values
+                        .Where(x => x.subPropName.Length == 1)
                         .Select(x => x.subPropRowIdColumnNumbers)
                         .OrderedIntersection()
                         .ToArray();
@@ -159,7 +162,8 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="pattern">The common pattern</param>
         /// <param name="array">The array to trim</param>
-        static int[] RemoveBeforePattern(int[] pattern, int[] array)
+        /// <param name="throwErrorIfPatternNotFound">If true, will throw an error if the array does not begin with the pattern</param>
+        static int[] RemoveBeforePattern(int[] pattern, int[] array, bool throwErrorIfPatternNotFound = true)
         {
             if (pattern.Length == 0)
                 return array;
@@ -178,7 +182,7 @@ namespace SqlDsl.DataParser
                 }
             }
 
-            if (pI != pattern.Length)
+            if (throwErrorIfPatternNotFound && pI != pattern.Length)
             {
                 throw new InvalidOperationException($"Could not find pattern in array" + 
                     $"\npattern: [{pattern.JoinString(",")}]\narray: [{array.JoinString(",")}]");
