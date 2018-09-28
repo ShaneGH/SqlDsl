@@ -15,21 +15,13 @@ namespace SqlDsl.DataParser
         /// </summary>
         public readonly string[] ColumnNames;
 
-        // /// <summary>
-        // /// Build an object graph
-        // /// </summary>
-        // /// <param name="colNames">
-        // /// The names of the columns returned in the query.
-        // /// </param>
-        // /// <param name="rowNumberMap">A map from each column to the indexes of it's row number columns</param>
-        // /// <param name="objectType">The type of the object which this graph represents</param>
-        // /// <param name="propertyRowNumberColMap">A list of properties along with the row number cols that define their uniqueness</param>
-        // public RootObjectPropertyGraph(int[][] rowNumberMap, IEnumerable<string> colNames, Type objectType, IEnumerable<(string name, IEnumerable<int> rowNumberCols)> propertyRowNumberColMap)
-        //     : base(rowNumberMap, colNames, objectType, propertyRowNumberColMap)
-        // {
-        //     ColumnNames = colNames.ToArray();
-        // }
-
+        /// <summary>
+        /// Build an object graph
+        /// </summary>
+        /// <param name="colNames">The column names that this graph is based on.</param>
+        /// <param name="simpleProps">Properties of an object with simple values like strings, ints etc... The index is the index of the column in the sql query resuts table.</param>
+        /// <param name="complexProps">Properties of an object which have sub properies</param>
+        /// <param name="rowIdColumnNumbers">A composite of the row numbers which point to this object</param>
         public RootObjectPropertyGraph(
             IEnumerable<string> colNames,
             IEnumerable<(int index, string name, IEnumerable<int> rowNumberColumnIds)> simpleProps, 

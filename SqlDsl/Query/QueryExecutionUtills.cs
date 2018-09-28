@@ -44,7 +44,7 @@ namespace SqlDsl.Query
                 .OrderBy(GetIndex)
                 .Select(RemoveIndex);
                 
-            return OPG.Build(objectType, mappedTableProperties, rowIdColumns, queryParseType);
+            return ObjectPropertyGraphBuilder.Build(objectType, mappedTableProperties, rowIdColumns, queryParseType);
 
             (string name, int[] rowIdColumnMap) GetMappedTable((string rowIdColumnName, string resultClassProperty) propertyRowIds)
             {

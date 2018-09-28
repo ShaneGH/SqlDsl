@@ -6,12 +6,10 @@ using System.Linq;
 
 namespace SqlDsl.DataParser
 {
-    //TODO: this class needs a cleanup
-
     /// <summary>
-    /// Represents an object with it's property names
+    /// Util methods for builing an object property graph
     /// </summary>
-    public static class OPG
+    public static class ObjectPropertyGraphBuilder
     {
         public static RootObjectPropertyGraph Build(Type objectType, IEnumerable<(string name, int[] rowIdColumnMap)> mappedTableProperties, IEnumerable<(string name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
         {
