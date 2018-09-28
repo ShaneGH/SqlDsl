@@ -175,8 +175,11 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class WhereErrorQueryClass
         {
+            // warning CS0649: Field 'ObjectShapeTests.WhereErrorQueryClass.Person2' is never assigned to, and will always have its default value null
+            #pragma warning disable 0649
             public Person Person1;
             public Person Person2;
+            #pragma warning restore 0649
         }
 
         [Test]
