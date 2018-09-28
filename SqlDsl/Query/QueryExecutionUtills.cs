@@ -32,10 +32,10 @@ namespace SqlDsl.Query
         /// <param name="queryParseType">Define the way results are to be parsed</param>
         public static RootObjectPropertyGraph BuildObjetPropertyGraph(this ISqlStatement sqlBuilder, Type objectType, QueryParseType queryParseType) 
         {
-            // map each mapped property to a chain of row id column numbers
-            var properties = sqlBuilder
+            // row id's for each mapped table
+            var mappedTableProperties = sqlBuilder
                 .RowIdsForMappedProperties
-                .Select(GetProperty);
+                .Select(GetMappedTable);
 
             // map each column to a chain of row id column numbers
             var rowIdColumns = sqlBuilder
@@ -44,9 +44,9 @@ namespace SqlDsl.Query
                 .OrderBy(GetIndex)
                 .Select(RemoveIndex);
                 
-            return OPG.Build(objectType, properties, rowIdColumns, queryParseType);
+            return OPG.Build(objectType, mappedTableProperties, rowIdColumns, queryParseType);
 
-            (string name, int[] rowIdColumnMap) GetProperty((string rowIdColumnName, string resultClassProperty) propertyRowIds)
+            (string name, int[] rowIdColumnMap) GetMappedTable((string rowIdColumnName, string resultClassProperty) propertyRowIds)
             {
                 var ridI = sqlBuilder.SelectColumns.IndexOf(propertyRowIds.rowIdColumnName);
                 if (ridI == -1)

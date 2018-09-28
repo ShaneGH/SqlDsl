@@ -102,7 +102,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Add a JOIN to the query
         /// </summary>
-        /// <param name="joinType">The type, e.g.abstract INNER, LEFT etc...</param>
+        /// <param name="joinType">The type, e.g. INNER, LEFT etc...</param>
         /// <param name="joinTable">The table to join on</param>
         /// <param name="queryRootParam">The parameter which represents the query object in the expression</param>
         /// <param name="joinTableParam">The parameter which represents the join table in the expression</param>

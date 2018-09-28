@@ -13,14 +13,14 @@ namespace SqlDsl.DataParser
     /// </summary>
     public static class OPG
     {
-        public static RootObjectPropertyGraph Build(Type objectType, IEnumerable<(string name, int[] rowIdColumnMap)> properties, IEnumerable<(string name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
+        public static RootObjectPropertyGraph Build(Type objectType, IEnumerable<(string name, int[] rowIdColumnMap)> mappedTableProperties, IEnumerable<(string name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
         {
             columns = columns.Enumerate();
 
             var opg = _Build(
                 objectType, 
                 new [] { 0 },
-                properties.Select(c => (c.name.Split('.'), c.rowIdColumnMap)),
+                mappedTableProperties.Select(c => (c.name.Split('.'), c.rowIdColumnMap)),
                 columns.Select((c, i) => (i, c.name.Split('.'), c.rowIdColumnMap)), 
                 queryParseType);
 
@@ -31,13 +31,13 @@ namespace SqlDsl.DataParser
                 opg.RowIdColumnNumbers);
         }
 
-        static ObjectPropertyGraph _Build(Type objectType, int[] rowIdColumnNumbers, IEnumerable<(string[] name, int[] rowIdColumnMap)> properties, IEnumerable<(int index, string[] name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
+        static ObjectPropertyGraph _Build(Type objectType, int[] rowIdColumnNumbers, IEnumerable<(string[] name, int[] rowIdColumnMap)> mappedTableProperties, IEnumerable<(int index, string[] name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
         {
             // TODO: rowIdColumnNumbers should be int[]
             var simpleProps = new List<(int index, string propertyName, IEnumerable<int> rowIdColumnNumbers)>();
             var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType)>();
 
-            properties = properties.Select(p => (
+            mappedTableProperties = mappedTableProperties.Select(p => (
                 p.name, 
                 RemoveBeforePattern(rowIdColumnNumbers, p.rowIdColumnMap)
             ));
@@ -88,19 +88,29 @@ namespace SqlDsl.DataParser
                 values = values.Enumerate();
                 var propertyName = values.First().propertyName;
 
-                var property = properties
+                // try to get row ids from property table map
+                var propertyTableMap = mappedTableProperties
                     .Where(p => p.name.Length == 1 && p.name[0] == propertyName)
-                    .ToArray();
+                    .Select(x => x.rowIdColumnMap)
+                    .FirstOrDefault();
 
-                if (property.Length == 0)
-                    throw new InvalidOperationException($"Could not find property for {propertyName}.");
+                // if there is no map, use the common root for all properties
+                // this will happen when it is not a mapped query, 
+                // or for properties not bound to a Select(...) statement in a map
+                if (propertyTableMap == null)
+                {
+                    propertyTableMap = values
+                        .Select(x => x.subPropRowIdColumnNumbers)
+                        .OrderedIntersection()
+                        .ToArray();
+                }
 
                 return (
                     propertyName,
                     _Build(
                         values.First().propertyType,
-                        FilterRowIdColumnNumbers(property[0].rowIdColumnMap).ToArray(),
-                        properties.Where(p => p.name.Length > 1).Select(p => (p.name.Skip(1).ToArray(), p.rowIdColumnMap)),
+                        FilterRowIdColumnNumbers(propertyTableMap).ToArray(),
+                        mappedTableProperties.Where(p => p.name.Length > 1).Select(p => (p.name.Skip(1).ToArray(), p.rowIdColumnMap)),
                         values.Select(v => (v.index, v.subPropName, v.subPropRowIdColumnNumbers)),
                         queryParseType));
             }
