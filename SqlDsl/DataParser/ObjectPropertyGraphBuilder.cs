@@ -203,11 +203,7 @@ namespace SqlDsl.DataParser
         }
 
         static Dictionary<string, Type> BuildProperties(Type objectType) => objectType
-            .GetFields()
-            .Select(f => (name: f.Name, type: f.FieldType))
-            .Concat(objectType
-                .GetProperties()
-                .Select(f => (name: f.Name, type: f.PropertyType)))
+            .GetFieldsAndProperties()
             .ToDictionary(x => x.name, x => x.type);
     }
 }

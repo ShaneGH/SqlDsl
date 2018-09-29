@@ -20,11 +20,7 @@ namespace SqlDsl.ObjectBuilders
         public static Action<T> CompileEnumerabeAdder<T>()
         {
             // get all members of the object
-            var pi = BindingFlags.Public | BindingFlags.Instance;
-            var members = typeof(T)
-                .GetProperties(pi)
-                .Select(p => (name: p.Name, tpye: p.PropertyType))
-                .Concat(typeof(T).GetFields(pi).Select(p => (name: p.Name, type: p.FieldType)));
+            var members = typeof(T).GetFieldsAndProperties();
 
             // for each member, attempt to build a collection creator function
             var enumerableProperties = members

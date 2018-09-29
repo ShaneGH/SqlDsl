@@ -78,11 +78,11 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class MapComplexObjectType1
         {
+            public string PersonName;
             public Person Person;
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task MapComplexObject1()
         {
             // arrange
@@ -97,14 +97,8 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(Data.People.John.Name, data.First().Person);
-            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).Person);
-        }
-
-        class MapComplexObjectType2
-        {
-            public string PersonName;
-            public Person Person;
+            Assert.AreEqual(Data.People.John, data.First().Person);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).Person);
         }
 
         [Test]
@@ -114,7 +108,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await FullyJoinedQuery()
-                .Map(p => new MapComplexObjectType2
+                .Map(p => new MapComplexObjectType1
                 { 
                     PersonName = p.ThePerson.Name,
                     Person = p.ThePerson

@@ -216,6 +216,29 @@ namespace SqlDsl.Utils
                 return (false, null);
 
             return (true, e.Arguments[0]);
+        }        
+
+        /// <summary>
+        /// Get the public instance fields and properties from a class
+        /// </summary>
+        public static IEnumerable<(string name, Type type)> GetFieldsAndProperties(this Type objectType) => objectType
+            .GetFields(BindingFlags.Public | BindingFlags.Instance)
+            .Select(f => (name: f.Name, type: f.FieldType))
+            .Concat(objectType
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Select(f => (name: f.Name, type: f.PropertyType)));
+
+        /// <summary>
+        /// Get the type for a PropertyInfo or FieldInfo. Throw an exception otherwise
+        /// </summary>
+        public static Type GetPropertyOrFieldType(this MemberInfo member)
+        {
+            if (member is PropertyInfo)
+                return (member as PropertyInfo).PropertyType;
+            if (member is FieldInfo)
+                return (member as FieldInfo).FieldType;
+
+            throw new InvalidOperationException("Member must be a property or field: " + member);
         }
     }
 }

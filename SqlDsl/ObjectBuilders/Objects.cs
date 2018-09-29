@@ -37,15 +37,11 @@ namespace SqlDsl.ObjectBuilders
                     Expression.Constant(constructor)));
 
             // get list of properties
-            var pi = BindingFlags.Public | BindingFlags.Instance;
-            var props = type
-                .GetProperties(pi)
-                .Select(p => (p.Name, p.PropertyType))
-                .Concat(type.GetFields(pi).Select(p => (p.Name, p.FieldType)));
+            var props = type.GetFieldsAndProperties();
                 
             // compile setter for each property
             var propSetters = props
-                .Select(p => (name: p.Name, BuildPropertySetter<T>(p.Name, p.Item2), p.Item2))
+                .Select(p => (name: p.name, BuildPropertySetter<T>(p.name, p.type), p.type))
                 .ToDictionary(x => x.name, x => (setter: x.Item2, type: x.Item3));
 
             T build(ObjectGraph vals) => BuildObject(propSetters, vals);

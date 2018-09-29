@@ -121,9 +121,20 @@ namespace SqlDsl.Query
                         .ToEnumerableStruct()
                         .Concat(init.Bindings
                             .OfType<MemberAssignment>()
-                            .Select(b => (memberName: b.Member.Name, map: BuildMap(state, b.Expression, b.Member.Name)))
+                            .Select(b => (binding: b, memberName: b.Member.Name, map: BuildMap(state, b.Expression, b.Member.Name)))
                             .Select(m => (
-                                m.map.properties.Select(x => new Mapped(x.From, CombineStrings(toPrefix, x.To))),
+                                m.map.properties.SelectMany(x => 
+                                {
+                                    if (x.From == null)
+                                    {
+                                        return m.binding.Member
+                                            .GetPropertyOrFieldType()
+                                            .GetFieldsAndProperties()
+                                            .Select(mem => new Mapped(mem.name, CombineStrings(x.To, mem.name)));
+                                    }
+
+                                    return new Mapped(x.From, CombineStrings(toPrefix, x.To)).ToEnumerable();
+                                }),
                                 m.map.tables.Select(x => new Mapped(x.From, CombineStrings(m.memberName, x.To))))))
                         .AggregateTuple2();
 

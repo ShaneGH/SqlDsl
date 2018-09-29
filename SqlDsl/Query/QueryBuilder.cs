@@ -60,7 +60,7 @@ namespace SqlDsl.Query
                 throw new ArgumentException("This expression must point to a paramater on the query object.", nameof(body));
                 
             // return the name and type
-            return (output.MemberName(), GetPropertyOrFieldType(output.Last()));
+            return (output.MemberName(), output.Last().GetPropertyOrFieldType());
 
             Expression TryOne(Expression val) => ReflectionUtils.IsOne(val) ?? val;
         }
@@ -95,19 +95,6 @@ namespace SqlDsl.Query
                 .AsReadOnly();
                 
             return Columns.GetOrAdd(t, value);
-        }
-
-        /// <summary>
-        /// Get the type for a PropertyInfo or FieldInfo.static Throw an exception otherwise
-        /// </summary>
-        static Type GetPropertyOrFieldType(MemberInfo member)
-        {
-            if (member is PropertyInfo)
-                return (member as PropertyInfo).PropertyType;
-            if (member is FieldInfo)
-                return (member as FieldInfo).FieldType;
-
-            throw new InvalidOperationException("Member must be a property or field: " + member);
         }
     }
 }
