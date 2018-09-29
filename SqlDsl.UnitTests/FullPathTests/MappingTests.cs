@@ -586,13 +586,12 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
-        public async Task JoinInMap_WithSimpleJoin_JoinPropertyIsSingular_ThrowsException()
+        public void JoinInMap_WithSimpleJoin_JoinPropertyIsSingular_ThrowsException()
         {
             // arrange
             // act
             // assert
-            await FullyJoinedQuery()
+            Assert.ThrowsAsync(typeof(InvalidOperationException), () => FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass3_1
                 { 
                     FavouriteClasses = query.Classes
@@ -605,9 +604,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ExecuteAsync(Executor);
-                
-            Assert.Fail("Should throw exn");
+                .ExecuteAsync(Executor));
         }
 
         class SmartJoinedClass3_2
