@@ -94,4 +94,25 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             return person != null && person.ClassId == ClassId && person.TagId == TagId;
         }
     }
+    
+    class Purchase : EqComparer
+    {
+        public int Id { get; set; }
+        public float Amount { get; set; }
+        public int PersonId { get; set; }
+        public int PurchaedForPersonId { get; set; }
+        public int? ClassId { get; set; }
+
+        public override int GetHashCode() => $"{Id}.{Amount}.{PersonId}.{ClassId}.{PurchaedForPersonId}".GetHashCode();
+        public override bool Equals(object p)
+        {
+            var person = p as Purchase;
+            return person != null && 
+                person.Id == Id && 
+                person.Amount == Amount && 
+                person.PersonId == PersonId &&
+                person.PurchaedForPersonId == PurchaedForPersonId &&
+                person.ClassId == ClassId;
+        }
+    }
 }

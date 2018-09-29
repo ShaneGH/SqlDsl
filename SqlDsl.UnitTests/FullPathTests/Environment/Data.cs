@@ -21,6 +21,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         public static readonly Tags Tags = new Tags();
         public static readonly PersonClasses PersonClasses = new PersonClasses();
         public static readonly ClassTags ClassTags = new ClassTags();
+        public static readonly Purchases Purchases = new Purchases();
     }
 
     public static class InitData
@@ -60,7 +61,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                     PopulatedTableSql(Data.Classes),
                     PopulatedTableSql(Data.Tags),
                     PopulatedTableSql(Data.PersonClasses),
-                    PopulatedTableSql(Data.ClassTags)
+                    PopulatedTableSql(Data.ClassTags),
+                    PopulatedTableSql(Data.Purchases)
                 }.JoinString("\n");
                 
                 var cmd = conn.CreateCommand();
@@ -102,8 +104,10 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         {
             if (t == typeof(string)) return "TEXT";
             if (t == typeof(int)) return "INTEGER";
+            if (t == typeof(int?)) return "INTEGER";
+            if (t == typeof(float)) return "REAL";
 
-            throw new NotSupportedException();
+            throw new NotSupportedException($"Invalid database data type: {t}");
         }
 
         static string GetPrimaryKey(string name) => name.ToLowerInvariant() == "id" ? " PRIMARY KEY" : "";
@@ -111,12 +115,14 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         static string SqlValue(object val, Type t)
         {
             if (t == typeof(int)) return val.ToString();
-            if (t == typeof(string)) return "'" + val.ToString() + "'";
+            if (t == typeof(int?)) return val == null ? "NULL" : val.ToString();
+            if (t == typeof(float)) return val.ToString();
+            if (t == typeof(string)) return val == null ? "NULL" : ("'" + val.ToString() + "'");
 
-            throw new NotSupportedException();
+            throw new NotSupportedException($"Unsupported sql value {val}, {t}");
         }
 
-        static string GetNullable(Type t) => t.IsClass ? "" : " NOT NULL";
+        static string GetNullable(Type t) => t.IsClass || t.FullName.StartsWith("System.Nullable`1[") ? " NULL" : " NOT NULL";
     }
 
     class People : IEnumerable<Person>
@@ -222,6 +228,55 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         };
 
         public IEnumerator<ClassTag> GetEnumerator() => (new [] { ArcherySport, TennisSport, TennisBallSport } as IEnumerable<ClassTag>).GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+    
+    class Purchases : IEnumerable<Purchase>
+    {
+        public readonly Purchase JohnPurchasedHimselfShoes = new Purchase
+        {
+            Id = 7,
+            Amount = 100,
+            PersonId = new People().John.Id,
+            PurchaedForPersonId = new People().John.Id,
+            ClassId = null
+        };
+
+        public readonly Purchase JohnPurchasedHimselfTennis = new Purchase
+        {
+            Id = 8,
+            Amount = 200,
+            PersonId = new People().John.Id,
+            PurchaedForPersonId = new People().John.Id,
+            ClassId = new Classes().Tennis.Id
+        };
+
+        public readonly Purchase MaryPurchasedHerselfTennis = new Purchase
+        {
+            Id = 9,
+            Amount = 300,
+            PersonId = new People().Mary.Id,
+            PurchaedForPersonId = new People().Mary.Id,
+            ClassId = new Classes().Tennis.Id
+        };
+
+        public readonly Purchase MaryPurchasedJohnArchery = new Purchase
+        {
+            Id = 10,
+            Amount = 400,
+            PersonId = new People().Mary.Id,
+            PurchaedForPersonId = new People().John.Id,
+            ClassId = new Classes().Archery.Id
+        };
+
+        public IEnumerator<Purchase> GetEnumerator() => (new [] 
+        { 
+            JohnPurchasedHimselfShoes,
+            JohnPurchasedHimselfTennis,
+            MaryPurchasedHerselfTennis,
+            MaryPurchasedJohnArchery
+        } as IEnumerable<Purchase>).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
