@@ -156,7 +156,7 @@ namespace SqlDsl.ObjectBuilders
 
             // vals.Select(x => Convertors.GetConvertor(propertyType)(x))
             var convertor = Expression.Constant(
-                TypeConvertors.GetConvertor(iEnumerableType ?? propertyType, true));
+                TypeConvertors.GetConvertor(iEnumerableType ?? propertyType));
             var castMethod = ReflectionUtils.GetMethod<IEnumerable<object>>(
                 x => x.Select(_ => _), 
                 typeof(object), iEnumerableType ?? propertyType);

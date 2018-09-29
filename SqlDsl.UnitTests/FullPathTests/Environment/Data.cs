@@ -280,4 +280,111 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
+
+    // TODO: currently this class is not used and data types are not tested
+    // Move this class into a test dll for SqlDsl.Sqlite (and duplicate for other sql providers) it's own 
+    class DataTypeTests
+    {
+        public readonly DataTypeTest DataTypeTestNotNulled = new DataTypeTest
+        {
+            Byte = 1,
+            SByte = 2,
+            Bool = true,
+            Byte_N = 3,
+            SByte_N = 4,
+            Bool_N = true,
+
+            Short = 6,
+            Int = 7,
+            Long = 8,
+            Short_N = 9,
+            Int_N = 10,
+            Long_N = 11,
+
+            UShort = 12,
+            UInt = 13,
+            ULong = 14,
+            UShort_N = 15,
+            UInt_N = 16,
+            ULong_N = 17,
+
+            Float = 1.8F,
+            Double = 1.9,
+            Decimal = 2.1M,
+            Float_N = 2.2F,
+            Double_N = 2.3,
+            Decimal_N = 2.4M,
+
+            Char = 'a',
+            DateTime = new DateTime(2000, 1, 1),
+            String = "b",
+            Char_N = 'c',
+            DateTime_N = new DateTime(2000, 1, 2),
+
+            Guid = new Guid("b5591caa-46bc-4cce-b477-0711090848bf"),
+            Guid_N = new Guid("031e35c3-3365-473c-a509-edefaf3f49da"),
+
+            CharArray = new [] { 'd' },
+            CharEnumerable = new [] { 'e' },
+            CharList = new List<char> { 'f' },
+
+            ByteArray = new [] { (byte)25 },
+            ByteEnumerable = new [] { (byte)26 },
+            ByteList = new List<byte> { 27 },
+
+            TestEnum = TestEnum.Option1,
+            TestEnum_N = TestEnum.Option2
+        };
+        
+        public readonly DataTypeTest DataTypeTestNulled = new DataTypeTest
+        {
+            Byte = 1,
+            SByte = 2,
+            Bool = true,
+            Byte_N = null,
+            SByte_N = null,
+            Bool_N = null,
+
+            Short = 6,
+            Int = 7,
+            Long = 8,
+            Short_N = null,
+            Int_N = null,
+            Long_N = null,
+
+            UShort = 12,
+            UInt = 13,
+            ULong = 14,
+            UShort_N = null,
+            UInt_N = null,
+            ULong_N = null,
+
+            Float = 1.8F,
+            Double = 1.9,
+            Decimal = 2.1M,
+            Float_N = null,
+            Double_N = null,
+            Decimal_N = null,
+
+            Char = 'a',
+            DateTime = new DateTime(2000, 1, 1),
+            String = null,
+            Char_N = null,
+            DateTime_N = null,
+
+            Guid = new Guid("b5591caa-46bc-4cce-b477-0711090848bf"),
+            Guid_N = null,
+
+            CharArray = null,
+            CharEnumerable = null,
+            CharList = null,
+
+            ByteArray = null,
+            ByteEnumerable = null,
+            ByteList = null,
+
+            TestEnum = TestEnum.Option1,
+            TestEnum_N = null
+        };
+    }
 }

@@ -115,4 +115,61 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 person.ClassId == ClassId;
         }
     }
+    
+    class DataTypeTest
+    {
+        public byte Byte;
+        public sbyte SByte;
+        public bool Bool;
+        public byte? Byte_N;
+        public sbyte? SByte_N;
+        public bool? Bool_N;
+
+        public short Short;
+        public int Int;
+        public long Long;
+        public short? Short_N;
+        public int? Int_N;
+        public long? Long_N;
+
+        public ushort UShort;
+        public uint UInt;
+        public ulong ULong;
+        public ushort? UShort_N;
+        public uint? UInt_N;
+        public ulong? ULong_N;
+
+        public float Float;
+        public double Double;
+        public decimal Decimal;
+        public float? Float_N;
+        public double? Double_N;
+        public decimal? Decimal_N;
+                
+        public char Char;
+        public DateTime DateTime;
+        public string String;
+        public char? Char_N;
+        public DateTime? DateTime_N;
+
+        public Guid Guid;
+        public Guid? Guid_N;
+
+        public IEnumerable<char> CharEnumerable;
+        public List<char> CharList;
+        public char[] CharArray;
+
+        public IEnumerable<byte> ByteEnumerable;
+        public List<byte> ByteList;
+        public byte[] ByteArray;
+
+        public TestEnum TestEnum;
+        public TestEnum? TestEnum_N;
+    }
+
+    public enum TestEnum
+    {
+        Option1 = 1,
+        Option2 = 2
+    }
 }

@@ -45,7 +45,7 @@ namespace SqlDsl.ObjectBuilders.UnitTests
         }
 
         [Test]
-        public void Build_WithExpectingIntGetsNull_ThrowsError()
+        public void Build_ExpectingIntGetsNull_ThrowsError()
         {
             // arrange
             // act
