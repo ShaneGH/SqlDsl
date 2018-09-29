@@ -186,7 +186,7 @@ namespace SqlDsl.Utils
             return (false, null, null);
         }
 
-        static readonly MethodInfo _ToArray = GetMethod(() => new object[0].ToArray()).GetGenericMethodDefinition();
+        static readonly MethodInfo IEnumerableToArray = GetMethod(() => new object[0].ToArray()).GetGenericMethodDefinition();
 
         /// <summary>
         /// Determine whether an expression is a ToArray().
@@ -196,10 +196,15 @@ namespace SqlDsl.Utils
         /// </returns>
         public static (bool isToArray, Expression enumerable) IsToArray(MethodCallExpression e)
         {
-            if (!e.Method.IsGenericMethod || e.Method.GetGenericMethodDefinition() != _ToArray)
-                return (false, null);
+            if (e.Method.IsGenericMethod && e.Method.GetGenericMethodDefinition() == IEnumerableToArray)
+                return (true, e.Arguments[0]);
 
-            return (true, e.Arguments[0]);
+            if (e.Method.DeclaringType.IsGenericType && 
+                e.Method.DeclaringType.GetGenericTypeDefinition() == typeof(List<>) &&
+                e.Method.Name == "ToArray")
+                return (true, e.Object);
+
+            return (false, null);
         }
 
         static readonly MethodInfo _ToList = GetMethod(() => new object[0].ToList()).GetGenericMethodDefinition();

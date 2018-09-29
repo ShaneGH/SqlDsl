@@ -129,8 +129,11 @@ namespace SqlDsl.Query
                                     // if From == null, it is a reference to the query object
                                     if (x.From == null || IsQueryObjectProperty(state, x.From))
                                     {
-                                        return m.binding.Member
-                                            .GetPropertyOrFieldType()
+                                        var t = m.binding.Member
+                                            .GetPropertyOrFieldType();
+
+                                        t = ReflectionUtils.GetIEnumerableType(t) ?? t;
+                                        return t
                                             .GetFieldsAndProperties()
                                             .Select(mem => new Mapped(CombineStrings(x.From, mem.name), CombineStrings(x.To, mem.name)));
                                     }
@@ -169,7 +172,7 @@ namespace SqlDsl.Query
 
         static bool IsQueryObjectProperty(BuildMapState state, string property)
         {
-            return state.ValidJoins.Select(x => x.to).Prepend(state.PrimaryTableProperty).Contains(property);
+            return state.AllPossibleTableProperties.Contains(property);
         }
 
         static void TryAddSelectStatementParameterToProperty(BuildMapState state, Expression enumerable, ParameterExpression parameter)
@@ -308,20 +311,24 @@ namespace SqlDsl.Query
                 $"{CompileMemberName(next)}.{expr.Member.Name}" :
                 expr.Member.Name;
         }
-    }
 
-    class BuildMapState
-    {
-        public readonly ParameterExpression QueryObject;
-        public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
-        public readonly List<(string from, string to)> ValidJoins;
-        public readonly string PrimaryTableProperty;
-
-        public BuildMapState(ParameterExpression queryObject, string primaryTableProperty, IEnumerable<(string from, string to)> validJoins)
+        class BuildMapState
         {
-            QueryObject = queryObject;
-            PrimaryTableProperty = primaryTableProperty;
-            ValidJoins = validJoins.OrEmpty().ToList(); 
+            public readonly ParameterExpression QueryObject;
+            public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
+            public readonly IEnumerable<(string from, string to)> ValidJoins;
+            public readonly string PrimaryTableProperty;
+            public readonly IEnumerable<string> AllPossibleTableProperties;
+
+            public BuildMapState(ParameterExpression queryObject, string primaryTableProperty, IEnumerable<(string from, string to)> validJoins)
+            {
+                QueryObject = queryObject;
+                PrimaryTableProperty = primaryTableProperty;
+                ValidJoins = validJoins.OrEmpty();
+                
+                var tmp = ValidJoins.Select(x => x.from).Prepend(PrimaryTableProperty);
+                AllPossibleTableProperties = tmp.Concat(tmp.Select(x => CombineStrings(SqlStatementConstants.RootObjectAlias, x))).Enumerate();
+            }
         }
     }
 

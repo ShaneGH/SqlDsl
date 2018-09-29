@@ -43,6 +43,25 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, t) => q.ClassTags.One().TagId == t.Id);
         }
 
+        class DeepJoinedQueryClass
+        {
+            public JoinedQueryClass Query { get; set; }
+        }
+
+        static Dsl.IQuery<DeepJoinedQueryClass> DeepFullyJoinedQuery()
+        {
+            return Sql.Query.Sqlite<DeepJoinedQueryClass>()
+                .From<Person>(x => x.Query.ThePerson)
+                .InnerJoin<PersonClass>(q => q.Query.PersonClasses)
+                    .On((q, pc) => q.Query.ThePerson.Id == pc.PersonId)
+                .InnerJoin<Class>(q => q.Query.Classes)
+                    .On((q, c) => q.Query.PersonClasses.One().ClassId == c.Id)
+                .InnerJoin<ClassTag>(q => q.Query.ClassTags)
+                    .On((q, ct) => q.Query.Classes.One().Id == ct.ClassId)
+                .InnerJoin<Tag>(q => q.Query.Tags)
+                    .On((q, t) => q.Query.ClassTags.One().TagId == t.Id);
+        }
+
         class SimpleMapClass
         {
             public string TheName { get; set; }
@@ -151,6 +170,122 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).PersonName);
             Assert.AreEqual(Data.People.Mary, data.ElementAt(1).Person);
+        }
+
+        class MapComplexObjectType2
+        {
+            public string PersonName;
+            public Cls1[] Classes;
+
+            public class Cls1
+            {
+                public string Name;
+                public Tag[] Tags;
+            }
+        }
+
+        [Test]
+        public async Task MapComplexObject4()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(p => new MapComplexObjectType2
+                { 
+                    PersonName = p.ThePerson.Name,
+                    Classes = p.Classes
+                        .Select(c => new MapComplexObjectType2.Cls1
+                        {
+                            Name = c.Name,
+                            Tags = c
+                                .Joined(p.ClassTags)
+                                .Joined(p.Tags)
+                                .ToArray()
+                        })
+                        .ToArray()
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            var john = data.First();
+            var mary = data.ElementAt(1);
+
+            Assert.AreEqual(Data.People.John.Name, john.PersonName);            
+            Assert.AreEqual(2, john.Classes.Length);
+
+            Assert.AreEqual(Data.Classes.Tennis.Name, john.Classes[0].Name);
+            Assert.AreEqual(2, john.Classes[0].Tags.Length);
+
+            Assert.AreEqual(Data.Tags.Sport, john.Classes[0].Tags[0]);
+            Assert.AreEqual(Data.Tags.BallSport, john.Classes[0].Tags[1]);
+
+            Assert.AreEqual(Data.Classes.Archery.Name, john.Classes[1].Name);
+            Assert.AreEqual(1, john.Classes[1].Tags.Length);
+
+            Assert.AreEqual(Data.Tags.Sport, john.Classes[1].Tags[0]);
+            
+
+            Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);            
+            Assert.AreEqual(1, mary.Classes.Length);
+
+            Assert.AreEqual(Data.Classes.Tennis.Name, mary.Classes[0].Name);
+            Assert.AreEqual(2, mary.Classes[0].Tags.Length);
+
+            Assert.AreEqual(Data.Tags.Sport, mary.Classes[0].Tags[0]);
+            Assert.AreEqual(Data.Tags.BallSport, mary.Classes[0].Tags[1]);
+        }
+
+        [Test]
+        public async Task MapComplexObject5()
+        {
+            // arrange
+            // act
+            var data = await DeepFullyJoinedQuery()
+                .Map(p => new MapComplexObjectType2
+                { 
+                    PersonName = p.Query.ThePerson.Name,
+                    Classes = p.Query.Classes
+                        .Select(c => new MapComplexObjectType2.Cls1
+                        {
+                            Name = c.Name,
+                            Tags = c
+                                .Joined(p.Query.ClassTags)
+                                .Joined(p.Query.Tags)
+                                .ToArray()
+                        })
+                        .ToArray()
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            var john = data.First();
+            var mary = data.ElementAt(1);
+
+            Assert.AreEqual(Data.People.John.Name, john.PersonName);            
+            Assert.AreEqual(2, john.Classes.Length);
+
+            Assert.AreEqual(Data.Classes.Tennis.Name, john.Classes[0].Name);
+            Assert.AreEqual(2, john.Classes[0].Tags.Length);
+
+            Assert.AreEqual(Data.Tags.Sport, john.Classes[0].Tags[0]);
+            Assert.AreEqual(Data.Tags.BallSport, john.Classes[0].Tags[1]);
+
+            Assert.AreEqual(Data.Classes.Archery.Name, john.Classes[1].Name);
+            Assert.AreEqual(1, john.Classes[1].Tags.Length);
+
+            Assert.AreEqual(Data.Tags.Sport, john.Classes[1].Tags[0]);
+            
+
+            Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);            
+            Assert.AreEqual(1, mary.Classes.Length);
+
+            Assert.AreEqual(Data.Classes.Tennis.Name, mary.Classes[0].Name);
+            Assert.AreEqual(2, mary.Classes[0].Tags.Length);
+
+            Assert.AreEqual(Data.Tags.Sport, mary.Classes[0].Tags[0]);
+            Assert.AreEqual(Data.Tags.BallSport, mary.Classes[0].Tags[1]);
         }
 
         [Test]
@@ -319,26 +454,12 @@ namespace SqlDsl.UnitTests.FullPathTests
             AssertMapOnTableWith2JoinedTables(data);
         }
 
-        class JoinedQueryClass2
-        {
-            public JoinedQueryClass Query { get; set; }
-        }
-
         [Test]
         public async Task MapOnTableWith2JoinedTables_DataIsOnInnerProperty()
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<JoinedQueryClass2>()
-                .From<Person>(x => x.Query.ThePerson)
-                .InnerJoin<PersonClass>(q => q.Query.PersonClasses)
-                    .On((q, pc) => q.Query.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.Query.Classes)
-                    .On((q, c) => q.Query.PersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.Query.ClassTags)
-                    .On((q, ct) => q.Query.Classes.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.Query.Tags)
-                    .On((q, t) => q.Query.ClassTags.One().TagId == t.Id)
+            var data = await DeepFullyJoinedQuery()
                 .Map(p => new JoinedMapClass
                 { 
                     TheName = p.Query.ThePerson.Name,
