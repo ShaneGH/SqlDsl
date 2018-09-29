@@ -31,12 +31,13 @@ namespace SqlDsl.Query
 
         public (ISqlStatement builder, IEnumerable<object> paramaters) ToSqlBuilder()
         {
-            // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
             // TODO: filter columns
+            // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
+
             var (wrappedBuilder, parameters) = Query.ToSqlBuilder(null);
 
             var map = BuildMap(
-                new BuildMapState(Mapper.Parameters[0], wrappedBuilder.JoinedTables),
+                new BuildMapState(Mapper.Parameters[0], wrappedBuilder.PrimaryTableAlias, wrappedBuilder.JoinedTables),
                 Mapper.Body);
 
             var rowIdPropertyMap = map.tables
@@ -125,12 +126,13 @@ namespace SqlDsl.Query
                             .Select(m => (
                                 m.map.properties.SelectMany(x => 
                                 {
-                                    if (x.From == null)
+                                    // if From == null, it is a reference to the query object
+                                    if (x.From == null || IsQueryObjectProperty(state, x.From))
                                     {
                                         return m.binding.Member
                                             .GetPropertyOrFieldType()
                                             .GetFieldsAndProperties()
-                                            .Select(mem => new Mapped(mem.name, CombineStrings(x.To, mem.name)));
+                                            .Select(mem => new Mapped(CombineStrings(x.From, mem.name), CombineStrings(x.To, mem.name)));
                                     }
 
                                     return new Mapped(x.From, CombineStrings(toPrefix, x.To)).ToEnumerable();
@@ -163,6 +165,11 @@ namespace SqlDsl.Query
             }
 
             throw new InvalidOperationException($"Unsupported mapping expression \"{expr}\".");
+        }
+
+        static bool IsQueryObjectProperty(BuildMapState state, string property)
+        {
+            return state.ValidJoins.Select(x => x.to).Prepend(state.PrimaryTableProperty).Contains(property);
         }
 
         static void TryAddSelectStatementParameterToProperty(BuildMapState state, Expression enumerable, ParameterExpression parameter)
@@ -308,10 +315,12 @@ namespace SqlDsl.Query
         public readonly ParameterExpression QueryObject;
         public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
         public readonly List<(string from, string to)> ValidJoins;
+        public readonly string PrimaryTableProperty;
 
-        public BuildMapState(ParameterExpression queryObject, IEnumerable<(string from, string to)> validJoins)
+        public BuildMapState(ParameterExpression queryObject, string primaryTableProperty, IEnumerable<(string from, string to)> validJoins)
         {
             QueryObject = queryObject;
+            PrimaryTableProperty = primaryTableProperty;
             ValidJoins = validJoins.OrEmpty().ToList(); 
         }
     }

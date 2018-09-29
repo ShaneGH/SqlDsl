@@ -47,7 +47,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The alias of the table in the SELECT clause
         /// </summary>
-        string PrimaryTableAlias;
+        public string PrimaryTableAlias { get; private set; }
         
         /// <summary>
         /// Set the name and alias of the table in the SELECT clause. alias can be null

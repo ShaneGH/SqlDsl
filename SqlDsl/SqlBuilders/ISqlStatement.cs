@@ -11,6 +11,11 @@ namespace SqlDsl.SqlBuilders
     public interface ISqlStatement
     {        
         /// <summary>
+        /// The alias of the table in the SELECT clause
+        /// </summary>
+        string PrimaryTableAlias { get; }
+
+        /// <summary>
         /// A unique alias for this statement. Uniqueness must be guaranteed within a single statement only
         /// </summary>
         string UniqueAlias { get; }

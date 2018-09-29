@@ -102,12 +102,12 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task MapComplexObject2()
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.ThePerson)
                 .Map(p => new MapComplexObjectType1
                 { 
                     PersonName = p.ThePerson.Name,
@@ -117,8 +117,40 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(Data.People.John.Name, data.First().Person);
-            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).Person);
+            Assert.AreEqual(Data.People.John.Name, data.First().PersonName);
+            Assert.AreEqual(Data.People.John, data.First().Person);
+
+            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).PersonName);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).Person);
+        }
+
+        class DeepSingleClass
+        {
+            public Person ThePerson { get; set; }
+            public DeepSingleClass Inner { get; set; }
+        }
+
+        [Test]
+        public async Task MapComplexObject3()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<DeepSingleClass>()
+                .From<Person>(x => x.Inner.Inner.ThePerson)
+                .Map(p => new MapComplexObjectType1
+                { 
+                    PersonName = p.Inner.Inner.ThePerson.Name,
+                    Person = p.Inner.Inner.ThePerson
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John.Name, data.First().PersonName);
+            Assert.AreEqual(Data.People.John, data.First().Person);
+
+            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).PersonName);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).Person);
         }
 
         [Test]
