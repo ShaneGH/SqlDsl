@@ -27,7 +27,7 @@ namespace SqlDsl
         Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args);
     }
 
-    public class CompiledQuery<TResult> : ICompiledQuery<TResult>
+    public class CompiledQuery<TArgs, TResult> : ICompiledQuery<TArgs, TResult>
     {
         readonly string Sql;
         readonly IEnumerable<object> Parameters;
@@ -46,7 +46,7 @@ namespace SqlDsl
             PropertyGraph = propertyGraph;
         }
 
-        public async Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor)
+        public async Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args)
         {
             // execute and get all rows
             var reader = await executor.ExecuteDebugAsync(Sql, Parameters, SelectColumns);
@@ -54,5 +54,17 @@ namespace SqlDsl
 
             return results.Parse<TResult>(PropertyGraph);
         }
+    }
+
+    public class CompiledQuery<TResult> : ICompiledQuery<TResult>
+    {
+        readonly ICompiledQuery<object, TResult> Worker;
+
+        public CompiledQuery(ICompiledQuery<object, TResult> worker)
+        {
+            Worker = worker;
+        }
+
+        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor) => Worker.ExecuteAsync(executor, null);
     }
 }

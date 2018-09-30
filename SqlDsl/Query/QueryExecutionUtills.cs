@@ -16,13 +16,13 @@ namespace SqlDsl.Query
         /// <param name="sqlBuilder">The builder with all properties populated</param>
         /// <param name="parameters">Any constant parameters in the statement</param>
         /// <param name="queryParseType">Define the way results are to be parsed</param>
-        public static CompiledQuery<TResult> Compile<TResult>(this ISqlStatement sqlBuilder, IEnumerable<object> parameters, QueryParseType queryParseType) 
+        public static CompiledQuery<TArgs, TResult> Compile<TArgs, TResult>(this ISqlStatement sqlBuilder, IEnumerable<object> parameters, QueryParseType queryParseType) 
         {
             var sql = ToSql(sqlBuilder);
             var selectColumns = sqlBuilder.SelectColumns.ToArray();
             var propertyGraph = sqlBuilder.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
 
-            return new CompiledQuery<TResult>(sql, parameters, selectColumns, propertyGraph);
+            return new CompiledQuery<TArgs, TResult>(sql, parameters, selectColumns, propertyGraph);
         }
         
         /// <summary>

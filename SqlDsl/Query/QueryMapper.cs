@@ -10,13 +10,13 @@ using System.Threading.Tasks;
 
 namespace SqlDsl.Query
 {
-    public class QueryMapper<TSqlBuilder, TResult, TMapped> : ISqlBuilder<TMapped>
+    public class QueryMapper<TSqlBuilder, TArgs, TResult, TMapped> : ISqlBuilder<TArgs, TMapped>
         where TSqlBuilder: ISqlFragmentBuilder, new()
     {
-        readonly QueryBuilder<TSqlBuilder, TResult> Query;
+        readonly QueryBuilder<TSqlBuilder, TArgs, TResult> Query;
         readonly Expression<Func<TResult, TMapped>> Mapper;
         
-        public QueryMapper(QueryBuilder<TSqlBuilder, TResult> query, Expression<Func<TResult, TMapped>> mapper)
+        public QueryMapper(QueryBuilder<TSqlBuilder, TArgs, TResult> query, Expression<Func<TResult, TMapped>> mapper)
         {
             Query = query ?? throw new ArgumentNullException(nameof(query));
             Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -63,15 +63,15 @@ namespace SqlDsl.Query
         /// <summary>
         /// Compile the query into something which can be executed multiple times
         /// </summary>
-        public ICompiledQuery<TMapped> Compile()
+        public ICompiledQuery<TArgs, TMapped> Compile()
         {
             var sqlBuilder = ToSqlBuilder();
             return sqlBuilder.builder
-                .Compile<TMapped>(sqlBuilder.paramaters, QueryParseType.ORM);
+                .Compile<TArgs, TMapped>(sqlBuilder.paramaters, QueryParseType.ORM);
         }
         
-        public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor) =>
-            Compile().ExecuteAsync(executor);
+        public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor, TArgs args) =>
+            Compile().ExecuteAsync(executor, args);
 
         static readonly IEnumerable<Mapped> EmptyMapped = Enumerable.Empty<Mapped>();
 

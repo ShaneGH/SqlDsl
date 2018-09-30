@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace SqlDsl.Query
 {
-    public partial class QueryBuilder<TSqlBuilder, TResult>
+    public partial class QueryBuilder<TSqlBuilder, TArgs, TResult>
     {        
         /// <summary>
         /// Get a sql statement and corresponding sql paramaters from the query
@@ -37,17 +37,17 @@ namespace SqlDsl.Query
         /// <param name="executor">
         /// An expression to map the selected table to a property on the result
         /// </param>
-        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor) =>  // FROM INTERFACE
-            Compile().ExecuteAsync(executor);
+        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args) =>  // FROM INTERFACE
+            Compile().ExecuteAsync(executor, args);
 
         /// <summary>
         /// Compile the query into something which can be executed multiple times
         /// </summary>
-        public ICompiledQuery<TResult> Compile()
+        public ICompiledQuery<TArgs, TResult> Compile()
         {
             var sqlBuilder = ToSqlBuilder(null);
             return sqlBuilder.builder
-                .Compile<TResult>(sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
+                .Compile<TArgs, TResult>(sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
         }
 
         /// <summary>

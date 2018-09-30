@@ -15,21 +15,21 @@ namespace SqlDsl.Query
     /// <summary>
     /// Object to append query values to via underlying DSL
     /// </summary>
-    public partial class QueryBuilder<TSqlBuilder, TResult>
+    public partial class QueryBuilder<TSqlBuilder, TArgs, TResult>
     {
         /// <summary>
         /// Holds partial join state and can build a join
         /// </summary>
-        class JoinBuilder<TJoin> : IJoinBuilder<TResult, TJoin>
+        class JoinBuilder<TJoin> : IJoinBuilder<TArgs, TResult, TJoin>
         {
-            readonly QueryBuilder<TSqlBuilder, TResult> Query;
+            readonly QueryBuilder<TSqlBuilder, TArgs, TResult> Query;
             readonly JoinType JoinType;
             readonly string TableName;
             readonly Expression JoinResultBody;
             readonly ParameterExpression JoinResultQueryParam;
 
             private JoinBuilder(
-                QueryBuilder<TSqlBuilder, TResult> query, 
+                QueryBuilder<TSqlBuilder, TArgs, TResult> query, 
                 JoinType joinType, 
                 string tableName, 
                 Expression joinResultBody, 
@@ -42,12 +42,12 @@ namespace SqlDsl.Query
                 TableName = tableName ?? throw new ArgumentNullException(nameof(tableName));
             }
 
-            public JoinBuilder(QueryBuilder<TSqlBuilder, TResult> query, JoinType joinType, string tableName, Expression<Func<TResult, TJoin>> joinResult)
+            public JoinBuilder(QueryBuilder<TSqlBuilder, TArgs, TResult> query, JoinType joinType, string tableName, Expression<Func<TResult, TJoin>> joinResult)
                 : this(query, joinType, tableName, joinResult?.Body, joinResult?.Parameters[0])
             {
             }
 
-            public JoinBuilder(QueryBuilder<TSqlBuilder, TResult> query, JoinType joinType, string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult)
+            public JoinBuilder(QueryBuilder<TSqlBuilder, TArgs, TResult> query, JoinType joinType, string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult)
                 : this(query, joinType, tableName, joinResult?.Body, joinResult?.Parameters[0])
             {
             }
@@ -58,7 +58,7 @@ namespace SqlDsl.Query
             /// <param name="joinExpression">
             /// An expression which describes the [ON] part of JOIN [Table] [ON]
             /// </param>
-            public IQuery<TResult> On(Expression<Func<TResult, TJoin, bool>> joinExpression)
+            public IQuery<TArgs, TResult> On(Expression<Func<TResult, TJoin, TArgs, bool>> joinExpression)
             {                    
                 if (joinExpression == null)
                     throw new ArgumentNullException(nameof(joinExpression));
@@ -70,6 +70,22 @@ namespace SqlDsl.Query
                     CheckMemberExpression(JoinResultBody, JoinResultQueryParam)));
 
                 return Query;
+            }
+
+            /// <summary>
+            /// Define how a JOIN table joins to other tables in the query
+            /// </summary>
+            /// <param name="joinExpression">
+            /// An expression which describes the [ON] part of JOIN [Table] [ON]
+            /// </param>
+            public IQuery<TArgs, TResult> On(Expression<Func<TResult, TJoin, bool>> joinExpression)
+            {
+                // create a new expression which is the same as the previous
+                // but with 1 more (unused) arg
+                var newExpr = Expression.Lambda<Func<TResult, TJoin, TArgs, bool>>(
+                    joinExpression.Body, joinExpression.TailCall, joinExpression.Parameters.Append(Expression.Parameter(typeof(TArgs))));
+
+                return On(newExpr);
             }
         }
     }

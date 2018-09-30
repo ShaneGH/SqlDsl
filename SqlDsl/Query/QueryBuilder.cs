@@ -15,7 +15,7 @@ namespace SqlDsl.Query
     /// <summary>
     /// Object to append query values to via underlying DSL
     /// </summary>
-    public partial class QueryBuilder<TSqlBuilder, TResult> : ITable<TResult>, IQuery<TResult>
+    public partial class QueryBuilder<TSqlBuilder, TArgs, TResult> : ITable<TArgs, TResult>, IQuery<TArgs, TResult>
         where TSqlBuilder: ISqlFragmentBuilder, new()
     {
         /// <summary>
@@ -36,7 +36,7 @@ namespace SqlDsl.Query
         /// <summary>
         /// The WHERE part of the query
         /// </summary>
-        (ParameterExpression queryRoot, Expression where)? WhereClause = null;
+        (ParameterExpression queryRoot, ParameterExpression args, Expression where)? WhereClause = null;
 
         /// <summary>
         /// Check an expression ultimately points to the query object. Throw an exception if not

@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace SqlDsl.Query
 {
-    public partial class QueryBuilder<TSqlBuilder, TResult>
+    public partial class QueryBuilder<TSqlBuilder, TArgs, TResult>
     {
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table]
@@ -20,7 +20,7 @@ namespace SqlDsl.Query
         /// <param name="resultProperty">
         /// An expression to map the selected table to a property on the result
         /// </param>
-        public IQuery<TResult> From<TTable>(string tableName, Expression<Func<TResult, TTable>> tableProperty)
+        public IQuery<TArgs, TResult> From<TTable>(string tableName, Expression<Func<TResult, TTable>> tableProperty)
         {
             PrimaryTableName = tableName ?? throw new ArgumentNullException(nameof(tableName));
             PrimaryTableMember = CheckMemberExpression(tableProperty.Body, tableProperty.Parameters[0]);
@@ -31,19 +31,19 @@ namespace SqlDsl.Query
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table]. Uses the class name of TTable as the sql table name
         /// </summary>
-        public IQuery<TResult> From<TTable>(Expression<Func<TResult, TTable>> tableProperty) =>
+        public IQuery<TArgs, TResult> From<TTable>(Expression<Func<TResult, TTable>> tableProperty) =>
             From<TTable>(typeof(TTable).Name, tableProperty);
 
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table] to be TResult.
         /// </summary>
-        public IQuery<TResult> From(string tableName) =>
+        public IQuery<TArgs, TResult> From(string tableName) =>
             From<TResult>(tableName, x => x);
 
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table] to be TResult. Uses the class name of TResult as the sql table name
         /// </summary>
-        public IQuery<TResult> From() =>
+        public IQuery<TArgs, TResult> From() =>
             From(typeof(TResult).Name);
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace SqlDsl.Query
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        public IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
+        public IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
             new JoinBuilder<TJoin>(this, JoinType.Inner, tableName, joinResult);
         
         /// <summary>
@@ -64,7 +64,7 @@ namespace SqlDsl.Query
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        public IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
+        public IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
             InnerJoin<TJoin>(typeof(TJoin).Name, joinResult);
             
         /// <summary>
@@ -76,7 +76,7 @@ namespace SqlDsl.Query
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        public IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinResult) =>
+        public IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinResult) =>
             new JoinBuilder<TJoin>(this, JoinType.Inner, tableName, joinResult);
         
         /// <summary>
@@ -85,7 +85,7 @@ namespace SqlDsl.Query
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        public IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, TJoin>> joinResult) =>
+        public IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, TJoin>> joinResult) =>
             InnerJoin<TJoin>(typeof(TJoin).Name, joinResult);
         
         /// <summary>
@@ -97,7 +97,7 @@ namespace SqlDsl.Query
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        public IJoinBuilder<TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
+        public IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
             new JoinBuilder<TJoin>(this, JoinType.Left, tableName, joinResult);
         
         /// <summary>
@@ -106,7 +106,7 @@ namespace SqlDsl.Query
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        public IJoinBuilder<TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
+        public IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
             LeftJoin<TJoin>(typeof(TJoin).Name, joinResult);
         
         /// <summary>
@@ -118,7 +118,7 @@ namespace SqlDsl.Query
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        public IJoinBuilder<TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinResult) =>
+        public IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinResult) =>
             new JoinBuilder<TJoin>(this, JoinType.Left, tableName, joinResult);
         
         /// <summary>
@@ -127,7 +127,7 @@ namespace SqlDsl.Query
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        public IJoinBuilder<TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, TJoin>> joinResult) =>
+        public IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, TJoin>> joinResult) =>
             LeftJoin<TJoin>(typeof(TJoin).Name, joinResult);
 
         /// <summary>
@@ -136,12 +136,22 @@ namespace SqlDsl.Query
         /// <param name="filter">
         /// An expression which denotes the where clause
         /// </param>
-        public IResultMapper<TResult> Where(Expression<Func<TResult, bool>> filter)
+        public IResultMapper<TArgs, TResult> Where(Expression<Func<TResult, bool>> filter)
+        {
+            // create a new expression which is the same as the previous
+            // but with 1 more (unused) arg
+            var newExpr = Expression.Lambda<Func<TResult, TArgs, bool>>(
+                filter.Body, filter.TailCall, filter.Parameters.Append(Expression.Parameter(typeof(TArgs))));
+
+            return Where(newExpr);
+        }
+
+        public IResultMapper<TArgs, TResult> Where(Expression<Func<TResult, TArgs, bool>> filter)
         {
             if (filter == null)
                 throw new ArgumentNullException(nameof(filter));
 
-            WhereClause = (filter.Parameters[0], filter.Body);
+            WhereClause = (filter.Parameters[0], filter.Parameters[1], filter.Body);
             return this;
         }
 
@@ -151,7 +161,7 @@ namespace SqlDsl.Query
         /// <param name="mapper">
         /// An expression to build a mapped object
         /// </param>
-        public ISqlBuilder<TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper) =>
-            new QueryMapper<TSqlBuilder, TResult, TMapped>(this, mapper);
+        public ISqlBuilder<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper) =>
+            new QueryMapper<TSqlBuilder, TArgs, TResult, TMapped>(this, mapper);
     }
 }

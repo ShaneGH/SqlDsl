@@ -35,6 +35,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        [Ignore("TODO")]
         public async Task QueryWithArgs_WithArgsInJoin_ExecutesCorrectly()
         {
             // arrange

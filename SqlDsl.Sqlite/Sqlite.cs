@@ -22,7 +22,7 @@ namespace SqlDsl
         /// </summary>
         public static ITable<TArgs, TResult> Sqlite<TArgs, TResult>(this QueryBuilder builder)
         {
-            throw new System.NotImplementedException();
+            return new QueryBuilder<SqliteBuilder, TArgs, TResult>();
         }
     }
 }
