@@ -113,6 +113,7 @@ namespace SqlDsl.SqlBuilders
             JoinType joinType, 
             string joinTable, 
             ParameterExpression queryRootParam, 
+            ParameterExpression queryArgsParam,
             ParameterExpression joinTableParam,
             Expression equalityStatement, 
             IList<object> parameters, 
@@ -120,6 +121,7 @@ namespace SqlDsl.SqlBuilders
         {
             var condition = SqlBuilder.BuildCondition(
                 queryRootParam, 
+                queryArgsParam,
                 new[]{ (joinTableParam, joinTableAlias) }, 
                 equalityStatement, 
                 parameters);
@@ -183,11 +185,12 @@ namespace SqlDsl.SqlBuilders
         /// The WHERE statement, if necessary
         /// </summary>
         /// <param name="queryRoot">The parameter which represents the query object in the expression</param>
+        /// <param name="args">The parameter which represents the query args in the expression</param>
         /// <param name="equality">The condition in the WHERE statement</param>
         /// <param name="parameters">A list of parameters which will be added to if a constant is found in the equalityStatement</param>
-        public void SetWhere(ParameterExpression queryRoot, Expression equality, IList<object> parameters)
+        public void SetWhere(ParameterExpression queryRoot, ParameterExpression args, Expression equality, IList<object> parameters)
         {
-            Where = SqlBuilder.BuildCondition(queryRoot, Enumerable.Empty<(ParameterExpression, string)>(), equality, parameters);
+            Where = SqlBuilder.BuildCondition(queryRoot, args, Enumerable.Empty<(ParameterExpression, string)>(), equality, parameters);
         }
 
         /// <summary>

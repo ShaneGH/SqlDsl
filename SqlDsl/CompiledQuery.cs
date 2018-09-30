@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SqlDsl.DataParser;
+using SqlDsl.SqlBuilders;
 
 namespace SqlDsl
 {
@@ -48,8 +49,14 @@ namespace SqlDsl
 
         public async Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args)
         {
+            // build sql params
+            var parameters = Parameters.Select(p =>
+                p is IQueryArgAccessor<TArgs> ? 
+                    (p as IQueryArgAccessor<TArgs>).GetArgValue(args) :
+                    p);
+
             // execute and get all rows
-            var reader = await executor.ExecuteDebugAsync(Sql, Parameters, SelectColumns);
+            var reader = await executor.ExecuteDebugAsync(Sql, parameters, SelectColumns);
             var results = await reader.GetRowsAsync();
 
             return results.Parse<TResult>(PropertyGraph);

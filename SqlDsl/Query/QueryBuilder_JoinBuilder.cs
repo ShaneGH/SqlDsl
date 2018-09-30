@@ -66,7 +66,7 @@ namespace SqlDsl.Query
                 Query.Joins.Add(new Join(
                     JoinType,
                     TableName,
-                    (joinExpression.Parameters[0], joinExpression.Parameters[1], joinExpression.Body),
+                    (joinExpression.Parameters[0], joinExpression.Parameters[2], joinExpression.Parameters[1], joinExpression.Body),
                     CheckMemberExpression(JoinResultBody, JoinResultQueryParam)));
 
                 return Query;

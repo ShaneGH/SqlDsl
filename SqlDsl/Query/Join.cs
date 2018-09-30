@@ -23,7 +23,7 @@ namespace SqlDsl.Query
         /// <summary>
         /// The expression which describes the join (the ON part)
         /// </summary>
-        public readonly (ParameterExpression rootObjectParam, ParameterExpression joinParam, Expression joinExpression) JoinExpression;
+        public readonly (ParameterExpression rootObjectParam, ParameterExpression queryArgs, ParameterExpression joinParam, Expression joinExpression) JoinExpression;
         
         /// <summary>
         /// The parameter to append the joined tables to on the query result class
@@ -33,7 +33,7 @@ namespace SqlDsl.Query
         public Join(
             JoinType joinType,
             string tableName,
-            (ParameterExpression rootObjectParam, ParameterExpression joinParam, Expression joinExpression) joinExpression,
+            (ParameterExpression rootObjectParam, ParameterExpression queryArgs, ParameterExpression joinParam, Expression joinExpression) joinExpression,
             (string name, Type type) joinedTableProperty)
         {
             JoinType = joinType;

@@ -23,10 +23,10 @@ namespace SqlDsl.UnitTests.FullPathTests
         class JoinedQueryClass
         {
             public Person ThePerson { get; set; }
-            public List<PersonClass> PersonClasses { get; set; }
-            public List<Class> Classes { get; set; }
-            public List<ClassTag> ClassTags { get; set; }
-            public List<Tag> Tags { get; set; }
+            public IEnumerable<PersonClass> PersonClasses { get; set; }
+            public IEnumerable<Class> Classes { get; set; }
+            public IEnumerable<ClassTag> ClassTags { get; set; }
+            public IEnumerable<Tag> Tags { get; set; }
         }
 
         public class Arguments
@@ -35,15 +35,15 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
-        public async Task QueryWithArgs_WithArgsInJoin_ExecutesCorrectly()
+        public async Task QueryWithArgs_WithArgsInWhere_ExecutesCorrectly()
         {
             // arrange
             var query = Sql.Query
                 .Sqlite<Arguments, JoinedQueryClass>()
                 .From(x => x.ThePerson)
-                .InnerJoin(x => x.PersonClasses)
-                    .On((q, x, args) => q.ThePerson.Id == x.One().PersonId && x.One().ClassId == args.AValue)
+                .LeftJoin(x => x.PersonClasses)
+                    .On((q, x) => x.PersonId == q.ThePerson.Id)
+                .Where((x, args) => x.PersonClasses.One().ClassId == args.AValue)
                 .Compile();
 
             // act
