@@ -37,8 +37,18 @@ namespace SqlDsl.Query
         /// <param name="executor">
         /// An expression to map the selected table to a property on the result
         /// </param>
-        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args) =>  // FROM INTERFACE
+        
+        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args) =>
             Compile().ExecuteAsync(executor, args);
+
+        /// <summary>
+        /// Execute the sql query and get a list of results
+        /// </summary>
+        /// <param name="executor">
+        /// An expression to map the selected table to a property on the result
+        /// </param>
+        public IEnumerable<TResult> Execute(IExecutor executor) =>
+            Compile().Execute(executor);
 
         /// <summary>
         /// Compile the query into something which can be executed multiple times

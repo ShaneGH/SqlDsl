@@ -69,9 +69,12 @@ namespace SqlDsl.Query
             return sqlBuilder.builder
                 .Compile<TArgs, TMapped>(sqlBuilder.paramaters, QueryParseType.ORM);
         }
-        
+       
         public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor, TArgs args) =>
             Compile().ExecuteAsync(executor, args);
+        
+        public IEnumerable<TMapped> Execute(IExecutor executor) =>
+            Compile().Execute(executor);
 
         static readonly IEnumerable<Mapped> EmptyMapped = Enumerable.Empty<Mapped>();
 

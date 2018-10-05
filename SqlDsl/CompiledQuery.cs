@@ -15,6 +15,11 @@ namespace SqlDsl
         /// Execute the compiled query
         /// </summary>
         Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        IEnumerable<TResult> Execute(IExecutor executor);
     }
 
     /// <summary>
@@ -26,6 +31,11 @@ namespace SqlDsl
         /// Execute the compiled query
         /// </summary>
         Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        IEnumerable<TResult> Execute(IExecutor executor, TArgs args);
     }
 
     public class CompiledQuery<TArgs, TResult> : ICompiledQuery<TArgs, TResult>
@@ -58,6 +68,15 @@ namespace SqlDsl
             // execute and get all rows
             var reader = await executor.ExecuteDebugAsync(Sql, parameters, SelectColumns);
             var results = await reader.GetRowsAsync();
+
+            return results.Parse<TResult>(PropertyGraph);
+        }
+
+        public IEnumerable<TResult> Execute(IExecutor executor)
+        {
+            // execute and get all rows
+            var reader = executor.ExecuteDebug(Sql, Parameters, SelectColumns);
+            var results = reader.GetRows();
 
             return results.Parse<TResult>(PropertyGraph);
         }

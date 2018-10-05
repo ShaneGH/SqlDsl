@@ -59,6 +59,16 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         {
             SqlStatements[index].results.Add(row);
         }
+
+        public IReader Execute(string sql, IEnumerable<object> paramaters, string[] columnNames)
+        {
+            throw new NotImplementedException("Use async method with columnNames");
+        }
+
+        public IReader Execute(string sql, IEnumerable<object> paramaters)
+        {
+            throw new NotImplementedException("Use async method with columnNames");
+        }
     }
 
     class TestReader : IReader
@@ -72,6 +82,11 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             Executor = executor;
             Reader = reader;
             Index = index;
+        }
+
+        public (bool hasRow, object[] row) GetRow()
+        {
+            throw new NotImplementedException("Use async method");
         }
 
         public async Task<(bool hasRow, object[] row)> GetRowAsync()

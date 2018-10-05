@@ -40,5 +40,25 @@ namespace SqlDsl.Sqlite
                 
             return (true, vals);
         }
+
+        /// <summary>
+        /// Read the next row in the query
+        /// </summary>
+        /// <returns> hasRow: if true, row will be populated, there may be more rows to read; 
+        /// if false, row is null, there are no more rows to read
+        /// row: the data from a row, ordered as the database returned it
+        /// </returns>
+        public (bool hasRow, object[] row) GetRow()
+        {
+            // read the next row
+            if (!DataReader.Read())
+                return (false, null);
+
+            // load row into array
+            var vals = new object[DataReader.FieldCount];
+            DataReader.GetValues(vals);
+                
+            return (true, vals);
+        }
     }
 }

@@ -12,6 +12,11 @@ namespace SqlDsl
         /// Execute a sql query and return a reader to read results
         /// </summary>
         Task<IReader> ExecuteAsync(string sql, IEnumerable<object> paramaters);
+        
+        /// <summary>
+        /// Execute a sql query and return a reader to read results
+        /// </summary>
+        IReader Execute(string sql, IEnumerable<object> paramaters);
     }
 
     public static class IExecutorUtils
@@ -24,5 +29,14 @@ namespace SqlDsl
             executor is IDebugExecutor ?
                 (executor as IDebugExecutor).ExecuteAsync(sql, paramaters, columnNames) :
                 executor.ExecuteAsync(sql, paramaters);
+
+        /// <summary>
+        /// If the input is a debug executor, run Execute with column names,
+        /// otherwise use IExecutor.Execute
+        /// </summary>
+        public static IReader ExecuteDebug(this IExecutor executor, string sql, IEnumerable<object> paramaters, string[] columnNames) =>
+            executor is IDebugExecutor ?
+                (executor as IDebugExecutor).Execute(sql, paramaters, columnNames) :
+                executor.Execute(sql, paramaters);
     }
 }
