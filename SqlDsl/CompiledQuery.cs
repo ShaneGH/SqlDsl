@@ -72,8 +72,14 @@ namespace SqlDsl
             return results.Parse<TResult>(PropertyGraph);
         }
 
-        public IEnumerable<TResult> Execute(IExecutor executor)
+        public IEnumerable<TResult> Execute(IExecutor executor, TArgs args)
         {
+            // build sql params
+            var parameters = Parameters.Select(p =>
+                p is IQueryArgAccessor<TArgs> ? 
+                    (p as IQueryArgAccessor<TArgs>).GetArgValue(args) :
+                    p);
+                    
             // execute and get all rows
             var reader = executor.ExecuteDebug(Sql, Parameters, SelectColumns);
             var results = reader.GetRows();
@@ -92,5 +98,7 @@ namespace SqlDsl
         }
 
         public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor) => Worker.ExecuteAsync(executor, null);
+
+        public IEnumerable<TResult> Execute(IExecutor executor) => Worker.Execute(executor, null);
     }
 }

@@ -47,8 +47,8 @@ namespace SqlDsl.Query
         /// <param name="executor">
         /// An expression to map the selected table to a property on the result
         /// </param>
-        public IEnumerable<TResult> Execute(IExecutor executor) =>
-            Compile().Execute(executor);
+        public IEnumerable<TResult> Execute(IExecutor executor, TArgs args) =>
+            Compile().Execute(executor, args);
 
         /// <summary>
         /// Compile the query into something which can be executed multiple times

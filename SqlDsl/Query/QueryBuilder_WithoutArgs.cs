@@ -22,6 +22,8 @@ namespace SqlDsl.Query
 
         Task<IEnumerable<TResult>> ISqlBuilder<TResult>.ExecuteAsync(IExecutor executor) => ExecuteAsync(executor, null);
 
+        IEnumerable<TResult> ISqlBuilder<TResult>.Execute(IExecutor executor) => Execute(executor, null);
+
         ICompiledQuery<TResult> ISqlBuilder<TResult>.Compile() => new CompiledQuery<TResult>(base.Compile());
 
         IQuery<TResult> ITable<TResult>.From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty) =>
