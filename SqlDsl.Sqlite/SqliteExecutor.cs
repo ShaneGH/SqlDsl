@@ -24,7 +24,19 @@ namespace SqlDsl.Sqlite
         /// <summary>
         /// Execute a sqlite query and return a reader to read results
         /// </summary>
-        public async Task<IReader> ExecuteAsync(string sql, IEnumerable<object> paramaters)
+        public async Task<IReader> ExecuteAsync(string sql, IEnumerable<object> paramaters) =>
+            new SqliteReader(await CreateCommand(sql, paramaters).ExecuteReaderAsync());
+
+        /// <summary>
+        /// Execute a sqlite query and return a reader to read results
+        /// </summary>
+        public IReader Execute(string sql, IEnumerable<object> paramaters) =>
+            new SqliteReader(CreateCommand(sql, paramaters).ExecuteReader());
+
+        /// <summary>
+        /// Create a sql command with the given sql and parameters
+        /// </summary>
+        SqliteCommand CreateCommand(string sql, IEnumerable<object> paramaters)
         {
             var command = Connection.CreateCommand();
             command.CommandText = sql;
@@ -35,8 +47,7 @@ namespace SqlDsl.Sqlite
                 command.Parameters.Add(new SqliteParameter("p" + (i++), p));
             }
 
-            return new SqliteReader(
-                await command.ExecuteReaderAsync());
+            return command;
         }
     }
 }

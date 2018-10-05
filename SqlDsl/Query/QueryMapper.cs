@@ -72,6 +72,9 @@ namespace SqlDsl.Query
         
         public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor) =>
             Compile().ExecuteAsync(executor);
+        
+        public IEnumerable<TMapped> Execute(IExecutor executor) =>
+            Compile().Execute(executor);
 
         static readonly IEnumerable<Mapped> EmptyMapped = Enumerable.Empty<Mapped>();
 

@@ -12,5 +12,10 @@ namespace SqlDsl
         /// Execute a sql query and return a reader to read results
         /// </summary>
         Task<IReader> ExecuteAsync(string sql, IEnumerable<object> paramaters, string[] columnNames);
+        
+        /// <summary>
+        /// Execute a sql query and return a reader to read results
+        /// </summary>
+        IReader Execute(string sql, IEnumerable<object> paramaters, string[] columnNames);
     }
 }

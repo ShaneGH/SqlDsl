@@ -24,6 +24,14 @@ namespace SqlDsl.Dsl
         Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor);
         
         /// <summary>
+        /// Execute the sql query and get a list of results
+        /// </summary>
+        /// <param name="executor">
+        /// An expression to map the selected table to a property on the result
+        /// </param>
+        IEnumerable<TResult> Execute(IExecutor executor);
+        
+        /// <summary>
         /// Compile the query into something which can be executed multiple times
         /// </summary>
         ICompiledQuery<TResult> Compile();
