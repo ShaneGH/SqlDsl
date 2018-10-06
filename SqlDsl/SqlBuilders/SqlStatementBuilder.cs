@@ -93,9 +93,13 @@ namespace SqlDsl.SqlBuilders
 
             IEnumerable<ISelectColumn> BuildRowIdColumn(IQueryTable table)
             {
+                var name = table.Alias == SqlStatementConstants.RootObjectAlias ?
+                    SqlStatementConstants.RowIdName :
+                    $"{table.Alias}.{SqlStatementConstants.RowIdName}";
+                    
                 yield return new SelectColumn(
                     SqlStatementConstants.RowIdName, 
-                    $"{table.Alias}.{SqlStatementConstants.RowIdName}", 
+                    name, 
                     table.Alias, 
                     true,
                     QueryBuilder);
