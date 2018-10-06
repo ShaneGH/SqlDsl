@@ -9,13 +9,13 @@ namespace SqlDsl.SqlBuilders
 {
     public static class ISqlStatementUtils
     {
-        public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlStatement2 sqlStatement, string columnAlias)
+        public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlStatement sqlStatement, string columnAlias)
         {
             var col = sqlStatement.SelectColumns[columnAlias].RowNumberColumnIndex;
             return sqlStatement.GetRowNumberColumnIndexes(col);
         }
 
-        public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlStatement2 sqlStatement, int rowNumberColumnIndex)
+        public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlStatement sqlStatement, int rowNumberColumnIndex)
         {
             while (sqlStatement.MappingProperties != null)
                 sqlStatement = sqlStatement.MappingProperties.InnerStatement;
@@ -35,12 +35,12 @@ namespace SqlDsl.SqlBuilders
             return op.Skip(0);
         }
         
-        public static bool JoinIsValid(this ISqlStatement2 sqlStatement, string from, string to)
+        public static bool JoinIsValid(this ISqlStatement sqlStatement, string from, string to)
         {
             return sqlStatement.Tables[to].JoinedFrom?.Alias == from;
         }
         
-        public static bool ContainsTable(this ISqlStatement2 sqlStatement, string tableAlias)
+        public static bool ContainsTable(this ISqlStatement sqlStatement, string tableAlias)
         {
             foreach (var t in sqlStatement.Tables)
             {

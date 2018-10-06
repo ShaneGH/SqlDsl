@@ -63,7 +63,7 @@ namespace SqlDsl.Query
         /// Create a populated sql builder along with any constants specified in the query
         /// </summary>
         /// <param name="filterSelectCols">If specified, only add the given columns to the SELECT statement</param>
-        public (ISqlStatement2 builder, IEnumerable<object> paramaters) ToSqlBuilder(IEnumerable<string> filterSelectCols)
+        public (ISqlStatement builder, IEnumerable<object> paramaters) ToSqlBuilder(IEnumerable<string> filterSelectCols)
         {
             if (PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");

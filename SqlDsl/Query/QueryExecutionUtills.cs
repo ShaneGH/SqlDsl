@@ -16,7 +16,7 @@ namespace SqlDsl.Query
         /// <param name="sqlBuilder">The builder with all properties populated</param>
         /// <param name="parameters">Any constant parameters in the statement</param>
         /// <param name="queryParseType">Define the way results are to be parsed</param>
-        public static CompiledQuery<TResult> Compile<TResult>(this ISqlStatement2 sqlBuilder, IEnumerable<object> parameters, QueryParseType queryParseType) 
+        public static CompiledQuery<TResult> Compile<TResult>(this ISqlStatement sqlBuilder, IEnumerable<object> parameters, QueryParseType queryParseType) 
         {
             var sql = ToSql(sqlBuilder);
             var selectColumns = sqlBuilder.SelectColumns.Select(Alias).ToArray();
@@ -32,7 +32,7 @@ namespace SqlDsl.Query
         /// </summary>
         /// <param name="sqlBuilder">The builder with all properties populated</param>
         /// <param name="queryParseType">Define the way results are to be parsed</param>
-        public static RootObjectPropertyGraph BuildObjetPropertyGraph(this ISqlStatement2 sqlBuilder, Type objectType, QueryParseType queryParseType) 
+        public static RootObjectPropertyGraph BuildObjetPropertyGraph(this ISqlStatement sqlBuilder, Type objectType, QueryParseType queryParseType) 
         {
             // row id's for each mapped table
             var mappedTableProperties = (sqlBuilder.MappingProperties
@@ -60,7 +60,7 @@ namespace SqlDsl.Query
         /// Get a sql statement and corresponding sql paramaters from the builder
         /// </summary>
         /// <param name="builder">The sql builder to use in order to render sql</param>
-        public static string ToSql(this ISqlStatement2 builder)
+        public static string ToSql(this ISqlStatement builder)
         {
             var sql = builder.ToSqlString();
             return $"{sql.querySetupSql}\n\n{sql.querySql}";

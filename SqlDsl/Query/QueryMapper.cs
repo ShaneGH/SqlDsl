@@ -29,7 +29,7 @@ namespace SqlDsl.Query
             return (result.builder.ToSql(), result.paramaters);
         }
 
-        public (ISqlStatement2 builder, IEnumerable<object> paramaters) ToSqlBuilder()
+        public (ISqlStatement builder, IEnumerable<object> paramaters) ToSqlBuilder()
         {
             // TODO: filter columns
             // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
@@ -316,11 +316,11 @@ namespace SqlDsl.Query
         {
             public readonly ParameterExpression QueryObject;
             public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
-            public readonly ISqlStatement2 WrappedSqlStatement;
+            public readonly ISqlStatement WrappedSqlStatement;
          //   public readonly IEnumerable<(string from, string to)> ValidJoins;
             //public readonly IEnumerable<string> AllPossibleTableProperties;
 
-            public BuildMapState(ParameterExpression queryObject, ISqlStatement2 wrappedSqlStatement)//, string primaryTableProperty, IEnumerable<(string from, string to)> validJoins)
+            public BuildMapState(ParameterExpression queryObject, ISqlStatement wrappedSqlStatement)//, string primaryTableProperty, IEnumerable<(string from, string to)> validJoins)
             {
                 QueryObject = queryObject;
                 WrappedSqlStatement = wrappedSqlStatement;

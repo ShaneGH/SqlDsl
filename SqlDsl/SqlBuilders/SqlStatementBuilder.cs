@@ -12,13 +12,13 @@ namespace SqlDsl.SqlBuilders
     // temp partial class to implement ISqlStatement2
     public partial class SqlStatementBuilder<TSqlBuilder>
     {
-        string ISqlStatement2.UniqueAlias => UniqueAlias;
+        string ISqlStatement.UniqueAlias => UniqueAlias;
 
-        IQueryTables ISqlStatement2.Tables => GetQueryTables();
+        IQueryTables ISqlStatement.Tables => GetQueryTables();
 
-        ISelectColumns ISqlStatement2.SelectColumns => GetSelectColumns();
+        ISelectColumns ISqlStatement.SelectColumns => GetSelectColumns();
 
-        IMappingProperties ISqlStatement2.MappingProperties => BuildMappingProperties();
+        IMappingProperties ISqlStatement.MappingProperties => BuildMappingProperties();
 
         IQueryTables GetQueryTables()
         {
@@ -39,7 +39,7 @@ namespace SqlDsl.SqlBuilders
 
         class MappingProperties : IMappingProperties
         {
-            public ISqlStatement2 InnerStatement => MappedStatement.InnerQuery;
+            public ISqlStatement InnerStatement => MappedStatement.InnerQuery;
             readonly SqlStatementBuilder<TSqlBuilder> MappedStatement;
             
 
@@ -73,9 +73,9 @@ namespace SqlDsl.SqlBuilders
             public IEnumerator<ISelectColumn> GetEnumerator()
             {
                 var cols = QueryBuilder.Select.Select(BuildColumn);
-                var ridCols = (QueryBuilder as ISqlStatement2).MappingProperties == null ?
-                    (QueryBuilder as ISqlStatement2).Tables.SelectMany(BuildRowIdColumn) :
-                    (QueryBuilder as ISqlStatement2).MappingProperties.InnerStatement.SelectColumns.Where(IsRowNumber);
+                var ridCols = (QueryBuilder as ISqlStatement).MappingProperties == null ?
+                    (QueryBuilder as ISqlStatement).Tables.SelectMany(BuildRowIdColumn) :
+                    (QueryBuilder as ISqlStatement).MappingProperties.InnerStatement.SelectColumns.Where(IsRowNumber);
 
                 return ridCols
                     .Concat(cols)
@@ -134,14 +134,14 @@ namespace SqlDsl.SqlBuilders
         class SelectColumn : ISelectColumn
         {
             public string Alias { get; }
-            readonly ISqlStatement2 SqlStatement;
+            readonly ISqlStatement SqlStatement;
             public bool IsRowNumber { get; }
             readonly string Name;
             readonly SqlStatementBuilder<TSqlBuilder> QueryBuilder;
             readonly string TableAlias;
             public int RowNumberColumnIndex => QueryBuilder.InnerQuery == null ?
                 SqlStatement.Tables[TableAlias].RowNumberColumnIndex :
-                (QueryBuilder.InnerQuery as ISqlStatement2).SelectColumns[Name].RowNumberColumnIndex;
+                (QueryBuilder.InnerQuery as ISqlStatement).SelectColumns[Name].RowNumberColumnIndex;
 
             public SelectColumn(string name, string alias, string tableAlias, bool isRowNumber, SqlStatementBuilder<TSqlBuilder> qb)
             {
@@ -150,7 +150,7 @@ namespace SqlDsl.SqlBuilders
                 TableAlias = tableAlias;
                 IsRowNumber = isRowNumber;
                 QueryBuilder = qb;
-                SqlStatement = QueryBuilder as ISqlStatement2;
+                SqlStatement = QueryBuilder as ISqlStatement;
             }
         }
 
@@ -225,7 +225,7 @@ namespace SqlDsl.SqlBuilders
 
             public IQueryTable JoinedFrom => QueryBuilder.PrimaryTableAlias == Alias ?
                 null :
-                (QueryBuilder as ISqlStatement2).Tables[
+                (QueryBuilder as ISqlStatement).Tables[
                 QueryBuilder.Joins
                     .Where(j => j.alias == Alias)
                     // TODO: First is not gaurenteed result. Need better error message
@@ -254,7 +254,7 @@ namespace SqlDsl.SqlBuilders
     /// <summary>
     /// A class to build sql statements
     /// </summary>
-    public partial class SqlStatementBuilder<TSqlBuilder> : ISqlStatement2
+    public partial class SqlStatementBuilder<TSqlBuilder> : ISqlStatement
         where TSqlBuilder : ISqlFragmentBuilder, new()
     {
         // #region ISqlStatement
@@ -308,12 +308,12 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The inner query used in the SELECT clause
         /// </summary>
-        ISqlStatement2 InnerQuery;
+        ISqlStatement InnerQuery;
         
         /// <summary>
         /// Set the inner query and is's alias in the SELECT clause. alias can be null
         /// </summary>
-        public void SetPrimaryTable(ISqlStatement2 table, string alias)
+        public void SetPrimaryTable(ISqlStatement table, string alias)
         {
             InnerQuery = table;
             PrimaryTableAlias = alias;

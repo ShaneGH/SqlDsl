@@ -34,7 +34,7 @@ namespace SqlDsl.SqlBuilders
         ISelectColumn this[string alias] { get; }
     }
 
-    public interface ISqlStatement2
+    public interface ISqlStatement
     {
         /// <summary>
         /// A unique alias for this statement. Uniqueness must be guaranteed within a single statement only
@@ -55,7 +55,7 @@ namespace SqlDsl.SqlBuilders
 
     public interface IMappingProperties
     {
-        ISqlStatement2 InnerStatement { get; }
+        ISqlStatement InnerStatement { get; }
         IEnumerable<(string columnGroupPrefix, int rowNumberColumnIndex)> ColumnGroupRowNumberColumIndex { get; }
     }
 }
