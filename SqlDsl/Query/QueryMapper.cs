@@ -130,7 +130,7 @@ namespace SqlDsl.Query
                                 m.map.properties.SelectMany(x => 
                                 {
                                     // if From == null, it is a reference to the query object
-                                    if (x.From == null || state.WrappedSqlStatement.ContainsTable(x.From))
+                                    if (x.From == null || state.WrappedSqlStatement.ContainsTable(RemoveRoot(x.From)))
                                     {
                                         var t = m.binding.Member
                                             .GetPropertyOrFieldType();
@@ -285,7 +285,7 @@ namespace SqlDsl.Query
                 op.tables);
         }
 
-        static readonly string RootObjectAsPrefix = $"{SqlStatementConstants.RootObjectAlias}.";
+        static string RootObjectAsPrefix => $"{SqlStatementConstants.RootObjectAlias}.";
 
         static string CombineStrings(string s1, string s2)
         {
