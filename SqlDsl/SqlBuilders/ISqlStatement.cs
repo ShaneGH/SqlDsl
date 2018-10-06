@@ -6,58 +6,120 @@ using System.Reflection;
 namespace SqlDsl.SqlBuilders
 {
     /// <summary>
-    /// Represents an object which can be converted into a sql statement
+    /// Describes a sql statement
     /// </summary>
     public interface ISqlStatement
-    {        
-        /// <summary>
-        /// The alias of the table in the SELECT clause
-        /// </summary>
-        string PrimaryTableAlias { get; }
-
+    {
         /// <summary>
         /// A unique alias for this statement. Uniqueness must be guaranteed within a single statement only
         /// </summary>
         string UniqueAlias { get; }
 
         /// <summary>
-        /// A map from column names to the name of the column of it's RowId
+        /// The tables involved in the statement
         /// </summary>
-        IEnumerable<(string columnName, string rowIdColumnName)> RowIdMap { get; }
+        IQueryTables Tables { get; }
 
         /// <summary>
-        /// A map from a row id column to a location in a mapped property graph
+        /// If the statement is a mapped statement, i.e. it has an inner wrapped query, this property will show the details of this.
+        /// Otherwise It will be null.
         /// </summary>
-        IEnumerable<(string rowIdColumnName, string resultClassProperty)> RowIdsForMappedProperties { get; }
+        IMappingProperties MappingProperties { get; }
 
         /// <summary>
-        /// A list of row id colums, the alias of the table they are identifying, and the alias for the row id column (if any)
+        /// The columns in the SELECT part of the query
         /// </summary>
-        IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> RowIdSelectColumns { get; }
+        ISelectColumns SelectColumns { get; }
+    }
 
+    /// <summary>
+    /// A list of tables in the query.false (FROM and JOIN)
+    /// </summary>
+    public interface IQueryTables : IEnumerable<IQueryTable>
+    {
         /// <summary>
-        /// A list of aliases for columns in the SELECT statement
+        /// Get a table based on the index of its row number column
         /// </summary>
-        IEnumerable<string> SelectColumns { get; }
+        IQueryTable this[int rowNumberColumnIndex] { get; }
+        
+        /// <summary>
+        /// Get a table based on it's index
+        /// </summary>
+        IQueryTable this[string alias] { get; }
+    }
 
+    /// <summary>
+    /// A list of columns in the SELECT statement
+    /// </summary>
+    public interface ISelectColumns : IEnumerable<ISelectColumn>
+    {
         /// <summary>
-        /// A list of tables which have a join to one another
+        /// Get a column based on it's index in the select statement
         /// </summary>
-        IEnumerable<(string from, string to)> JoinedTables { get; }
+        ISelectColumn this[int index] { get; }
+        
+        /// <summary>
+        /// Get a column based on it's alias
+        /// </summary>
+        ISelectColumn this[string alias] { get; }
+    }
 
+    /// <summary>
+    /// Extra values on a statement which describe the mapping of another query
+    /// </summary>
+    public interface IMappingProperties
+    {
         /// <summary>
-        /// Generate sql. Setup sql will be executd before querySql, but in the same sql script
+        /// The other (mapped from) query
         /// </summary>
-        (string querySetupSql, string querySql) ToSqlString();
+        ISqlStatement InnerStatement { get; }
+        
+        /// <summary>
+        /// A list of column name prefixes which are bound to a specific table, along with an index to reference that table
+        /// </summary>
+        IEnumerable<(string columnGroupPrefix, int rowNumberColumnIndex)> ColumnGroupRowNumberColumIndex { get; }
+    }
 
+    /// <summary>
+    /// A table within a query
+    /// </summary>
+    public interface IQueryTable
+    {
         /// <summary>
-        /// Given a row id column index, return the column index for the row id of the table it needs to join on. Null means that the table has no dependant joins
+        /// The table alias
         /// </summary>
-        int? GetDependantRowId(int rowId);
-
+        string Alias { get; }
+        
         /// <summary>
-        /// Given a row id column index, return a chain of column indexes back to the root for the row id of the table it needs to join on.
+        /// The index of the column which provides row numbers for this table
         /// </summary>
-        IEnumerable<int> GetDependantRowIdChain(int rowId);
+        int RowNumberColumnIndex { get; }
+        
+        /// <summary>
+        /// If this table is in a join, will be the table that it is joined on.
+        /// Otherwise it will be null
+        /// </summary>
+        IQueryTable JoinedFrom { get; }
+    }
+    
+    /// <summary>
+    /// A column in the SELECT statement
+    /// </summary>
+    public interface ISelectColumn
+    {
+        /// <summary>
+        /// The alias of the column
+        /// </summary>
+        string Alias { get; }
+        
+        /// <summary>
+        /// The index of the row number column for the table which exposes this column
+        /// </summary>
+        int RowNumberColumnIndex { get; }
+        
+        /// <summary>
+        /// If true, this column is a row number
+        /// </summary>
+        bool IsRowNumber { get; }
     }
 }

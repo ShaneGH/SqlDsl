@@ -1,6 +1,7 @@
 using SqlDsl.DataParser;
 using SqlDsl.Dsl;
 using SqlDsl.SqlBuilders;
+using SqlDsl.SqlBuilders.SqlStatementParts;
 using SqlDsl.Utils;
 using System;
 using System.Collections.Generic;
@@ -25,19 +26,18 @@ namespace SqlDsl.Query
         public (string sql, IEnumerable<object> paramaters) ToSql()
         {
             var result = ToSqlBuilder();
-            var sql = result.builder.ToSqlString();
-            return (result.builder.ToSql(), result.paramaters);
+            return (result.builder.Builder.ToSql(), result.paramaters);
         }
 
-        public (ISqlStatement builder, IEnumerable<object> paramaters) ToSqlBuilder()
+        public (SqlBuilderItems builder, IEnumerable<object> paramaters) ToSqlBuilder()
         {
             // TODO: filter columns
             // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
 
-            var (wrappedBuilder, parameters) = Query.ToSqlBuilder(null);
+            var (wrappedBuilder, parameters) = Query.ToSqlStatement(null);
 
             var map = BuildMap(
-                new BuildMapState(Mapper.Parameters[0], wrappedBuilder.PrimaryTableAlias, wrappedBuilder.JoinedTables),
+                new BuildMapState(Mapper.Parameters[0], wrappedBuilder.Statement),
                 Mapper.Body);
 
             var rowIdPropertyMap = map.tables
@@ -49,15 +49,17 @@ namespace SqlDsl.Query
                 .Enumerate();
 
             var builder = new SqlStatementBuilder<TSqlBuilder>();
-            builder.SetPrimaryTable(wrappedBuilder, wrappedBuilder.UniqueAlias);
+            builder.SetPrimaryTable(wrappedBuilder, wrappedBuilder.Statement.UniqueAlias);
 
             foreach (var col in mappedValues)
-                builder.AddSelectColumn(col.from, tableName: wrappedBuilder.UniqueAlias, alias: col.to);
+                builder.AddSelectColumn(col.from, tableName: wrappedBuilder.Statement.UniqueAlias, alias: col.to);
 
             foreach (var col in rowIdPropertyMap)
                 builder.RowIdsForMappedProperties.Add((col.rowIdColumnName, col.resultClassProperty));
                 
-            return (builder, parameters);
+            return (
+                new SqlBuilderItems(builder, new SqlStatement(builder)), 
+                parameters);
         }
 
         /// <summary>
@@ -130,7 +132,7 @@ namespace SqlDsl.Query
                                 m.map.properties.SelectMany(x => 
                                 {
                                     // if From == null, it is a reference to the query object
-                                    if (x.From == null || IsQueryObjectProperty(state, x.From))
+                                    if (x.From == null || state.WrappedSqlStatement.ContainsTable(RemoveRoot(x.From)))
                                     {
                                         var t = m.binding.Member
                                             .GetPropertyOrFieldType();
@@ -171,11 +173,6 @@ namespace SqlDsl.Query
             }
 
             throw new InvalidOperationException($"Unsupported mapping expression \"{expr}\".");
-        }
-
-        static bool IsQueryObjectProperty(BuildMapState state, string property)
-        {
-            return state.AllPossibleTableProperties.Contains(property);
         }
 
         static void TryAddSelectStatementParameterToProperty(BuildMapState state, Expression enumerable, ParameterExpression parameter)
@@ -265,10 +262,7 @@ namespace SqlDsl.Query
         /// </summary>
         static void VerifyJoin(BuildMapState state, string from, string to)
         {
-            if (!state.ValidJoins.Any(j => 
-                (j.from == from && j.to == to) ||
-                (j.from == to && j.to == from)))
-
+            if (!state.WrappedSqlStatement.JoinIsValid(from, to))
                 throw new InvalidOperationException($"Error in mapping: property \"{from}\" does not join to property \"{to}\".");
         }
 
@@ -288,7 +282,7 @@ namespace SqlDsl.Query
                 op.tables);
         }
 
-        static readonly string RootObjectAsPrefix = $"{SqlStatementConstants.RootObjectAlias}.";
+        static string RootObjectAsPrefix => $"{SqlStatementConstants.RootObjectAlias}.";
 
         static string CombineStrings(string s1, string s2)
         {
@@ -319,18 +313,12 @@ namespace SqlDsl.Query
         {
             public readonly ParameterExpression QueryObject;
             public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
-            public readonly IEnumerable<(string from, string to)> ValidJoins;
-            public readonly string PrimaryTableProperty;
-            public readonly IEnumerable<string> AllPossibleTableProperties;
+            public readonly ISqlStatement WrappedSqlStatement;
 
-            public BuildMapState(ParameterExpression queryObject, string primaryTableProperty, IEnumerable<(string from, string to)> validJoins)
+            public BuildMapState(ParameterExpression queryObject, ISqlStatement wrappedSqlStatement)
             {
                 QueryObject = queryObject;
-                PrimaryTableProperty = primaryTableProperty;
-                ValidJoins = validJoins.OrEmpty();
-                
-                var tmp = ValidJoins.Select(x => x.from).Prepend(PrimaryTableProperty);
-                AllPossibleTableProperties = tmp.Concat(tmp.Select(x => CombineStrings(SqlStatementConstants.RootObjectAlias, x))).Enumerate();
+                WrappedSqlStatement = wrappedSqlStatement;
             }
         }
     }

@@ -135,8 +135,10 @@ namespace SqlDsl.UnitTests.DataParser
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.PersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId) as QueryBuilder<Sqlite.SqliteBuilder, object, JoinedQueryClass>)
-                .ToSqlBuilder(null)
+                .ToSqlStatement(null)
+
                 .builder
+                .Statement
                 .BuildObjetPropertyGraph(typeof(JoinedQueryClass), QueryParseType.DoNotDuplicate);
 
             // assert
@@ -176,8 +178,9 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = FullyJoinedQuery()
-                .ToSqlBuilder(null)
+                .ToSqlStatement(null)
                 .builder
+                .Statement
                 .BuildObjetPropertyGraph(typeof(JoinedQueryClass), QueryParseType.DoNotDuplicate);
 
             // assert
@@ -231,9 +234,7 @@ namespace SqlDsl.UnitTests.DataParser
                         null, 
                         new[]{4}))
                 }, 
-                new[] { 0 });
-
-                
+                new[] { 0 });              
 
             Compare(expected, actual);
         }
@@ -262,6 +263,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, MappedVersion>)
                 .ToSqlBuilder()
                 .builder
+                .Statement
                 .BuildObjetPropertyGraph(typeof(MappedVersion), QueryParseType.ORM);
 
             // assert
@@ -272,7 +274,7 @@ namespace SqlDsl.UnitTests.DataParser
                 },
                 null, 
                 new[] { 0 });
-
+            
             Compare(expected, actual);
         }
 
@@ -293,6 +295,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, MappedVersion>)
                 .ToSqlBuilder()
                 .builder
+                .Statement
                 .BuildObjetPropertyGraph(typeof(MappedVersion), QueryParseType.ORM);
 
             // assert
@@ -338,6 +341,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, MappedVersion>)
                 .ToSqlBuilder()
                 .builder
+                .Statement
                 .BuildObjetPropertyGraph(typeof(MappedVersion), QueryParseType.ORM);
 
             // assert
@@ -401,6 +405,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, MappedVersion2>)
                 .ToSqlBuilder()
                 .builder
+                .Statement
                 .BuildObjetPropertyGraph(typeof(MappedVersion2), QueryParseType.ORM);
 
             // assert
@@ -463,6 +468,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, DifficultScenario>)
                 .ToSqlBuilder()
                 .builder
+                .Statement
                 .BuildObjetPropertyGraph(typeof(DifficultScenario), QueryParseType.ORM);
 
             // assert
@@ -502,6 +508,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, DifficultScenario2>)
                 .ToSqlBuilder()
                 .builder
+                .Statement
                 .BuildObjetPropertyGraph(typeof(DifficultScenario), QueryParseType.ORM);
 
             // assert
@@ -554,6 +561,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, DeepJoinedClass>)
                 .ToSqlBuilder()
                 .builder
+                .Statement
                 .BuildObjetPropertyGraph(typeof(DeepJoinedClass), QueryParseType.ORM);
 
             // assert
