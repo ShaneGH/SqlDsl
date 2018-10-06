@@ -231,9 +231,7 @@ namespace SqlDsl.UnitTests.DataParser
                         null, 
                         new[]{4}))
                 }, 
-                new[] { 0 });
-
-                
+                new[] { 0 });              
 
             Compare(expected, actual);
         }
@@ -272,7 +270,7 @@ namespace SqlDsl.UnitTests.DataParser
                 },
                 null, 
                 new[] { 0 });
-
+            
             Compare(expected, actual);
         }
 

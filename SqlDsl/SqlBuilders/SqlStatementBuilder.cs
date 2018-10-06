@@ -1,6 +1,7 @@
 using SqlDsl.Query;
 using SqlDsl.Utils;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,31 +9,273 @@ using System.Reflection;
 
 namespace SqlDsl.SqlBuilders
 {
+    // temp partial class to implement ISqlStatement2
+    public partial class SqlStatementBuilder<TSqlBuilder>
+    {
+        string ISqlStatement2.UniqueAlias => UniqueAlias;
+
+        IQueryTables ISqlStatement2.Tables => GetQueryTables();
+
+        ISelectColumns ISqlStatement2.SelectColumns => GetSelectColumns();
+
+        IMappingProperties ISqlStatement2.MappingProperties => BuildMappingProperties();
+
+        IQueryTables GetQueryTables()
+        {
+            return new QueryTables(this);
+        }
+
+        ISelectColumns GetSelectColumns()
+        {
+            return new SelectColumns(this);
+        }
+
+        IMappingProperties BuildMappingProperties()
+        {
+            return this.InnerQuery == null ?
+                null :
+                new MappingProperties(this);
+        }
+
+        class MappingProperties : IMappingProperties
+        {
+            public ISqlStatement2 InnerStatement => MappedStatement.InnerQuery;
+            readonly SqlStatementBuilder<TSqlBuilder> MappedStatement;
+            
+
+            public IEnumerable<(string columnGroupPrefix, int rowNumberColumnIndex)> ColumnGroupRowNumberColumIndex => GetColumnGroupRowNumberColumIndex();
+
+            public MappingProperties(SqlStatementBuilder<TSqlBuilder> mappedStatement)
+            {
+                MappedStatement = mappedStatement;
+            }
+
+            IEnumerable<(string columnGroupPrefix, int rowNumberColumnIndex)> GetColumnGroupRowNumberColumIndex()
+            {
+                return MappedStatement.RowIdsForMappedProperties
+                    .Select(x => (x.resultClassProperty, InnerStatement.SelectColumns[x.rowIdColumnName].RowNumberColumnIndex));
+            }
+        }
+
+        class SelectColumns : ISelectColumns
+        {
+            readonly SqlStatementBuilder<TSqlBuilder> QueryBuilder;
+
+            public SelectColumns(SqlStatementBuilder<TSqlBuilder> qb)
+            {
+                QueryBuilder = qb;
+            }
+
+            public ISelectColumn this[int index] => GetColumn(index);
+
+            public ISelectColumn this[string alias] => GetColumn(alias);
+
+            public IEnumerator<ISelectColumn> GetEnumerator()
+            {
+                var cols = QueryBuilder.Select.Select(BuildColumn);
+                var ridCols = (QueryBuilder as ISqlStatement2).MappingProperties == null ?
+                    (QueryBuilder as ISqlStatement2).Tables.SelectMany(BuildRowIdColumn) :
+                    (QueryBuilder as ISqlStatement2).MappingProperties.InnerStatement.SelectColumns.Where(IsRowNumber);
+
+                return ridCols
+                    .Concat(cols)
+                    .GetEnumerator();
+
+                bool IsRowNumber(ISelectColumn col) => col.IsRowNumber;
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+            ISelectColumn BuildColumn((string columnName, string tableName, string alias) col)
+            {
+                return new SelectColumn(col.columnName, col.alias ?? col.columnName, col.tableName, false, QueryBuilder);
+            }
+
+            IEnumerable<ISelectColumn> BuildRowIdColumn(IQueryTable table)
+            {
+                yield return new SelectColumn(
+                    SqlStatementConstants.RowIdName, 
+                    $"{table.Alias}.{SqlStatementConstants.RowIdName}", 
+                    table.Alias, 
+                    true,
+                    QueryBuilder);
+            }
+
+            ISelectColumn GetColumn(int index)
+            {
+                var i = index;
+                foreach (var col in this)
+                {
+                    if (i == 0)
+                        return col;
+
+                    i--;
+                }
+
+                throw new InvalidOperationException($"There is no column at index: {index}.");
+            }
+
+            ISelectColumn GetColumn(string alias)
+            {
+                foreach (var col in this)
+                {
+                    if (col.Alias == alias)
+                        return col;
+                }
+
+                throw new InvalidOperationException($"There is no column with alias: {alias}.");
+            }
+        }
+
+        class SelectColumn : ISelectColumn
+        {
+            public string Alias { get; }
+            readonly ISqlStatement2 SqlStatement;
+            public bool IsRowNumber { get; }
+            readonly string Name;
+            readonly SqlStatementBuilder<TSqlBuilder> QueryBuilder;
+            readonly string TableAlias;
+            public int RowNumberColumnIndex => QueryBuilder.InnerQuery == null ?
+                SqlStatement.Tables[TableAlias].RowNumberColumnIndex :
+                (QueryBuilder.InnerQuery as ISqlStatement2).SelectColumns[Name].RowNumberColumnIndex;
+
+            public SelectColumn(string name, string alias, string tableAlias, bool isRowNumber, SqlStatementBuilder<TSqlBuilder> qb)
+            {
+                Alias = alias;
+                Name = name;
+                TableAlias = tableAlias;
+                IsRowNumber = isRowNumber;
+                QueryBuilder = qb;
+                SqlStatement = QueryBuilder as ISqlStatement2;
+            }
+        }
+
+        class QueryTables : IQueryTables
+        {
+            readonly SqlStatementBuilder<TSqlBuilder> QueryBuilder;
+
+            public QueryTables(SqlStatementBuilder<TSqlBuilder> qb)
+            {
+                QueryBuilder = qb;
+            }
+
+            public IQueryTable this[int rowNumberColumnIndex] => GetTable(rowNumberColumnIndex);
+
+            public IQueryTable this[string alias] => GetTable(alias);
+
+            public IEnumerator<IQueryTable> GetEnumerator()
+            {
+                yield return new QueryTable(QueryBuilder.PrimaryTableAlias, QueryBuilder);
+
+                foreach (var j in QueryBuilder.Joins)
+                    yield return new QueryTable(j.alias, QueryBuilder);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+            IQueryTable GetTable(int rowNumberColumnIndex)
+            {
+                foreach (var tab in this)
+                {
+                    if (tab.RowNumberColumnIndex == rowNumberColumnIndex)
+                        return tab;
+                }
+
+                throw new InvalidOperationException($"There is no table with row number column index: {rowNumberColumnIndex}.");
+            }
+
+            IQueryTable GetTable(string alias)
+            {
+                foreach (var tab in this)
+                {
+                    if (tab.Alias == alias)
+                        return tab;
+                }
+
+                throw new InvalidOperationException($"There is no table with alias: {alias}.");
+            }
+        }
+
+        class QueryTable : IQueryTable
+        {
+            readonly SqlStatementBuilder<TSqlBuilder> QueryBuilder;
+
+            public string Alias { get; }
+
+            public int RowNumberColumnIndex => QueryBuilder.PrimaryTableAlias == Alias ?
+                0 :
+                // TODO: First is not gaurenteed result. Need better error message
+                QueryBuilder.Joins
+                    .Select((x, i) => (i + 1, x))
+                    .Where(j => j.Item2.alias == Alias)
+                    .Select(x => x.Item1)
+                    .First();
+
+            // {   
+            //         if (QueryBuilder.PrimaryTableAlias == Alias) return 0;
+
+            //         var xs = QueryBuilder.Joins.Where(j => j.alias == Alias).ToArray();
+            //         var ys = xs.Select((x, i) => i + 1).ToArray();
+            //         return ys.First();
+            //     }
+
+            public IQueryTable JoinedFrom => QueryBuilder.PrimaryTableAlias == Alias ?
+                null :
+                (QueryBuilder as ISqlStatement2).Tables[
+                QueryBuilder.Joins
+                    .Where(j => j.alias == Alias)
+                    // TODO: First is not gaurenteed result. Need better error message
+                    // TODO: Not sure if Single on this property is correct
+                    .Select(x => x.queryObjectReferences.Single()).First()];
+
+            // public IEnumerable<IQueryTable> IsWrapperFor => 
+            //     QueryBuilder.InnerQuery == null ?
+            //         null :
+            //         (QueryBuilder.InnerQuery as ISqlStatement2).Tables;
+
+            public QueryTable(string alias, SqlStatementBuilder<TSqlBuilder> queryBuilder)
+            {
+                Alias = alias;
+                QueryBuilder = queryBuilder;
+
+                var JoinedFrom = queryBuilder.PrimaryTableAlias == alias ?
+                    null :
+                    queryBuilder.Joins
+                        .Where(j => j.alias == alias)
+                        .Select(x => x.queryObjectReferences.Single()).First();
+            }
+        }
+    }
+
     /// <summary>
     /// A class to build sql statements
     /// </summary>
-    public class SqlStatementBuilder<TSqlBuilder> : ISqlStatement
+    public partial class SqlStatementBuilder<TSqlBuilder> : ISqlStatement2
         where TSqlBuilder : ISqlFragmentBuilder, new()
     {
-        #region ISqlStatement
+        // #region ISqlStatement
 
-        IEnumerable<string> ISqlStatement.SelectColumns
-             => GetAllSelectColumns().Select(c => c.alias ?? c.columnName);
+        // string ISqlStatement.PrimaryTableAlias => PrimaryTableAlias;
+
+        // IEnumerable<string> ISqlStatement.SelectColumns
+        //      => GetAllSelectColumns().Select(c => c.alias ?? c.columnName);
              
-        public IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> RowIdSelectColumns
-             => GetRowIdSelectColumns();
+        // public IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> RowIdSelectColumns
+        //      => GetRowIdSelectColumns();
 
-        IEnumerable<(string columnName, string rowIdColumnName)> ISqlStatement.RowIdMap => GetRowIdMap();
+        // IEnumerable<(string columnName, string rowIdColumnName)> ISqlStatement.RowIdMap => GetRowIdMap();
                 
-        public string UniqueAlias { get; private set; } = BuildInnerQueryAlias();
+        // string ISqlStatement.UniqueAlias => UniqueAlias;
 
-        IEnumerable<(string rowIdColumnName, string resultClassProperty)> ISqlStatement.RowIdsForMappedProperties => RowIdsForMappedProperties.Skip(0);
+        // IEnumerable<(string rowIdColumnName, string resultClassProperty)> ISqlStatement.RowIdsForMappedProperties => RowIdsForMappedProperties.Skip(0);
 
-        IEnumerable<(string from, string to)> ISqlStatement.JoinedTables => GetJoinedTables();
+        // IEnumerable<(string from, string to)> ISqlStatement.JoinedTables => GetJoinedTables();
 
-        #endregion
+        // #endregion
 
         ISqlFragmentBuilder SqlBuilder;
+                
+        readonly string UniqueAlias = BuildInnerQueryAlias();
 
         public SqlStatementBuilder()
         {
@@ -47,7 +290,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The alias of the table in the SELECT clause
         /// </summary>
-        public string PrimaryTableAlias { get; private set; }
+        string PrimaryTableAlias;
         
         /// <summary>
         /// Set the name and alias of the table in the SELECT clause. alias can be null
@@ -61,12 +304,12 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The inner query used in the SELECT clause
         /// </summary>
-        ISqlStatement InnerQuery;
+        ISqlStatement2 InnerQuery;
         
         /// <summary>
         /// Set the inner query and is's alias in the SELECT clause. alias can be null
         /// </summary>
-        public void SetPrimaryTable(ISqlStatement table, string alias)
+        public void SetPrimaryTable(ISqlStatement2 table, string alias)
         {
             InnerQuery = table;
             PrimaryTableAlias = alias;
@@ -178,7 +421,7 @@ namespace SqlDsl.SqlBuilders
         /// The WHERE statement, if necessary
         /// </summary>
         (string setupSql, string sql, IEnumerable<string> queryObjectReferences)? Where = null;
-        
+
         /// <summary>
         /// The WHERE statement, if necessary
         /// </summary>
@@ -284,10 +527,13 @@ namespace SqlDsl.SqlBuilders
             else
             {
                 // if there is an inner query, all columns will come from it
-                foreach (var rowId in InnerQuery.RowIdSelectColumns)
+                foreach (var table in InnerQuery.Tables)
                 {
                     // the only row id will be [inner query alias].[##rowid]
-                    yield return (rowId.rowIdColumnNameAlias ?? rowId.rowIdColumnName, InnerQuery.UniqueAlias, null);
+                    yield return (
+                        InnerQuery.SelectColumns[table.RowNumberColumnIndex].Alias, 
+                        InnerQuery.UniqueAlias, 
+                        null);
                 }
             }
         }
@@ -298,121 +544,121 @@ namespace SqlDsl.SqlBuilders
         IEnumerable<(string columnName, string tableName, string alias)> GetAllSelectColumns() =>
             GetRowIdSelectColumns().Concat(Select); // TODO: should be Select.Concat(GetRowIdSelectColumns())
 
-        IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMap() => InnerQuery != null ?
-            GetRowIdMapForInnerQuery() :
-            GetRowIdMapForNonInnerQuery();
+        // IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMap() => InnerQuery != null ?
+        //     GetRowIdMapForInnerQuery() :
+        //     GetRowIdMapForNonInnerQuery();
 
-        /// <summary>
-        /// Get a map of all columns to their respective row id column, if InnerQuery == null
-        /// </summary>
-        IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMapForNonInnerQuery()
-        {
-            // get a row id for each SELECT column
-            foreach (var col in Select)
-            {
-                foreach (var rid in RowIdSelectColumns)
-                {
-                    if (col.tableName == rid.tableAlias)
-                    {
-                        yield return (col.alias ?? col.columnName, rid.rowIdColumnNameAlias ?? rid.rowIdColumnName);
-                        break;
-                    }
-                }
-            }
-            
-            // foreach row id, return a reference to itself
-            foreach (var rid in RowIdSelectColumns)
-                yield return (rid.rowIdColumnNameAlias ?? rid.rowIdColumnName, rid.rowIdColumnNameAlias ?? rid.rowIdColumnName);
-        }
+        // /// <summary>
+        // /// Get a map of all columns to their respective row id column, if InnerQuery == null
+        // /// </summary>
+        // IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMapForNonInnerQuery()
+        // {
+        //     // get a row id for each SELECT column
+        //     foreach (var col in Select)
+        //     {
+        //         foreach (var rid in RowIdSelectColumns)
+        //         {
+        //             if (col.tableName == rid.tableAlias)
+        //             {
+        //                 yield return (col.alias ?? col.columnName, rid.rowIdColumnNameAlias ?? rid.rowIdColumnName);
+        //                 break;
+        //             }
+        //         }
+        //     }
 
-        /// <summary>
-        /// Get a map of all columns to their respective row id column, if InnerQuery != null
-        /// </summary>
-        IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMapForInnerQuery()
-        {
-            // get the map fron the inner query, and 
-            // map the inner query columns to the outer query ones
-            var innerMap = InnerQuery.RowIdMap.ToList();
-            foreach (var col in Select)
-            {
-                foreach (var rid in innerMap)
-                {
-                    if (col.columnName == rid.columnName)
-                    {
-                        yield return (col.alias ?? col.columnName, rid.rowIdColumnName);
-                        break;
-                    }
-                }
-            }
-            
-            // foreach row id, return a reference to itself
-            foreach (var rid in innerMap.Select(x => x.rowIdColumnName).Distinct())
-                yield return (rid, rid);
-        }
+        //     // foreach row id, return a reference to itself
+        //     foreach (var rid in RowIdSelectColumns)
+        //         yield return (rid.rowIdColumnNameAlias ?? rid.rowIdColumnName, rid.rowIdColumnNameAlias ?? rid.rowIdColumnName);
+        // }
 
-        static readonly IEnumerable<int> EmptyInts = Enumerable.Empty<int>();
+        // /// <summary>
+        // /// Get a map of all columns to their respective row id column, if InnerQuery != null
+        // /// </summary>
+        // IEnumerable<(string columnName, string rowIdColumnName)> GetRowIdMapForInnerQuery()
+        // {
+        //     // get the map fron the inner query, and 
+        //     // map the inner query columns to the outer query ones
+        //     var innerMap = InnerQuery.RowIdMap.ToList();
+        //     foreach (var col in Select)
+        //     {
+        //         foreach (var rid in innerMap)
+        //         {
+        //             if (col.columnName == rid.columnName)
+        //             {
+        //                 yield return (col.alias ?? col.columnName, rid.rowIdColumnName);
+        //                 break;
+        //             }
+        //         }
+        //     }
 
-        /// <summary>
-        /// Get a list of tables which have a join to one another
-        /// </summary>
-        IEnumerable<(string from, string to)> GetJoinedTables()
-        {
-            // TDO: hacky
-            // TODO; unify join table property and row id col numbers
-            return Joins
-                .SelectMany(j => j.queryObjectReferences.Select(o => (j.alias, o)))
-                .Distinct();
-        }
+        //     // foreach row id, return a reference to itself
+        //     foreach (var rid in innerMap.Select(x => x.rowIdColumnName).Distinct())
+        //         yield return (rid, rid);
+        // }
 
-        /// <summary>
-        /// Given a row id column index, return the column index for the row id of the table it needs to join on. Null means that the table has no dependant joins
-        /// </summary>
-        public int? GetDependantRowId(int rowIdColumnIndex)
-        {
-            if (InnerQuery != null)
-                return InnerQuery.GetDependantRowId(rowIdColumnIndex);
+        // static readonly IEnumerable<int> EmptyInts = Enumerable.Empty<int>();
 
-            // 0 rowid means the primary table
-            if (rowIdColumnIndex == 0) return null;
+        // /// <summary>
+        // /// Get a list of tables which have a join to one another
+        // /// </summary>
+        // IEnumerable<(string from, string to)> GetJoinedTables()
+        // {
+        //     // TDO: hacky
+        //     // TODO; unify join table property and row id col numbers
+        //     return Joins
+        //         .SelectMany(j => j.queryObjectReferences.Select(o => (j.alias, o)))
+        //         .Distinct();
+        // }
 
-            // account for primary table being first in list
-            var join = Joins[rowIdColumnIndex - 1];
-            if (join.queryObjectReferences.Count() == 0)
-                return null;
+        // /// <summary>
+        // /// Given a row id column index, return the column index for the row id of the table it needs to join on. Null means that the table has no dependant joins
+        // /// </summary>
+        // public int? GetDependantRowId(int rowIdColumnIndex)
+        // {
+        //     if (InnerQuery != null)
+        //         return InnerQuery.GetDependantRowId(rowIdColumnIndex);
 
-            if (join.queryObjectReferences.Count() > 1)
-                // TODO
-                throw new NotImplementedException("Cannot support joins on 2 seperate tables at the moment");
-                
-            var tableName = join.queryObjectReferences.First();
-            if (PrimaryTableAlias == tableName)
-                return 0;
+        //     // 0 rowid means the primary table
+        //     if (rowIdColumnIndex == 0) return null;
 
-            for (var i = 0; i < Joins.Count; i++)
-            {
-                if (Joins[i].alias == tableName)
-                    return i + 1;
-            }
-            
-            throw new InvalidOperationException(
-                $"Cannot find row id index for table alias \"{tableName}\". " + 
-                $"Have you added a Join to the \"{tableName}\" property of the query object?");
-        }
+        //     // account for primary table being first in list
+        //     var join = Joins[rowIdColumnIndex - 1];
+        //     if (join.queryObjectReferences.Count() == 0)
+        //         return null;
 
-        /// <summary>
-        /// Given a row id column index, return a chain of column indexes back to the root for the row id of the table it needs to join on.
-        /// </summary>
-        public IEnumerable<int> GetDependantRowIdChain(int rowId)
-        {
-            int? rid = rowId;
-            var result = new List<int>();
-            while (rid != null)
-            {
-                result.Insert(0, rid.Value);
-                rid = GetDependantRowId(rid.Value);
-            }
+        //     if (join.queryObjectReferences.Count() > 1)
+        //         // TODO
+        //         throw new NotImplementedException("Cannot support joins on 2 seperate tables at the moment");
 
-            return result.Skip(0);
-        }
+        //     var tableName = join.queryObjectReferences.First();
+        //     if (PrimaryTableAlias == tableName)
+        //         return 0;
+
+        //     for (var i = 0; i < Joins.Count; i++)
+        //     {
+        //         if (Joins[i].alias == tableName)
+        //             return i + 1;
+        //     }
+
+        //     throw new InvalidOperationException(
+        //         $"Cannot find row id index for table alias \"{tableName}\". " + 
+        //         $"Have you added a Join to the \"{tableName}\" property of the query object?");
+        // }
+
+        // /// <summary>
+        // /// Given a row id column index, return a chain of column indexes back to the root for the row id of the table it needs to join on.
+        // /// </summary>
+        // IEnumerable<int> GetDependantRowIdChain(int rowId)
+        // {
+        //     int? rid = rowId;
+        //     var result = new List<int>();
+        //     while (rid != null)
+        //     {
+        //         result.Insert(0, rid.Value);
+        //         rid = GetDependantRowId(rid.Value);
+        //     }
+
+        //     return result.Skip(0);
+        // }
     }
 }
