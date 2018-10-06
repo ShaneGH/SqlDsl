@@ -1,6 +1,7 @@
 using SqlDsl.DataParser;
 using SqlDsl.Dsl;
 using SqlDsl.SqlBuilders;
+using SqlDsl.SqlBuilders.SqlStatementParts;
 using SqlDsl.Utils;
 using System;
 using System.Collections.Concurrent;
@@ -26,9 +27,8 @@ namespace SqlDsl.Query
         /// <param name="filterSelectCols">If specified, only add the given columns to the SELECT statement</param>
         public (string sql, IEnumerable<object> paramaters) ToSql(IEnumerable<string> filterSelectCols)
         {
-            var result = ToSqlBuilder(filterSelectCols);
-            var sql = result.builder.ToSqlString();
-            return (result.builder.ToSql(), result.paramaters);
+            var result = ToSqlStatement(filterSelectCols);
+            return (result.builder.Builder.ToSql(), result.paramaters);
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace SqlDsl.Query
         /// </summary>
         public ICompiledQuery<TResult> Compile()
         {
-            var sqlBuilder = ToSqlBuilder(null);
+            var sqlBuilder = ToSqlStatement(null);
             return sqlBuilder.builder
                 .Compile<TResult>(sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
         }
@@ -63,7 +63,7 @@ namespace SqlDsl.Query
         /// Create a populated sql builder along with any constants specified in the query
         /// </summary>
         /// <param name="filterSelectCols">If specified, only add the given columns to the SELECT statement</param>
-        public (ISqlStatement builder, IEnumerable<object> paramaters) ToSqlBuilder(IEnumerable<string> filterSelectCols)
+        public (SqlBuilderItems builder, IEnumerable<object> paramaters) ToSqlStatement(IEnumerable<string> filterSelectCols)
         {
             if (PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
@@ -115,7 +115,9 @@ namespace SqlDsl.Query
             if (WhereClause != null)
                 builder.SetWhere(WhereClause.Value.queryRoot, WhereClause.Value.where, param);
 
-            return (builder, param);
+            return (
+                new SqlBuilderItems(builder, new SqlStatement(builder)), 
+                param);
         }
     }
 }

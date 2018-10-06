@@ -30,33 +30,6 @@ namespace SqlDsl.SqlBuilders
         /// The columns in the SELECT part of the query
         /// </summary>
         ISelectColumns SelectColumns { get; }
-
-        /// <summary>
-        /// Generate sql. Setup sql will be executd before querySql, but in the same sql script
-        /// </summary>
-        (string querySetupSql, string querySql) ToSqlString();
-    }
-
-    /// <summary>
-    /// A table within a query
-    /// </summary>
-    public interface IQueryTable
-    {
-        /// <summary>
-        /// The table alias
-        /// </summary>
-        string Alias { get; }
-        
-        /// <summary>
-        /// The index of the column which provides row numbers for this table
-        /// </summary>
-        int RowNumberColumnIndex { get; }
-        
-        /// <summary>
-        /// If this table is in a join, will be the table that it is joined on.
-        /// Otherwise it will be null
-        /// </summary>
-        IQueryTable JoinedFrom { get; }
     }
 
     /// <summary>
@@ -73,27 +46,6 @@ namespace SqlDsl.SqlBuilders
         /// Get a table based on it's index
         /// </summary>
         IQueryTable this[string alias] { get; }
-    }
-    
-    /// <summary>
-    /// A column in the SELECT statement
-    /// </summary>
-    public interface ISelectColumn
-    {
-        /// <summary>
-        /// The alias of the column
-        /// </summary>
-        string Alias { get; }
-        
-        /// <summary>
-        /// The index of the row number column for the table which exposes this column
-        /// </summary>
-        int RowNumberColumnIndex { get; }
-        
-        /// <summary>
-        /// If true, this column is a row number
-        /// </summary>
-        bool IsRowNumber { get; }
     }
 
     /// <summary>
@@ -126,5 +78,48 @@ namespace SqlDsl.SqlBuilders
         /// A list of column name prefixes which are bound to a specific table, along with an index to reference that table
         /// </summary>
         IEnumerable<(string columnGroupPrefix, int rowNumberColumnIndex)> ColumnGroupRowNumberColumIndex { get; }
+    }
+
+    /// <summary>
+    /// A table within a query
+    /// </summary>
+    public interface IQueryTable
+    {
+        /// <summary>
+        /// The table alias
+        /// </summary>
+        string Alias { get; }
+        
+        /// <summary>
+        /// The index of the column which provides row numbers for this table
+        /// </summary>
+        int RowNumberColumnIndex { get; }
+        
+        /// <summary>
+        /// If this table is in a join, will be the table that it is joined on.
+        /// Otherwise it will be null
+        /// </summary>
+        IQueryTable JoinedFrom { get; }
+    }
+    
+    /// <summary>
+    /// A column in the SELECT statement
+    /// </summary>
+    public interface ISelectColumn
+    {
+        /// <summary>
+        /// The alias of the column
+        /// </summary>
+        string Alias { get; }
+        
+        /// <summary>
+        /// The index of the row number column for the table which exposes this column
+        /// </summary>
+        int RowNumberColumnIndex { get; }
+        
+        /// <summary>
+        /// If true, this column is a row number
+        /// </summary>
+        bool IsRowNumber { get; }
     }
 }

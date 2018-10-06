@@ -16,11 +16,12 @@ namespace SqlDsl.Query
         /// <param name="sqlBuilder">The builder with all properties populated</param>
         /// <param name="parameters">Any constant parameters in the statement</param>
         /// <param name="queryParseType">Define the way results are to be parsed</param>
-        public static CompiledQuery<TResult> Compile<TResult>(this ISqlStatement sqlBuilder, IEnumerable<object> parameters, QueryParseType queryParseType) 
+        public static CompiledQuery<TResult> Compile<TResult>(this SqlBuilderItems sqlBuilder, IEnumerable<object> parameters, QueryParseType queryParseType) 
         {
-            var sql = ToSql(sqlBuilder);
-            var selectColumns = sqlBuilder.SelectColumns.Select(Alias).ToArray();
-            var propertyGraph = sqlBuilder.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
+            var sql = ToSql(sqlBuilder.Builder);
+
+            var selectColumns = sqlBuilder.Statement.SelectColumns.Select(Alias).ToArray();
+            var propertyGraph = sqlBuilder.Statement.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
 
             return new CompiledQuery<TResult>(sql, parameters, selectColumns, propertyGraph);
 
@@ -60,7 +61,7 @@ namespace SqlDsl.Query
         /// Get a sql statement and corresponding sql paramaters from the builder
         /// </summary>
         /// <param name="builder">The sql builder to use in order to render sql</param>
-        public static string ToSql(this ISqlStatement builder)
+        public static string ToSql(this ISqlBuilder builder)
         {
             var sql = builder.ToSqlString();
             return $"{sql.querySetupSql}\n\n{sql.querySql}";
