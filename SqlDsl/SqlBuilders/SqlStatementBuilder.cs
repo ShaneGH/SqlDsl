@@ -265,10 +265,11 @@ namespace SqlDsl.SqlBuilders
         string BuildSelectColumn(string columnName, string tableName = null, string alias = null)
         {
             alias = alias == null || alias.StartsWith($"{SqlStatementConstants.RootObjectAlias}.") ? "" : $" AS {SqlBuilder.WrapAlias(alias)}";
+            columnName = (columnName ?? "").StartsWith("@") ? columnName : SqlBuilder.WrapColumn(columnName);
 
             return tableName == null ? 
-                $"{SqlBuilder.WrapColumn(columnName)}{alias}" : 
-                $"{SqlBuilder.WrapTable(tableName)}.{SqlBuilder.WrapColumn(columnName)}{alias}";
+                $"{columnName}{alias}" : 
+                $"{SqlBuilder.WrapTable(tableName)}.{columnName}{alias}";
         }
 
         /// <summary>

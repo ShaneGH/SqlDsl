@@ -46,9 +46,11 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             bool IsRowNumber(ISelectColumn col) => col.IsRowNumber;
 
             ISelectColumn _BuildColumn((string columnName, string tableName, string alias) col, bool isRowId) =>
-                queryBuilder.InnerQuery == null ?
-                    new SelectColumn(col.alias ?? col.columnName, col.tableName, isRowId, tables) as ISelectColumn :
-                    new InnerQuerySelectColumn(col.columnName, col.alias ?? col.columnName, isRowId, queryBuilder);
+                (col.columnName ?? "").StartsWith("@") ?
+                    new ConstSelectColumn(col.alias, isRowId) as ISelectColumn :
+                    queryBuilder.InnerQuery == null ?
+                        new SelectColumn(col.alias ?? col.columnName, col.tableName, isRowId, tables) as ISelectColumn :
+                        new InnerQuerySelectColumn(col.columnName, col.alias ?? col.columnName, isRowId, queryBuilder);
 
             ISelectColumn BuildColumn((string columnName, string tableName, string alias) col) => _BuildColumn(col, false);
 

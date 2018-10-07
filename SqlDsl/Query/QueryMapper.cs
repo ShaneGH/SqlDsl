@@ -35,9 +35,10 @@ namespace SqlDsl.Query
             // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
 
             var (wrappedBuilder, parameters) = Query.ToSqlStatement(null);
+            var mutableParameters = parameters.ToList();
 
             var map = BuildMap(
-                new BuildMapState(Mapper.Parameters[0], wrappedBuilder.Statement),
+                new BuildMapState(mutableParameters, Mapper.Parameters[0], wrappedBuilder.Statement),
                 Mapper.Body);
 
             var rowIdPropertyMap = map.tables
@@ -52,14 +53,17 @@ namespace SqlDsl.Query
             builder.SetPrimaryTable(wrappedBuilder, wrappedBuilder.Statement.UniqueAlias);
 
             foreach (var col in mappedValues)
-                builder.AddSelectColumn(col.from, tableName: wrappedBuilder.Statement.UniqueAlias, alias: col.to);
+                builder.AddSelectColumn(
+                    col.from, 
+                    tableName: (col.from ?? "").StartsWith("@") ? null : wrappedBuilder.Statement.UniqueAlias, 
+                    alias: col.to);
 
             foreach (var col in rowIdPropertyMap)
                 builder.RowIdsForMappedProperties.Add((col.rowIdColumnName, col.resultClassProperty));
                 
             return (
                 new SqlBuilderItems(builder, new SqlStatement(builder)), 
-                parameters);
+                mutableParameters.Skip(0));
         }
 
         /// <summary>
@@ -80,8 +84,41 @@ namespace SqlDsl.Query
 
         static readonly IEnumerable<Mapped> EmptyMapped = Enumerable.Empty<Mapped>();
 
+        static bool IsConstant(Expression expr)
+        {
+            switch (expr.NodeType)
+            {
+                case ExpressionType.Constant:
+                    return true;
+                case ExpressionType.MemberAccess:
+                    return IsConstant((expr as MemberExpression).Expression);
+                case ExpressionType.Call:
+                    var call = expr as MethodCallExpression;
+                    return (call.Object == null || IsConstant(call.Object)) && call.Arguments.All(IsConstant);
+                default:
+                    return false;
+            }
+        }
+
         static (IEnumerable<Mapped> properties, IEnumerable<Mapped> tables) BuildMap(BuildMapState state, Expression expr, string toPrefix = null)
         {
+            if (IsConstant(expr))
+            {
+                var result = Expression
+                    .Lambda<Func<object>>(
+                        Expression.Convert(
+                            expr,
+                            typeof(object)))
+                    .Compile()();
+
+                state.Parameters.Add(result);
+
+                return (
+                    new Mapped("@p" + (state.Parameters.Count - 1), toPrefix).ToEnumerable(),
+                    Enumerable.Empty<Mapped>()
+                );
+            }
+
             switch (expr.NodeType)
             {
                 case ExpressionType.Parameter:
@@ -135,6 +172,9 @@ namespace SqlDsl.Query
                     if (isJoined)
                         return BuildMapForJoined(state, joinedFrom, joinedTo, toPrefix);
 
+                    break;
+
+                default:
                     break;
             }
 
@@ -319,12 +359,14 @@ namespace SqlDsl.Query
 
         class BuildMapState
         {
+            public readonly List<object> Parameters;
             public readonly ParameterExpression QueryObject;
             public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
             public readonly ISqlStatement WrappedSqlStatement;
 
-            public BuildMapState(ParameterExpression queryObject, ISqlStatement wrappedSqlStatement)
+            public BuildMapState(List<object> parameters, ParameterExpression queryObject, ISqlStatement wrappedSqlStatement)
             {
+                Parameters = parameters;
                 QueryObject = queryObject;
                 WrappedSqlStatement = wrappedSqlStatement;
             }

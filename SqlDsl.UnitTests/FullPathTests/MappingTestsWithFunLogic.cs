@@ -77,6 +77,37 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         [Test]
         [Ignore("TODO")]
+        public async Task MapAndReturnConstant()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(p => 77)
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(77, data.First());
+            Assert.AreEqual(77, data.ElementAt(1));
+        }
+
+        [Test]
+        public async Task MapAndReturnMappedConstant()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(p => new Person { Id = 77 })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(77, data.First().Id);
+            Assert.AreEqual(77, data.ElementAt(1).Id);
+        }
+
+        [Test]
+        [Ignore("TODO")]
         public async Task MapWithAddition()
         {
             // arrange
