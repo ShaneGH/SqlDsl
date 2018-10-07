@@ -44,6 +44,21 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public async Task SimpleMapReturningEmptyObject()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(p => new object())
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(typeof(object), data.First().GetType());
+            Assert.AreEqual(typeof(object), data.ElementAt(1).GetType());
+        }
+
+        [Test]
         [Ignore("TODO")]
         public async Task SimpleMapOn1FullTable()
         {

@@ -216,15 +216,17 @@ namespace SqlDsl.SqlBuilders
             if (PrimaryTableAlias == null)
                 throw new InvalidOperationException("You must call SetPrimaryTable before calling ToSqlString.");
 
-            if (!_Select.Any())
-                throw new InvalidOperationException("You must set at least 1 select column before calling ToSqlString.");
-
             // get the sql from the inner query if possible
             var innerQuery = InnerQuery?.Builder.ToSqlString();
 
             // build SELECT columns (cols and row ids)
             var select = GetAllSelectColumns()
-                .Select(s => BuildSelectColumn(s.columnName, s.tableName, s.alias));
+                .Select(s => BuildSelectColumn(s.columnName, s.tableName, s.alias))
+                .Enumerate();
+
+            // add placeholder in case no SELECT columns were specified
+            if (!select.Any())
+                select = new [] { "1" };
 
             // build WHERE part
             var where = Where == null ? "" : $"WHERE {Where.Value.sql}";
