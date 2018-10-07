@@ -60,5 +60,75 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(1, result.ElementAt(1).PersonClasses.Count());
             Assert.AreEqual(Data.PersonClasses.MaryTennis, result.ElementAt(1).PersonClasses.First());
         }
+
+        [Test]
+        public async Task Select_JoinOnNonTable_ReturnsCorrectValues1()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<Arguments, JoinedQueryClass>()
+                .From(nameof(Person), result => result.ThePerson)
+                .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
+                    .On((q, c, a) => c.ClassId == a.AValue)
+                .ExecuteAsync(Executor, new Arguments { AValue = Data.Classes.Archery.Id });
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John, data.First().ThePerson);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).ThePerson);
+
+            foreach (var person in data)
+            {
+                Assert.AreEqual(1, person.PersonClasses.Count());
+                Assert.AreEqual(Data.PersonClasses.JohnArchery, person.PersonClasses.First());
+            }
+        }
+
+        [Test]
+        public async Task Select_JoinOnNonTable_ReturnsCorrectValues2()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<Arguments, JoinedQueryClass>()
+                .From(nameof(Person), result => result.ThePerson)
+                .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
+                    .On((q, c, a) => c.ClassId == a.AValue)
+                .ExecuteAsync(Executor, new Arguments { AValue = Data.Classes.Tennis.Id });
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John, data.First().ThePerson);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).ThePerson);
+
+            foreach (var person in data)
+            {
+                Assert.AreEqual(2, person.PersonClasses.Count());
+                Assert.AreEqual(Data.PersonClasses.JohnTennis, person.PersonClasses.First());
+                Assert.AreEqual(Data.PersonClasses.MaryTennis, person.PersonClasses.ElementAt(1));
+            }
+        }
+
+        [Test]
+        public async Task Select_JoinTableAndNonTable_ReturnsCorrectValues()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<Arguments, JoinedQueryClass>()
+                .From(nameof(Person), result => result.ThePerson)
+                .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
+                    .On((q, c, a) => q.ThePerson.Id == c.PersonId && c.ClassId == a.AValue)
+                .ExecuteAsync(Executor, new Arguments { AValue = Data.Classes.Tennis.Id });
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John, data.First().ThePerson);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).ThePerson);
+
+            Assert.AreEqual(1, data.First().PersonClasses.Count());
+            Assert.AreEqual(Data.PersonClasses.JohnTennis, data.First().PersonClasses.First());
+            
+            Assert.AreEqual(1, data.ElementAt(1).PersonClasses.Count());
+            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1).PersonClasses.First());
+        }
     }
 }
