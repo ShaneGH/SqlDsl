@@ -147,7 +147,8 @@ namespace SqlDsl.UnitTests.DataParser
                         {
                             (0, "##rowid", new int[0].Skip(0)),
                             (4, "Id", new int[0].Skip(0)),
-                            (5, "Name", new int[0].Skip(0))
+                            (5, "Name", new int[0].Skip(0)),
+                            (6, "Gender", new int[0].Skip(0))
                         }, 
                         null, 
                         null)),
@@ -189,7 +190,8 @@ namespace SqlDsl.UnitTests.DataParser
                         {
                             (0, "##rowid", new int[0].Skip(0)),
                             (13, "Id", new int[0].Skip(0)),
-                            (14, "Name", new int[0].Skip(0))
+                            (14, "Name", new int[0].Skip(0)),
+                            (15, "Gender", new int[0].Skip(0))
                         }, 
                         null, 
                         null)),
@@ -613,7 +615,8 @@ namespace SqlDsl.UnitTests.DataParser
                         {
                             (0, "##rowid", new int[0].Skip(0)),
                             (4, "Id", new int[0].Skip(0)),
-                            (5, "Name", new int[0].Skip(0))
+                            (5, "Name", new int[0].Skip(0)),
+                            (6, "Gender", new int[0].Skip(0))
                         }, 
                         null, 
                         null)),

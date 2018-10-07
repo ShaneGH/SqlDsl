@@ -106,6 +106,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             if (t == typeof(int)) return "INTEGER";
             if (t == typeof(int?)) return "INTEGER";
             if (t == typeof(float)) return "REAL";
+            if (t.IsEnum) return "INTEGER";
 
             throw new NotSupportedException($"Invalid database data type: {t}");
         }
@@ -118,6 +119,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             if (t == typeof(int?)) return val == null ? "NULL" : val.ToString();
             if (t == typeof(float)) return val.ToString();
             if (t == typeof(string)) return val == null ? "NULL" : ("'" + val.ToString() + "'");
+            if (t.IsEnum) return ((int)val).ToString();
 
             throw new NotSupportedException($"Unsupported sql value {val}, {t}");
         }
@@ -130,13 +132,15 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         public readonly Person John = new Person
         {
             Id = 1,
-            Name = "John"
+            Name = "John",
+            Gender = Gender.Male
         };
         
         public readonly Person Mary = new Person
         {
             Id = 2,
-            Name = "Mary"
+            Name = "Mary",
+            Gender = Gender.Female
         };
 
         public IEnumerator<Person> GetEnumerator() => (new [] { John, Mary } as IEnumerable<Person>).GetEnumerator();

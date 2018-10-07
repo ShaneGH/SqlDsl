@@ -29,18 +29,25 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public Gender Gender { get; set; }
 
-        public override int GetHashCode() => $"{Id}.{Name}".GetHashCode();
+        public override int GetHashCode() => $"{Id}.{Name}.{Gender}".GetHashCode();
         public override bool Equals(object p)
         {
             var person = p as Person;
-            return person != null && person.Id == Id && person.Name == Name;
+            return person != null && person.Id == Id && person.Name == Name && person.Gender == Gender;
         }
         
         public override string ToString()
         {
             return $"{Id}: {Name}";
         }
+    }
+
+    enum Gender
+    {
+        Female = 1,
+        Male = 2
     }
     
     class PersonClass : EqComparer
