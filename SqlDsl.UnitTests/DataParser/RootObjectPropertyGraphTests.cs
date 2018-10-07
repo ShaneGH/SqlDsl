@@ -131,15 +131,11 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = (Sql.Query.Sqlite<JoinedQueryClass>()
+            var actual = Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.PersonClasses)
-                    .On((q, pc) => q.ThePerson.Id == pc.PersonId) as QueryBuilder<Sqlite.SqliteBuilder, object, JoinedQueryClass>)
-                .ToSqlStatement(null)
-
-                .builder
-                .Statement
-                .BuildObjetPropertyGraph(typeof(JoinedQueryClass), QueryParseType.DoNotDuplicate);
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                .BuildObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -540,7 +536,7 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = (FullyJoinedQuery()
+            var actual = FullyJoinedQuery()
                 .Map(query => new DeepJoinedClass
                 { 
                     Inner = new DeepJoinedClass
@@ -558,11 +554,8 @@ namespace SqlDsl.UnitTests.DataParser
                                 .ToArray()
                         }
                     }
-                }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, DeepJoinedClass>)
-                .ToSqlBuilder()
-                .builder
-                .Statement
-                .BuildObjetPropertyGraph(typeof(DeepJoinedClass), QueryParseType.ORM);
+                })
+                .BuildObjetPropertyGraph<DeepJoinedClass, JoinedQueryClass>();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -597,6 +590,27 @@ namespace SqlDsl.UnitTests.DataParser
                 new[] { 0 });
 
             Compare(expected, actual);
+        }
+    }
+
+    public static class RootObjectPropertyGraphTestUtils
+    {
+        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.ISqlBuilder<object, TResult> builder)
+        {
+            return ((QueryMapper<Sqlite.SqliteBuilder, object, TMappedFrom, TResult>)builder)
+                .ToSqlBuilder()
+                .builder
+                .Statement
+                .BuildObjetPropertyGraph(typeof(TResult), QueryParseType.ORM);
+        }
+        
+        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult>(this Dsl.IQuery<TResult> builder)
+        {
+            return ((QueryBuilder<Sqlite.SqliteBuilder, object, TResult>)builder)
+                .ToSqlStatement(null)
+                .builder
+                .Statement
+                .BuildObjetPropertyGraph(typeof(TResult), QueryParseType.DoNotDuplicate);
         }
     }
 }
