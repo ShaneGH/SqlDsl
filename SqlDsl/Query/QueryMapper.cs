@@ -99,17 +99,7 @@ namespace SqlDsl.Query
 
                     break;
                 case ExpressionType.MemberAccess:
-                    var memExpr = expr as MemberExpression;
-                    var result = BuildMap(state, memExpr.Expression, toPrefix);
-
-                    return (
-                        result.properties
-                            .Select(p => new Mapped(
-                                CombineStrings(p.From, memExpr.Member.Name), 
-                                p.To))
-                            .Enumerate(),
-                        result.tables
-                    );
+                    return BuildMapForMemberAccess(state, expr as MemberExpression, toPrefix);
 
                 case ExpressionType.Block:
                     return (expr as BlockExpression).Expressions
@@ -122,31 +112,7 @@ namespace SqlDsl.Query
                         .AggregateTuple2();
 
                 case ExpressionType.MemberInit:
-                    var init = expr as MemberInitExpression;
-                    return BuildMap(state, init.NewExpression, toPrefix)
-                        .ToEnumerableStruct()
-                        .Concat(init.Bindings
-                            .OfType<MemberAssignment>()
-                            .Select(b => (binding: b, memberName: b.Member.Name, map: BuildMap(state, b.Expression, b.Member.Name)))
-                            .Select(m => (
-                                m.map.properties.SelectMany(x => 
-                                {
-                                    // if From == null, it is a reference to the query object
-                                    if (x.From == null || state.WrappedSqlStatement.ContainsTable(RemoveRoot(x.From)))
-                                    {
-                                        var t = m.binding.Member
-                                            .GetPropertyOrFieldType();
-
-                                        t = ReflectionUtils.GetIEnumerableType(t) ?? t;
-                                        return t
-                                            .GetFieldsAndProperties()
-                                            .Select(mem => new Mapped(CombineStrings(x.From, mem.name), CombineStrings(x.To, mem.name)));
-                                    }
-
-                                    return new Mapped(x.From, CombineStrings(toPrefix, x.To)).ToEnumerable();
-                                }),
-                                m.map.tables.Select(x => new Mapped(x.From, CombineStrings(m.memberName, x.To))))))
-                        .AggregateTuple2();
+                    return BuildMapForMemberInit(state, expr as MemberInitExpression, toPrefix);
 
                 case ExpressionType.Call:
                     var oneExpr = ReflectionUtils.IsOne(expr as MethodCallExpression);
@@ -173,6 +139,48 @@ namespace SqlDsl.Query
             }
 
             throw new InvalidOperationException($"Unsupported mapping expression \"{expr}\".");
+        }
+
+        static (IEnumerable<Mapped> properties, IEnumerable<Mapped> tables) BuildMapForMemberAccess(BuildMapState state, MemberExpression expr, string toPrefix = null)
+        {
+            var result = BuildMap(state, expr.Expression, toPrefix);
+
+            return (
+                result.properties
+                    .Select(p => new Mapped(
+                        CombineStrings(p.From, expr.Member.Name), 
+                        p.To))
+                    .Enumerate(),
+                result.tables
+            );
+        }
+
+        static (IEnumerable<Mapped> properties, IEnumerable<Mapped> tables) BuildMapForMemberInit(BuildMapState state, MemberInitExpression expr, string toPrefix = null)
+        {
+            return BuildMap(state, expr.NewExpression, toPrefix)
+                .ToEnumerableStruct()
+                .Concat(expr.Bindings
+                    .OfType<MemberAssignment>()
+                    .Select(b => (binding: b, memberName: b.Member.Name, map: BuildMap(state, b.Expression, b.Member.Name)))
+                    .Select(m => (
+                        m.map.properties.SelectMany(x => 
+                        {
+                            // if From == null, it is a reference to the query object
+                            if (x.From == null || state.WrappedSqlStatement.ContainsTable(RemoveRoot(x.From)))
+                            {
+                                var t = m.binding.Member
+                                    .GetPropertyOrFieldType();
+
+                                t = ReflectionUtils.GetIEnumerableType(t) ?? t;
+                                return t
+                                    .GetFieldsAndProperties()
+                                    .Select(mem => new Mapped(CombineStrings(x.From, mem.name), CombineStrings(x.To, mem.name)));
+                            }
+
+                            return new Mapped(x.From, CombineStrings(toPrefix, x.To)).ToEnumerable();
+                        }),
+                        m.map.tables.Select(x => new Mapped(x.From, CombineStrings(m.memberName, x.To))))))
+                .AggregateTuple2();
         }
 
         static void TryAddSelectStatementParameterToProperty(BuildMapState state, Expression enumerable, ParameterExpression parameter)
