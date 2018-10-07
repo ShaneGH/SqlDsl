@@ -120,6 +120,15 @@ namespace SqlDsl.SqlBuilders
                 equalityStatement, 
                 parameters);
 
+            // if there are no query object references, add a reference to
+            // the root (SELECT) object
+            // this can happen if join condition is like "... ON x.Val = 1" 
+            var queryObjectReferences = condition.queryObjectReferences.Enumerate();
+            if (!queryObjectReferences.Any())
+            {
+                queryObjectReferences = new [] { PrimaryTableAlias };
+            }
+
             var join = BuildJoin(joinType, joinTable, condition.sql, joinTableAlias);
 
             _Joins.Add((
@@ -129,7 +138,7 @@ namespace SqlDsl.SqlBuilders
                 new [] { condition.setupSql, join.setupSql }
                     .RemoveNullOrEmpty()
                     .JoinString(";\n"),
-                condition.queryObjectReferences));
+                queryObjectReferences));
         }
 
         /// <summary>
