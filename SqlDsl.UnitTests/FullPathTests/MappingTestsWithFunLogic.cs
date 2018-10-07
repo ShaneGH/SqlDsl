@@ -92,6 +92,22 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         [Test]
         [Ignore("TODO")]
+        public async Task SimpleMapOn1Table2()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(p => p.ThePerson)
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John, data.First());
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1));
+        }
+
+        [Test]
+        [Ignore("TODO")]
         public async Task MapAndReturnConstant()
         {
             // arrange
