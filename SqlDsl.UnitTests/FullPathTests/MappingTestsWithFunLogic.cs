@@ -90,6 +90,12 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1));
         }
 
+        // TODO: need to investigate the how arrays, One and Select impact results
+        // Map(x => x.PersonClasses)
+        // Map(x => x.PersonClasses).One()
+        // Map(x => x.PersonClasses).One().PersonId
+        // Map(x => x.PersonClasses).Select(x => x.PersonId)
+
         [Test]
         [Ignore("TODO")]
         public async Task SimpleMapOn1Table2()
