@@ -23,12 +23,6 @@ namespace SqlDsl.Query
             Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        public (string sql, IEnumerable<object> paramaters) ToSql()
-        {
-            var result = ToSqlBuilder();
-            return (result.builder.Builder.ToSql(), result.paramaters);
-        }
-
         public (SqlBuilderItems builder, IEnumerable<object> paramaters) ToSqlBuilder()
         {
             // TODO: filter columns

@@ -36,13 +36,7 @@ namespace SqlDsl.Dsl
     /// Interface to help with query building DSL
     /// </summary>
     public interface ISqlBuilder<TArgs, TResult>
-    {
-        /// <summary>
-        /// Get a sql statement and corresponding sql paramaters from the query
-        /// </summary>
-        (string sql, IEnumerable<object> paramaters) ToSql();
-        //TODO: try to remove this method. It is confusing. (Should the method not accept a TArgs parameter)
-        
+    {        
         /// <summary>
         /// Execute the sql query and get a list of results
         /// </summary>
