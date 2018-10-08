@@ -9,12 +9,7 @@ namespace SqlDsl.Dsl
     /// Interface to help with query building DSL
     /// </summary>
     public interface ISqlBuilder<TResult>
-    {
-        /// <summary>
-        /// Get a sql statement and corresponding sql paramaters from the query
-        /// </summary>
-        (string sql, IEnumerable<object> paramaters) ToSql();
-        
+    {        
         /// <summary>
         /// Execute the sql query and get a list of results
         /// </summary>

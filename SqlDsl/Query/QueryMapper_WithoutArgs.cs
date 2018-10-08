@@ -51,13 +51,5 @@ namespace SqlDsl.Query
         {
             return Worker.Execute(executor, null);
         }
-
-        /// <summary>
-        /// Get a sql statement and corresponding sql paramaters from the query
-        /// </summary>
-        public (string sql, IEnumerable<object> paramaters) ToSql()
-        {
-            return Worker.ToSql();
-        }
     }
 }

@@ -841,7 +841,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ToSql());
+                .Compile());
         }
 
         class SmartJoinedClass5
