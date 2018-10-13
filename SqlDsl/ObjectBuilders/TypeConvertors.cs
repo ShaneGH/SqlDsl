@@ -76,10 +76,14 @@ namespace SqlDsl.ObjectBuilders
         {
             var err1 = $"Cannot convert from null to {typeof(T)}";
             var err2 = $"Cannot convert from DBNull to {typeof(T)}";
-            return x =>
+
+            return Result;
+
+            T Result(object x)
             {
                 if (x is DBNull) throw new InvalidOperationException(err1);
                 if (x == null) throw new InvalidOperationException(err2);
+                
                 return basedOn(x);
             };
         }
@@ -90,7 +94,9 @@ namespace SqlDsl.ObjectBuilders
         static Func<object, T?> ForNullable<T>(Func<object, T> basedOn)
             where T: struct
         {
-            return x =>
+            return Result;
+            
+            T? Result(object x)
             {
                 if (x is DBNull || x == null) return null;
                 return basedOn(x);
@@ -107,7 +113,9 @@ namespace SqlDsl.ObjectBuilders
         static Func<object, T> ForNullableClass<T>(Func<object, T> basedOn)
             where T: class
         {
-            return x =>
+            return Result;
+            
+            T Result(object x)
             {
                 if (x is DBNull || x == null) return null;
                 return basedOn(x);
