@@ -58,18 +58,19 @@ namespace SqlDsl.Query
 
             var (wrappedBuilder, parameters) = Query.ToSqlStatement(null);
             var mutableParameters = parameters.ToList();
+            var wrappedStatement = new SqlStatement(wrappedBuilder);
 
             var (resultType, properties, tables) = BuildMapFromRoot(
-                new BuildMapState(mutableParameters, Mapper.Parameters[0], wrappedBuilder.Statement),
+                new BuildMapState(mutableParameters, Mapper.Parameters[0], wrappedStatement),
                 Mapper.Body);
 
             switch (resultType)
             {
                 case BuildMapResult.Map:
             
-                    var builder = ToSqlBuilder(properties, tables, wrappedBuilder.Builder, wrappedBuilder.Statement);
+                    var builder = ToSqlBuilder(properties, tables, wrappedBuilder, wrappedStatement);
                     return builder
-                        .Compile<TArgs, TMapped>(new SqlStatement(builder), mutableParameters.Skip(0), QueryParseType.ORM);
+                        .Compile<TArgs, TMapped>(mutableParameters.Skip(0), QueryParseType.ORM);
 
                 case BuildMapResult.SimpleProp:
                     throw new NotImplementedException("TODO");

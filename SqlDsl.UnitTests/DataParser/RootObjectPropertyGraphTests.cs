@@ -174,11 +174,7 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
-                .ToSqlStatement(null)
-                .builder
-                .Statement
-                .BuildObjetPropertyGraph(typeof(JoinedQueryClass), QueryParseType.DoNotDuplicate);
+            var actual = FullyJoinedQuery().BuildObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -630,11 +626,18 @@ namespace SqlDsl.UnitTests.DataParser
         
         public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult>(this Dsl.IQuery<TResult> builder)
         {
-            return ((QueryBuilder<Sqlite.SqliteBuilder, object, TResult>)builder)
-                .ToSqlStatement(null)
-                .builder
-                .Statement
-                .BuildObjetPropertyGraph(typeof(TResult), QueryParseType.DoNotDuplicate);
+            var compiled = (CompiledQuery<object, TResult>)((QueryBuilder<Sqlite.SqliteBuilder, object, TResult>)builder)
+                .Compile();
+
+            return compiled.PropertyGraph;
+        }
+        
+        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult>(this Dsl.IQuery<object, TResult> builder)
+        {
+            var compiled = (CompiledQuery<object, TResult>)((QueryBuilder<Sqlite.SqliteBuilder, object, TResult>)builder)
+                .Compile();
+
+            return compiled.PropertyGraph;
         }
     }
 }

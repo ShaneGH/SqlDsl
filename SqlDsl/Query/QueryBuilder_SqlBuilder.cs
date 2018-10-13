@@ -14,23 +14,7 @@ using System.Threading.Tasks;
 namespace SqlDsl.Query
 {
     public partial class QueryBuilder<TSqlBuilder, TArgs, TResult>
-    {        
-        /// <summary>
-        /// Get a sql statement and corresponding sql paramaters from the query
-        /// </summary>
-        public (string sql, IEnumerable<object> paramaters) ToSql() =>  // FROM INTERFACE
-            ToSql(filterSelectCols: null);
-
-        /// <summary>
-        /// Get a sql statement and corresponding sql paramaters from the query
-        /// </summary>
-        /// <param name="filterSelectCols">If specified, only add the given columns to the SELECT statement</param>
-        public (string sql, IEnumerable<object> paramaters) ToSql(IEnumerable<string> filterSelectCols)
-        {
-            var result = ToSqlStatement(filterSelectCols);
-            return (result.builder.Builder.ToSql(), result.paramaters);
-        }
-
+    {
         /// <summary>
         /// Execute the sql query and get a list of results
         /// </summary>
@@ -56,15 +40,15 @@ namespace SqlDsl.Query
         public ICompiledQuery<TArgs, TResult> Compile()
         {
             var sqlBuilder = ToSqlStatement(null);
-            return sqlBuilder.builder.Builder
-                .Compile<TArgs, TResult>(sqlBuilder.builder.Statement, sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
+            return sqlBuilder.builder
+                .Compile<TArgs, TResult>(sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
         }
 
         /// <summary>
         /// Create a populated sql builder along with any constants specified in the query
         /// </summary>
         /// <param name="filterSelectCols">If specified, only add the given columns to the SELECT statement</param>
-        public (SqlBuilderItems builder, IEnumerable<object> paramaters) ToSqlStatement(IEnumerable<string> filterSelectCols)
+        public (SqlStatementBuilder builder, IEnumerable<object> paramaters) ToSqlStatement(IEnumerable<string> filterSelectCols)
         {
             if (PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
@@ -117,9 +101,7 @@ namespace SqlDsl.Query
             if (WhereClause != null)
                 builder.SetWhere(WhereClause.Value.queryRoot, WhereClause.Value.args, WhereClause.Value.where, param);
 
-            return (
-                new SqlBuilderItems(builder, new SqlStatement(builder)), 
-                param);
+            return (builder, param);
         }
     }
 }

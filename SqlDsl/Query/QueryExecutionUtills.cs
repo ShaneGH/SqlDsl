@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using SqlDsl.Utils;
 using SqlDsl.DataParser;
+using SqlDsl.SqlBuilders.SqlStatementParts;
 
 namespace SqlDsl.Query
 {
@@ -16,9 +17,10 @@ namespace SqlDsl.Query
         /// <param name="sqlBuilder">The builder with all properties populated</param>
         /// <param name="parameters">Any constant parameters in the statement</param>
         /// <param name="queryParseType">Define the way results are to be parsed</param>
-        public static CompiledQuery<TArgs, TResult> Compile<TArgs, TResult> (this ISqlBuilder sqlBuilder, ISqlStatement statement, IEnumerable<object> parameters, QueryParseType queryParseType)
+        public static CompiledQuery<TArgs, TResult> Compile<TArgs, TResult> (this SqlStatementBuilder sqlBuilder, IEnumerable<object> parameters, QueryParseType queryParseType)
         {
             var sql = ToSql(sqlBuilder);
+            var statement = new SqlStatement(sqlBuilder);
 
             var selectColumns = statement.SelectColumns.Select(Alias).ToArray();
             var propertyGraph = statement.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
