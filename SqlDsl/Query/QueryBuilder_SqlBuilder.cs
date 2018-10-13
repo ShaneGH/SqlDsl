@@ -56,8 +56,8 @@ namespace SqlDsl.Query
         public ICompiledQuery<TArgs, TResult> Compile()
         {
             var sqlBuilder = ToSqlStatement(null);
-            return sqlBuilder.builder
-                .Compile<TArgs, TResult>(sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
+            return sqlBuilder.builder.Builder
+                .Compile<TArgs, TResult>(sqlBuilder.builder.Statement, sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
         }
 
         /// <summary>

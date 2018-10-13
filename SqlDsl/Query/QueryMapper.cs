@@ -87,8 +87,8 @@ namespace SqlDsl.Query
         public ICompiledQuery<TArgs, TMapped> Compile()
         {
             var sqlBuilder = ToSqlBuilder();
-            return sqlBuilder.builder
-                .Compile<TArgs, TMapped>(sqlBuilder.paramaters, QueryParseType.ORM);
+            return sqlBuilder.builder.Builder
+                .Compile<TArgs, TMapped>(sqlBuilder.builder.Statement, sqlBuilder.paramaters, QueryParseType.ORM);
         }
        
         public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor, TArgs args) =>
