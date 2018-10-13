@@ -15,6 +15,20 @@ namespace SqlDsl.SqlBuilders
             return sqlStatement.GetRowNumberColumnIndexes(col);
         }
 
+        public static int IndexOfColumnAlias(this ISqlStatement sqlStatement, string columnAlias)
+        {
+            var i = 0;
+            foreach (var col in sqlStatement.SelectColumns)
+            {
+                if (col.Alias == columnAlias)
+                    return i;
+
+                i++;
+            }
+
+            return -1;
+        }
+
         public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlStatement sqlStatement, int rowNumberColumnIndex)
         {
             while (sqlStatement.MappingProperties != null)

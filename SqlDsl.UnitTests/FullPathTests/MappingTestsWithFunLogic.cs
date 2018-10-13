@@ -90,6 +90,10 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         // TODO: need to investigate the how arrays, One and Select impact results
+        // Map(x => 2)
+        // Map((x, a) => a)
+        // Map((x, a) => a.Value)
+        // Map((x, a) => someVar)
         // Map(x => x.PersonClasses)
         // Map(x => x.PersonClasses).One()
         // Map(x => x.PersonClasses).One().PersonId

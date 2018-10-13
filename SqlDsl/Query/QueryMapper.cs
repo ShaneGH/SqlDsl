@@ -68,16 +68,32 @@ namespace SqlDsl.Query
             {
                 case BuildMapResult.Map:
             
-                    var builder = ToSqlBuilder(properties, tables, wrappedBuilder, wrappedStatement);
-                    return builder
+                    return ToSqlBuilder(properties, tables, wrappedBuilder, wrappedStatement)
                         .Compile<TArgs, TMapped>(mutableParameters.Skip(0), QueryParseType.ORM);
-
                 case BuildMapResult.SimpleProp:
-                    throw new NotImplementedException("TODO");
+                    properties = properties.Enumerate();
+                    if (properties.Count() != 1)
+                    {
+                        throw new InvalidOperationException($"Expected one property, but got {properties.Count()}.");
+                    }
+
+                    return ToSqlBuilder(properties.First().From, wrappedBuilder, wrappedStatement)
+                        .CompileSimple<TArgs, TMapped>(mutableParameters.Skip(0), properties.First().From);
                 default:
                     // TODO: BuildMapResult.ComplexProp
                     throw new NotSupportedException(resultType.ToString());
             }
+        }
+
+        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(string property, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
+        {
+            var builder = new SqlStatementBuilder<TSqlBuilder>();
+            builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
+            builder.AddSelectColumn(
+                property, 
+                tableName: wrappedStatement.UniqueAlias);
+                
+            return builder;
         }
        
         public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor, TArgs args) =>

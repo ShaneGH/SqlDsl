@@ -17,28 +17,37 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
-        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph) =>
-            _Parse<TResult>(rows, propertyGraph).Enumerate();
+        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph)
+        {
+            return propertyGraph.IsSimpleValue ?
+                ParseSimple<TResult>(rows, propertyGraph).Enumerate() :
+                ParseComplex<TResult>(rows, propertyGraph).Enumerate();
+        }
 
         /// <summary>
-        /// Parse the results of a sql query
+        /// Parse the results of a sql query which returns one column
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
-        static IEnumerable<TResult> _Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph)
+        static IEnumerable<TResult> ParseSimple<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph)
         {
-            if (propertyGraph.IsSimpleValue)
-            {
-                // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
-                var values = rows
-                    .GroupBy(r => r[propertyGraph.SimpleValueRowNumberColumnIndex])
-                    .Select(r => r.First()[propertyGraph.SimpleValueColumnIndex]);
+            // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
+            var values = rows
+                .GroupBy(r => r[propertyGraph.SimpleValueRowNumberColumnIndex])
+                .Select(r => r.First()[propertyGraph.SimpleValueColumnIndex]);
 
-                var convertor = TypeConvertors.GetConvertor<TResult>();
-                foreach (var value in values)
-                    yield return convertor(value);
-            }
+            var convertor = TypeConvertors.GetConvertor<TResult>();
+            foreach (var value in values)
+                yield return convertor(value);
+        }
 
+        /// <summary>
+        /// Parse the results of a sql query which returns a comlex object
+        /// </summary>
+        /// <param name="rows">The query results</param>
+        /// <param name="propertyGraph">The query columns mapped to an object graph</param>
+        static IEnumerable<TResult> ParseComplex<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph)
+        {
             foreach (var obj in CreateObject(propertyGraph, rows))
                 yield return (TResult)Builders.Build(typeof(TResult), obj);
         }

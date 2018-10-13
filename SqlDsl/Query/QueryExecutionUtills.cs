@@ -26,9 +26,26 @@ namespace SqlDsl.Query
             var propertyGraph = statement.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
 
             return new CompiledQuery<TArgs, TResult>(sql, parameters, selectColumns, propertyGraph);
-
-            string Alias(ISelectColumn c) => c.Alias;
         }
+
+        /// <summary>
+        /// Compile a sqlBuilder into a query which can be executed multiple times, The query in this case should return one simple value
+        /// </summary>
+        /// <param name="sqlBuilder">The builder with the property populated</param>
+        /// <param name="parameters">Any constant parameters in the statement</param>
+        /// <param name="property">The name of the singe property</param>
+        public static CompiledQuery<TArgs, TResult> CompileSimple<TArgs, TResult>(this SqlStatementBuilder sqlBuilder, IEnumerable<object> parameters, string property)
+        {
+            var statement = new SqlStatement(sqlBuilder);
+            var i = statement.IndexOfColumnAlias(property);
+            if (i == -1)
+                throw new InvalidOperationException($"Could not find column {property} in wrapped statement.");
+
+            var graph = new RootObjectPropertyGraph(i, statement.SelectColumns[i].RowNumberColumnIndex);
+            return new CompiledQuery<TArgs, TResult>(sqlBuilder.ToSql(), parameters, statement.SelectColumns.Select(Alias).ToArray(), graph);
+        }
+
+        static string Alias(ISelectColumn c) => c.Alias;
         
         /// <summary>
         /// Build an object property graph from a sql builder
