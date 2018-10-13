@@ -121,6 +121,14 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
         /// </summary>
+        public static Func<object, T> GetConvertor<T>()
+        {
+            return (Func<object, T>)GetConvertor(typeof(T));
+        }
+
+        /// <summary>
+        /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
+        /// </summary>
         public static object GetConvertor(Type propertyType)
         {
             if (Convertors.TryGetValue(propertyType, out object convertor))

@@ -27,6 +27,18 @@ namespace SqlDsl.DataParser
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
         static IEnumerable<TResult> _Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph)
         {
+            if (propertyGraph.IsSimpleValue)
+            {
+                // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
+                var values = rows
+                    .GroupBy(r => r[propertyGraph.SimpleValueRowNumberColumnIndex])
+                    .Select(r => r.First()[propertyGraph.SimpleValueColumnIndex]);
+
+                var convertor = TypeConvertors.GetConvertor<TResult>();
+                foreach (var value in values)
+                    yield return convertor(value);
+            }
+
             foreach (var obj in CreateObject(propertyGraph, rows))
                 yield return (TResult)Builders.Build(typeof(TResult), obj);
         }

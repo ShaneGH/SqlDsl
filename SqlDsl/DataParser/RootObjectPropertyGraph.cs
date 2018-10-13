@@ -16,6 +16,29 @@ namespace SqlDsl.DataParser
         public readonly string[] ColumnNames;
 
         /// <summary>
+        /// If null, ignore. If not null, this object references a simple value
+        /// </summary>
+        readonly (int columnIndex, int rowNumberColumnIndex)? SimpleProperty;
+
+        /// <summary>
+        /// Specifies the type of this graph. If true graph only has one node which represents a simple value (e.g. a string, int etc...).
+        /// Otherwise the graph represents a complex object with inner properties
+        /// </summary>
+        public bool IsSimpleValue => SimpleProperty.HasValue;
+
+        /// <summary>
+        /// If IsSimpleValue == true, will specify the column index of the simple value column
+        /// Otherwise the value of this property should be ignored
+        /// </summary>
+        public int SimpleValueColumnIndex => SimpleProperty?.columnIndex ?? 0;
+
+        /// <summary>
+        /// If IsSimpleValue == true, will specify the row number column index for the SimpleValueColumn
+        /// Otherwise the value of this property should be ignored
+        /// </summary>
+        public int SimpleValueRowNumberColumnIndex => SimpleProperty?.rowNumberColumnIndex ?? 0;
+
+        /// <summary>
         /// Build an object graph
         /// </summary>
         /// <param name="colNames">The column names that this graph is based on.</param>
@@ -30,6 +53,18 @@ namespace SqlDsl.DataParser
             : base(simpleProps, complexProps, rowIdColumnNumbers)
         {
             ColumnNames = colNames.ToArray();
+        }
+
+        /// <summary>
+        /// Build an object graph for a simple value.
+        /// </summary>
+        public RootObjectPropertyGraph(int columnIndex, int rowNumberColumnIndex)
+            : this(Enumerable.Empty<string>(),
+                Enumerable.Empty<(int, string, IEnumerable<int>)>(), 
+                Enumerable.Empty<(string, ObjectPropertyGraph)>(), 
+                Enumerable.Empty<int>())
+        {
+            SimpleProperty = (columnIndex, rowNumberColumnIndex);
         }
 
         public override string ToString() =>

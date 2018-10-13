@@ -22,24 +22,20 @@ namespace SqlDsl.Query
             Query = query ?? throw new ArgumentNullException(nameof(query));
             Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
-
-        public (SqlBuilderItems builder, IEnumerable<object> paramaters) ToSqlBuilder()
+        
+        static SqlBuilderItems ToSqlBuilderItems(IEnumerable<Mapped> properties, IEnumerable<Mapped> tables, SqlBuilderItems wrappedBuilder)
         {
-            // TODO: filter columns
-            // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
+            var b = ToSqlBuilder(properties, tables, wrappedBuilder);
+            return new SqlBuilderItems(b, new SqlStatement(b));
+        }
 
-            var (wrappedBuilder, parameters) = Query.ToSqlStatement(null);
-            var mutableParameters = parameters.ToList();
-
-            var map = BuildMap(
-                new BuildMapState(mutableParameters, Mapper.Parameters[0], wrappedBuilder.Statement),
-                Mapper.Body);
-
-            var rowIdPropertyMap = map.tables
+        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(IEnumerable<Mapped> properties, IEnumerable<Mapped> tables, SqlBuilderItems wrappedBuilder)
+        {
+            var rowIdPropertyMap = tables
                 .Select(t => (rowIdColumnName: $"{t.From}.{SqlStatementConstants.RowIdName}", resultClassProperty: t.To))
                 .Enumerate();
 
-            var mappedValues = map.properties
+            var mappedValues = properties
                 .Select(x => (from: RemoveRoot(x.From), to: RemoveRoot(x.To)))
                 .Enumerate();
 
@@ -55,9 +51,38 @@ namespace SqlDsl.Query
             foreach (var col in rowIdPropertyMap)
                 builder.RowIdsForMappedProperties.Add((col.rowIdColumnName, col.resultClassProperty));
                 
-            return (
-                new SqlBuilderItems(builder, new SqlStatement(builder)), 
-                mutableParameters.Skip(0));
+            return builder;
+        }
+
+        public (SqlBuilderItems builder, IEnumerable<object> paramaters) ToSqlBuilder()
+        {
+            // TODO: filter columns
+            // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
+
+            var (wrappedBuilder, parameters) = Query.ToSqlStatement(null);
+            var mutableParameters = parameters.ToList();
+
+            var (resultType, properties, tables) = BuildMapFromRoot(
+                new BuildMapState(mutableParameters, Mapper.Parameters[0], wrappedBuilder.Statement),
+                Mapper.Body);
+
+            switch (resultType)
+            {
+                case BuildMapResult.Map:
+                    return (
+                        ToSqlBuilderItems(properties, tables, wrappedBuilder),
+                        mutableParameters.Skip(0)
+                    );
+                case BuildMapResult.SimpleProp:
+                    var b = ToSqlBuilder(properties, tables, wrappedBuilder);
+                    return (
+                        new SqlBuilderItems(b, 1, 1),
+                        mutableParameters.Skip(0)
+                    );
+                default:
+                    // TODO: BuildMapResult.ComplexProp
+                    throw new NotSupportedException(resultType.ToString());
+            }
         }
 
         /// <summary>
@@ -77,6 +102,50 @@ namespace SqlDsl.Query
             Compile().Execute(executor, args);
 
         static readonly IEnumerable<Mapped> EmptyMapped = Enumerable.Empty<Mapped>();
+
+        static (BuildMapResult resultType, IEnumerable<Mapped> properties, IEnumerable<Mapped> tables) BuildMapFromRoot(BuildMapState state, Expression expr)
+        {
+            var _expr = ReflectionUtils.RemoveConvert(expr);
+            _expr = ReflectionUtils.IsOne(_expr) ?? _expr;
+
+            var (isPropertyChain, _, chain) = ReflectionUtils.GetPropertyChain(_expr);
+            if (isPropertyChain)
+            {
+                var pChain = chain.JoinString(".");
+                if (pChain == "")
+                {
+                    throw new InvalidOperationException("You must provide a valid mapping with the Map(...) method.");
+                }
+
+                foreach (var property in state.WrappedSqlStatement.Tables)
+                {
+                    if (pChain == property.Alias)
+                        return (
+                            BuildMapResult.ComplexProp,
+                            new[]{ new Mapped(pChain, null) },
+                            Enumerable.Empty<Mapped>()
+                        );
+
+                    if (pChain.StartsWith(property.Alias) && 
+                        pChain.Length >= (property.Alias.Length + 2) &&
+                        pChain[property.Alias.Length] == '.' &&
+                        !pChain.Substring(property.Alias.Length + 1).Contains('.'))
+                    {
+                        return (
+                            BuildMapResult.SimpleProp,
+                            new[]{ new Mapped(pChain, null) },
+                            Enumerable.Empty<Mapped>()
+                        );
+                    }
+                }
+
+                // TODO: there is a third case where mapping expr is x => x.Outer (and Outer is {Inner: {Val: string}}
+                throw new InvalidOperationException("Unable to understand mapping statement: " + expr);
+            }
+
+            var (properties, tables) = BuildMap(state, expr);
+            return (BuildMapResult.Map, properties, tables);
+        }
 
         static bool IsConstant(Expression expr)
         {
@@ -364,6 +433,13 @@ namespace SqlDsl.Query
                 QueryObject = queryObject;
                 WrappedSqlStatement = wrappedSqlStatement;
             }
+        }
+        
+        enum BuildMapResult
+        {
+            Map = 1,
+            SimpleProp,
+            ComplexProp
         }
     }
 

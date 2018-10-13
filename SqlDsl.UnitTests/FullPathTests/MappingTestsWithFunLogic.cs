@@ -75,7 +75,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task SimpleMapOn1Table()
         {
             // arrange
