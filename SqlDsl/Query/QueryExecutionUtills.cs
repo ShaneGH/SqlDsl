@@ -35,7 +35,7 @@ namespace SqlDsl.Query
         }
 
         /// <summary>
-        /// Compile a complex sqlBuilder into a query which can be executed multiple times
+        /// Compile a simple sqlBuilder into a query which can be executed multiple times
         /// </summary>
         static CompiledQuery<TArgs, TResult> Compile<TArgs, TResult> (
             ISqlBuilder builder, 
