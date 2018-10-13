@@ -37,9 +37,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         static IEnumerable<ISelectColumn> BuildColumns(SqlStatementBuilder queryBuilder, IQueryTables tables)
         {
             var cols = queryBuilder.Select.Select(BuildColumn);
-            var ridCols = queryBuilder.InnerQuery == null ?
+            var ridCols = queryBuilder.InnerStatement == null ?
                 tables.Select(BuildRowIdColumn) :
-                queryBuilder.InnerQuery.Statement.SelectColumns.Where(IsRowNumber);
+                queryBuilder.InnerStatement.SelectColumns.Where(IsRowNumber);
 
             return ridCols.Concat(cols);
 
@@ -48,7 +48,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             ISelectColumn _BuildColumn((string columnName, string tableName, string alias) col, bool isRowId) =>
                 (col.columnName ?? "").StartsWith("@") ?
                     new ConstSelectColumn(col.alias, isRowId) as ISelectColumn :
-                    queryBuilder.InnerQuery == null ?
+                    queryBuilder.InnerStatement == null ?
                         new SelectColumn(col.alias ?? col.columnName, col.tableName, isRowId, tables) as ISelectColumn :
                         new InnerQuerySelectColumn(col.columnName, col.alias ?? col.columnName, isRowId, queryBuilder);
 

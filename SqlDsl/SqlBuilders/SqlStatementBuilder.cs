@@ -54,14 +54,19 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The inner query used in the SELECT clause
         /// </summary>
-        public SqlBuilderItems InnerQuery { get; private set; }
+        (ISqlBuilder builder, ISqlStatement statement)? InnerQueryX;
+
+        /// <summary>
+        /// The inner statement used in the SELECT clause, or null if there is no inner statement
+        /// </summary>
+        public ISqlStatement InnerStatement => InnerQueryX?.statement;
         
         /// <summary>
         /// Set the inner query and is's alias in the SELECT clause. alias can be null
         /// </summary>
-        public void SetPrimaryTable(SqlBuilderItems innerQuery, string alias)
+        public void SetPrimaryTable(ISqlBuilder innerQueryBuilder, ISqlStatement innerQueryStatement, string alias)
         {
-            InnerQuery = innerQuery;
+            InnerQueryX = (innerQueryBuilder, innerQueryStatement);
             PrimaryTableAlias = alias;
         }
         
@@ -207,17 +212,17 @@ namespace SqlDsl.SqlBuilders
         /// <returns>querySetupSql: sql which must be executed before the query is run. querySql: the query sql</returns>
         public (string querySetupSql, string querySql) ToSqlString()
         {
-            if (PrimaryTable != null && InnerQuery != null)
+            if (PrimaryTable != null && InnerQueryX != null)
                 throw new InvalidOperationException("You can only call one overload of SetPrimaryTable.");
                 
-            if (PrimaryTable == null && InnerQuery == null)
+            if (PrimaryTable == null && InnerQueryX == null)
                 throw new InvalidOperationException("You must call SetPrimaryTable before calling ToSqlString.");
                 
             if (PrimaryTableAlias == null)
                 throw new InvalidOperationException("You must call SetPrimaryTable before calling ToSqlString.");
 
             // get the sql from the inner query if possible
-            var innerQuery = InnerQuery?.Builder.ToSqlString();
+            var innerQuery = InnerQueryX?.builder.ToSqlString();
 
             // build SELECT columns (cols and row ids)
             var select = GetAllSelectColumns()
@@ -280,7 +285,7 @@ namespace SqlDsl.SqlBuilders
         IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns()
         {
             // if there is no inner query, columns will come from SELECT and JOIN parts
-            if (InnerQuery == null)
+            if (InnerQueryX == null)
             {
                 // Get row id from the SELECT
                 var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? 
@@ -298,12 +303,12 @@ namespace SqlDsl.SqlBuilders
             else
             {
                 // if there is an inner query, all columns will come from it
-                foreach (var table in InnerQuery.Statement.Tables)
+                foreach (var table in InnerQueryX.Value.statement.Tables)
                 {
                     // the only row id will be [inner query alias].[##rowid]
                     yield return (
-                        InnerQuery.Statement.SelectColumns[table.RowNumberColumnIndex].Alias, 
-                        InnerQuery.Statement.UniqueAlias, 
+                        InnerQueryX.Value.statement.SelectColumns[table.RowNumberColumnIndex].Alias, 
+                        InnerQueryX.Value.statement.UniqueAlias, 
                         null);
                 }
             }

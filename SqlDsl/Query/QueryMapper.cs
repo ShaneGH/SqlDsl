@@ -40,7 +40,7 @@ namespace SqlDsl.Query
                 .Enumerate();
 
             var builder = new SqlStatementBuilder<TSqlBuilder>();
-            builder.SetPrimaryTable(wrappedBuilder, wrappedBuilder.Statement.UniqueAlias);
+            builder.SetPrimaryTable(wrappedBuilder.Builder, wrappedBuilder.Statement, wrappedBuilder.Statement.UniqueAlias);
 
             foreach (var col in mappedValues)
                 builder.AddSelectColumn(

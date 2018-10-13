@@ -17,7 +17,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// <summary>
         /// The other (mapped from) query
         /// </summary>
-        public ISqlStatement InnerStatement => InnerQuery.InnerQuery.Statement;
+        public ISqlStatement InnerStatement => InnerQuery.InnerStatement;
         
         /// <summary>
         /// The inner query
@@ -32,7 +32,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public MappingProperties(SqlStatementBuilder mappedStatement)
         {
             InnerQuery = mappedStatement ?? throw new ArgumentNullException(nameof(mappedStatement));
-            if (InnerQuery.InnerQuery == null)
+            if (InnerQuery.InnerStatement == null)
                 throw new InvalidOperationException("Invalid mapped statement.");
         }
 

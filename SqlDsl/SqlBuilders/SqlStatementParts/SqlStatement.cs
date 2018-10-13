@@ -40,7 +40,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             UniqueAlias = builder.UniqueAlias;
             Tables = new QueryTables(builder);
             SelectColumns = new SelectColumns(builder, Tables);
-            MappingProperties = builder.InnerQuery == null ?
+            MappingProperties = builder.InnerStatement == null ?
                 null :
                 new MappingProperties(builder);
         }

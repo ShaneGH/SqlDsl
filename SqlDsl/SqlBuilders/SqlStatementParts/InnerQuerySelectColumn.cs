@@ -22,7 +22,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public InnerQuerySelectColumn(string name, string alias, bool isRowNumber, SqlStatementBuilder qb)
             : base(alias, isRowNumber)
         {
-            RowNumberColumnIndex = qb.InnerQuery.Statement.SelectColumns[name].RowNumberColumnIndex;
+            RowNumberColumnIndex = qb.InnerStatement.SelectColumns[name].RowNumberColumnIndex;
         }
     }
 }
