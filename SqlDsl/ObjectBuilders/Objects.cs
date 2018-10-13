@@ -170,28 +170,17 @@ namespace SqlDsl.ObjectBuilders
             // if the property is not an enumerable
             if (!getter.isCollection)
             {
-                // use test function to check against too many values
-                Action<IEnumerable<object>> testForList = input =>
-                {
-                    if (input.Count() > 1)
-                        throw new InvalidOperationException($"Database has returned {input.Count()} items for " +
-                            $"{propertyName}, however it only accepts a single item.");
-                };
+                // create a function which will allow 
+                // 0 or 1 values in an array of inputs
+                // for a non enumerable result
+                var singularGetter = ReflectionUtils
+                    .GetMethod(() => BuildGetterForSingularProp<int>(""), propertyType)
+                    .Invoke(null, new [] { propertyName });
 
-                var checkForTooMany = Expression.Invoke(
-                    Expression.Constant(testForList),
-                    valParam);
-
-                var firstOrDefault = ReflectionUtils.GetMethod<IEnumerable<object>>(
-                    x => x.FirstOrDefault(), 
-                    propertyType);
-
-                getter = (true, Expression.Block(
-                    // testForList(values)
-                    checkForTooMany,
-                    // valuesOfType.FirstOrDefault()
-                    Expression.Call(null, firstOrDefault, valuesOfType)
-                ));
+                getter = (
+                    true, 
+                    Expression.Invoke(Expression.Constant(singularGetter), valuesOfType)
+                );
             }
 
             // objectParam.propertyName = valuesOfType
@@ -200,6 +189,25 @@ namespace SqlDsl.ObjectBuilders
                 getter.builder);
 
             return Expression.Lambda<Action<T, IEnumerable<object>>>(body, objectParam, valParam).Compile();
+        }
+
+        /// <summary>
+        /// Create a function which converts an enumerable value to a singular one,
+        /// throwing an exception if there is more than 1 value
+        /// </summary>
+        static Func<IEnumerable<T>, T> BuildGetterForSingularProp<T>(string propertyName)
+        {
+            return Get;
+
+            T Get(IEnumerable<T> input)
+            {
+                input = input.Enumerate();
+                if (input.Count() > 1)
+                    throw new InvalidOperationException($"Database has returned {input.Count()} items for " +
+                        $"{propertyName}, however it only accepts a single item.");
+
+                return input.FirstOrDefault();
+            }
         }
     }
 }
