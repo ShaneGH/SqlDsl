@@ -43,7 +43,7 @@ namespace SqlDsl
         readonly string Sql;
         readonly IEnumerable<object> Parameters;
         readonly string[] SelectColumns;
-        readonly RootObjectPropertyGraph PropertyGraph;
+        public readonly RootObjectPropertyGraph PropertyGraph;
 
         public CompiledQuery(
             string sql, 

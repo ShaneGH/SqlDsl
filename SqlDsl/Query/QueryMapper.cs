@@ -22,14 +22,8 @@ namespace SqlDsl.Query
             Query = query ?? throw new ArgumentNullException(nameof(query));
             Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
-        
-        static SqlBuilderItems ToSqlBuilderItems(IEnumerable<Mapped> properties, IEnumerable<Mapped> tables, SqlBuilderItems wrappedBuilder)
-        {
-            var b = ToSqlBuilder(properties, tables, wrappedBuilder);
-            return new SqlBuilderItems(b, new SqlStatement(b));
-        }
 
-        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(IEnumerable<Mapped> properties, IEnumerable<Mapped> tables, SqlBuilderItems wrappedBuilder)
+        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(IEnumerable<Mapped> properties, IEnumerable<Mapped> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
         {
             var rowIdPropertyMap = tables
                 .Select(t => (rowIdColumnName: $"{t.From}.{SqlStatementConstants.RowIdName}", resultClassProperty: t.To))
@@ -40,12 +34,12 @@ namespace SqlDsl.Query
                 .Enumerate();
 
             var builder = new SqlStatementBuilder<TSqlBuilder>();
-            builder.SetPrimaryTable(wrappedBuilder.Builder, wrappedBuilder.Statement, wrappedBuilder.Statement.UniqueAlias);
+            builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
 
             foreach (var col in mappedValues)
                 builder.AddSelectColumn(
                     col.from, 
-                    tableName: (col.from ?? "").StartsWith("@") ? null : wrappedBuilder.Statement.UniqueAlias, 
+                    tableName: (col.from ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias, 
                     alias: col.to);
 
             foreach (var col in rowIdPropertyMap)
@@ -54,7 +48,10 @@ namespace SqlDsl.Query
             return builder;
         }
 
-        public (SqlBuilderItems builder, IEnumerable<object> paramaters) ToSqlBuilder()
+        /// <summary>
+        /// Compile the query into something which can be executed multiple times
+        /// </summary>
+        public ICompiledQuery<TArgs, TMapped> Compile()
         {
             // TODO: filter columns
             // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
@@ -69,26 +66,17 @@ namespace SqlDsl.Query
             switch (resultType)
             {
                 case BuildMapResult.Map:
-                    return (
-                        ToSqlBuilderItems(properties, tables, wrappedBuilder),
-                        mutableParameters.Skip(0)
-                    );
+            
+                    var builder = ToSqlBuilder(properties, tables, wrappedBuilder.Builder, wrappedBuilder.Statement);
+                    return builder
+                        .Compile<TArgs, TMapped>(new SqlStatement(builder), mutableParameters.Skip(0), QueryParseType.ORM);
+
                 case BuildMapResult.SimpleProp:
                     throw new NotImplementedException("TODO");
                 default:
                     // TODO: BuildMapResult.ComplexProp
                     throw new NotSupportedException(resultType.ToString());
             }
-        }
-
-        /// <summary>
-        /// Compile the query into something which can be executed multiple times
-        /// </summary>
-        public ICompiledQuery<TArgs, TMapped> Compile()
-        {
-            var sqlBuilder = ToSqlBuilder();
-            return sqlBuilder.builder.Builder
-                .Compile<TArgs, TMapped>(sqlBuilder.builder.Statement, sqlBuilder.paramaters, QueryParseType.ORM);
         }
        
         public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor, TArgs args) =>

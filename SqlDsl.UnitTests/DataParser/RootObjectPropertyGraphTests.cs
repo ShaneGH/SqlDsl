@@ -254,15 +254,12 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = (FullyJoinedQuery()
+            var actual = FullyJoinedQuery()
                 .Map(x => new MappedVersion
                 {
                     PersonName = x.ThePerson.Name
-                }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, MappedVersion>)
-                .ToSqlBuilder()
-                .builder
-                .Statement
-                .BuildObjetPropertyGraph(typeof(MappedVersion), QueryParseType.ORM);
+                })
+                .BuildObjetPropertyGraph<MappedVersion, JoinedQueryClass>();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -281,7 +278,7 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = (FullyJoinedQuery()
+            var actual = FullyJoinedQuery()
                 .Map(x => new MappedVersion
                 {
                     PersonName = x.ThePerson.Name,
@@ -290,11 +287,8 @@ namespace SqlDsl.UnitTests.DataParser
                         {
                             ClassName = c.Name
                         })
-                }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, MappedVersion>)
-                .ToSqlBuilder()
-                .builder
-                .Statement
-                .BuildObjetPropertyGraph(typeof(MappedVersion), QueryParseType.ORM);
+                })
+                .BuildObjetPropertyGraph<MappedVersion, JoinedQueryClass>();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -322,7 +316,7 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = (FullyJoinedQuery()
+            var actual = FullyJoinedQuery()
                 .Map(x => new MappedVersion
                 {
                     PersonName = x.ThePerson.Name,
@@ -336,11 +330,8 @@ namespace SqlDsl.UnitTests.DataParser
                                 .Select(t => t.Name)
 
                         })
-                }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, MappedVersion>)
-                .ToSqlBuilder()
-                .builder
-                .Statement
-                .BuildObjetPropertyGraph(typeof(MappedVersion), QueryParseType.ORM);
+                })
+                .BuildObjetPropertyGraph<MappedVersion, JoinedQueryClass>();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -386,7 +377,7 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = (FullyJoinedQuery()
+            var actual = FullyJoinedQuery()
                 .Map(x => new MappedVersion2
                 {
                     PersonName = x.ThePerson.Name,
@@ -400,11 +391,8 @@ namespace SqlDsl.UnitTests.DataParser
                                 .Select(t => new Tag2 { TagName = t.Name })
 
                         })
-                }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, MappedVersion2>)
-                .ToSqlBuilder()
-                .builder
-                .Statement
-                .BuildObjetPropertyGraph(typeof(MappedVersion2), QueryParseType.ORM);
+                })
+                .BuildObjetPropertyGraph<MappedVersion2, JoinedQueryClass>();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -451,7 +439,7 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = (FullyJoinedQuery()
+            var actual = FullyJoinedQuery()
                 .Map(query => new DifficultScenario
                 { 
                     FavouriteClasses = query.Classes
@@ -463,11 +451,8 @@ namespace SqlDsl.UnitTests.DataParser
                                 .ToArray()
                         })
                         .ToArray()
-                }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, DifficultScenario>)
-                .ToSqlBuilder()
-                .builder
-                .Statement
-                .BuildObjetPropertyGraph(typeof(DifficultScenario), QueryParseType.ORM);
+                })
+                .BuildObjetPropertyGraph<DifficultScenario, JoinedQueryClass>();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -497,17 +482,14 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = (FullyJoinedQuery()
+            var actual = FullyJoinedQuery()
                 .Map(query => new DifficultScenario2
                 { 
                     TagIds = query.ClassTags
                         .Select(t => t.TagId)
                         .ToArray()
-                }) as QueryMapper<Sqlite.SqliteBuilder, object, JoinedQueryClass, DifficultScenario2>)
-                .ToSqlBuilder()
-                .builder
-                .Statement
-                .BuildObjetPropertyGraph(typeof(DifficultScenario), QueryParseType.ORM);
+                })
+                .BuildObjetPropertyGraph<DifficultScenario2, JoinedQueryClass>();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -640,11 +622,10 @@ namespace SqlDsl.UnitTests.DataParser
     {
         public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.ISqlBuilder<object, TResult> builder)
         {
-            return ((QueryMapper<Sqlite.SqliteBuilder, object, TMappedFrom, TResult>)builder)
-                .ToSqlBuilder()
-                .builder
-                .Statement
-                .BuildObjetPropertyGraph(typeof(TResult), QueryParseType.ORM);
+            var compiled = (CompiledQuery<object, TResult>)((QueryMapper<Sqlite.SqliteBuilder, object, TMappedFrom, TResult>)builder)
+                .Compile();
+
+            return compiled.PropertyGraph;
         }
         
         public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult>(this Dsl.IQuery<TResult> builder)
