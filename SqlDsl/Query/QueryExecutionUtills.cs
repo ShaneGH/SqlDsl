@@ -18,50 +18,10 @@ namespace SqlDsl.Query
         /// <param name="queryParseType">Define the way results are to be parsed</param>
         public static CompiledQuery<TArgs, TResult> Compile<TArgs, TResult> (this SqlBuilderItems sqlBuilder, IEnumerable<object> parameters, QueryParseType queryParseType)
         {
-            switch (sqlBuilder.QueryType)
-            {
-                case QueryType.Complex:
-                    return Compile<TArgs, TResult>(sqlBuilder.Builder, sqlBuilder.Statement, parameters, queryParseType);
-                case QueryType.Simple:
-                    return Compile<TArgs, TResult>(
-                        sqlBuilder.Builder, 
-                        sqlBuilder.SimpleValueColumnIndex, 
-                        sqlBuilder.SimpleValueRowNumberColumnIndex, 
-                        parameters, 
-                        queryParseType);
-                default:
-                    throw new NotSupportedException(sqlBuilder.QueryType.ToString());
-            }
-        }
+            var sql = ToSql(sqlBuilder.Builder);
 
-        /// <summary>
-        /// Compile a simple sqlBuilder into a query which can be executed multiple times
-        /// </summary>
-        static CompiledQuery<TArgs, TResult> Compile<TArgs, TResult> (
-            ISqlBuilder builder, 
-            int simpleValueColumnIndex, 
-            int simpleValueRowNumberColumnIndex, 
-            IEnumerable<object> parameters, 
-            QueryParseType queryParseType)
-        {
-            var sql = ToSql(builder);
-
-            // TODO
-            var selectColumns = new[]{ "Debug select columns are not available for this type of query" };
-            var propertyGraph = new RootObjectPropertyGraph(simpleValueColumnIndex, simpleValueRowNumberColumnIndex);
-
-            return new CompiledQuery<TArgs, TResult>(sql, parameters, selectColumns, propertyGraph);
-        }
-
-        /// <summary>
-        /// Compile a complex sqlBuilder into a query which can be executed multiple times
-        /// </summary>
-        static CompiledQuery<TArgs, TResult> Compile<TArgs, TResult> (ISqlBuilder builder, ISqlStatement statement, IEnumerable<object> parameters, QueryParseType queryParseType)
-        {
-            var sql = ToSql(builder);
-
-            var selectColumns = statement.SelectColumns.Select(Alias).ToArray();
-            var propertyGraph = statement.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
+            var selectColumns = sqlBuilder.Statement.SelectColumns.Select(Alias).ToArray();
+            var propertyGraph = sqlBuilder.Statement.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
 
             return new CompiledQuery<TArgs, TResult>(sql, parameters, selectColumns, propertyGraph);
 

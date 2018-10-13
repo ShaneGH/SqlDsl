@@ -74,11 +74,7 @@ namespace SqlDsl.Query
                         mutableParameters.Skip(0)
                     );
                 case BuildMapResult.SimpleProp:
-                    var b = ToSqlBuilder(properties, tables, wrappedBuilder);
-                    return (
-                        new SqlBuilderItems(b, 1, 1),
-                        mutableParameters.Skip(0)
-                    );
+                    throw new NotImplementedException("TODO");
                 default:
                     // TODO: BuildMapResult.ComplexProp
                     throw new NotSupportedException(resultType.ToString());
