@@ -44,7 +44,7 @@ namespace SqlDsl.Sqlite
             var i = 0;
             foreach (var p in paramaters)
             {
-                command.Parameters.Add(new SqliteParameter("p" + (i++), p));
+                command.Parameters.Add(new SqliteParameter("p" + (i++), p ?? DBNull.Value));
             }
 
             return command;
