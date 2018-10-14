@@ -78,7 +78,6 @@ namespace SqlDsl.ObjectBuilders
             // use a setter to set each simple property
             foreach (var prop in vals.SimpleProps.OrEmpty())
                 if (propSetters.ContainsKey(prop.name))
-                    // TODO: can prop.value be enumerable?
                     propSetters[prop.name].setter(obj, prop.value);
             
             // use a setter to set each complex property
@@ -164,11 +163,11 @@ namespace SqlDsl.ObjectBuilders
 
             // if property is enumerable: new List<T>(valuesOfType)
             // otherwise null
-            var getter = Enumerables
+            var (isCollection, builder) = Enumerables
                 .CreateCollectionExpression(propertyType, valuesOfType);
 
             // if the property is not an enumerable
-            if (!getter.isCollection)
+            if (!isCollection)
             {
                 // create a function which will allow 
                 // 0 or 1 values in an array of inputs
@@ -177,18 +176,17 @@ namespace SqlDsl.ObjectBuilders
                     .GetMethod(() => BuildGetterForSingularProp<int>(""), propertyType)
                     .Invoke(null, new [] { propertyName });
 
-                getter = (
-                    true, 
-                    Expression.Invoke(Expression.Constant(singularGetter), valuesOfType)
-                );
+                builder = Expression.Invoke(Expression.Constant(singularGetter), valuesOfType);
             }
 
             // objectParam.propertyName = valuesOfType
             var body = Expression.Assign(
                 Expression.PropertyOrField(objectParam, propertyName),
-                getter.builder);
+                builder);
 
-            return Expression.Lambda<Action<T, IEnumerable<object>>>(body, objectParam, valParam).Compile();
+            return Expression
+                .Lambda<Action<T, IEnumerable<object>>>(body, objectParam, valParam)
+                .Compile();
         }
 
         /// <summary>
