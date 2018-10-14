@@ -47,7 +47,7 @@ namespace SqlDsl.DataParser
         /// <param name="rowIdColumnNumbers">A composite of the row numbers which point to this object</param>
         public RootObjectPropertyGraph(
             IEnumerable<string> colNames,
-            IEnumerable<(int index, string name, IEnumerable<int> rowNumberColumnIds)> simpleProps, 
+            IEnumerable<(int index, string name, IEnumerable<int> rowNumberColumnIds, Type type)> simpleProps, 
             IEnumerable<(string name, ObjectPropertyGraph value)> complexProps, 
             IEnumerable<int> rowIdColumnNumbers)
             : base(simpleProps, complexProps, rowIdColumnNumbers)
@@ -60,7 +60,7 @@ namespace SqlDsl.DataParser
         /// </summary>
         public RootObjectPropertyGraph(int columnIndex, int rowNumberColumnIndex)
             : this(Enumerable.Empty<string>(),
-                Enumerable.Empty<(int, string, IEnumerable<int>)>(), 
+                Enumerable.Empty<(int, string, IEnumerable<int>, Type)>(), 
                 Enumerable.Empty<(string, ObjectPropertyGraph)>(), 
                 Enumerable.Empty<int>())
         {

@@ -86,13 +86,34 @@ namespace SqlDsl.DataParser
                         .Enumerate()
                 };
 
-                (string name, IEnumerable<object> value) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds) p)
+                (string name, IEnumerable<object> value) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type type) p)
                 {
-                    return (p.name, objectData
-                        // run a "Distinct" on the rowNumbers
+                    // run a "Distinct" on the rowNumbers
+                    var dataRowsForProp = objectData
                         .GroupBy(d => propertyGraph.GetUniqueIdForSimpleProp(d, p.rowNumberColumnIds))
-                        .Select(Enumerable.First)
-                        .Select(o => o[p.index]));
+                        .Select(Enumerable.First);
+
+                    var data = dataRowsForProp
+                        .Select(o => o[p.index])
+                        .ToArray();
+
+                    if (data.Length > 0 && p.type != null)
+                    {
+                        var enum1 = ReflectionUtils.CountEnumerables(p.type);
+                        if (enum1 > 0 && data[0] != null)
+                        {
+                            var enum2 = ReflectionUtils.CountEnumerables(data[0].GetType());
+                            while (data.Length > 0 && enum2 >= enum1)
+                            {
+                                // TODO: expensive boxing here
+                                // e.g. data[0] may be byte[] which represents a data cell of type BLOB
+                                data = (data[0] as System.Collections.IEnumerable).Cast<object>().ToArray();
+                                enum2--;
+                            }
+                        }
+                    }
+
+                    return (p.name, data);
                 }
             }
         }

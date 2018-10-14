@@ -28,6 +28,12 @@ namespace SqlDsl.Dsl
         /// The property of TResult to append the joined table to
         /// </param>
         IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
+
+        // TODO
+        // IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, List<TJoin>>> joinProperty);
+        // IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, TJoin[]>> joinProperty);
+        // Also, ability to use "One()" in an join On statement in case there is an other collection type not referenced
+
         /// <summary>
         /// Join another table to the query using INNER JOIN
         /// </summary>

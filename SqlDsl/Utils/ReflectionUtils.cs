@@ -57,7 +57,7 @@ namespace SqlDsl.Utils
         }
 
         /// <summary>
-        /// Get the T from an IEnumerable<T> type, or null if the type is not IEnumerable
+        /// Get the T from an IEnumerable&lt;T> type, or null if the type is not IEnumerable
         /// </summary>
         public static Type GetIEnumerableType(Type t)
         {
@@ -70,6 +70,24 @@ namespace SqlDsl.Utils
                 .Where(i => i.IsConstructedGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                 .Select(i => i.GetGenericArguments()[0])
                 .FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Given a type count how many wrapped IEnumerables it has.
+        /// e.g. the type is IEnumerable&lt;IEnumerable&lt;int>> the result will be 2
+        /// </summary>
+        public static int CountEnumerables(Type type)
+        {
+            if (type == null) throw new ArgumentNullException(nameof(type));
+
+            var result = -1;
+            while (type != null)
+            {
+                result++;
+                type = ReflectionUtils.GetIEnumerableType(type);
+            }
+
+            return result;
         }
 
         /// <summary>

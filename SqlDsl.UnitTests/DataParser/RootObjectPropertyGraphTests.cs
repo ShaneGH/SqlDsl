@@ -59,7 +59,8 @@ namespace SqlDsl.UnitTests.DataParser
                 var y_ = actual.SimpleProps.ElementAt(i);
 
                 if (x_.index != y_.index || 
-                    x_.name != y_.name)
+                    x_.name != y_.name || 
+                    x_.type != y_.type)
                     Fail("Simple prop " + i);
 
                 CollectionAssert.AreEqual(x_.rowNumberColumnIds, y_.rowNumberColumnIds, ErrMessage("Simple prop " + i));
@@ -145,19 +146,19 @@ namespace SqlDsl.UnitTests.DataParser
                     ("ThePerson", new ObjectPropertyGraph(
                         new[]
                         {
-                            (0, "##rowid", new int[0].Skip(0)),
-                            (4, "Id", new int[0].Skip(0)),
-                            (5, "Name", new int[0].Skip(0)),
-                            (6, "Gender", new int[0].Skip(0))
+                            (0, "##rowid", new int[0].Skip(0), null),
+                            (4, "Id", new int[0].Skip(0), typeof(int)),
+                            (5, "Name", new int[0].Skip(0), typeof(string)),
+                            (6, "Gender", new int[0].Skip(0), typeof(Gender))
                         }, 
                         null, 
                         null)),
                     ("PersonClasses", new ObjectPropertyGraph(
                         new[]
                         {
-                            (1, "##rowid", new int[0].Skip(0)),
-                            (2, "PersonId", new int[0].Skip(0)),
-                            (3, "ClassId", new int[0].Skip(0))
+                            (1, "##rowid", new int[0].Skip(0), null),
+                            (2, "PersonId", new int[0].Skip(0), typeof(int)),
+                            (3, "ClassId", new int[0].Skip(0), typeof(int))
                         }, 
                         null, 
                         new[]{1}))
@@ -184,46 +185,46 @@ namespace SqlDsl.UnitTests.DataParser
                     ("ThePerson", new ObjectPropertyGraph(
                         new[]
                         {
-                            (0, "##rowid", new int[0].Skip(0)),
-                            (13, "Id", new int[0].Skip(0)),
-                            (14, "Name", new int[0].Skip(0)),
-                            (15, "Gender", new int[0].Skip(0))
+                            (0, "##rowid", new int[0].Skip(0), null),
+                            (13, "Id", new int[0].Skip(0), typeof(int)),
+                            (14, "Name", new int[0].Skip(0), typeof(string)),
+                            (15, "Gender", new int[0].Skip(0), typeof(Gender))
                         }, 
                         null, 
                         null)),
                     ("PersonClasses", new ObjectPropertyGraph(
                         new[]
                         {
-                            (1, "##rowid", new int[0].Skip(0)),
-                            (5, "PersonId", new int[0].Skip(0)),
-                            (6, "ClassId", new int[0].Skip(0))
+                            (1, "##rowid", new int[0].Skip(0), null),
+                            (5, "PersonId", new int[0].Skip(0), typeof(int)),
+                            (6, "ClassId", new int[0].Skip(0), typeof(int))
                         }, 
                         null, 
                         new[]{1})),
                     ("Classes", new ObjectPropertyGraph(
                         new[]
                         {
-                            (2, "##rowid", new int[0].Skip(0)),
-                            (7, "Id", new int[0].Skip(0)),
-                            (8, "Name", new int[0].Skip(0))
+                            (2, "##rowid", new int[0].Skip(0), null),
+                            (7, "Id", new int[0].Skip(0), typeof(int)),
+                            (8, "Name", new int[0].Skip(0), typeof(string))
                         }, 
                         null, 
                         new[]{2})),
                     ("ClassTags", new ObjectPropertyGraph(
                         new[]
                         {
-                            (3, "##rowid", new int[0].Skip(0)),
-                            (9, "ClassId", new int[0].Skip(0)),
-                            (10, "TagId", new int[0].Skip(0))
+                            (3, "##rowid", new int[0].Skip(0), null),
+                            (9, "ClassId", new int[0].Skip(0), typeof(int)),
+                            (10, "TagId", new int[0].Skip(0), typeof(int))
                         }, 
                         null, 
                         new[]{3})),
                     ("Tags", new ObjectPropertyGraph(
                         new[]
                         {
-                            (4, "##rowid", new int[0].Skip(0)),
-                            (11, "Id", new int[0].Skip(0)),
-                            (12, "Name", new int[0].Skip(0))
+                            (4, "##rowid", new int[0].Skip(0), null),
+                            (11, "Id", new int[0].Skip(0), typeof(int)),
+                            (12, "Name", new int[0].Skip(0), typeof(string))
                         }, 
                         null, 
                         new[]{4}))
@@ -261,7 +262,7 @@ namespace SqlDsl.UnitTests.DataParser
             var expected = new ObjectPropertyGraph(
                 new[]
                 {
-                    (5, "PersonName", new int[0].Skip(0))
+                    (5, "PersonName", new int[0].Skip(0), typeof(string))
                 },
                 null, 
                 new[] { 0 });
@@ -290,14 +291,14 @@ namespace SqlDsl.UnitTests.DataParser
             var expected = new ObjectPropertyGraph(
                 new[]
                 {
-                    (5, "PersonName", new int[0].Skip(0))
+                    (5, "PersonName", new int[0].Skip(0), typeof(string))
                 },
                 new[]
                 {
                     ("MappedClasses", new ObjectPropertyGraph(
                         new[]
                         {
-                            (6, "ClassName", new int[0].Skip(0))
+                            (6, "ClassName", new int[0].Skip(0), typeof(string))
                         }, 
                         null, 
                         new[]{1,2}))
@@ -333,15 +334,15 @@ namespace SqlDsl.UnitTests.DataParser
             var expected = new ObjectPropertyGraph(
                 new[]
                 {
-                    (5, "PersonName", new int[0].Skip(0))
+                    (5, "PersonName", new int[0].Skip(0), typeof(string))
                 },
                 new[]
                 {
                     ("MappedClasses", new ObjectPropertyGraph(
                         new[]
                         {
-                            (6, "ClassName", new int[0].Skip(0)),
-                            (7, "TagNames", new int[]{3, 4}.Skip(0))
+                            (6, "ClassName", new int[0].Skip(0), typeof(string)),
+                            (7, "TagNames", new int[]{3, 4}.Skip(0), typeof(IEnumerable<string>))
                         }, 
                         null, 
                         new[]{1,2}))
@@ -394,21 +395,21 @@ namespace SqlDsl.UnitTests.DataParser
             var expected = new ObjectPropertyGraph(
                 new[]
                 {
-                    (5, "PersonName", new int[0].Skip(0))
+                    (5, "PersonName", new int[0].Skip(0), typeof(string))
                 },
                 new[]
                 {
                     ("MappedClasses", new ObjectPropertyGraph(
                         new[]
                         {
-                            (6, "ClassName", new int[0].Skip(0))
+                            (6, "ClassName", new int[0].Skip(0), typeof(string))
                         }, 
                         new[]
                         {
                             ("Tags", new ObjectPropertyGraph(
                                 new[]
                                 {
-                                    (7, "TagName", new int[0].Skip(0))
+                                    (7, "TagName", new int[0].Skip(0), typeof(string))
                                 }, 
                                 null, 
                                 new[]{3, 4}))
@@ -458,7 +459,7 @@ namespace SqlDsl.UnitTests.DataParser
                     ("FavouriteClasses", new ObjectPropertyGraph(
                         new[]
                         {
-                            (5, "TagIds", new int[]{3}.Skip(0))
+                            (5, "TagIds", new int[]{3}.Skip(0), typeof(int[]))
                         }, 
                         null, 
                         new[]{1,2}))
@@ -491,7 +492,7 @@ namespace SqlDsl.UnitTests.DataParser
             var expected = new ObjectPropertyGraph(
                 new []
                 {
-                    (5, "TagIds", new int[]{1,2,3}.Skip(0))
+                    (5, "TagIds", new int[]{1,2,3}.Skip(0), typeof(int[]))
                 },
                 null,
                 new[] { 0 });
@@ -555,7 +556,7 @@ namespace SqlDsl.UnitTests.DataParser
                                     (
                                         new[] 
                                         {
-                                            (5, "TagIds", new int[]{3}.Skip(0))
+                                            (5, "TagIds", new int[]{3}.Skip(0), typeof(int[]))
                                         },
                                         null,
                                         new[]{1, 2}
@@ -591,19 +592,19 @@ namespace SqlDsl.UnitTests.DataParser
                     ("ThePerson", new ObjectPropertyGraph(
                         new[]
                         {
-                            (0, "##rowid", new int[0].Skip(0)),
-                            (4, "Id", new int[0].Skip(0)),
-                            (5, "Name", new int[0].Skip(0)),
-                            (6, "Gender", new int[0].Skip(0))
+                            (0, "##rowid", new int[0].Skip(0), null),
+                            (4, "Id", new int[0].Skip(0), typeof(int)),
+                            (5, "Name", new int[0].Skip(0), typeof(string)),
+                            (6, "Gender", new int[0].Skip(0), typeof(Gender))
                         }, 
                         null, 
                         null)),
                     ("PersonClasses", new ObjectPropertyGraph(
                         new[]
                         {
-                            (1, "##rowid", new int[0].Skip(0)),
-                            (2, "PersonId", new int[0].Skip(0)),
-                            (3, "ClassId", new int[0].Skip(0))
+                            (1, "##rowid", new int[0].Skip(0), null),
+                            (2, "PersonId", new int[0].Skip(0), typeof(int)),
+                            (3, "ClassId", new int[0].Skip(0), typeof(int))
                         }, 
                         null, 
                         new[]{1}))
