@@ -56,26 +56,37 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             using (var conn = CreateConnection())
             {   
                 conn.Open();
+                var paramaters = new List<object>();
                 var sql = new[]
                 {
-                    PopulatedTableSql(Data.People),
-                    PopulatedTableSql(Data.PeoplesData),
-                    PopulatedTableSql(Data.Classes),
-                    PopulatedTableSql(Data.Tags),
-                    PopulatedTableSql(Data.PersonClasses),
-                    PopulatedTableSql(Data.ClassTags),
-                    PopulatedTableSql(Data.Purchases)
+                    PopulatedTableSql(Data.People, paramaters),
+                    PopulatedTableSql(Data.PeoplesData, paramaters),
+                    PopulatedTableSql(Data.Classes, paramaters),
+                    PopulatedTableSql(Data.Tags, paramaters),
+                    PopulatedTableSql(Data.PersonClasses, paramaters),
+                    PopulatedTableSql(Data.ClassTags, paramaters),
+                    PopulatedTableSql(Data.Purchases, paramaters)
                 }.JoinString("\n");
                 
-                var cmd = conn.CreateCommand();
                 Console.WriteLine($" * Adding data");
+
+                var cmd = conn.CreateCommand();
                 cmd.CommandText = sql;
+                cmd.Parameters.AddRange(paramaters.Select((p, i) => 
+                {
+                    var param = cmd.CreateParameter();
+                    param.ParameterName = "p" + i;
+                    param.Value = p == null ? DBNull.Value : p;
+                    return param;
+                }));
+                
                 cmd.ExecuteNonQuery();
+
                 Console.WriteLine($" * Data added");
             }
         }
 
-        public static string PopulatedTableSql<T>(IEnumerable<T> entities)
+        public static string PopulatedTableSql<T>(IEnumerable<T> entities, List<object> paramaters)
         {
             var createSql = new List<string>();
             var insertSql = new List<string>();
@@ -90,7 +101,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             var data = entities
                 .Select(e => props
                     .Select(p => 
-                        SqlValue(p.GetMethod.Invoke(e, new object[0]), p.PropertyType)).JoinString(", "))
+                        SqlValue(p.GetMethod.Invoke(e, new object[0]), p.PropertyType, paramaters)).JoinString(", "))
                 .Select(v => $"INSERT INTO [{typeof(T).Name}]\nVALUES ({v});");
 
             return new [] 
@@ -116,13 +127,18 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
 
         static string GetPrimaryKey(string name) => name.ToLowerInvariant() == "id" ? " PRIMARY KEY" : "";
 
-        static string SqlValue(object val, Type t)
+        static string SqlValue(object val, Type t, List<object> parameters)
         {
             if (t == typeof(int)) return val.ToString();
             if (t == typeof(int?)) return val == null ? "NULL" : val.ToString();
             if (t == typeof(float)) return val.ToString();
             if (t == typeof(string)) return val == null ? "NULL" : ("'" + val.ToString() + "'");
-            if (t == typeof(byte[])) return val == null ? "NULL" : ("0x" + BitConverter.ToString((byte[])val).Replace("-",""));
+            if (t == typeof(byte[])) 
+            {
+                parameters.Add(val);
+                return "@p" + (parameters.Count - 1);
+            }
+
             if (t.IsEnum) return ((int)val).ToString();
 
             throw new NotSupportedException($"Unsupported sql value {val}, {t}");
