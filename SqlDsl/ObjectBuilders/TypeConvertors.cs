@@ -81,8 +81,8 @@ namespace SqlDsl.ObjectBuilders
 
             T Result(object x)
             {
-                if (x is DBNull) throw new InvalidOperationException(err1);
-                if (x == null) throw new InvalidOperationException(err2);
+                if (x == null) throw new InvalidOperationException(err1);
+                if (x is DBNull) throw new InvalidOperationException(err2);
                 
                 return basedOn(x);
             };
