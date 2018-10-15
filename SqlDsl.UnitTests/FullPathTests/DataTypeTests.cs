@@ -126,6 +126,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        [Ignore("TODO")]
         public async Task ArrayDataType2()
         {
             // arrange
@@ -154,6 +155,30 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, john.ClassIds.Length);
             Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);
             Assert.AreEqual(Data.Classes.Archery.Id, john.ClassIds[1]);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public void ArrayDataType_JoinReturnsTooMany_ThrowsException()
+        {
+            // arrange
+            // act
+            // assert
+            Assert.ThrowsAsync(
+                typeof(Exception), 
+                () => Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                    .From(x => x.Person)
+                    .InnerJoin(x => x.PersonsData)
+                        .On((q, pd) => pd.PersonId < 100)
+                    .InnerJoin(x => x.Classes)
+                        .On((q, pc) => q.Person.Id == pc.PersonId)
+                    .Where(p => p.Person.Id == Data.People.John.Id)
+                    .Map(x => new ArrayDataType1Result
+                    {
+                        Data = x.PersonsData.One().Data,
+                        ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
+                    })
+                    .ExecuteAsync(Executor));
         }
     }
 }
