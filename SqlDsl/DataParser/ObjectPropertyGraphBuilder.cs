@@ -32,7 +32,7 @@ namespace SqlDsl.DataParser
         static ObjectPropertyGraph _Build(Type objectType, int[] rowIdColumnNumbers, IEnumerable<(string[] name, int[] rowIdColumnMap)> mappedTableProperties, IEnumerable<(int index, string[] name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
         {
             // TODO: rowIdColumnNumbers should be int[]
-            var simpleProps = new List<(int index, string propertyName, IEnumerable<int> rowIdColumnNumbers, Type type)>();
+            var simpleProps = new List<(int index, string propertyName, IEnumerable<int> rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();
             var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType)>();
 
             mappedTableProperties = mappedTableProperties
@@ -57,7 +57,8 @@ namespace SqlDsl.DataParser
                         col.name[0], 
                         FilterRowIdColumnNumbers(
                             RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap)),
-                        colType
+                        colType,
+                        null
                     ));
                 }
                 // if there are more than one, the property belongs to a child of this object
