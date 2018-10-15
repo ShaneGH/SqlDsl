@@ -616,9 +616,12 @@ namespace SqlDsl.UnitTests.DataParser
 
         class DataCellTypeIsArray1
         {
+            // warning CS0649: Field 'Person/PersonsData' is never assigned to, and will always have its default value null
+            #pragma warning disable 0649
             public Person Person;
             public PersonsData PersonsData;
             public IEnumerable<PersonClass> PersonClasses;
+            #pragma warning restore 0649
         }
 
         class DataCellTypeIsArray1Result
@@ -662,9 +665,12 @@ namespace SqlDsl.UnitTests.DataParser
 
         class DataCellTypeIsArray2
         {
+            // warning CS0649: Field 'PersonClasses/PersonsData' is never assigned to, and will always have its default value null
+            #pragma warning disable 0649
             public Person Person;
             public IEnumerable<PersonsData> PersonsData;
             public IEnumerable<PersonClass> PersonClasses;
+            #pragma warning restore 0649
         }
 
         class DataCellTypeIsArray2Result

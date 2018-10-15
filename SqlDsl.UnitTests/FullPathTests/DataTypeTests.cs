@@ -47,15 +47,12 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class ArrayDataTypeQuery
         {
+            // warning CS0649: Field 'PersonClasses/PersonsData' is never assigned to, and will always have its default value null
+            #pragma warning disable 0649
             public Person Person;
             public IEnumerable<PersonsData> PersonsData;
             public IEnumerable<PersonClass> Classes;
-        }
-
-        class ExploratoryResult
-        {
-            public byte[] Data;
-            public PersonClass[] Classes;
+            #pragma warning restore 0649
         }
 
         class ArrayDataType1Result
@@ -70,9 +67,15 @@ namespace SqlDsl.UnitTests.FullPathTests
             public byte[][] Data;
         }
 
+        // class ExploratoryResult
+        // {
+        //     public byte[] Data;
+        //     public PersonClass[] Classes;
+        // }
+
         [Test]
         [Ignore("TODO: not sure what test class this should go in")]
-        public async Task Exploratory()
+        public void Exploratory()
         {
             // // arrange
             // // act
