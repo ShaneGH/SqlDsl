@@ -23,16 +23,20 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// If true, this column is a row number
         /// </summary>
         public bool IsRowNumber { get; }
+
+        /// <inheritdoc />
+        public Type DataType { get; }
         
         /// <summary>
         /// The index of the row number column for the table which exposes this column
         /// </summary>
         public abstract int RowNumberColumnIndex { get; }
 
-        public SelectColumnBase(string alias, bool isRowNumber)
+        public SelectColumnBase(string alias, bool isRowNumber, Type dataType)
         {
             Alias = alias;
             IsRowNumber = isRowNumber;
+            DataType = dataType;
         }
     }
 }

@@ -23,7 +23,7 @@ namespace SqlDsl.Query
             Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
+        static SqlStatementBuilder ToSqlBuilder(IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
         {
             var rowIdPropertyMap = tables
                 .Select(t => (rowIdColumnName: $"{t.From}.{SqlStatementConstants.RowIdName}", resultClassProperty: t.To))
@@ -37,11 +37,13 @@ namespace SqlDsl.Query
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
 
             foreach (var col in mappedValues)
+            {
                 builder.AddSelectColumn(
                     col.type,
                     col.from, 
                     tableName: (col.from ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias, 
                     alias: col.to);
+            }
 
             foreach (var col in rowIdPropertyMap)
                 builder.RowIdsForMappedProperties.Add((col.rowIdColumnName, col.resultClassProperty));

@@ -19,8 +19,8 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public override int RowNumberColumnIndex => 0;
 
-        public ConstSelectColumn(string alias, bool isRowNumber)
-            : base(alias, isRowNumber)
+        public ConstSelectColumn(string alias, bool isRowNumber, Type dataType)
+            : base(alias, isRowNumber, dataType)
         {
         }
     }

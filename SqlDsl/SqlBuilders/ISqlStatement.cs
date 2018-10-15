@@ -1,4 +1,5 @@
 using SqlDsl.Query;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -121,5 +122,10 @@ namespace SqlDsl.SqlBuilders
         /// If true, this column is a row number
         /// </summary>
         bool IsRowNumber { get; }
+
+        /// <summary>
+        /// The data type of the cell
+        /// </summary>
+        Type DataType { get; }
     }
 }

@@ -68,26 +68,26 @@ namespace SqlDsl.Query
         /// <summary>
         /// Return all of the property and field names of a type as column names
         /// </summary>
-        static IEnumerable<string> GetColumnNames(Type t)
+        static IEnumerable<(string name, Type dataType)> GetColumnNames(Type t)
         {
             foreach (var col in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                yield return col.Name;
+                yield return (col.Name, col.PropertyType);
                 
             foreach (var col in t.GetFields(BindingFlags.Public | BindingFlags.Instance))
-                yield return col.Name;
+                yield return (col.Name, col.FieldType);
         }
 
         /// <summary>
         /// A cache of column names for a given type
         /// </summary>
-        static readonly ConcurrentDictionary<Type, IEnumerable<string>> Columns = new ConcurrentDictionary<Type, IEnumerable<string>>();
+        static readonly ConcurrentDictionary<Type, IEnumerable<(string name, Type dataType)>> Columns = new ConcurrentDictionary<Type, IEnumerable<(string, Type)>>();
         
         /// <summary>
         /// Get all of the column names for a given type
         /// </summary>
-        static IEnumerable<string> ColumnsOf(Type t)
+        static IEnumerable<(string name, Type dataType)> ColumnsOf(Type t)
         {
-            if (Columns.TryGetValue(t, out IEnumerable<string> value))
+            if (Columns.TryGetValue(t, out IEnumerable<(string, Type)> value))
                 return value;
 
             value = GetColumnNames(t)

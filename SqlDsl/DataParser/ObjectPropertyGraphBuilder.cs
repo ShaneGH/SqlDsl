@@ -11,7 +11,11 @@ namespace SqlDsl.DataParser
     /// </summary>
     public static class ObjectPropertyGraphBuilder
     {
-        public static RootObjectPropertyGraph Build(Type objectType, IEnumerable<(string name, int[] rowIdColumnMap)> mappedTableProperties, IEnumerable<(string name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
+        public static RootObjectPropertyGraph Build(
+            Type objectType, 
+            IEnumerable<(string name, int[] rowIdColumnMap)> mappedTableProperties, 
+            IEnumerable<(string name, int[] rowIdColumnMap, Type cellType)> columns, 
+            QueryParseType queryParseType)
         {
             columns = columns.Enumerate();
 
@@ -19,7 +23,7 @@ namespace SqlDsl.DataParser
                 objectType, 
                 new [] { 0 },
                 mappedTableProperties.Select(c => (c.name.Split('.'), c.rowIdColumnMap)),
-                columns.Select((c, i) => (i, c.name.Split('.'), c.rowIdColumnMap)), 
+                columns.Select((c, i) => (i, c.name.Split('.'), c.rowIdColumnMap, c.cellType)), 
                 queryParseType);
 
             return new RootObjectPropertyGraph(
@@ -29,11 +33,16 @@ namespace SqlDsl.DataParser
                 opg.RowIdColumnNumbers);
         }
 
-        static ObjectPropertyGraph _Build(Type objectType, int[] rowIdColumnNumbers, IEnumerable<(string[] name, int[] rowIdColumnMap)> mappedTableProperties, IEnumerable<(int index, string[] name, int[] rowIdColumnMap)> columns, QueryParseType queryParseType)
+        static ObjectPropertyGraph _Build(
+            Type objectType, 
+            int[] rowIdColumnNumbers, 
+            IEnumerable<(string[] name, int[] rowIdColumnMap)> mappedTableProperties, 
+            IEnumerable<(int index, string[] name, int[] rowIdColumnMap, Type cellType)> columns, 
+            QueryParseType queryParseType)
         {
             // TODO: rowIdColumnNumbers should be int[]
             var simpleProps = new List<(int index, string propertyName, IEnumerable<int> rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();
-            var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType)>();
+            var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType)>();
 
             mappedTableProperties = mappedTableProperties
                 .Select(p => (
@@ -58,7 +67,7 @@ namespace SqlDsl.DataParser
                         FilterRowIdColumnNumbers(
                             RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap)),
                         colType,
-                        null
+                        col.cellType
                     ));
                 }
                 // if there are more than one, the property belongs to a child of this object
@@ -76,7 +85,8 @@ namespace SqlDsl.DataParser
                         col.name[0], 
                         col.name.Skip(1).ToArray(),
                         RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap),
-                        colType));
+                        colType,
+                        col.cellType));
                 }
             }
 
@@ -87,9 +97,9 @@ namespace SqlDsl.DataParser
 
             return new ObjectPropertyGraph(simpleProps, cplxProps, rowIdColumnNumbers);
 
-            string PropertyName((int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType) value) => value.propertyName;
+            string PropertyName((int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType) value) => value.propertyName;
 
-            (string, ObjectPropertyGraph) BuildComplexProp(IEnumerable<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType)> values)
+            (string, ObjectPropertyGraph) BuildComplexProp(IEnumerable<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType)> values)
             {
                 values = values.Enumerate();
                 var propertyName = values.First().propertyName;
@@ -118,7 +128,7 @@ namespace SqlDsl.DataParser
                         values.First().propertyType,
                         FilterRowIdColumnNumbers(propertyTableMap).ToArray(),
                         mappedTableProperties.Where(p => p.name.Length > 1).Select(p => (p.name.Skip(1).ToArray(), p.rowIdColumnMap)),
-                        values.Select(v => (v.index, v.subPropName, v.subPropRowIdColumnNumbers)),
+                        values.Select(v => (v.index, v.subPropName, v.subPropRowIdColumnNumbers, v.dataCellType)),
                         queryParseType));
             }
 

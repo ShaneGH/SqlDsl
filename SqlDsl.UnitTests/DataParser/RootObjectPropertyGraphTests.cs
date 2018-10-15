@@ -58,10 +58,10 @@ namespace SqlDsl.UnitTests.DataParser
                 var x_ = expected.SimpleProps.ElementAt(i);
                 var y_ = actual.SimpleProps.ElementAt(i);
 
-                if (x_.index != y_.index || 
-                    x_.name != y_.name || 
-                    x_.resultPropertyType != y_.resultPropertyType)
-                    Fail("Simple prop " + i);
+                Assert.AreEqual(x_.index, y_.index, "Simple prop " + i + " index");
+                Assert.AreEqual(x_.name, y_.name, "Simple prop " + i + " name");
+                Assert.AreEqual(x_.resultPropertyType, y_.resultPropertyType, "Simple prop " + i + " resultPropertyType");
+                Assert.AreEqual(x_.dataCellType, y_.dataCellType, "Simple prop " + i + " dataCellType");
 
                 CollectionAssert.AreEqual(x_.rowNumberColumnIds, y_.rowNumberColumnIds, ErrMessage("Simple prop " + i));
             }
@@ -342,7 +342,7 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             (6, "ClassName", new int[0].Skip(0), typeof(string), typeof(string)),
-                            (7, "TagNames", new int[]{3, 4}.Skip(0), typeof(IEnumerable<string>), typeof(IEnumerable<string>))
+                            (7, "TagNames", new int[]{3, 4}.Skip(0), typeof(IEnumerable<string>), typeof(string))
                         }, 
                         null, 
                         new[]{1,2}))
@@ -459,7 +459,7 @@ namespace SqlDsl.UnitTests.DataParser
                     ("FavouriteClasses", new ObjectPropertyGraph(
                         new[]
                         {
-                            (5, "TagIds", new int[]{3}.Skip(0), typeof(int[]), typeof(int[]))
+                            (5, "TagIds", new int[]{3}.Skip(0), typeof(int[]), typeof(int))
                         }, 
                         null, 
                         new[]{1,2}))
@@ -492,7 +492,7 @@ namespace SqlDsl.UnitTests.DataParser
             var expected = new ObjectPropertyGraph(
                 new []
                 {
-                    (5, "TagIds", new int[]{1,2,3}.Skip(0), typeof(int[]), typeof(int[]))
+                    (5, "TagIds", new int[]{1,2,3}.Skip(0), typeof(int[]), typeof(int))
                 },
                 null,
                 new[] { 0 });
@@ -556,7 +556,7 @@ namespace SqlDsl.UnitTests.DataParser
                                     (
                                         new[] 
                                         {
-                                            (5, "TagIds", new int[]{3}.Skip(0), typeof(int[]), typeof(int[]))
+                                            (5, "TagIds", new int[]{3}.Skip(0), typeof(int[]), typeof(int))
                                         },
                                         null,
                                         new[]{1, 2}
@@ -613,6 +613,100 @@ namespace SqlDsl.UnitTests.DataParser
 
             Compare(expected, actual);
         }
+
+        class DataCellTypeIsArray1
+        {
+            public Person Person;
+            public PersonsData PersonsData;
+            public IEnumerable<PersonClass> PersonClasses;
+        }
+
+        class DataCellTypeIsArray1Result
+        {
+            public int[] TheClassIds;
+            public byte[] TheData;
+        }
+
+        [Test]
+        public void PropertyGraph_DataCellTypeIsArray_ReturnsCorrectOPG1()
+        {
+            // arrange
+            // act
+            var actual = Sql.Query.Sqlite<DataCellTypeIsArray1>()
+                .From<Person>(x => x.Person)
+                .InnerJoin<PersonClass>(result => result.PersonClasses)
+                    .On((q, c) => c.PersonId == q.Person.Id)
+                .InnerJoin<PersonsData>(result => result.PersonsData)
+                    .On((q, c) => c.PersonId == q.Person.Id)
+                .Map(x => new DataCellTypeIsArray1Result
+                {
+                    TheData = x.PersonsData.Data,
+                    TheClassIds = x.PersonClasses
+                        .Select(c => c.ClassId)
+                        .ToArray()
+                })
+                .BuildObjetPropertyGraph<DataCellTypeIsArray1Result, DataCellTypeIsArray1>();
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                new[]
+                {
+                    (3, "TheData", new [] {2}.Skip(0), typeof(byte[]), typeof(byte[])),
+                    (4, "TheClassIds", new [] {1}.Skip(0), typeof(int[]), typeof(int))
+                }, 
+                null, 
+                new[] { 0 });
+
+            Compare(expected, actual);
+        }
+
+        class DataCellTypeIsArray2
+        {
+            public Person Person;
+            public IEnumerable<PersonsData> PersonsData;
+            public IEnumerable<PersonClass> PersonClasses;
+        }
+
+        class DataCellTypeIsArray2Result
+        {
+            public int[] ClassIds;
+            public byte[][] Data;
+        }
+
+        [Test]
+        public void PropertyGraph_DataCellTypeIsArray_ReturnsCorrectOPG2()
+        {
+            // arrange
+            // act
+            var actual = Sql.Query.Sqlite<DataCellTypeIsArray2>()
+                .From<Person>(x => x.Person)
+                .InnerJoin<PersonClass>(result => result.PersonClasses)
+                    .On((q, c) => c.PersonId == q.Person.Id)
+                .InnerJoin<PersonsData>(result => result.PersonsData)
+                    .On((q, c) => c.PersonId == q.Person.Id)
+                .Map(x => new DataCellTypeIsArray2Result
+                {
+                    Data = x.PersonsData
+                        .Select(c => c.Data)
+                        .ToArray(),
+                    ClassIds = x.PersonClasses
+                        .Select(c => c.ClassId)
+                        .ToArray()
+                })
+                .BuildObjetPropertyGraph<DataCellTypeIsArray2Result, DataCellTypeIsArray2>();
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                new[]
+                {
+                    (3, "Data", new [] {2}.Skip(0), typeof(byte[][]), typeof(byte[])),
+                    (4, "ClassIds", new [] {1}.Skip(0), typeof(int[]), typeof(int))
+                }, 
+                null, 
+                new[] { 0 });
+
+            Compare(expected, actual);
+        }
     }
 
     public static class RootObjectPropertyGraphTestUtils
@@ -620,6 +714,15 @@ namespace SqlDsl.UnitTests.DataParser
         public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.ISqlBuilder<object, TResult> builder)
         {
             var compiled = (CompiledQuery<object, TResult>)((QueryMapper<Sqlite.SqliteBuilder, object, TMappedFrom, TResult>)builder)
+                .Compile();
+
+            return compiled.PropertyGraph;
+        }
+        
+        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.ISqlBuilder<TResult> builder)
+        {
+            var mapper = (QueryMapper<TResult>)builder;
+            var compiled = (CompiledQuery<TResult>)mapper
                 .Compile();
 
             return compiled.PropertyGraph;

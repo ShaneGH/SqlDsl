@@ -72,15 +72,15 @@ namespace SqlDsl.Query
             {
                 var cols = new HashSet<string>(filterSelectCols);
                 selectColumns = selectColumns.Where(c => c.table == SqlStatementConstants.RootObjectAlias ?
-                    cols.Contains(c.column) :
-                    cols.Contains($"{c.table}.{c.column}"));
+                    cols.Contains(c.column.name) :
+                    cols.Contains($"{c.table}.{c.column.name}"));
             }
 
             // Add select columns to builder
             foreach (var col in selectColumns)
             {
-                var alias = col.table == SqlStatementConstants.RootObjectAlias ? null : $"{col.table}.{col.column}";
-                builder.AddSelectColumn(col.column, col.table, alias);
+                var alias = col.table == SqlStatementConstants.RootObjectAlias ? null : $"{col.table}.{col.column.name}";
+                builder.AddSelectColumn(col.column.dataType, col.column.name, col.table, alias);
             }
 
             // add each join

@@ -19,8 +19,8 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public override int RowNumberColumnIndex { get; }
 
-        public InnerQuerySelectColumn(string name, string alias, bool isRowNumber, SqlStatementBuilder qb)
-            : base(alias, isRowNumber)
+        public InnerQuerySelectColumn(string name, string alias, bool isRowNumber, Type dataType, SqlStatementBuilder qb)
+            : base(alias, isRowNumber, dataType)
         {
             RowNumberColumnIndex = qb.InnerStatement.SelectColumns[name].RowNumberColumnIndex;
         }

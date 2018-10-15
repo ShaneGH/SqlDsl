@@ -71,9 +71,10 @@ namespace SqlDsl.Query
                 map.columnGroupPrefix,
                 sqlBuilder.GetRowNumberColumnIndexes(map.rowNumberColumnIndex).ToArray());
 
-            (string name, int[] rowIdColumnMap) GetMappedColumn(ISelectColumn column) => (
+            (string name, int[] rowIdColumnMap, Type dataCellType) GetMappedColumn(ISelectColumn column) => (
                 column.Alias,
-                sqlBuilder.GetRowNumberColumnIndexes(column.Alias).ToArray());
+                sqlBuilder.GetRowNumberColumnIndexes(column.Alias).ToArray(),
+                column.DataType);
         }
 
         /// <summary>

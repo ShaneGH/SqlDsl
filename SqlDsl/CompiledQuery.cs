@@ -90,6 +90,11 @@ namespace SqlDsl
 
     public class CompiledQuery<TResult> : ICompiledQuery<TResult>
     {
+        /// <summary>
+        /// Debug only (TODO: make internal)
+        /// </summary>
+        public RootObjectPropertyGraph PropertyGraph => (Worker as CompiledQuery<object, TResult>)?.PropertyGraph;
+
         readonly ICompiledQuery<object, TResult> Worker;
 
         public CompiledQuery(ICompiledQuery<object, TResult> worker)

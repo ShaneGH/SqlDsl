@@ -45,14 +45,14 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
             bool IsRowNumber(ISelectColumn col) => col.IsRowNumber;
 
-            ISelectColumn _BuildColumn((string columnName, string tableName, string alias) col, bool isRowId) =>
+            ISelectColumn _BuildColumn((Type cellDataType, string columnName, string tableName, string alias) col, bool isRowId) =>
                 (col.columnName ?? "").StartsWith("@") ?
-                    new ConstSelectColumn(col.alias, isRowId) as ISelectColumn :
+                    new ConstSelectColumn(col.alias, isRowId, col.cellDataType) as ISelectColumn :
                     queryBuilder.InnerStatement == null ?
-                        new SelectColumn(col.alias ?? col.columnName, col.tableName, isRowId, tables) as ISelectColumn :
-                        new InnerQuerySelectColumn(col.columnName, col.alias ?? col.columnName, isRowId, queryBuilder);
+                        new SelectColumn(col.alias ?? col.columnName, col.tableName, isRowId, col.cellDataType, tables) as ISelectColumn :
+                        new InnerQuerySelectColumn(col.columnName, col.alias ?? col.columnName, isRowId, col.cellDataType, queryBuilder);
 
-            ISelectColumn BuildColumn((string columnName, string tableName, string alias) col) => _BuildColumn(col, false);
+            ISelectColumn BuildColumn((Type cellDataType, string columnName, string tableName, string alias) col) => _BuildColumn(col, false);
 
             ISelectColumn BuildRowIdColumn(IQueryTable table)
             {
@@ -60,7 +60,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                     SqlStatementConstants.RowIdName :
                     $"{table.Alias}.{SqlStatementConstants.RowIdName}";
 
-                return _BuildColumn((SqlStatementConstants.RowIdName, table.Alias, columnAlias), true);
+                return _BuildColumn((null, SqlStatementConstants.RowIdName, table.Alias, columnAlias), true);
             }
         }
 
