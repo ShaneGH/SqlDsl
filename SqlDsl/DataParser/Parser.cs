@@ -86,7 +86,7 @@ namespace SqlDsl.DataParser
                         .Enumerate()
                 };
 
-                (string name, IEnumerable<object> value) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                (string name, IEnumerable<object> value, Action<object, IEnumerable<object>> customSetter) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
                 {
                     // run a "Distinct" on the rowNumbers
                     var dataRowsForProp = objectData
@@ -100,18 +100,14 @@ namespace SqlDsl.DataParser
                     var cellEnumType = p.dataCellType == null ?
                         null :
                         ReflectionUtils.GetIEnumerableType(p.dataCellType);
-                    if (cellEnumType != null && data.Length > 0)
-                    {
-                        // TODO: extremely iniffecient. 1 boxing operation per element in cell
-                        // e.g. if cell contains 10000bytes * 10000 rows, it would be catestrophic
-                        data = (data[0] as System.Collections.IEnumerable).Cast<object>().ToArray();
-                    }
 
-                        Console.WriteLine(p.name + ": " + (p.resultPropertyType == p.dataCellType));
-                        Console.WriteLine("resultPropertyType: " + p.resultPropertyType);
-                        Console.WriteLine("dataCellType: " + p.dataCellType);
+                    // regular parsers will not work if the cell contains an array
+                    // e.g. byte[]
+                    var customSetter = cellEnumType == null ?
+                        null :
+                        Objects.GetEnumerableSetter(propertyGraph.ObjectType, p.name, cellEnumType, p.resultPropertyType);
 
-                    return (p.name, data);
+                    return (p.name, data, customSetter);
                 }
             }
         }

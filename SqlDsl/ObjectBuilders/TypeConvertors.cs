@@ -59,13 +59,13 @@ namespace SqlDsl.ObjectBuilders
                 { typeof(Guid), ForNonNullable(ConvertGuid) },
                 { typeof(Guid?), ForNullable(ConvertGuid) },
                 
-                { typeof(IEnumerable<char>), ForNullableClass(ConvertCharEnumerable) },
-                { typeof(List<char>), ForNullableClass(ConvertCharList) },
-                { typeof(char[]), ForNullableClass(ConvertCharArray) },
+                // { typeof(IEnumerable<char>), ForNullableClass(ConvertCharEnumerable) },
+                // { typeof(List<char>), ForNullableClass(ConvertCharList) },
+                // { typeof(char[]), ForNullableClass(ConvertCharArray) },
                 
-                { typeof(IEnumerable<byte>), ForNullableClass(ConvertCharEnumerable) },
-                { typeof(List<byte>), ForNullableClass(ConvertByteList) },
-                { typeof(byte[]), ForNullableClass(ConvertByteArray) }
+                // { typeof(IEnumerable<byte>), ForNullableClass(ConvertCharEnumerable) },
+                // { typeof(List<byte>), ForNullableClass(ConvertByteList) },
+                // { typeof(byte[]), ForNullableClass(ConvertByteArray) }
             });
 
         /// <summary>
@@ -199,28 +199,28 @@ namespace SqlDsl.ObjectBuilders
             throw new InvalidOperationException($"Cannot convert type {x.GetType()} to Guid");
         }
 
-        static char[] ConvertCharArray(object x) => ConvertCharEnumerable(x).ToArray();
+        // static char[] ConvertCharArray(object x) => ConvertCharEnumerable(x).ToArray();
 
-        static List<char> ConvertCharList(object x) => ConvertCharEnumerable(x).ToList();
+        // static List<char> ConvertCharList(object x) => ConvertCharEnumerable(x).ToList();
 
-        static IEnumerable<char> ConvertCharEnumerable(object x) => Convert.ToString(x);
+        // static IEnumerable<char> ConvertCharEnumerable(object x) => Convert.ToString(x);
 
 
-        static byte[] ConvertByteArray(object x) => _ConvertByteEnumerable(x).ToArray();
+        // static byte[] ConvertByteArray(object x) => _ConvertByteEnumerable(x).ToArray();
 
-        static List<byte> ConvertByteList(object x) => _ConvertByteEnumerable(x).ToList();
+        // static List<byte> ConvertByteList(object x) => _ConvertByteEnumerable(x).ToList();
 
-        static IEnumerable<byte> ConvertByteEnumerable(object x) => _ConvertByteEnumerable(x).Enumerate();
+        // static IEnumerable<byte> ConvertByteEnumerable(object x) => _ConvertByteEnumerable(x).Enumerate();
 
-        static IEnumerable<byte> _ConvertByteEnumerable(object x)
-        {
-            if (x is IEnumerable)
-            {
-                foreach (var b in x as IEnumerable)
-                {
-                    yield return Convert.ToByte(b);
-                }
-            }
-        }
+        // static IEnumerable<byte> _ConvertByteEnumerable(object x)
+        // {
+        //     if (x is IEnumerable)
+        //     {
+        //         foreach (var b in x as IEnumerable)
+        //         {
+        //             yield return Convert.ToByte(b);
+        //         }
+        //     }
+        // }
     }
 }

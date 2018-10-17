@@ -77,9 +77,15 @@ namespace SqlDsl.ObjectBuilders
 
             // use a setter to set each simple property
             foreach (var prop in vals.SimpleProps.OrEmpty())
-                if (propSetters.ContainsKey(prop.name))
+            {
+                // if the prop has a custom setter, use it
+                // otherwise use the default prop setters
+                if (prop.customSetter != null)
+                    prop.customSetter(obj, prop.value);
+                else if (propSetters.ContainsKey(prop.name))
                     propSetters[prop.name].setter(obj, prop.value);
-            
+            }
+
             // use a setter to set each complex property
             foreach (var prop in vals.ComplexProps.OrEmpty())
             {
@@ -190,6 +196,29 @@ namespace SqlDsl.ObjectBuilders
         }
 
         /// <summary>
+        /// If the enumerable contains 0 items, return default.
+        /// If the enumerable contains 1 item, return it.
+        /// If the enumerable contains more than 1 item, throw an exception
+        /// </summary>
+        public static T GetOne<T>(string propertyName, IEnumerable<T> items)
+        {
+            using (var enumerator = items.GetEnumerator())
+            {
+                if (!enumerator.MoveNext())
+                    return default(T);
+
+                var result = enumerator.Current;
+                if (enumerator.MoveNext())
+                {
+                    throw new InvalidOperationException($"Database has returned more than one item for " +
+                        $"{propertyName}, however it only accepts a single item.");   
+                }
+
+                return result;
+            }
+        }
+
+        /// <summary>
         /// Create a function which converts an enumerable value to a singular one,
         /// throwing an exception if there is more than 1 value
         /// </summary>
@@ -199,13 +228,41 @@ namespace SqlDsl.ObjectBuilders
 
             T Get(IEnumerable<T> input)
             {
-                input = input.Enumerate();
-                if (input.Count() > 1)
-                    throw new InvalidOperationException($"Database has returned {input.Count()} items for " +
-                        $"{propertyName}, however it only accepts a single item.");
-
-                return input.FirstOrDefault();
+                return GetOne(propertyName, input);
             }
+        }
+
+        static readonly ConcurrentDictionary<EnumerableSettersKey, Action<object, IEnumerable<object>>> EnumerableSetterCache = new ConcurrentDictionary<EnumerableSettersKey, Action<object, IEnumerable<object>>>();
+
+        public static Action<object, IEnumerable<object>> GetEnumerableSetter(Type objectType, string propertyName, Type enumeratedType, Type resultPropertyType)
+        {
+            var key = new EnumerableSettersKey(objectType, propertyName, enumeratedType, resultPropertyType);
+            if (EnumerableSetterCache.TryGetValue(key, out Action<object, IEnumerable<object>> val))
+                return val;
+
+            return EnumerableSetterCache.GetOrAdd(key, BuildEnumerableSetter(objectType, propertyName, enumeratedType, resultPropertyType));
+        }
+
+        static Action<object, IEnumerable<object>> BuildEnumerableSetter(Type objectType, string propertyName, Type enumeratedType, Type resultPropertyType)
+        {
+            // ((objectType)objParam).propertyName = (resultPropertyType)valueParam
+            var objParam = Expression.Parameter(typeof(object));
+            var valueParam = Expression.Parameter(typeof(object));
+            var setterBody = Expression.Assign(
+                Expression.PropertyOrField(
+                    Expression.Convert(
+                        objParam,
+                        objectType),
+                    propertyName),
+                Expression.Convert(
+                    valueParam,
+                    resultPropertyType));
+
+            var setter = Expression
+                .Lambda<Action<object, object>>(setterBody, objParam, valueParam)
+                .Compile();
+
+            return (obj, values) => setter(obj, GetOne(propertyName, values));
         }
     }
 }

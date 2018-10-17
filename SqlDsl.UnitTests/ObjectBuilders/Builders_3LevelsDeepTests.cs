@@ -44,8 +44,8 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                                     {
                                         SimpleProps = new [] 
                                         {
-                                            ("Property1", new object[] { "Hello" }.Skip(0)),
-                                            ("Property2", new object[] { 7 }.Skip(0))
+                                            ("Property1", new object[] { "Hello" }.Skip(0), Builders_1LevelDeepTests.NullAction),
+                                            ("Property2", new object[] { 7 }.Skip(0), null)
                                         }.Skip(0)
                                     }
                                 }.Skip(0))
