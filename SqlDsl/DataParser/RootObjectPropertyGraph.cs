@@ -41,16 +41,18 @@ namespace SqlDsl.DataParser
         /// <summary>
         /// Build an object graph
         /// </summary>
+        /// <param name="objectType">The type of the object.</param>
         /// <param name="colNames">The column names that this graph is based on.</param>
         /// <param name="simpleProps">Properties of an object with simple values like strings, ints etc... The index is the index of the column in the sql query resuts table.</param>
         /// <param name="complexProps">Properties of an object which have sub properies</param>
         /// <param name="rowIdColumnNumbers">A composite of the row numbers which point to this object</param>
         public RootObjectPropertyGraph(
+            Type objectType,
             IEnumerable<string> colNames,
             IEnumerable<(int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType)> simpleProps, 
             IEnumerable<(string name, ObjectPropertyGraph value)> complexProps, 
             IEnumerable<int> rowIdColumnNumbers)
-            : base(simpleProps, complexProps, rowIdColumnNumbers)
+            : base(objectType, simpleProps, complexProps, rowIdColumnNumbers)
         {
             ColumnNames = colNames.ToArray();
         }
@@ -58,8 +60,10 @@ namespace SqlDsl.DataParser
         /// <summary>
         /// Build an object graph for a simple value.
         /// </summary>
-        public RootObjectPropertyGraph(int columnIndex, int rowNumberColumnIndex)
-            : this(Enumerable.Empty<string>(),
+        /// <param name="objectType">The type of the object.</param>
+        public RootObjectPropertyGraph(Type objectType, int columnIndex, int rowNumberColumnIndex)
+            : this(objectType,
+                Enumerable.Empty<string>(),
                 Enumerable.Empty<(int, string, IEnumerable<int>, Type, Type)>(), 
                 Enumerable.Empty<(string, ObjectPropertyGraph)>(), 
                 Enumerable.Empty<int>())

@@ -29,18 +29,26 @@ namespace SqlDsl.DataParser
         /// A composite of the row numbers which point to this object
         /// </summary>
         public readonly IEnumerable<int> RowIdColumnNumbers;
+        
+        /// <summary>
+        /// The type of the object
+        /// </summary>
+        public readonly Type ObjectType;
 
         /// <summary>
         /// Build an object graph
         /// </summary>
+        /// <param name="objectType">The type of the object.</param>
         /// <param name="simpleProps">Properties of an object with simple values like strings, ints etc... The index is the index of the column in the sql query resuts table.</param>
         /// <param name="complexProps">Properties of an object which have sub properies</param>
         /// <param name="rowIdColumnNumbers">A composite of the row numbers which point to this object</param>
         public ObjectPropertyGraph(
+            Type objectType,
             IEnumerable<(int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType)> simpleProps, 
             IEnumerable<(string name, ObjectPropertyGraph value)> complexProps, 
             IEnumerable<int> rowIdColumnNumbers)
         {
+            ObjectType = objectType ?? throw new ArgumentNullException(nameof(objectType));
             SimpleProps = simpleProps.OrEmpty();
             ComplexProps = complexProps.OrEmpty();
             RowIdColumnNumbers = rowIdColumnNumbers.OrEmpty();

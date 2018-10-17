@@ -50,6 +50,8 @@ namespace SqlDsl.UnitTests.DataParser
             if (expected == null && actual == null) return;
             if (expected == null || actual == null) Fail();
 
+            Assert.AreEqual(expected.ObjectType, actual.ObjectType);
+
             CompareRowIdColumnNumbers(expected, actual);
 
             if (expected.SimpleProps.Count() != actual.SimpleProps.Count()) Fail("Simple props count");
@@ -140,10 +142,12 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
+                typeof(JoinedQueryClass),
                 null, 
                 new[]
                 {
                     ("ThePerson", new ObjectPropertyGraph(
+                        typeof(Person),
                         new[]
                         {
                             (0, "##rowid", new int[0].Skip(0), null, null),
@@ -154,6 +158,7 @@ namespace SqlDsl.UnitTests.DataParser
                         null, 
                         null)),
                     ("PersonClasses", new ObjectPropertyGraph(
+                        typeof(PersonClass),
                         new[]
                         {
                             (1, "##rowid", new int[0].Skip(0), null, null),
@@ -179,10 +184,12 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
+                typeof(JoinedQueryClass),
                 null, 
                 new[]
                 {
                     ("ThePerson", new ObjectPropertyGraph(
+                        typeof(Person),
                         new[]
                         {
                             (0, "##rowid", new int[0].Skip(0), null, null),
@@ -193,6 +200,7 @@ namespace SqlDsl.UnitTests.DataParser
                         null, 
                         null)),
                     ("PersonClasses", new ObjectPropertyGraph(
+                        typeof(PersonClass),
                         new[]
                         {
                             (1, "##rowid", new int[0].Skip(0), null, null),
@@ -202,6 +210,7 @@ namespace SqlDsl.UnitTests.DataParser
                         null, 
                         new[]{1})),
                     ("Classes", new ObjectPropertyGraph(
+                        typeof(Class),
                         new[]
                         {
                             (2, "##rowid", new int[0].Skip(0), null, null),
@@ -211,6 +220,7 @@ namespace SqlDsl.UnitTests.DataParser
                         null, 
                         new[]{2})),
                     ("ClassTags", new ObjectPropertyGraph(
+                        typeof(ClassTag),
                         new[]
                         {
                             (3, "##rowid", new int[0].Skip(0), null, null),
@@ -220,6 +230,7 @@ namespace SqlDsl.UnitTests.DataParser
                         null, 
                         new[]{3})),
                     ("Tags", new ObjectPropertyGraph(
+                        typeof(Tag),
                         new[]
                         {
                             (4, "##rowid", new int[0].Skip(0), null, null),
@@ -260,6 +271,7 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
+                typeof(MappedVersion),
                 new[]
                 {
                     (5, "PersonName", new int[0].Skip(0), typeof(string), typeof(string))
@@ -289,6 +301,7 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
+                typeof(MappedVersion),
                 new[]
                 {
                     (5, "PersonName", new int[0].Skip(0), typeof(string), typeof(string))
@@ -296,6 +309,7 @@ namespace SqlDsl.UnitTests.DataParser
                 new[]
                 {
                     ("MappedClasses", new ObjectPropertyGraph(
+                        typeof(MappedClass),
                         new[]
                         {
                             (6, "ClassName", new int[0].Skip(0), typeof(string), typeof(string))
@@ -332,6 +346,7 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
+                typeof(MappedVersion),
                 new[]
                 {
                     (5, "PersonName", new int[0].Skip(0), typeof(string), typeof(string))
@@ -339,6 +354,7 @@ namespace SqlDsl.UnitTests.DataParser
                 new[]
                 {
                     ("MappedClasses", new ObjectPropertyGraph(
+                        typeof(MappedClass),
                         new[]
                         {
                             (6, "ClassName", new int[0].Skip(0), typeof(string), typeof(string)),
@@ -393,6 +409,7 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
+                typeof(MappedVersion2),
                 new[]
                 {
                     (5, "PersonName", new int[0].Skip(0), typeof(string), typeof(string))
@@ -400,6 +417,7 @@ namespace SqlDsl.UnitTests.DataParser
                 new[]
                 {
                     ("MappedClasses", new ObjectPropertyGraph(
+                        typeof(MappedClass2),
                         new[]
                         {
                             (6, "ClassName", new int[0].Skip(0), typeof(string), typeof(string))
@@ -407,6 +425,7 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             ("Tags", new ObjectPropertyGraph(
+                                typeof(Tag2),
                                 new[]
                                 {
                                     (7, "TagName", new int[0].Skip(0), typeof(string), typeof(string))
@@ -453,10 +472,12 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
+                typeof(DifficultScenario),
                 null,
                 new[]
                 {
                     ("FavouriteClasses", new ObjectPropertyGraph(
+                        typeof(DifficultScenarioInner),
                         new[]
                         {
                             (5, "TagIds", new int[]{3}.Skip(0), typeof(int[]), typeof(int))
@@ -490,6 +511,7 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
+                typeof(DifficultScenario2),
                 new []
                 {
                     (5, "TagIds", new int[]{1,2,3}.Skip(0), typeof(int[]), typeof(int))
@@ -540,20 +562,24 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
+                typeof(DeepJoinedClass),
                 null,
                 new []
                 {
                     ("Inner", new ObjectPropertyGraph(
+                        typeof(DeepJoinedClass),
                         null,
                         new []
                         {
                             ("Inner", new ObjectPropertyGraph
                             (
+                                typeof(DeepJoinedClass),
                                 null,
                                 new []
                                 {
                                     ("FavouriteClasses", new ObjectPropertyGraph
                                     (
+                                        typeof(DeepJoinedClassData),
                                         new[] 
                                         {
                                             (5, "TagIds", new int[]{3}.Skip(0), typeof(int[]), typeof(int))
@@ -586,10 +612,12 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
+                typeof(JoinedQueryClass),
                 null, 
                 new[]
                 {
                     ("ThePerson", new ObjectPropertyGraph(
+                        typeof(Person),
                         new[]
                         {
                             (0, "##rowid", new int[0].Skip(0), null, null),
@@ -600,6 +628,7 @@ namespace SqlDsl.UnitTests.DataParser
                         null, 
                         null)),
                     ("PersonClasses", new ObjectPropertyGraph(
+                        typeof(PersonClass),
                         new[]
                         {
                             (1, "##rowid", new int[0].Skip(0), null, null),
@@ -652,6 +681,7 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
+                typeof(DataCellTypeIsArray1Result),
                 new[]
                 {
                     (3, "TheData", new [] {2}.Skip(0), typeof(byte[]), typeof(byte[])),
@@ -703,6 +733,7 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
+                typeof(DataCellTypeIsArray2Result),
                 new[]
                 {
                     (3, "Data", new [] {2}.Skip(0), typeof(byte[][]), typeof(byte[])),

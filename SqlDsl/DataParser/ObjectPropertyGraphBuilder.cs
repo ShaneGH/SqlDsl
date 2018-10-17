@@ -27,6 +27,7 @@ namespace SqlDsl.DataParser
                 queryParseType);
 
             return new RootObjectPropertyGraph(
+                opg.ObjectType,
                 columns.Select(x => x.name), 
                 opg.SimpleProps, 
                 opg.ComplexProps, 
@@ -95,7 +96,7 @@ namespace SqlDsl.DataParser
                 .Select(BuildComplexProp)
                 .Enumerate();
 
-            return new ObjectPropertyGraph(simpleProps, cplxProps, rowIdColumnNumbers);
+            return new ObjectPropertyGraph(objectType, simpleProps, cplxProps, rowIdColumnNumbers);
 
             string PropertyName((int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType) value) => value.propertyName;
 
