@@ -61,6 +61,12 @@ namespace SqlDsl.UnitTests.FullPathTests
             public byte[] Data;
         }
 
+        class ArrayDataType1_1Result
+        {
+            public int[] ClassIds;
+            public List<byte> Data;
+        }
+
         class ArrayDataType2Result
         {
             public int[] ClassIds;
@@ -122,6 +128,35 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(1, data.Count());
             var john = data.First();
             CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.Data);
+
+            Assert.AreEqual(2, john.ClassIds.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);
+            Assert.AreEqual(Data.Classes.Archery.Id, john.ClassIds[1]);
+        }
+
+        [Test]
+        public async Task ArrayDataType1_ConvertArrayToList()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                .From(x => x.Person)
+                .InnerJoin(x => x.PersonsData)
+                    .On((q, pd) => q.Person.Id == pd.PersonId)
+                .InnerJoin(x => x.Classes)
+                    .On((q, pc) => q.Person.Id == pc.PersonId)
+                .Where(p => p.Person.Id == Data.People.John.Id)
+                .Map(x => new ArrayDataType1_1Result
+                {
+                    Data = x.PersonsData.One().Data.ToList(),
+                    ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            var john = data.First();
+            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.Data.ToArray());
 
             Assert.AreEqual(2, john.ClassIds.Length);
             Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);

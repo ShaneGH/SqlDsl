@@ -245,6 +245,9 @@ namespace SqlDsl.ObjectBuilders
 
         static Action<object, IEnumerable<object>> BuildEnumerableSetter(Type objectType, string propertyName, Type enumeratedType, Type resultPropertyType)
         {
+            Console.WriteLine(enumeratedType);
+            Console.WriteLine(resultPropertyType);
+
             // ((objectType)objParam).propertyName = (resultPropertyType)valueParam
             var objParam = Expression.Parameter(typeof(object));
             var valueParam = Expression.Parameter(typeof(object));
@@ -262,7 +265,57 @@ namespace SqlDsl.ObjectBuilders
                 .Lambda<Action<object, object>>(setterBody, objParam, valueParam)
                 .Compile();
 
-            return (obj, values) => setter(obj, GetOne(propertyName, values));
+            var ensureCollectionType = EnsureCollectionType(enumeratedType, resultPropertyType, propertyName);
+
+            return Setter;
+            
+            void Setter(object obj, IEnumerable<object> values)
+            {
+                var value = GetOne(propertyName, values);
+                if (value != null)
+                    value = ensureCollectionType(value);
+                
+                setter(obj, value);
+            }
+        }
+        
+        static Func<object, object> EnsureCollectionType(Type dataType, Type collectionType, string propertyName)
+        {
+            var valuesParam = Expression.Parameter(typeof(object));
+            var valuesAsIEnumerable = Expression.Convert(valuesParam, typeof(IEnumerable<>).MakeGenericType(dataType));
+            var (isCollection, cr) = Enumerables.CreateCollectionExpression(collectionType, valuesAsIEnumerable);
+            if (!isCollection)
+            {
+                throw new InvalidOperationException(
+                    $"Type {collectionType} must be a collection type (e.g. List<T>, T[], IEnumerable<T>");   
+            }
+
+            var create = Expression
+                .Lambda<Func<object, object>>(cr, valuesParam)
+                .Compile();
+            
+            return Ensure;
+
+            object Ensure(object values)
+            {
+                if (collectionType.IsAssignableFrom(values.GetType()))
+                {
+                    return values;
+                }
+
+                try
+                {
+                    // TODO: add logging to warn user that collection value is not correct
+                    // text like: $"Converting {values.GetType()} to type {collectionType} for property {propertyName}. This conversion is inefficient. Consider changing the data type of {propertyName} to {values.GetType()}"
+                    return create(values);
+                }
+                catch (Exception e)
+                {
+                    throw new InvalidOperationException(
+                        $"Value {values.GetType()} cannot be converted to type {collectionType}",
+                        e);
+                }
+            }
         }
     }
 }
