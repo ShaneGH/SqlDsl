@@ -245,8 +245,7 @@ namespace SqlDsl.ObjectBuilders
 
         static Action<object, IEnumerable<object>> BuildEnumerableSetter(Type objectType, string propertyName, Type enumeratedType, Type resultPropertyType)
         {
-            Console.WriteLine(enumeratedType);
-            Console.WriteLine(resultPropertyType);
+            //TODO: is enumeratedType arg needed?
 
             // ((objectType)objParam).propertyName = (resultPropertyType)valueParam
             var objParam = Expression.Parameter(typeof(object));
@@ -265,13 +264,17 @@ namespace SqlDsl.ObjectBuilders
                 .Lambda<Action<object, object>>(setterBody, objParam, valueParam)
                 .Compile();
 
-            var ensureCollectionType = EnsureCollectionType(enumeratedType, resultPropertyType, propertyName);
+            var ensureCollectionType = EnsureCollectionType(resultPropertyType, propertyName);
+            var singleCollectionOnly = ReflectionUtils.CountEnumerables(resultPropertyType) <= 1;
 
             return Setter;
             
             void Setter(object obj, IEnumerable<object> values)
             {
-                var value = GetOne(propertyName, values);
+                var value = singleCollectionOnly ?
+                    GetOne(propertyName, values) :
+                    values;
+
                 if (value != null)
                     value = ensureCollectionType(value);
                 
@@ -279,19 +282,54 @@ namespace SqlDsl.ObjectBuilders
             }
         }
         
-        static Func<object, object> EnsureCollectionType(Type dataType, Type collectionType, string propertyName)
+        /// <summary>
+        /// Given a (nested) collection type, create a function which takes in 
+        /// an object with variable collection types and converts them to the correct
+        /// type.
+        /// e.g. collectionType = List&lt;byte[]>, obj = (object)IEnumerable&lt;IEnumerable&lt;byte>>
+        /// Returns null if collectionType is not actually a collection
+        /// </summary>
+        static Func<object, object> EnsureCollectionType(Type collectionType, string propertyName)
         {
-            var valuesParam = Expression.Parameter(typeof(object));
-            var valuesAsIEnumerable = Expression.Convert(valuesParam, typeof(IEnumerable<>).MakeGenericType(dataType));
-            var (isCollection, cr) = Enumerables.CreateCollectionExpression(collectionType, valuesAsIEnumerable);
+            var collectionTypeEnumerable = ReflectionUtils.GetIEnumerableType(collectionType);
+            if (collectionTypeEnumerable == null)
+            {
+                return null;
+            }
+
+            var input = Expression.Parameter(typeof(object));
+
+            // cast object => IEnumerable<object>
+            Expression inputAsEnumerable = Expression.Convert(
+                input,
+                typeof(IEnumerable<>).MakeGenericType(collectionTypeEnumerable));
+            
+            // if enumType is also enum => IEnumerable<object> = IEnumerable<object>.Select(EnsureCollectionType)
+            var innerCollectionBuilder = EnsureCollectionType(collectionTypeEnumerable, propertyName);
+            if (innerCollectionBuilder != null)
+            {
+                inputAsEnumerable = Expression.Call(
+                    null,
+                    ReflectionUtils
+                        .GetMethod<IEnumerable<object>>(xs => xs.Select(x => x)),
+                    inputAsEnumerable,
+                    Expression.Constant(innerCollectionBuilder));
+            }
+
+            var (isCollection, cr) = Enumerables.CreateCollectionExpression(
+                collectionType, 
+                Expression.Convert(
+                    inputAsEnumerable, 
+                    typeof(IEnumerable<>).MakeGenericType(collectionTypeEnumerable)));
             if (!isCollection)
             {
                 throw new InvalidOperationException(
-                    $"Type {collectionType} must be a collection type (e.g. List<T>, T[], IEnumerable<T>");   
+                    $"Property {propertyName} ({collectionType}) must be a collection type " + 
+                    "(e.g. List<T>, T[], IEnumerable<T>).");   
             }
 
             var create = Expression
-                .Lambda<Func<object, object>>(cr, valuesParam)
+                .Lambda<Func<object, object>>(cr, input)
                 .Compile();
             
             return Ensure;
@@ -312,8 +350,7 @@ namespace SqlDsl.ObjectBuilders
                 catch (Exception e)
                 {
                     throw new InvalidOperationException(
-                        $"Value {values.GetType()} cannot be converted to type {collectionType}",
-                        e);
+                        $"Value {values.GetType()} cannot be converted to type {collectionType}", e);
                 }
             }
         }
