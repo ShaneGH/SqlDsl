@@ -86,7 +86,7 @@ namespace SqlDsl.DataParser
                         .Enumerate()
                 };
 
-                (string name, IEnumerable<object> value, Action<object, IEnumerable<object>> customSetter) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                (string name, IEnumerable<object> value, Action<object, IEnumerable<object>> customSetter, bool isEnumerableDataCell) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
                 {
                     // run a "Distinct" on the rowNumbers
                     var dataRowsForProp = objectData
@@ -107,7 +107,7 @@ namespace SqlDsl.DataParser
                         null :
                         Objects.GetEnumerableSetter(propertyGraph.ObjectType, p.name, cellEnumType, p.resultPropertyType);
 
-                    return (p.name, data, customSetter);
+                    return (p.name, data, customSetter, cellEnumType != null);
                 }
             }
         }
