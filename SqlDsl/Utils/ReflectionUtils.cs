@@ -12,13 +12,13 @@ namespace SqlDsl.Utils
     public static class ReflectionUtils
     {   
         /// <summary>
-        /// Get the MethodInfo object from a method call. If call is Do<T>(...) and replaceGenerics == [U], will replace T with U
+        /// Get the MethodInfo object from a method call. If call is Do&lt;T>(...) and replaceGenerics == [U], will replace T with U
         /// </summary>
         public static MethodInfo GetMethod<TRoot>(Expression<Action<TRoot>> methodCall, params Type[] replaceGenerics) =>
             GetMethod(methodCall.Body, replaceGenerics);
                
         /// <summary>
-        /// Get the MethodInfo object from a method call. If call is Do<T>(...) and replaceGenerics == [U], will replace T with U
+        /// Get the MethodInfo object from a method call. If call is Do&lt;T>(...) and replaceGenerics == [U], will replace T with U
         /// </summary>
         public static MethodInfo GetMethod(Expression<Action> methodCall, params Type[] replaceGenerics) =>
             GetMethod(methodCall.Body, replaceGenerics);
