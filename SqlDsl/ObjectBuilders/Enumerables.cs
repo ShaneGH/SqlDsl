@@ -76,7 +76,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Create an expression which builds a new collection.
         /// </summary>
-        /// <param name="collectionType">can be ICollection<T>, IList<T>, List<T>, IEnumerable<T>, IReadOnlyCollection<T> or IReadOnlyList<T>
+        /// <param name="collectionType">can be T[], ICollection&lt;T>, IList&lt;T>, List&lt;T>, IEnumerable&lt;T>, IReadOnlyCollection&lt;T> or IReadOnlyList&lt;T>
         /// </param>
         /// <param name="collectionValues">If not null, the output builder will initialize the collection with these values
         /// </param>
