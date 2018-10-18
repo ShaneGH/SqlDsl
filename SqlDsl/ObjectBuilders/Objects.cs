@@ -275,7 +275,9 @@ namespace SqlDsl.ObjectBuilders
                     GetOne(propertyName, values) :
                     values;
 
-                if (value != null)
+                if (value == DBNull.Value)
+                    value = null;
+                else if (value != null)
                     value = ensureCollectionType(value);
                 
                 setter(obj, value);

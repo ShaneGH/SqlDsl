@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace SqlDsl.ObjectBuilders
 {
@@ -11,7 +12,8 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        object Build(ObjectGraph values);
+        /// <param name="enumerableDbFields">A list of props on the object which are enumerable, and will get data from a single cell. e.g. BLOB => byte[]</param>
+        object Build(ObjectGraph values, IEnumerable<string> enumerableDbFields);
     }
 
     /// <summary>
@@ -27,7 +29,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compiled function to set all null enumerable properties of an object to empty
         /// </summary>
-        readonly Action<T> AddEmptyEnumerables;
+        readonly Action<T, IEnumerable<string>> AddEmptyEnumerables;
 
         public Builder()
         {
@@ -38,10 +40,11 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        public T Build(ObjectGraph values) 
+        /// <param name="enumerableDbFields">A list of props on the object which are enumerable, and will get data from a single cell. e.g. BLOB => byte[]</param>
+        public T Build(ObjectGraph values, IEnumerable<string> enumerableDbFields) 
         {
             var obj = BuildObject(values);
-            AddEmptyEnumerables(obj);
+            AddEmptyEnumerables(obj, enumerableDbFields);
 
             return obj;
         }
@@ -49,6 +52,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        object IBuilder.Build(ObjectGraph values) => Build(values);
+        /// <param name="enumerableDbFields">A list of props on the object which are enumerable, and will get data from a single cell. e.g. BLOB => byte[]</param>
+        object IBuilder.Build(ObjectGraph values, IEnumerable<string> enumerableDbFields) => Build(values, enumerableDbFields);
     }
 }

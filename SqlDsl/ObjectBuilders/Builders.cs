@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace SqlDsl.ObjectBuilders
@@ -35,7 +36,7 @@ namespace SqlDsl.ObjectBuilders
             }
 
             // use cached builder to create concrete object
-            return builder.Build(values);
+            return builder.Build(values, new string[0]);
         }
     }
 }

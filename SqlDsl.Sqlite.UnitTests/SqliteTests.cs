@@ -13,13 +13,6 @@ namespace SqlDsl.Sqlite.UnitTests
     [TestFixture]
     public class SqliteTests : SqlFragmentBuilderTestBase<SqliteBuilder>
     {
-
-        [Test]
-        public void TestC()
-        {
-            TestJoins();
-        }
-
         readonly string DbFileName = $"SqliteTests, {DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")}.db";
         readonly Lazy<SqliteConnection> ExecutorConnection;
 

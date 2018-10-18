@@ -17,7 +17,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compile a function to set all null enumerable properties of an object to empty
         /// </summary>
-        public static Action<T> CompileEnumerabeAdder<T>()
+        public static Action<T, IEnumerable<string>> CompileEnumerabeAdder<T>()
         {
             // get all members of the object
             var members = typeof(T).GetFieldsAndProperties();
@@ -34,26 +34,43 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compile a function to set all null enumerable properties of an object to empty
         /// </summary>
-        static Action<T> CompileEnumerabeAdder<T>(IEnumerable<((string name, Type) prop, (bool isCollection, Expression builder) collection)> enumerableProperties)
+        static Action<T, IEnumerable<string>> CompileEnumerabeAdder<T>(IEnumerable<((string name, Type) prop, (bool isCollection, Expression builder) collection)> enumerableProperties)
         {
             // the input of the output Action
             var input = Expression.Parameter(typeof(T));
+            var enumerableDbFields = Expression.Parameter(typeof(IEnumerable<string>));
             var _null = Expression.Constant(null);
+
+            // enumerableDbFields = enumerableDbFields.Enumerate();
+            var enumerateInput = Expression.Assign(
+                enumerableDbFields,
+                Expression.Call(
+                    ReflectionUtils.GetMethod<IEnumerable<string>>(x => x.Enumerate()),
+                    enumerableDbFields));
 
             // for each property, build a setter
             var setters = enumerableProperties
-                // if (input.Prop == null) { input.Prop = new List<...>(); }
-                .Select(p => Expression.IfThen(
-                    Expression.Equal(
-                        Expression.PropertyOrField(input, p.prop.name),
-                        _null),
+                // if (input.Prop == null && !enumerableDbFields.Contains("Prop")) { input.Prop = new List<...>(); }
+                .Select(p => (Expression)Expression.IfThen(
+                    Expression.And(
+                        Expression.Equal(
+                            Expression.PropertyOrField(input, p.prop.name),
+                            _null),
+                        Expression.Not(
+                            Expression.Call(
+                                ReflectionUtils.GetMethod<IEnumerable<string>>(
+                                    x => x.Contains("")),
+                                enumerableDbFields,
+                                Expression.Constant(p.prop.name)))),
                     Expression.Assign(
                         Expression.PropertyOrField(input, p.prop.name),
                         p.collection.builder)));
 
             // compile all setters into a block
-            var body = Expression.Block(setters);
-            return Expression.Lambda<Action<T>>(body, input).Compile();
+            var body = Expression.Block(setters.Prepend(enumerateInput));
+            return Expression
+                .Lambda<Action<T, IEnumerable<string>>>(body, input, enumerableDbFields)
+                .Compile();
         }        
 
         /// <summary>
