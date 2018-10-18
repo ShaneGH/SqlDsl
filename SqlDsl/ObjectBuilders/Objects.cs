@@ -297,30 +297,36 @@ namespace SqlDsl.ObjectBuilders
                 return null;
             }
 
+            var iEnumerableOfType = typeof(IEnumerable<>).MakeGenericType(collectionTypeEnumerable);
             var input = Expression.Parameter(typeof(object));
 
-            // cast object => IEnumerable<object>
+            // cast object => IEnumerable<T>
             Expression inputAsEnumerable = Expression.Convert(
                 input,
-                typeof(IEnumerable<>).MakeGenericType(collectionTypeEnumerable));
+                iEnumerableOfType);
             
-            // if enumType is also enum => IEnumerable<object> = IEnumerable<object>.Select(EnsureCollectionType)
+            // if enumType is also enum => IEnumerable<IEnumerable<T>> = IEnumerable<object>.Select(EnsureCollectionType)
             var innerCollectionBuilder = EnsureCollectionType(collectionTypeEnumerable, propertyName);
             if (innerCollectionBuilder != null)
             {
-                inputAsEnumerable = Expression.Call(
-                    null,
-                    ReflectionUtils
-                        .GetMethod<IEnumerable<object>>(xs => xs.Select(x => x)),
-                    inputAsEnumerable,
-                    Expression.Constant(innerCollectionBuilder));
+                inputAsEnumerable = Expression.Convert(
+                    Expression.Call(
+                        null,
+                        ReflectionUtils.GetMethod<IEnumerable<object>>(
+                            xs => xs.Select(x => x), 
+                            collectionTypeEnumerable,
+                            typeof(object)),
+                        inputAsEnumerable,
+                        Expression.Constant(innerCollectionBuilder)),
+                    typeof(IEnumerable<>).MakeGenericType(collectionTypeEnumerable));
             }
 
             var (isCollection, cr) = Enumerables.CreateCollectionExpression(
                 collectionType, 
                 Expression.Convert(
                     inputAsEnumerable, 
-                    typeof(IEnumerable<>).MakeGenericType(collectionTypeEnumerable)));
+                    iEnumerableOfType));
+
             if (!isCollection)
             {
                 throw new InvalidOperationException(
