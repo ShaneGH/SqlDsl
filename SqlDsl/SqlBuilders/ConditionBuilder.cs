@@ -12,7 +12,7 @@ namespace SqlDsl.SqlBuilders
     using OtherParams = IEnumerable<(ParameterExpression param, string alias)>;
 
     /// <summary>
-    /// stirng setupSql, string sql, IEnumerable<string> queryObjectReferences
+    /// string setupSql, string sql, IEnumerable<string> queryObjectReferences
     /// </summary>
     using ConditionResult = ValueTuple<string, string, IEnumerable<string>>;
 
@@ -188,35 +188,62 @@ namespace SqlDsl.SqlBuilders
             sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, gte, paramaters, sqlBuilder.BuildGreaterThanEqualToCondition);
 
         /// <summary>
-        /// Get a real value from a member expression
+        /// Get a real value from an expression
         /// </summary>
         /// <returns>memberStaticValue: null if memberHasStaticValue == false
         /// </returns>
-        static (bool memberHasStaticValue, object memberStaticValue) GetMemberStaticObjectValue(MemberExpression member)
+        static (bool memberHasStaticValue, object memberStaticValue) GetExpressionStaticObjectValue(Expression expr)
         {
-            var m = member;
-
             // drill down into the member until we get to the root
-            while (member != null)
+            if (MemberHasStaticValue(expr))
             {
-                // if we get to the root (static property, expression == null)
-                if (member.Expression is ConstantExpression || member.Expression == null)
-                {
-                    // compile the expression
-                    var valueGetter = Expression
-                        .Lambda<Func<object>>(
-                            Expression.Convert(
-                                m, typeof(object)))
-                        .Compile();
+                // compile the expression
+                var valueGetter = Expression
+                    .Lambda<Func<object>>(
+                        Expression.Convert(
+                            expr, 
+                            typeof(object)))
+                    .Compile();
 
-                    // get the expression value
-                    return (true, valueGetter());
-                }
-
-                member = member.Expression as MemberExpression;
+                // get the expression value
+                return (true, valueGetter());
             }
 
             return (false, null);
+        }
+
+        /// <summary>
+        /// Determine if a real value can be taken from an expression
+        /// </summary>
+
+        static bool MemberHasStaticValue(Expression e)
+        {
+            switch (e.NodeType)
+            {
+                case ExpressionType.Constant:
+                    return true;
+                case ExpressionType.MemberAccess:
+                    var e1 = (e as MemberExpression).Expression;
+                    return e1 == null || MemberHasStaticValue(e1);
+                case ExpressionType.Call:
+                    var e2 = e as MethodCallExpression;
+                    return (e2.Object == null || MemberHasStaticValue(e2.Object)) &&
+                        e2.Arguments.All(MemberHasStaticValue);
+                default:
+                    if (e is UnaryExpression)
+                    {
+                        var e3 = e as UnaryExpression;
+                        return MemberHasStaticValue(e3.Operand);
+                    }
+                    
+                    if (e is BinaryExpression)
+                    {
+                        var e4 = e as BinaryExpression;
+                        return MemberHasStaticValue(e4.Left) && MemberHasStaticValue(e4.Right);
+                    }
+
+                    return false;
+            }
         }
 
         /// <summary>
@@ -267,7 +294,7 @@ namespace SqlDsl.SqlBuilders
             IList<object> paramaters)
         {
             // if expression has a definite value, add it to parameters
-            var staticValue = GetMemberStaticObjectValue(member);
+            var staticValue = GetExpressionStaticObjectValue(member);
             if (staticValue.memberHasStaticValue)
                 return AddToParamaters(staticValue.memberStaticValue, paramaters);
 
@@ -333,7 +360,7 @@ namespace SqlDsl.SqlBuilders
         /// <param name="paramaters">A list of parameters which may be added to</param>
         static ConditionResult AddToParamaters(object value, IList<object> paramaters)
         {
-            paramaters.Add(value);
+            paramaters.Add(value == null ? DBNull.Value : value);
             return (null, $"@p{paramaters.Count - 1}", EmptyStrings);
         }
 

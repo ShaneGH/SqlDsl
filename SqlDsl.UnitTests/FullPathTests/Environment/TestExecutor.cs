@@ -11,7 +11,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
 {
     class TestExecutor : IDebugExecutor
     {
-        readonly IExecutor Executor;
+        public readonly IExecutor Executor;
         readonly List<(string sql, string[] colNames, List<object[]> results)> SqlStatements = new List<(string, string[], List<object[]>)>();
 
         public TestExecutor(IExecutor executor)
@@ -62,7 +62,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
 
         public IReader Execute(string sql, IEnumerable<object> paramaters, string[] columnNames)
         {
-            throw new NotImplementedException("Use async method with columnNames");
+            AddSqlStatement(sql, paramaters, columnNames);
+            return new TestReader(this, Executor.Execute(sql, paramaters), SqlStatements.Count - 1);
         }
 
         public IReader Execute(string sql, IEnumerable<object> paramaters)
@@ -86,7 +87,11 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
 
         public (bool hasRow, object[] row) GetRow()
         {
-            throw new NotImplementedException("Use async method");
+            var row = Reader.GetRow();
+            if (row.hasRow)
+                Executor.RecordRow(Index, row.row);
+
+            return row;
         }
 
         public async Task<(bool hasRow, object[] row)> GetRowAsync()

@@ -126,6 +126,41 @@ namespace SqlDsl.Utils
 
             return null;
         }
+            
+        /// <summary>
+        /// A set of generic methods that can be used to represent a sql IN.
+        /// </summary>
+        static readonly HashSet<MethodInfo> _In = new HashSet<MethodInfo>
+        {
+            // indexes are important in this hash set
+            GetMethod(() => Sql.In<object>(null, null)).GetGenericMethodDefinition(),
+            GetMethod(() => Enumerable.Contains<object>(null, null)).GetGenericMethodDefinition()
+        };
+
+        /// <summary>
+        /// If the input expression represents a call to Sql.In([inner expr]), Enumerable.Contains([inner expr])
+        /// or return [success, lhs (val), rhs (collection)]; otherwise return (false, null, null)
+        /// </summary>
+        public static (bool isIn, Expression lhs, Expression rhs) IsIn(Expression e)
+        {
+            var method = RemoveConvert(e) as MethodCallExpression;
+            if (method == null || !method.Method.IsGenericMethod)
+                return (false, null, null);
+
+            var methodGeneric = method.Method.GetGenericMethodDefinition();
+            var methodIndex = _In.IndexOf(methodGeneric);
+            if (methodIndex == 0)
+            {
+                return (true, RemoveConvert(method.Arguments[0]), RemoveConvert(method.Arguments[1]));
+            }
+
+            if (methodIndex == 1)
+            {
+                return (true, RemoveConvert(method.Arguments[1]), RemoveConvert(method.Arguments[0]));
+            }
+
+            return (false, null, null);
+        }
 
         /// <summary>
         /// If the input expression is an explicit or implicit cast, strip the cast expression off

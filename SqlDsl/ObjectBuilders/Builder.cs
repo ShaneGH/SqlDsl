@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using SqlDsl.Utils;
 
 namespace SqlDsl.ObjectBuilders
 {
@@ -12,8 +14,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        /// <param name="enumerableDbFields">A list of props on the object which are enumerable, and will get data from a single cell. e.g. BLOB => byte[]</param>
-        object Build(ObjectGraph values, IEnumerable<string> enumerableDbFields);
+        object Build(ObjectGraph values);
     }
 
     /// <summary>
@@ -40,19 +41,25 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        /// <param name="enumerableDbFields">A list of props on the object which are enumerable, and will get data from a single cell. e.g. BLOB => byte[]</param>
-        public T Build(ObjectGraph values, IEnumerable<string> enumerableDbFields) 
+        public T Build(ObjectGraph values) 
         {
             var obj = BuildObject(values);
-            AddEmptyEnumerables(obj, enumerableDbFields);
+            var enumProps = (values?.SimpleProps)
+                .OrEmpty()
+                .Where(isEnumerableDataCell)
+                .Select(name);
+
+            AddEmptyEnumerables(obj, enumProps);
 
             return obj;
+
+            bool isEnumerableDataCell((string name, IEnumerable<object> value, Action<object, IEnumerable<object>> customSetter, bool isEnumerableDataCell) c) => c.isEnumerableDataCell;
+            string name((string name, IEnumerable<object> value, Action<object, IEnumerable<object>> customSetter, bool isEnumerableDataCell) c) => c.name;
         }
 
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        /// <param name="enumerableDbFields">A list of props on the object which are enumerable, and will get data from a single cell. e.g. BLOB => byte[]</param>
-        object IBuilder.Build(ObjectGraph values, IEnumerable<string> enumerableDbFields) => Build(values, enumerableDbFields);
+        object IBuilder.Build(ObjectGraph values) => Build(values);
     }
 }

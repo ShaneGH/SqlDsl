@@ -7,6 +7,8 @@ namespace SqlDsl.UnitTests.SqlFlavours
 {    
     public class TestDataTable
     {
+        public int PrimaryKey;
+
         public byte Byte;
         public sbyte SByte;
         public bool Bool;
@@ -66,6 +68,8 @@ namespace SqlDsl.UnitTests.SqlFlavours
     {
         public static readonly TestDataTable DataTypeTestNotNulled = new TestDataTable
         {
+            PrimaryKey = 123,
+
             Byte = 1,
             SByte = 2,
             Bool = true,
@@ -117,6 +121,8 @@ namespace SqlDsl.UnitTests.SqlFlavours
         
         public static readonly TestDataTable DataTypeTestNulled = new TestDataTable
         {
+            PrimaryKey = 234,
+
             Byte = 1,
             SByte = 2,
             Bool = true,

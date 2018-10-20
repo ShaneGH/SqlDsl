@@ -36,7 +36,7 @@ namespace SqlDsl.ObjectBuilders
             }
 
             // use cached builder to create concrete object
-            return builder.Build(values, new string[0]);
+            return builder.Build(values);
         }
     }
 }

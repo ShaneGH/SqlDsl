@@ -14,12 +14,6 @@ namespace SqlDsl.Sqlite.UnitTests
     public class SqliteTests : SqlFragmentBuilderTestBase<SqliteBuilder>
     {
         readonly string DbFileName = $"SqliteTests, {DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")}.db";
-        readonly Lazy<SqliteConnection> ExecutorConnection;
-
-        public SqliteTests()
-        {
-            ExecutorConnection = new Lazy<SqliteConnection>(CreateConnection);
-        }
 
         public string GetDbLocation()
         {
@@ -33,6 +27,15 @@ namespace SqlDsl.Sqlite.UnitTests
             conn.Open();
 
             return conn;
+        }
+
+        public override void DisposeOfExecutor(IExecutor executor)
+        {
+            if (!(executor is SqliteExecutor))
+                throw new InvalidOperationException("Expecting executor to be SqliteExecutor.");
+
+            var ex = executor as SqliteExecutor;
+            ex.Connection.Dispose();
         }
 
         public override void CreateDb(TableDescriptor table)
@@ -104,13 +107,11 @@ namespace SqlDsl.Sqlite.UnitTests
 
         public override void DropDb()
         {
-            if (ExecutorConnection.IsValueCreated) ExecutorConnection.Value.Dispose();
-
             var location = GetDbLocation();
             if (File.Exists(location)) File.Delete(location);
         }
 
-        public override IExecutor GetExecutor() => new SqliteExecutor(ExecutorConnection.Value);
+        public override IExecutor CreateExecutor() => new SqliteExecutor(CreateConnection());
 
         public override void SeedDb(string tableName, IEnumerable<IEnumerable<KeyValuePair<string, object>>> rows)
         {
