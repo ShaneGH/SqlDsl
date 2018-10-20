@@ -20,11 +20,11 @@ namespace SqlDsl.Query
     {
         // TODO: try to remove all casts from this class
 
-        Task<IEnumerable<TResult>> ISqlBuilder<TResult>.ExecuteAsync(IExecutor executor) => ExecuteAsync(executor, null);
+        Task<IEnumerable<TResult>> ISqlBuilder<TResult>.ExecuteAsync(IExecutor executor, ILogger logger) => ExecuteAsync(executor, null, logger: logger);
 
-        IEnumerable<TResult> ISqlBuilder<TResult>.Execute(IExecutor executor) => Execute(executor, null);
+        IEnumerable<TResult> ISqlBuilder<TResult>.Execute(IExecutor executor, ILogger logger) => Execute(executor, null, logger: logger);
 
-        ICompiledQuery<TResult> ISqlBuilder<TResult>.Compile() => new CompiledQuery<TResult>(base.Compile());
+        ICompiledQuery<TResult> ISqlBuilder<TResult>.Compile(ILogger logger) => new CompiledQuery<TResult>(base.Compile(logger: logger));
 
         IQuery<TResult> ITable<TResult>.From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty) =>
             (QueryBuilder<TSqlBuilder, TResult>)base.From(tableName, resultProperty);

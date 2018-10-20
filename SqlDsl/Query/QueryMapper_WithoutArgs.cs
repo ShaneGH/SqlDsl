@@ -25,9 +25,9 @@ namespace SqlDsl.Query
         /// <summary>
         /// Compile the query into something which can be executed multiple times
         /// </summary>
-        public ICompiledQuery<TMapped> Compile()
+        public ICompiledQuery<TMapped> Compile(ILogger logger = null)
         {
-            return new CompiledQuery<TMapped>(Worker.Compile());
+            return new CompiledQuery<TMapped>(Worker.Compile(logger: logger));
         }
 
         /// <summary>
@@ -36,9 +36,9 @@ namespace SqlDsl.Query
         /// <param name="executor">
         /// An expression to map the selected table to a property on the result
         /// </param>
-        public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor)
+        public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor, ILogger logger = null)
         {
-            return Worker.ExecuteAsync(executor, null);
+            return Worker.ExecuteAsync(executor, null, logger: logger);
         }
 
         /// <summary>
@@ -47,9 +47,9 @@ namespace SqlDsl.Query
         /// <param name="executor">
         /// An expression to map the selected table to a property on the result
         /// </param>
-        public IEnumerable<TMapped> Execute(IExecutor executor)
+        public IEnumerable<TMapped> Execute(IExecutor executor, ILogger logger = null)
         {
-            return Worker.Execute(executor, null);
+            return Worker.Execute(executor, null, logger: logger);
         }
     }
 }

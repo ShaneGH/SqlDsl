@@ -22,8 +22,8 @@ namespace SqlDsl.Query
         /// An expression to map the selected table to a property on the result
         /// </param>
         
-        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args) =>
-            Compile().ExecuteAsync(executor, args);
+        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).ExecuteAsync(executor, args, logger);
 
         /// <summary>
         /// Execute the sql query and get a list of results
@@ -31,13 +31,13 @@ namespace SqlDsl.Query
         /// <param name="executor">
         /// An expression to map the selected table to a property on the result
         /// </param>
-        public IEnumerable<TResult> Execute(IExecutor executor, TArgs args) =>
-            Compile().Execute(executor, args);
+        public IEnumerable<TResult> Execute(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).Execute(executor, args, logger);
 
         /// <summary>
         /// Compile the query into something which can be executed multiple times
         /// </summary>
-        public ICompiledQuery<TArgs, TResult> Compile()
+        public ICompiledQuery<TArgs, TResult> Compile(ILogger logger = null)
         {
             var sqlBuilder = ToSqlStatement(null);
             return sqlBuilder.builder

@@ -54,7 +54,7 @@ namespace SqlDsl.Query
         /// <summary>
         /// Compile the query into something which can be executed multiple times
         /// </summary>
-        public ICompiledQuery<TArgs, TMapped> Compile()
+        public ICompiledQuery<TArgs, TMapped> Compile(ILogger logger = null)
         {
             // TODO: filter columns
             // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
@@ -70,9 +70,9 @@ namespace SqlDsl.Query
             switch (resultType)
             {
                 case BuildMapResult.Map:
-            
                     return ToSqlBuilder(properties, tables, wrappedBuilder, wrappedStatement)
                         .Compile<TArgs, TMapped>(mutableParameters.Skip(0), QueryParseType.ORM);
+
                 case BuildMapResult.SimpleProp:
                     properties = properties.Enumerate();
                     if (properties.Count() != 1)
@@ -83,6 +83,7 @@ namespace SqlDsl.Query
                     var p = properties.First();
                     return ToSqlBuilder(p.From, p.MappedPropertyType, wrappedBuilder, wrappedStatement)
                         .CompileSimple<TArgs, TMapped>(mutableParameters.Skip(0), properties.First().From);
+
                 default:
                     // TODO: BuildMapResult.ComplexProp
                     throw new NotSupportedException(resultType.ToString());
@@ -101,11 +102,11 @@ namespace SqlDsl.Query
             return builder;
         }
        
-        public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor, TArgs args) =>
-            Compile().ExecuteAsync(executor, args);
+        public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).ExecuteAsync(executor, args, logger: logger);
         
-        public IEnumerable<TMapped> Execute(IExecutor executor, TArgs args) =>
-            Compile().Execute(executor, args);
+        public IEnumerable<TMapped> Execute(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).Execute(executor, args, logger: logger);
 
         static readonly IEnumerable<MappedProperty> EmptyMapped = Enumerable.Empty<MappedProperty>();
 

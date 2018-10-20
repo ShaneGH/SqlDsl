@@ -14,12 +14,12 @@ namespace SqlDsl
         /// <summary>
         /// Execute the compiled query
         /// </summary>
-        Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor);
+        Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, ILogger logger = null);
         
         /// <summary>
         /// Execute the compiled query
         /// </summary>
-        IEnumerable<TResult> Execute(IExecutor executor);
+        IEnumerable<TResult> Execute(IExecutor executor, ILogger logger = null);
     }
 
     /// <summary>
@@ -30,12 +30,12 @@ namespace SqlDsl
         /// <summary>
         /// Execute the compiled query
         /// </summary>
-        Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args);
+        Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args, ILogger logger = null);
         
         /// <summary>
         /// Execute the compiled query
         /// </summary>
-        IEnumerable<TResult> Execute(IExecutor executor, TArgs args);
+        IEnumerable<TResult> Execute(IExecutor executor, TArgs args, ILogger logger = null);
     }
 
     public class CompiledQuery<TArgs, TResult> : ICompiledQuery<TArgs, TResult>
@@ -57,7 +57,7 @@ namespace SqlDsl
             PropertyGraph = propertyGraph;
         }
 
-        public async Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args)
+        public async Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args, ILogger logger = null)
         {
             // build sql params
             var parameters = Parameters.Select(p =>
@@ -72,7 +72,7 @@ namespace SqlDsl
             return results.Parse<TResult>(PropertyGraph);
         }
 
-        public IEnumerable<TResult> Execute(IExecutor executor, TArgs args)
+        public IEnumerable<TResult> Execute(IExecutor executor, TArgs args, ILogger logger = null)
         {
             // build sql params
             var parameters = Parameters.Select(p =>
@@ -102,8 +102,8 @@ namespace SqlDsl
             Worker = worker;
         }
 
-        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor) => Worker.ExecuteAsync(executor, null);
+        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, ILogger logger = null) => Worker.ExecuteAsync(executor, null, logger: logger);
 
-        public IEnumerable<TResult> Execute(IExecutor executor) => Worker.Execute(executor, null);
+        public IEnumerable<TResult> Execute(IExecutor executor, ILogger logger = null) => Worker.Execute(executor, null, logger: logger);
     }
 }
