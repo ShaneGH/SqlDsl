@@ -194,6 +194,27 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.Classes.Archery.Id, john.ClassIds[1]);
         }
 
+        [Test]
+        [Ignore("TODO: throwing unusual exception")]
+        public async Task ArrayDataType3()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                .From(x => x.Person)
+                .InnerJoin(x => x.PersonsData)
+                    .On((q, pd) => q.Person.Id == pd.PersonId)
+                .Where(p => p.Person.Id == Data.People.John.Id)
+                .Map(p => p.PersonsData.One().Data.ToList())
+                .ExecuteAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            var john = data.First();
+
+            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john);
+        }
+
         class ArrayDataType3Result
         {
             public int[] ClassIds;
@@ -201,7 +222,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task ArrayDataType3()
+        public async Task ArrayDataType4()
         {
             // arrange
             // act
