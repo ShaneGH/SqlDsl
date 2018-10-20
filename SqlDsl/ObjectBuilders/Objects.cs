@@ -1,5 +1,6 @@
 using SqlDsl.Utils;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -367,15 +368,35 @@ namespace SqlDsl.ObjectBuilders
                 try
                 {
                     // TODO: add logging to warn user that collection value is not correct
-                    // text like: $"Converting {values.GetType()} to type {collectionType} for property {propertyName}. This conversion is inefficient. Consider changing the data type of {propertyName} to {values.GetType()}"
+                    // var valsType = GetTypeString(values);
+                    // throw new InvalidCastException($"Converting {valsType} to type {collectionType} for property " + 
+                    //     $"\"{propertyName}\". This conversion is inefficient. Consider changing the " + 
+                    //     $"data type of \"{propertyName}\" to {valsType}");
+                    
                     return create(values);
                 }
                 catch (Exception e)
                 {
                     throw new InvalidOperationException(
-                        $"Value {values.GetType()} cannot be converted to type {collectionType}", e);
+                        $"Value {GetTypeString(values)} cannot be converted to type {collectionType}", e);
                 }
             }
+        }
+
+        static string GetTypeString(object values)
+        {
+            if (values == null) return "?";
+
+            var valType = values.GetType();
+            if (!(values is IEnumerable))
+                return valType.Name;
+
+            var enumer = (values as IEnumerable).GetEnumerator();
+            enumer.MoveNext();
+
+            return valType.IsArray ?
+                (GetTypeString(enumer.Current) + "[]") :
+                (valType.Name + "<" + GetTypeString(enumer.Current) + ">");
         }
     }
 }
