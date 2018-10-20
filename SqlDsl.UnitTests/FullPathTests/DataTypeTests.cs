@@ -232,14 +232,13 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public void ArrayDataType_JoinReturnsTooMany_ThrowsException()
         {
             // arrange
             // act
             // assert
             Assert.ThrowsAsync(
-                typeof(Exception), 
+                typeof(InvalidOperationException), 
                 () => Sql.Query.Sqlite<ArrayDataTypeQuery>()
                     .From(x => x.Person)
                     .InnerJoin(x => x.PersonsData)
