@@ -38,7 +38,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await Sql.Query.Sqlite<Purchase>()
                 .From()
                 .Where(p => p.Id == Data.Purchases.JohnPurchasedHimselfShoes.Id)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -99,7 +99,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             //         // this part is the exploratory part
             //         Classes = x.Classes.ToArray()
             //     })
-            //     .ExecuteAsync(Executor);
+            //     .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.Fail("Do asserts");
@@ -122,7 +122,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data = x.PersonsData.One().Data,
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -151,7 +151,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data = x.PersonsData.One().Data.ToList(),
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -180,7 +180,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data = x.PersonsData.Select(d => d.Data).ToArray(),
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -217,7 +217,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data = x.PersonsData.Select(d => d.Data.ToList()).ToList(),
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());

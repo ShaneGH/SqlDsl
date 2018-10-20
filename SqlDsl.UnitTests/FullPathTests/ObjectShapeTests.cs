@@ -43,7 +43,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<Person>()
                 .From(result => result)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
                 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -58,7 +58,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<QueryClass1>()
                 .From(result => result.Person)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -73,7 +73,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<QueryClass2>()
                 .From(result => result.Inner.Person)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -89,7 +89,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await Sql.Query.Sqlite<QueryClass2>()
                 .From(result => result.Inner.Person)
                 .Where(result => result.Inner.Person.Id == Data.People.Mary.Id)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -106,7 +106,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .LeftJoin<PersonClass>(result => result.Inner.PersonClasses)
                     .On((r, pc) => r.Inner.Person.Id == pc.PersonId)
                 .Where(result => result.Inner.Person.Id == Data.People.Mary.Id)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -125,7 +125,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .LeftJoin<PersonClass>(result => result.Inner.One().PersonClasses)
                     .On((r, pc) => r.Inner.FirstOrDefault().Person.Id == pc.PersonId)
                 .Where(result => result.Inner.One().Person.Id == Data.People.Mary.Id)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -151,7 +151,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .LeftJoin<PersonClass>(result => result.PersonClass)
                     .On((r, pc) => r.Person.Id == pc.PersonId)
                 .Where(result => result.Person.Id == Data.People.Mary.Id)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());

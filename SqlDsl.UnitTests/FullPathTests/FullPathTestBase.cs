@@ -36,14 +36,16 @@ namespace SqlDsl.UnitTests.FullPathTests
             Connection.Dispose();
         }
 
-        protected bool PrintStatusOnFailure;        
+        protected bool PrintStatusOnFailure;
         internal TestExecutor Executor;
+        internal TestLogger Logger;
 
         [SetUp]
         public void SetUp()
         {
             PrintStatusOnFailure = true;
             Executor = new TestExecutor(new SqliteExecutor(Connection));
+            Logger = new TestLogger();
         }
 
         [TearDown]
@@ -52,6 +54,24 @@ namespace SqlDsl.UnitTests.FullPathTests
             if (PrintStatusOnFailure && TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
             {
                 Executor.PrintSqlStatements();
+            }
+        }
+
+        internal class TestLogger : ILogger
+        {
+            public LogLevel LogLevel => LogLevel.Info;
+
+            public readonly List<string> InfoMessages = new List<string>();
+            public readonly List<string> WarningMessages = new List<string>();
+
+            public void Info(string message)
+            {
+                InfoMessages.Add(message);
+            }
+
+            public void Warning(string message)
+            {
+                WarningMessages.Add(message);
             }
         }
     }

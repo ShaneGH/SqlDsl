@@ -85,7 +85,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         TheName = p.Name
                     }
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -112,7 +112,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 { 
                     Person = p
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -132,7 +132,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     PersonName = p.ThePerson.Name,
                     Person = p.ThePerson
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -161,7 +161,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     PersonName = p.Inner.Inner.ThePerson.Name,
                     Person = p.Inner.Inner.ThePerson
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -204,7 +204,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -256,7 +256,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -303,7 +303,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     TheName = p.ThePerson.Name,
                     TheClassIds = p.PersonClasses.Select(c => c.ClassId)
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -333,7 +333,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     TheClassIds = p.PersonClasses.Select(c => c.ClassId),
                     TheClassTagIds = p.ClassTags.Select(c => c.TagId)
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -364,7 +364,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 { 
                     TheClassIds = p.PersonClasses.Select(c => c.ClassId)
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -448,7 +448,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     TheClassNamesArray = p.Classes.Select(c => c.Name).ToArray(),
                     TheTagNames = p.Tags.Select(t => t.Name)
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             AssertMapOnTableWith2JoinedTables(data);
@@ -468,7 +468,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     TheClassNamesArray = p.Query.Classes.Select(c => c.Name).ToArray(),
                     TheTagNames = p.Query.Tags.Select(t => t.Name)
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             AssertMapOnTableWith2JoinedTables(data);
@@ -504,7 +504,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -550,7 +550,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -645,7 +645,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         }
                     }
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -736,7 +736,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -788,7 +788,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -878,7 +878,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());

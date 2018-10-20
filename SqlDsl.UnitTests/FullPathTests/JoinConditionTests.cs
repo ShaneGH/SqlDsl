@@ -50,7 +50,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From(nameof(Person), result => result.Person)
                 .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c) => q.Person.Id == c.PersonId)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             AssertSelect1SimpleJoin(data);
@@ -79,7 +79,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From(nameof(Person), result => result.Person)
                 .LeftJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c) => q.Person.Id == c.PersonId)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             AssertSelect1SimpleJoin(data);
@@ -96,7 +96,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, c) => q.Person.Id == c.PersonId)
                 .InnerJoin<ClassTag>(nameof(ClassTag), result => result.ClassTags)
                     .On((q, c) => q.PersonClasses.First().ClassId == c.ClassId)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             AssertSelect1SimpleJoin(data);
@@ -122,7 +122,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, c) => q.PersonClasses.Single().ClassId == c.ClassId)
                 .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c) => q.Person.Id == c.PersonId)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             AssertSelect1SimpleJoin(data);
@@ -146,7 +146,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From(nameof(Person), result => result.Person)
                 .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c) => c.ClassId == Data.Classes.Archery.Id)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -169,7 +169,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From(nameof(Person), result => result.Person)
                 .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c) => c.ClassId == Data.Classes.Tennis.Id)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -193,7 +193,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From(nameof(Person), result => result.Person)
                 .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c) => q.Person.Id == c.PersonId && c.ClassId == Data.Classes.Tennis.Id)
-                .ExecuteAsync(Executor);
+                .ExecuteAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
