@@ -10,6 +10,8 @@ using System.Runtime.CompilerServices;
 
 namespace SqlDsl.ObjectBuilders
 {
+    using Ex = Expression;
+
     /// <summary>
     /// Helper to compile functions which will convert an object graph into a concrete object
     /// </summary>
@@ -18,7 +20,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compile a function to build an object from an object graph
         /// </summary>
-        public static Func<ObjectGraph, T> CompileObjectBuilder<T>()
+        public static Func<ObjectGraph, ILogger, T> CompileObjectBuilder<T>()
         {
             var type = typeof(T);
 
@@ -29,13 +31,13 @@ namespace SqlDsl.ObjectBuilders
             // get the default construcor
             Func<T> constructor = () => (T)ConstructObject(type);
                 
-            var objectVar = Expression.Variable(type);
+            var objectVar = Ex.Variable(type);
 
             // var objectVar = constructor()
-            var createObject = Expression.Assign(
+            var createObject = Ex.Assign(
                 objectVar, 
-                Expression.Invoke(
-                    Expression.Constant(constructor)));
+                Ex.Invoke(
+                    Ex.Constant(constructor)));
 
             // get list of properties
             var props = type.GetFieldsAndProperties();
@@ -45,7 +47,7 @@ namespace SqlDsl.ObjectBuilders
                 .Select(p => (name: p.name, BuildPropertySetter<T>(p.name, p.type), p.type))
                 .ToDictionary(x => x.name, x => (setter: x.Item2, type: x.Item3));
 
-            T build(ObjectGraph vals) => BuildObject(propSetters, vals);
+            T build(ObjectGraph vals, ILogger logger) => BuildObject(propSetters, vals, logger);
             return build;
         }
 
@@ -69,7 +71,7 @@ namespace SqlDsl.ObjectBuilders
         /// </summary>
         /// <param name="propSetters">A set of objects which can set the value of a property</param>
         /// <param name="vals">The values of the object</param>
-        static T BuildObject<T>(Dictionary<string, (Action<T, IEnumerable<object>> setter, Type propertyType)> propSetters, ObjectGraph vals)
+        static T BuildObject<T>(Dictionary<string, (Action<T, IEnumerable<object>> setter, Type propertyType)> propSetters, ObjectGraph vals, ILogger logger)
         {
             // Create output object
             var obj = (T)ConstructObject(typeof(T));
@@ -82,7 +84,7 @@ namespace SqlDsl.ObjectBuilders
                 // if the prop has a custom setter, use it
                 // otherwise use the default prop setters
                 if (prop.customSetter != null)
-                    prop.customSetter(obj, prop.value);
+                    prop.customSetter(obj, prop.value, logger);
                 else if (propSetters.ContainsKey(prop.name))
                     propSetters[prop.name].setter(obj, prop.value);
             }
@@ -99,7 +101,7 @@ namespace SqlDsl.ObjectBuilders
 
                     // recurse to get actual values
                     var values = prop.value
-                        .Select(v => Builders.Build(singlePropertyType, v))
+                        .Select(v => Builders.Build(singlePropertyType, v, logger))
                         .Enumerate();
 
                     // set the value of the property
@@ -137,10 +139,10 @@ namespace SqlDsl.ObjectBuilders
                 throw new InvalidOperationException($"Object {type} does not have a default constructor");
 
             // compile expression for constructor
-            constructor = Expression
+            constructor = Ex
                 .Lambda<Func<object>>(
-                    Expression.Convert(
-                        Expression.New(constr),
+                    Ex.Convert(
+                        Ex.New(constr),
                         typeof(object)))
                 .Compile();
 
@@ -157,16 +159,16 @@ namespace SqlDsl.ObjectBuilders
             var iEnumerableType = ReflectionUtils.GetIEnumerableType(propertyType);
             
             // Build expression inputs
-            var objectParam = Expression.Parameter(typeof(T));
-            var valParam = Expression.Parameter(typeof(IEnumerable<object>));
+            var objectParam = Ex.Parameter(typeof(T));
+            var valParam = Ex.Parameter(typeof(IEnumerable<object>));
 
             // vals.Select(x => Convertors.GetConvertor(propertyType)(x))
-            var convertor = Expression.Constant(
+            var convertor = Ex.Constant(
                 TypeConvertors.GetConvertor(iEnumerableType ?? propertyType));
             var castMethod = ReflectionUtils.GetMethod<IEnumerable<object>>(
                 x => x.Select(_ => _), 
                 typeof(object), iEnumerableType ?? propertyType);
-            var valuesOfType = Expression.Call(null, castMethod, valParam, convertor);
+            var valuesOfType = Ex.Call(null, castMethod, valParam, convertor);
 
             // if property is enumerable: new List<T>(valuesOfType)
             // otherwise null
@@ -183,15 +185,15 @@ namespace SqlDsl.ObjectBuilders
                     .GetMethod(() => BuildGetterForSingularProp<int>(""), propertyType)
                     .Invoke(null, new [] { propertyName });
 
-                builder = Expression.Invoke(Expression.Constant(singularGetter), valuesOfType);
+                builder = Ex.Invoke(Ex.Constant(singularGetter), valuesOfType);
             }
 
             // objectParam.propertyName = valuesOfType
-            var body = Expression.Assign(
-                Expression.PropertyOrField(objectParam, propertyName),
+            var body = Ex.Assign(
+                Ex.PropertyOrField(objectParam, propertyName),
                 builder);
 
-            return Expression
+            return Ex
                 .Lambda<Action<T, IEnumerable<object>>>(body, objectParam, valParam)
                 .Compile();
         }
@@ -233,35 +235,35 @@ namespace SqlDsl.ObjectBuilders
             }
         }
 
-        static readonly ConcurrentDictionary<EnumerableSettersKey, Action<object, IEnumerable<object>>> EnumerableSetterCache = new ConcurrentDictionary<EnumerableSettersKey, Action<object, IEnumerable<object>>>();
+        static readonly ConcurrentDictionary<EnumerableSettersKey, Action<object, IEnumerable<object>, ILogger>> EnumerableSetterCache = new ConcurrentDictionary<EnumerableSettersKey, Action<object, IEnumerable<object>, ILogger>>();
 
-        public static Action<object, IEnumerable<object>> GetEnumerableSetter(Type objectType, string propertyName, Type enumeratedType, Type resultPropertyType)
+        public static Action<object, IEnumerable<object>, ILogger> GetEnumerableSetter(Type objectType, string propertyName, Type enumeratedType, Type resultPropertyType)
         {
             var key = new EnumerableSettersKey(objectType, propertyName, enumeratedType, resultPropertyType);
-            if (EnumerableSetterCache.TryGetValue(key, out Action<object, IEnumerable<object>> val))
+            if (EnumerableSetterCache.TryGetValue(key, out Action<object, IEnumerable<object>, ILogger> val))
                 return val;
 
             return EnumerableSetterCache.GetOrAdd(key, BuildEnumerableSetter(objectType, propertyName, enumeratedType, resultPropertyType));
         }
 
-        static Action<object, IEnumerable<object>> BuildEnumerableSetter(Type objectType, string propertyName, Type enumeratedType, Type resultPropertyType)
+        static Action<object, IEnumerable<object>, ILogger> BuildEnumerableSetter(Type objectType, string propertyName, Type enumeratedType, Type resultPropertyType)
         {
             //TODO: is enumeratedType arg needed?
 
             // ((objectType)objParam).propertyName = (resultPropertyType)valueParam
-            var objParam = Expression.Parameter(typeof(object));
-            var valueParam = Expression.Parameter(typeof(object));
-            var setterBody = Expression.Assign(
-                Expression.PropertyOrField(
-                    Expression.Convert(
+            var objParam = Ex.Parameter(typeof(object));
+            var valueParam = Ex.Parameter(typeof(object));
+            var setterBody = Ex.Assign(
+                Ex.PropertyOrField(
+                    Ex.Convert(
                         objParam,
                         objectType),
                     propertyName),
-                Expression.Convert(
+                Ex.Convert(
                     valueParam,
                     resultPropertyType));
 
-            var setter = Expression
+            var setter = Ex
                 .Lambda<Action<object, object>>(setterBody, objParam, valueParam)
                 .Compile();
 
@@ -270,7 +272,7 @@ namespace SqlDsl.ObjectBuilders
 
             return Setter;
             
-            void Setter(object obj, IEnumerable<object> values)
+            void Setter(object obj, IEnumerable<object> values, ILogger logger)
             {
                 var value = singleCollectionOnly ?
                     GetOne(propertyName, values) :
@@ -279,7 +281,7 @@ namespace SqlDsl.ObjectBuilders
                 if (value == DBNull.Value)
                     value = null;
                 else if (value != null)
-                    value = ensureCollectionType(value);
+                    value = ensureCollectionType(value, logger);
                 
                 setter(obj, value);
             }
@@ -292,7 +294,7 @@ namespace SqlDsl.ObjectBuilders
         /// e.g. collectionType = List&lt;byte[]>, obj = (object)IEnumerable&lt;IEnumerable&lt;byte>>
         /// Returns null if collectionType is not actually a collection
         /// </summary>
-        static Func<object, object> EnsureCollectionType(Type collectionType, string propertyName)
+        static Func<object, ILogger, object> EnsureCollectionType(Type collectionType, string propertyName)
         {
             var collectionTypeEnumerable = ReflectionUtils.GetIEnumerableType(collectionType);
             if (collectionTypeEnumerable == null)
@@ -301,7 +303,8 @@ namespace SqlDsl.ObjectBuilders
             }
 
             var iEnumerableOfType = typeof(IEnumerable<>).MakeGenericType(collectionTypeEnumerable);
-            var input = Expression.Parameter(typeof(object));
+            var input = Ex.Parameter(typeof(object));
+            var loggerArg = Ex.Parameter(typeof(ILogger));
 
             Expression inputAsEnumerable;
             
@@ -309,34 +312,35 @@ namespace SqlDsl.ObjectBuilders
             var innerCollectionBuilder = EnsureCollectionType(collectionTypeEnumerable, propertyName);
             if (innerCollectionBuilder != null)
             {
-                var casterInput = Expression.Parameter(typeof(object));
+                var casterInput = Ex.Parameter(typeof(object));;
 
                 // cast output of innerCollectionBuilder to byte array
-                var castedCollectionBuilder = Expression
+                var castedCollectionBuilder = Ex
                     .Lambda(
-                        Expression.Convert(
-                            Expression.Invoke(
-                                Expression.Constant(innerCollectionBuilder),
-                                casterInput),
+                        Ex.Convert(
+                            Ex.Invoke(
+                                Ex.Constant(innerCollectionBuilder),
+                                casterInput,
+                                Ex.Constant(null, typeof(ILogger))),
                             collectionTypeEnumerable),
                         casterInput)
                     .Compile();
 
-                inputAsEnumerable = Expression.Call(
+                inputAsEnumerable = Ex.Call(
                     null,
                     ReflectionUtils.GetMethod<IEnumerable<object>>(
                         xs => xs.Select(x => x),
                         typeof(object),
                         collectionTypeEnumerable),
-                    Expression.Convert(
+                    Ex.Convert(
                         input,
                         typeof(IEnumerable<object>)),
-                    Expression.Constant(castedCollectionBuilder));  
+                    Ex.Constant(castedCollectionBuilder));  
             }
             else
             {
                 // cast object => IEnumerable<T>
-                inputAsEnumerable = Expression.Convert(
+                inputAsEnumerable = Ex.Convert(
                     input,
                     iEnumerableOfType);
             }
@@ -352,28 +356,30 @@ namespace SqlDsl.ObjectBuilders
                     "(e.g. List<T>, T[], IEnumerable<T>).");   
             }
 
-            var create = Expression
-                .Lambda<Func<object, object>>(cr, input)
+            var create = Ex
+                .Lambda<Func<object, ILogger, object>>(cr, input, loggerArg)
                 .Compile();
             
             return Ensure;
 
-            object Ensure(object values)
+            object Ensure(object values, ILogger logger)
             {
                 if (collectionType.IsAssignableFrom(values.GetType()))
                 {
                     return values;
                 }
 
+                if (logger.CanLogWarning())
+                {
+                    var valsType = GetTypeString(values);
+                    logger.LogWarning($"Converting {valsType} to type {collectionType} for property " + 
+                        $"\"{propertyName}\". This conversion is inefficient. Consider changing the " + 
+                        $"data type of \"{propertyName}\" to {valsType}");
+                }
+
                 try
                 {
-                    // TODO: add logging to warn user that collection value is not correct
-                    // var valsType = GetTypeString(values);
-                    // throw new InvalidCastException($"Converting {valsType} to type {collectionType} for property " + 
-                    //     $"\"{propertyName}\". This conversion is inefficient. Consider changing the " + 
-                    //     $"data type of \"{propertyName}\" to {valsType}");
-                    
-                    return create(values);
+                    return create(values, logger);
                 }
                 catch (Exception e)
                 {

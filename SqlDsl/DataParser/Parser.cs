@@ -17,11 +17,11 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
-        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph)
+        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
         {
             return propertyGraph.IsSimpleValue ?
-                ParseSimple<TResult>(rows, propertyGraph).Enumerate() :
-                ParseComplex<TResult>(rows, propertyGraph).Enumerate();
+                ParseSimple<TResult>(rows, propertyGraph, logger).Enumerate() :
+                ParseComplex<TResult>(rows, propertyGraph, logger).Enumerate();
         }
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
-        static IEnumerable<TResult> ParseSimple<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph)
+        static IEnumerable<TResult> ParseSimple<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
         {
             // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
             var values = rows
@@ -46,10 +46,10 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
-        static IEnumerable<TResult> ParseComplex<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph)
+        static IEnumerable<TResult> ParseComplex<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
         {
             foreach (var obj in CreateObject(propertyGraph, rows))
-                yield return (TResult)Builders.Build(typeof(TResult), obj);
+                yield return (TResult)Builders.Build(typeof(TResult), obj, logger);
         }
 
         /// <summary>
@@ -86,7 +86,7 @@ namespace SqlDsl.DataParser
                         .Enumerate()
                 };
 
-                (string name, IEnumerable<object> value, Action<object, IEnumerable<object>> customSetter, bool isEnumerableDataCell) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                (string name, IEnumerable<object> value, Action<object, IEnumerable<object>, ILogger> customSetter, bool isEnumerableDataCell) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
                 {
                     // run a "Distinct" on the rowNumbers
                     var dataRowsForProp = objectData

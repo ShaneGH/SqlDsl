@@ -42,7 +42,7 @@ namespace SqlDsl
         /// <summary>
         /// Determine whether a logger can log an info message
         /// </summary>
-        public static bool CanLogInfo(this ILogger logger, string message)
+        public static bool CanLogInfo(this ILogger logger)
         {
             return logger != null && (int)logger.LogLevel <= InfoLevel;
         }
@@ -50,9 +50,27 @@ namespace SqlDsl
         /// <summary>
         /// Determine whether a logger can log a warning
         /// </summary>
-        public static bool CanLogWarning(this ILogger logger, string message)
+        public static bool CanLogWarning(this ILogger logger)
         {
             return logger != null && (int)logger.LogLevel <= WarningLevel;
+        }
+
+        const string SqlDslPrefix = "[SqlDsl] ";
+
+        /// <summary>
+        /// Log an info message
+        /// </summary>
+        public static void LogInfo(this ILogger logger, string message)
+        {
+            logger.Info($"{SqlDslPrefix}{message}");
+        }
+
+        /// <summary>
+        /// Log a warning message
+        /// </summary>
+        public static void LogWarning(this ILogger logger, string message)
+        {
+            logger.Warning($"{SqlDslPrefix}{message}");
         }
     }
 }

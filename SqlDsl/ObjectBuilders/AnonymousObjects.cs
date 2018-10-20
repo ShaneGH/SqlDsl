@@ -17,7 +17,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compile a function to build an anonymous object from an object graph
         /// </summary>
-        public static Func<ObjectGraph, T> CompileAnonymousObjectBuilder<T>()
+        public static Func<ObjectGraph, ILogger, T> CompileAnonymousObjectBuilder<T>()
         {
             throw new NotImplementedException("Anonymous object maps are not yet supported");
         }

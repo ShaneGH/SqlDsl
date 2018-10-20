@@ -14,7 +14,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        object Build(ObjectGraph values);
+        object Build(ObjectGraph values, ILogger logger);
     }
 
     /// <summary>
@@ -25,7 +25,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compiled function to build an object
         /// </summary>
-        readonly Func<ObjectGraph, T> BuildObject;
+        readonly Func<ObjectGraph, ILogger, T> BuildObject;
         
         /// <summary>
         /// Compiled function to set all null enumerable properties of an object to empty
@@ -41,9 +41,9 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        public T Build(ObjectGraph values) 
+        public T Build(ObjectGraph values, ILogger logger) 
         {
-            var obj = BuildObject(values);
+            var obj = BuildObject(values, logger);
             var enumProps = (values?.SimpleProps)
                 .OrEmpty()
                 .Where(isEnumerableDataCell)
@@ -53,13 +53,13 @@ namespace SqlDsl.ObjectBuilders
 
             return obj;
 
-            bool isEnumerableDataCell((string name, IEnumerable<object> value, Action<object, IEnumerable<object>> customSetter, bool isEnumerableDataCell) c) => c.isEnumerableDataCell;
-            string name((string name, IEnumerable<object> value, Action<object, IEnumerable<object>> customSetter, bool isEnumerableDataCell) c) => c.name;
+            bool isEnumerableDataCell((string name, IEnumerable<object> value, Action<object, IEnumerable<object>, ILogger> customSetter, bool isEnumerableDataCell) c) => c.isEnumerableDataCell;
+            string name((string name, IEnumerable<object> value, Action<object, IEnumerable<object>, ILogger> customSetter, bool isEnumerableDataCell) c) => c.name;
         }
 
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        object IBuilder.Build(ObjectGraph values) => Build(values);
+        object IBuilder.Build(ObjectGraph values, ILogger logger) => Build(values, logger);
     }
 }

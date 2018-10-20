@@ -13,7 +13,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Simple properties such as int, string, List&lt;int>, List&lt;string> etc...
         /// </summary>
-        public IEnumerable<(string name, IEnumerable<object> value, Action<object, IEnumerable<object>> customSetter, bool isEnumerableDataCell)> SimpleProps { get; set; }
+        public IEnumerable<(string name, IEnumerable<object> value, Action<object, IEnumerable<object>, ILogger> customSetter, bool isEnumerableDataCell)> SimpleProps { get; set; }
         
         /// <summary>
         /// Complex properties will have properties of their own

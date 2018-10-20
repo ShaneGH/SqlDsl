@@ -69,7 +69,7 @@ namespace SqlDsl
             var reader = await executor.ExecuteDebugAsync(Sql, parameters, SelectColumns);
             var results = await reader.GetRowsAsync();
 
-            return results.Parse<TResult>(PropertyGraph);
+            return results.Parse<TResult>(PropertyGraph, logger);
         }
 
         public IEnumerable<TResult> Execute(IExecutor executor, TArgs args, ILogger logger = null)
@@ -84,7 +84,7 @@ namespace SqlDsl
             var reader = executor.ExecuteDebug(Sql, Parameters, SelectColumns);
             var results = reader.GetRows();
 
-            return results.Parse<TResult>(PropertyGraph);
+            return results.Parse<TResult>(PropertyGraph, logger);
         }
     }
 

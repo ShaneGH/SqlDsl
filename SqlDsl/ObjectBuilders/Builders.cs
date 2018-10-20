@@ -18,7 +18,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build an object of a given type with the object graph provided
         /// </summary>
-        public static object Build(Type type, ObjectGraph values)
+        public static object Build(Type type, ObjectGraph values, ILogger logger)
         {
             // try to get an existing builder
             if (!_Builders.TryGetValue(type, out IBuilder builder))
@@ -36,7 +36,7 @@ namespace SqlDsl.ObjectBuilders
             }
 
             // use cached builder to create concrete object
-            return builder.Build(values);
+            return builder.Build(values, logger);
         }
     }
 }

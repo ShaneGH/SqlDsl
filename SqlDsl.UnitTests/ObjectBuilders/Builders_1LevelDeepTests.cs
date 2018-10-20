@@ -15,14 +15,14 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             public int Property2 { get; set; } 
         }
 
-        public static Action<object, IEnumerable<object>> NullAction = null;
+        public static Action<object, IEnumerable<object>, ILogger> NullAction = null;
 
         [Test]
         public void Build_WithNullInput_BuildsCorrectly()
         {
             // arrange
             // act
-            var result = (SimpleProperties)Builders.Build(typeof(SimpleProperties), null);
+            var result = (SimpleProperties)Builders.Build(typeof(SimpleProperties), null, null);
 
             // assert
             Assert.NotNull(result);
@@ -40,7 +40,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                     ("Property1", new object[] { "Hello" }.Skip(0), NullAction, false),
                     ("Property2", new object[] { 7 }.Skip(0), NullAction, false)
                 }
-            });
+            }, null);
 
             // assert
             Assert.AreEqual("Hello", result.Property1);
@@ -61,7 +61,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                     {
                         ("Property2", new object[] { null }.Skip(0), NullAction, false)
                     }
-                }));
+                }, null));
         }
 
         [Test]
@@ -78,7 +78,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                     {
                         ("Property2", new object[] { DateTime.Now }.Skip(0), NullAction, false)
                     }
-                }));
+                }, null));
         }
 
         [Test]
@@ -96,7 +96,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                         ("Property1", new object[] { "Hello", "Hello again" }.Skip(0), NullAction, false),
                         ("Property2", new object[] { 7, 8 }.Skip(0), NullAction, false)
                     }
-                }));
+                }, null));
         }
 
         class SimplePropertiesChild : SimpleProperties{}
@@ -113,7 +113,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                     ("Property1", new object[] { "Hello" }.Skip(0), NullAction, false),
                     ("Property2", new object[] { 7 }.Skip(0), NullAction, false)
                 }
-            });
+            }, null);
 
             // assert
             Assert.AreEqual("Hello", result.Property1);
@@ -138,7 +138,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                     ("Property1", new object[] { "Hello", "Hello again" }.Skip(0), NullAction, false),
                     ("Property2", new object[] { 7, 8 }.Skip(0), NullAction, false)
                 }
-            });
+            }, null);
 
             // assert
             Assert.AreEqual(2, result.Property1.Count());
@@ -155,7 +155,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (MultipleSimpleProperties)Builders.Build(typeof(MultipleSimpleProperties), null);
+            var result = (MultipleSimpleProperties)Builders.Build(typeof(MultipleSimpleProperties), null, null);
 
             // assert
             Assert.NotNull(result.Property1);
@@ -232,7 +232,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             // act
             var result = (ITheCollection)Builders.Build(
                 testType, 
-                CollectionTestValues());
+                CollectionTestValues(), null);
 
             // assert
             AssertCollectionTest(result.Property1);
@@ -253,7 +253,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             // act
             var result = (ITheCollection)Builders.Build(
                 testType, 
-                null);
+                null, null);
 
             // assert
             Assert.NotNull(result.Property1);

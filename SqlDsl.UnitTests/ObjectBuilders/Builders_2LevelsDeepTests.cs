@@ -24,7 +24,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (Level2)Builders.Build(typeof(Level2), null);
+            var result = (Level2)Builders.Build(typeof(Level2), null, null);
 
             // assert
             Assert.NotNull(result);
@@ -52,7 +52,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                         }
                     }.Skip(0))
                 }
-            });
+            }, null);
 
             // assert
             Assert.NotNull(result);
@@ -91,7 +91,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                         }
                     }.Skip(0))
                 }
-            }));
+            }, null));
         }
 
         class Level1Multiple
@@ -128,7 +128,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                         }
                     }.Skip(0))
                 }
-            });
+            }, null);
 
             // assert
             Assert.NotNull(result);
@@ -145,7 +145,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (Level1Multiple)Builders.Build(typeof(Level1Multiple), null);
+            var result = (Level1Multiple)Builders.Build(typeof(Level1Multiple), null, null);
 
             // assert
             Assert.NotNull(result);

@@ -53,7 +53,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                         }
                     }.Skip(0))
                 }
-            });
+            }, null);
 
             // assert
             Assert.NotNull(result);
