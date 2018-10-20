@@ -302,32 +302,47 @@ namespace SqlDsl.ObjectBuilders
             var iEnumerableOfType = typeof(IEnumerable<>).MakeGenericType(collectionTypeEnumerable);
             var input = Expression.Parameter(typeof(object));
 
-            // cast object => IEnumerable<T>
-            Expression inputAsEnumerable = Expression.Convert(
-                input,
-                iEnumerableOfType);
+            Expression inputAsEnumerable;
             
             // if enumType is also enum => IEnumerable<IEnumerable<T>> = IEnumerable<object>.Select(EnsureCollectionType)
             var innerCollectionBuilder = EnsureCollectionType(collectionTypeEnumerable, propertyName);
             if (innerCollectionBuilder != null)
             {
+                var casterInput = Expression.Parameter(typeof(object));
+
+                // cast output of innerCollectionBuilder to byte array
+                var castedCollectionBuilder = Expression
+                    .Lambda(
+                        Expression.Convert(
+                            Expression.Invoke(
+                                Expression.Constant(innerCollectionBuilder),
+                                casterInput),
+                            collectionTypeEnumerable),
+                        casterInput)
+                    .Compile();
+
+                inputAsEnumerable = Expression.Call(
+                    null,
+                    ReflectionUtils.GetMethod<IEnumerable<object>>(
+                        xs => xs.Select(x => x),
+                        typeof(object),
+                        collectionTypeEnumerable),
+                    Expression.Convert(
+                        input,
+                        typeof(IEnumerable<object>)),
+                    Expression.Constant(castedCollectionBuilder));  
+            }
+            else
+            {
+                // cast object => IEnumerable<T>
                 inputAsEnumerable = Expression.Convert(
-                    Expression.Call(
-                        null,
-                        ReflectionUtils.GetMethod<IEnumerable<object>>(
-                            xs => xs.Select(x => x), 
-                            collectionTypeEnumerable,
-                            typeof(object)),
-                        inputAsEnumerable,
-                        Expression.Constant(innerCollectionBuilder)),
-                    typeof(IEnumerable<>).MakeGenericType(collectionTypeEnumerable));
+                    input,
+                    iEnumerableOfType);
             }
 
             var (isCollection, cr) = Enumerables.CreateCollectionExpression(
                 collectionType, 
-                Expression.Convert(
-                    inputAsEnumerable, 
-                    iEnumerableOfType));
+                inputAsEnumerable);
 
             if (!isCollection)
             {
