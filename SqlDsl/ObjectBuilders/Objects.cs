@@ -312,7 +312,7 @@ namespace SqlDsl.ObjectBuilders
             var innerCollectionBuilder = EnsureCollectionType(collectionTypeEnumerable, propertyName);
             if (innerCollectionBuilder != null)
             {
-                var casterInput = Ex.Parameter(typeof(object));;
+                var casterInput = Ex.Parameter(typeof(object));
 
                 // cast output of innerCollectionBuilder to byte array
                 var castedCollectionBuilder = Ex
