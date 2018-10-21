@@ -23,7 +23,7 @@ namespace SqlDsl.DataParser
                 objectType, 
                 new [] { 0 },
                 mappedTableProperties.Select(c => (c.name.Split('.'), c.rowIdColumnMap)),
-                columns.Select((c, i) => (i, c.name.Split('.'), c.rowIdColumnMap, c.cellType)), 
+                columns.OrEmpty().Select((c, i) => (i, c.name.Split('.'), c.rowIdColumnMap, c.cellType)), 
                 queryParseType);
 
             return new RootObjectPropertyGraph(
@@ -93,6 +93,7 @@ namespace SqlDsl.DataParser
 
             var cplxProps = complexProps
                 .GroupBy(PropertyName)
+
                 .Select(BuildComplexProp)
                 .Enumerate();
 

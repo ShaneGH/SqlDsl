@@ -31,5 +31,13 @@ namespace SqlDsl.Dsl
         /// An expression to build a mapped object
         /// </param>
         ISqlBuilder<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper);
+        
+        /// <summary>
+        /// Map the result TResult to another type of object. Use this method to cherry pick the columns you want to return
+        /// </summary>
+        /// <param name="mapper">
+        /// An expression to build a mapped object
+        /// </param>
+        ISqlBuilder<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TArgs, TMapped>> mapper);
     }
 }

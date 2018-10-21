@@ -15,9 +15,9 @@ namespace SqlDsl.Query
         where TSqlBuilder: ISqlFragmentBuilder, new()
     {
         readonly QueryBuilder<TSqlBuilder, TArgs, TResult> Query;
-        readonly Expression<Func<TResult, TMapped>> Mapper;
+        readonly Expression<Func<TResult, TArgs, TMapped>> Mapper;
         
-        public QueryMapper(QueryBuilder<TSqlBuilder, TArgs, TResult> query, Expression<Func<TResult, TMapped>> mapper)
+        public QueryMapper(QueryBuilder<TSqlBuilder, TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
         {
             Query = query ?? throw new ArgumentNullException(nameof(query));
             Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));

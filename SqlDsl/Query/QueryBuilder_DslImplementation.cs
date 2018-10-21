@@ -161,7 +161,23 @@ namespace SqlDsl.Query
         /// <param name="mapper">
         /// An expression to build a mapped object
         /// </param>
-        public ISqlBuilder<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper) =>
+        public ISqlBuilder<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TArgs, TMapped>> mapper) =>
             new QueryMapper<TSqlBuilder, TArgs, TResult, TMapped>(this, mapper);
+
+        /// <summary>
+        /// Map the result TResult to another type of object. Use this method to cherry pick the columns you want to return
+        /// </summary>
+        /// <param name="mapper">
+        /// An expression to build a mapped object
+        /// </param>
+        public ISqlBuilder<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper)
+        {
+            var addedArgs = Expression.Lambda<Func<TResult, TArgs, TMapped>>(
+                mapper.Body,
+                mapper.Parameters[0],
+                Expression.Parameter(typeof(TArgs)));
+
+            return Map(addedArgs);
+        }
     }
 }

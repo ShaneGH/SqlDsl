@@ -188,65 +188,6 @@ namespace SqlDsl.SqlBuilders
             sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, gte, paramaters, sqlBuilder.BuildGreaterThanEqualToCondition);
 
         /// <summary>
-        /// Get a real value from an expression
-        /// </summary>
-        /// <returns>memberStaticValue: null if memberHasStaticValue == false
-        /// </returns>
-        static (bool memberHasStaticValue, object memberStaticValue) GetExpressionStaticObjectValue(Expression expr)
-        {
-            // drill down into the member until we get to the root
-            if (MemberHasStaticValue(expr))
-            {
-                // compile the expression
-                var valueGetter = Expression
-                    .Lambda<Func<object>>(
-                        Expression.Convert(
-                            expr, 
-                            typeof(object)))
-                    .Compile();
-
-                // get the expression value
-                return (true, valueGetter());
-            }
-
-            return (false, null);
-        }
-
-        /// <summary>
-        /// Determine if a real value can be taken from an expression
-        /// </summary>
-
-        static bool MemberHasStaticValue(Expression e)
-        {
-            switch (e.NodeType)
-            {
-                case ExpressionType.Constant:
-                    return true;
-                case ExpressionType.MemberAccess:
-                    var e1 = (e as MemberExpression).Expression;
-                    return e1 == null || MemberHasStaticValue(e1);
-                case ExpressionType.Call:
-                    var e2 = e as MethodCallExpression;
-                    return (e2.Object == null || MemberHasStaticValue(e2.Object)) &&
-                        e2.Arguments.All(MemberHasStaticValue);
-                default:
-                    if (e is UnaryExpression)
-                    {
-                        var e3 = e as UnaryExpression;
-                        return MemberHasStaticValue(e3.Operand);
-                    }
-                    
-                    if (e is BinaryExpression)
-                    {
-                        var e4 = e as BinaryExpression;
-                        return MemberHasStaticValue(e4.Left) && MemberHasStaticValue(e4.Right);
-                    }
-
-                    return false;
-            }
-        }
-
-        /// <summary>
         /// Get the name and root parameter from an expression
         /// </summary>
         static (bool memberIsFromQueryObject, IEnumerable<string> memberQueryObjectParts, ParameterExpression rootParam) GetMemberQueryObjectName(MemberExpression member)
@@ -294,7 +235,7 @@ namespace SqlDsl.SqlBuilders
             IList<object> paramaters)
         {
             // if expression has a definite value, add it to parameters
-            var staticValue = GetExpressionStaticObjectValue(member);
+            var staticValue = ReflectionUtils.GetExpressionStaticObjectValue(member);
             if (staticValue.memberHasStaticValue)
                 return AddToParamaters(staticValue.memberStaticValue, paramaters);
 
