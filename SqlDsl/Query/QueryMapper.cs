@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace SqlDsl.Query
@@ -84,10 +85,55 @@ namespace SqlDsl.Query
                     return ToSqlBuilder(p.From, p.MappedPropertyType, wrappedBuilder, wrappedStatement)
                         .CompileSimple<TArgs, TMapped>(mutableParameters.Skip(0), properties.First().From);
 
+                case BuildMapResult.ComplexProp:
+                    return new QueryMapper<TSqlBuilder, TArgs, TResult, TMapped>(
+                        Query, 
+                        ConvertToFullMemberInit(Mapper)).Compile(logger: logger);
+
                 default:
                     // TODO: BuildMapResult.ComplexProp
                     throw new NotSupportedException(resultType.ToString());
             }
+        }
+
+        static Expression<Func<TResult, TArgs, TMapped>> ConvertToFullMemberInit(Expression<Func<TResult, TArgs, TMapped>> original)
+        {
+            var tMapped = typeof(TMapped);
+            var constructor = tMapped.GetConstructor(new Type[0]);
+            if (constructor == null)
+            {
+                throw new InvalidOperationException($"Type {tMapped.FullName} does not have a default constructor.");
+            }
+
+            var ex = Expression.MemberInit(
+                Expression.New(constructor),
+                ReflectionUtils
+                    .GetFieldAndPropertyMembers(tMapped)
+                    .Select(m => Expression.Bind(m, Expression.PropertyOrField(original.Body, m.Name))));
+
+            return Expression.Lambda<Func<TResult, TArgs, TMapped>>(ex, original.Parameters);
+        }
+
+        class TestMemberInitClass
+        {
+            public int sample { get; set; }
+        }
+
+        static void MemberInit()
+        {   
+            // This expression creates a new TestMemberInitClass object
+            // and assigns 10 to its sample property.
+            Expression testExpr = Expression.MemberInit(
+                Expression.New(typeof(TestMemberInitClass)),
+                new List<MemberBinding>() {
+                    Expression.Bind(typeof(TestMemberInitClass).GetMember("sample")[0], Expression.Constant(10))
+                }
+            );
+
+            // The following statement first creates an expression tree,
+            // then compiles it, and then runs it.
+            var test = Expression.Lambda<Func<TestMemberInitClass>>(testExpr).Compile()();
+            Console.WriteLine(test.sample);
         }
 
         static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(string propertyName, Type propertyType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)

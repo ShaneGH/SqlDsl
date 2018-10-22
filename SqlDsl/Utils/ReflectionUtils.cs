@@ -332,7 +332,7 @@ namespace SqlDsl.Utils
                 return (false, null);
 
             return (true, e.Arguments[0]);
-        }        
+        }
 
         /// <summary>
         /// Get the public instance fields and properties from a class
@@ -343,6 +343,15 @@ namespace SqlDsl.Utils
             .Concat(objectType
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Select(f => (name: f.Name, type: f.PropertyType)));
+
+        /// <summary>
+        /// Get the public instance fields and properties from a class
+        /// </summary>
+        public static IEnumerable<MemberInfo> GetFieldAndPropertyMembers(this Type objectType) => objectType
+            .GetFields(BindingFlags.Public | BindingFlags.Instance)
+            .Cast<MemberInfo>()
+            .Concat(objectType
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance));
 
         /// <summary>
         /// Get the type for a PropertyInfo or FieldInfo. Throw an exception otherwise
