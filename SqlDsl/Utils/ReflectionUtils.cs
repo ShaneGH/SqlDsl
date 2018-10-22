@@ -270,6 +270,24 @@ namespace SqlDsl.Utils
         }
 
         /// <summary>
+        /// Convert an "a => a.b" to "a => new b { b1 = a.b.b1, b2 = a.b.b2 ... }"
+        /// </summary>
+        public static Expression ConvertToFullMemberInit(Expression original)
+        {
+            var constructor = original.Type.GetConstructor(new Type[0]);
+            if (constructor == null)
+            {
+                throw new InvalidOperationException($"Type {original.Type.FullName} does not have a default constructor.");
+            }
+
+            return Expression.MemberInit(
+                Expression.New(constructor),
+                ReflectionUtils
+                    .GetFieldAndPropertyMembers(original.Type)
+                    .Select(m => Expression.Bind(m, Expression.PropertyOrField(original, m.Name))));
+        }
+
+        /// <summary>
         /// If an expression is a property chain, return it's root and the property names, otherwise, return false for isPropertyChain
         /// </summary>
         public static (bool isPropertyChain, ParameterExpression root, IEnumerable<string> chain) GetPropertyChain(Expression e)

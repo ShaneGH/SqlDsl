@@ -106,21 +106,38 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task ReturnMultipleFromMap()
         {
             // arrange
             // act
             var data = await FullyJoinedQuery<object>()
-                .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
                 .Map(p => p.PersonClasses)
                 .ExecuteAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(1, data.First().Count());
+            Assert.AreEqual(2, data.First().Count());
             Assert.AreEqual(1, data.ElementAt(1).Count());
             Assert.AreEqual(Data.PersonClasses.JohnTennis, data.First().First());
+            Assert.AreEqual(Data.PersonClasses.JohnArchery, data.First().ElementAt(1));
+            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1).First());
+        }
+
+        [Test]
+        public async Task ReturnMultipleFromMap2()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Map(p => p.PersonClasses.Select(x => x))
+                .ExecuteAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(2, data.First().Count());
+            Assert.AreEqual(1, data.ElementAt(1).Count());
+            Assert.AreEqual(Data.PersonClasses.JohnTennis, data.First().First());
+            Assert.AreEqual(Data.PersonClasses.JohnArchery, data.First().ElementAt(1));
             Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1).First());
         }
 
