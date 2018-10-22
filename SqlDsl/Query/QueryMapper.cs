@@ -55,18 +55,26 @@ namespace SqlDsl.Query
         /// <summary>
         /// Compile the query into something which can be executed multiple times
         /// </summary>
-        public ICompiledQuery<TArgs, TMapped> Compile(ILogger logger = null)
+        public ICompiledQuery<TArgs, TMapped> Compile(ILogger logger = null) => Compile(Query, Mapper, logger: logger);
+
+        /// <summary>
+        /// Compile the query into something which can be executed multiple times
+        /// </summary>
+        static ICompiledQuery<TArgs, TMapped> Compile(
+            QueryBuilder<TSqlBuilder, TArgs, TResult> query, 
+            Expression<Func<TResult, TArgs, TMapped>> mapper, 
+            ILogger logger = null)
         {
             // TODO: filter columns
             // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
 
-            var (wrappedBuilder, parameters) = Query.ToSqlStatement(null);
+            var (wrappedBuilder, parameters) = query.ToSqlStatement(null);
             var mutableParameters = parameters.ToList();
             var wrappedStatement = new SqlStatement(wrappedBuilder);
 
             var (resultType, properties, tables) = BuildMapFromRoot(
-                new BuildMapState(mutableParameters, Mapper.Parameters[0], wrappedStatement),
-                Mapper.Body);
+                new BuildMapState(mutableParameters, mapper.Parameters[0], wrappedStatement),
+                mapper.Body);
 
             switch (resultType)
             {
@@ -86,12 +94,12 @@ namespace SqlDsl.Query
                         .CompileSimple<TArgs, TMapped>(mutableParameters.Skip(0), properties.First().From);
 
                 case BuildMapResult.ComplexProp:
-                    return new QueryMapper<TSqlBuilder, TArgs, TResult, TMapped>(
-                        Query, 
-                        ConvertToFullMemberInit(Mapper)).Compile(logger: logger);
+                    return Compile(
+                        query, 
+                        ConvertToFullMemberInit(mapper),
+                        logger: logger);
 
                 default:
-                    // TODO: BuildMapResult.ComplexProp
                     throw new NotSupportedException(resultType.ToString());
             }
         }
