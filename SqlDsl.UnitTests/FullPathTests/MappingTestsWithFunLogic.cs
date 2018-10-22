@@ -88,16 +88,78 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.People.John.Name, data.First());
             Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1));
         }
+        
+        [Test]
+        [Ignore("TODO")]
+        public async Task ReturnOneFromMap()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
+                .Map(p => p.PersonClasses.One())
+                .ExecuteAsync(Executor, null, logger: Logger);
 
-        // TODO: need to investigate the how arrays, One and Select impact results
-        // Map(x => 2)
-        // Map((x, a) => a)
-        // Map((x, a) => a.Value)
-        // Map((x, a) => someVar)
-        // Map(x => x.PersonClasses)
-        // Map(x => x.PersonClasses).One()
-        // Map(x => x.PersonClasses).One().PersonId
-        // Map(x => x.PersonClasses).Select(x => x.PersonId)
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.PersonClasses.JohnTennis, data.First());
+            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1));
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ReturnMultipleFromMap()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
+                .Map(p => p.PersonClasses)
+                .ExecuteAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(1, data.First().Count());
+            Assert.AreEqual(1, data.ElementAt(1).Count());
+            Assert.AreEqual(Data.PersonClasses.JohnTennis, data.First().First());
+            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1).First());
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ReturnOneSubPropFromMap()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
+                .Map(p => p.PersonClasses.One().ClassId)
+                .ExecuteAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.PersonClasses.JohnTennis.ClassId, data.First());
+            Assert.AreEqual(Data.PersonClasses.MaryTennis.ClassId, data.ElementAt(1));
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ReturnMultipleSubPropsFromMap()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
+                .Map(p => p.PersonClasses.Select(pc => pc.ClassId))
+                .ExecuteAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(1, data.First().Count());
+            Assert.AreEqual(1, data.ElementAt(1).Count());
+            Assert.AreEqual(Data.PersonClasses.JohnTennis.ClassId, data.First().First());
+            Assert.AreEqual(Data.PersonClasses.MaryTennis.ClassId, data.ElementAt(1).First());
+        }
 
         [Test]
         [Ignore("TODO")]
