@@ -290,29 +290,54 @@ namespace SqlDsl.Utils
         /// <summary>
         /// If an expression is a property chain, return it's root and the property names, otherwise, return false for isPropertyChain
         /// </summary>
-        public static (bool isPropertyChain, ParameterExpression root, IEnumerable<string> chain) GetPropertyChain(Expression e)
+        /// <param name="allowOne">If true, calls to .One() will be ignored in the chain</param>
+        /// <param name="allowOne">If true, calls to .Select(...) will be considered part of the the chain if the mapping is also a property chain</param>
+        public static (bool isPropertyChain, ParameterExpression root, IEnumerable<string> chain) GetPropertyChain(
+            Expression e, 
+            bool allowOne = false,
+            bool allowSelect = false)
         {
-            var op = new List<string>();
-            while (e != null)
+            switch (e.NodeType)
             {
-                switch (e.NodeType)
-                {
-                    case ExpressionType.Convert:
-                        e = (e as UnaryExpression).Operand;
-                        break;
-                    case ExpressionType.MemberAccess:
-                        var acc = e as MemberExpression;
-                        op.Insert(0, acc.Member.Name);
-                        e = acc.Expression;
-                        break;
-                    case ExpressionType.Parameter:
-                        return (true, e as ParameterExpression, op);
-                    default:
-                        return (false, null, null);
-                }
+                case ExpressionType.Convert:
+                    return GetPropertyChain((e as UnaryExpression).Operand, allowOne: allowOne, allowSelect: allowSelect);
+                    
+                case ExpressionType.MemberAccess:
+                    var acc = e as MemberExpression;
+                    var (isPropertyChain1, root1, chain1) = GetPropertyChain(acc.Expression, allowOne: allowOne, allowSelect: allowSelect);
+                    return (isPropertyChain1, root1, chain1.Append(acc.Member.Name));
+                    
+                case ExpressionType.Parameter:
+                    return (true, e as ParameterExpression, Enumerable.Empty<string>());
+                    
+                case ExpressionType.Call:
+                    if (allowOne)
+                    {
+                        var oneExpr = ReflectionUtils.IsOne(e);
+                        if (oneExpr != null)
+                        {
+                            return GetPropertyChain(oneExpr, allowOne: allowOne, allowSelect: allowSelect);
+                        } 
+                    }
+
+                    if (allowSelect)
+                    {
+                        var (isSelect, enumerable, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(e as MethodCallExpression);
+                        if (isSelect)
+                        {
+                            var (isPropertyChain2, root2, chain2) = GetPropertyChain(enumerable, allowOne: allowOne, allowSelect: allowSelect);
+                            var (isPropertyChain3, _, chain3) = GetPropertyChain(mapper.Body, allowOne: allowOne, allowSelect: allowSelect);
+                            if (isPropertyChain2 && isPropertyChain3)
+                            {
+                                return (true, root2, chain2.Concat(chain3));
+                            }
+                        } 
+                    }
+                    
+                    return (false, null, null);
+                default:
+                    return (false, null, null);
             }
-            
-            return (false, null, null);
         }
 
         static readonly MethodInfo IEnumerableToArray = GetMethod(() => new object[0].ToArray()).GetGenericMethodDefinition();

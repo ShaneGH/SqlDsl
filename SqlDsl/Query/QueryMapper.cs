@@ -101,11 +101,12 @@ namespace SqlDsl.Query
                     return Compile(query, init, logger: logger);
 
                 case BuildMapResult.MultiComplexProp:
-                    // convert xs => xs to xs => xs.Select(x => x)
+
+                    // convert xs => xs to xs => xs.Select(x => new X { x1 = x.x1, x2 = x.x2 })
                     // this is easier for mapper to understand
 
                     var identityMap = Expression.Lambda(
-                        AddIdentitySelector(typeof(TMapped), mapper.Body), 
+                        AddMemberInitSelector(typeof(TMapped), mapper.Body), 
                         mapper.Parameters);
 
                     return Compile(query, identityMap, logger: logger);
@@ -116,22 +117,23 @@ namespace SqlDsl.Query
         }
 
         /// <summary>
-        /// convert xs => xs to xs => xs.Select(x => x)
+        /// convert xs => xs to xs => xs.Select(x => new X { x1 = x.x1, x2 = x.x2 })
         /// </summary>
-        static Expression AddIdentitySelector(Type tMapped, Expression collection)
+        static Expression AddMemberInitSelector(Type tMapped, Expression collection)
         {
             var enumeratedType = ReflectionUtils.GetIEnumerableType(tMapped);
             if (enumeratedType == null)
                 throw new InvalidOperationException($"Expected type {tMapped} to implement IEnumerable<>");
 
             var innerParam = Expression.Parameter(enumeratedType);
-            var innerMapper = Expression.Lambda(innerParam, innerParam);
+            var mapperBody = ReflectionUtils.ConvertToFullMemberInit(innerParam);
+            var mapper = Expression.Lambda(mapperBody, innerParam);
 
             return Expression.Call(
                 ReflectionUtils
                     .GetMethod<IEnumerable<object>>(xs => xs.Select(x => x), enumeratedType, enumeratedType),
                 collection,
-                innerMapper);
+                mapper);
         }
 
         static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(string propertyName, Type propertyType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
@@ -157,9 +159,8 @@ namespace SqlDsl.Query
         static (BuildMapResult resultType, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expr)
         {
             var _expr = ReflectionUtils.RemoveConvert(expr);
-            _expr = ReflectionUtils.IsOne(_expr) ?? _expr;
 
-            var (isPropertyChain, _, chain) = ReflectionUtils.GetPropertyChain(_expr);
+            var (isPropertyChain, _, chain) = ReflectionUtils.GetPropertyChain(_expr, allowOne: true, allowSelect: true);
             if (isPropertyChain)
             {
                 var pChain = chain.JoinString(".");
@@ -396,6 +397,11 @@ namespace SqlDsl.Query
 
         static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, LambdaExpression mapper, string toPrefix, bool isExprTip)
         {
+            if (mapper.Body == mapper.Parameters[0])
+            {
+                throw new InvalidOperationException($"Mapping \"{mapper}\" is not supported.");
+            }
+
             TryAddSelectStatementParameterToProperty(state, enumerable, mapper.Parameters[0]);
 
             var outerMap = BuildMap(state, enumerable, toPrefix);

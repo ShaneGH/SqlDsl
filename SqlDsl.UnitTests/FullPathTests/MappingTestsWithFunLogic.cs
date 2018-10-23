@@ -89,7 +89,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
         
         [Test]
-        [Ignore("TODO")]
         public async Task ReturnOneFromMap()
         {
             // arrange
@@ -124,25 +123,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task ReturnMultipleFromMap2()
-        {
-            // arrange
-            // act
-            var data = await FullyJoinedQuery<object>()
-                .Map(p => p.PersonClasses.Select(x => x))
-                .ExecuteAsync(Executor, null, logger: Logger);
-
-            // assert
-            Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(2, data.First().Count());
-            Assert.AreEqual(1, data.ElementAt(1).Count());
-            Assert.AreEqual(Data.PersonClasses.JohnTennis, data.First().First());
-            Assert.AreEqual(Data.PersonClasses.JohnArchery, data.First().ElementAt(1));
-            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1).First());
-        }
-
-        [Test]
-        [Ignore("TODO")]
         public async Task ReturnOneSubPropFromMap()
         {
             // arrange
@@ -159,13 +139,28 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public async Task ReturnOneSubPropFromMap2()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
+                .Map(p => p.PersonClasses.Select(x => x.ClassId).One())
+                .ExecuteAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.PersonClasses.JohnTennis.ClassId, data.First());
+            Assert.AreEqual(Data.PersonClasses.MaryTennis.ClassId, data.ElementAt(1));
+        }
+
+        [Test]
         [Ignore("TODO")]
         public async Task ReturnMultipleSubPropsFromMap()
         {
             // arrange
             // act
             var data = await FullyJoinedQuery<object>()
-                .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
                 .Map(p => p.PersonClasses.Select(pc => pc.ClassId))
                 .ExecuteAsync(Executor, null, logger: Logger);
 
@@ -175,22 +170,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(1, data.ElementAt(1).Count());
             Assert.AreEqual(Data.PersonClasses.JohnTennis.ClassId, data.First().First());
             Assert.AreEqual(Data.PersonClasses.MaryTennis.ClassId, data.ElementAt(1).First());
-        }
-
-        [Test]
-        [Ignore("TODO")]
-        public async Task SimpleMapOn1Table2()
-        {
-            // arrange
-            // act
-            var data = await FullyJoinedQuery<object>()
-                .Map(p => p.ThePerson)
-                .ExecuteAsync(Executor, null, logger: Logger);
-
-            // assert
-            Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(Data.People.John, data.First());
-            Assert.AreEqual(Data.People.Mary, data.ElementAt(1));
         }
 
         [Test]
@@ -238,7 +217,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery<AnInt>()
                 .Map((p, a) => a)
-                .ExecuteAsync(Executor,new AnInt { IntValue = 77 }, logger: Logger);
+                .ExecuteAsync(Executor, new AnInt { IntValue = 77 }, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
