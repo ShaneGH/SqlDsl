@@ -304,29 +304,5 @@ namespace SqlDsl.ObjectBuilders
 
             throw new InvalidOperationException($"Cannot convert type {x.GetType()} to Guid");
         }
-
-        // static char[] ConvertCharArray(object x) => ConvertCharEnumerable(x).ToArray();
-
-        // static List<char> ConvertCharList(object x) => ConvertCharEnumerable(x).ToList();
-
-        // static IEnumerable<char> ConvertCharEnumerable(object x) => Convert.ToString(x);
-
-
-        // static byte[] ConvertByteArray(object x) => _ConvertByteEnumerable(x).ToArray();
-
-        // static List<byte> ConvertByteList(object x) => _ConvertByteEnumerable(x).ToList();
-
-        // static IEnumerable<byte> ConvertByteEnumerable(object x) => _ConvertByteEnumerable(x).Enumerate();
-
-        // static IEnumerable<byte> _ConvertByteEnumerable(object x)
-        // {
-        //     if (x is IEnumerable)
-        //     {
-        //         foreach (var b in x as IEnumerable)
-        //         {
-        //             yield return Convert.ToByte(b);
-        //         }
-        //     }
-        // }
     }
 }
