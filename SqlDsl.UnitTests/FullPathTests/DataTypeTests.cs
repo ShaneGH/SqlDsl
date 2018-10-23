@@ -195,7 +195,30 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO: throwing unusual exception")]
+        [Ignore("TODO")]
+        public async Task ArrayDataType2_DoesNotWarn()
+        {
+            // arrange
+            // act
+            await Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                .From(x => x.Person)
+                .InnerJoin(x => x.PersonsData)
+                    .On((q, pd) => q.Person.Id == pd.PersonId)
+                .InnerJoin(x => x.Classes)
+                    .On((q, pc) => q.Person.Id == pc.PersonId)
+                .Where(p => p.Person.Id == Data.People.John.Id)
+                .Map(x => new ArrayDataType2Result
+                {
+                    Data = x.PersonsData.Select(d => d.Data).ToArray(),
+                    ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
+                })
+                .ExecuteAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.IsEmpty(Logger.WarningMessages);
+        }
+
+        [Test]
         public async Task ArrayDataType3()
         {
             // arrange
@@ -215,6 +238,26 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john);
         }
 
+        [Test]
+        public async Task ArrayDataType4()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                .From(x => x.Person)
+                .InnerJoin(x => x.PersonsData)
+                    .On((q, pd) => q.Person.Id == pd.PersonId)
+                .Where(p => p.Person.Id == Data.People.John.Id)
+                .Map(p => p.PersonsData.One().Data.ToArray())
+                .ExecuteAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            var john = data.First();
+
+            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john);
+        }
+
         class ArrayDataType3Result
         {
             public int[] ClassIds;
@@ -222,7 +265,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task ArrayDataType4()
+        public async Task ArrayDataType5()
         {
             // arrange
             // act

@@ -311,6 +311,15 @@ namespace SqlDsl.Utils
                     return (true, e as ParameterExpression, Enumerable.Empty<string>());
                     
                 case ExpressionType.Call:
+                    var methodCallE = e as MethodCallExpression;
+                    var (isToArray, enumerableA) = ReflectionUtils.IsToArray(methodCallE);
+                    if (isToArray)
+                        return GetPropertyChain(enumerableA, allowOne: allowOne, allowSelect: allowSelect);
+                        
+                    var (isToList, enumerableL) = ReflectionUtils.IsToList(methodCallE);
+                    if (isToList)
+                        return GetPropertyChain(enumerableL, allowOne: allowOne, allowSelect: allowSelect);
+
                     if (allowOne)
                     {
                         var oneExpr = ReflectionUtils.IsOne(e);
@@ -322,7 +331,7 @@ namespace SqlDsl.Utils
 
                     if (allowSelect)
                     {
-                        var (isSelect, enumerable, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(e as MethodCallExpression);
+                        var (isSelect, enumerable, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(methodCallE);
                         if (isSelect)
                         {
                             var (isPropertyChain2, root2, chain2) = GetPropertyChain(enumerable, allowOne: allowOne, allowSelect: allowSelect);

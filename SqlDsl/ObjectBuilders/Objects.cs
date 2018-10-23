@@ -294,7 +294,7 @@ namespace SqlDsl.ObjectBuilders
         /// e.g. collectionType = List&lt;byte[]>, obj = (object)IEnumerable&lt;IEnumerable&lt;byte>>
         /// Returns null if collectionType is not actually a collection
         /// </summary>
-        static Func<object, ILogger, object> EnsureCollectionType(Type collectionType, string propertyName)
+        public static Func<object, ILogger, object> EnsureCollectionType(Type collectionType, string propertyName)
         {
             var collectionTypeEnumerable = ReflectionUtils.GetIEnumerableType(collectionType);
             if (collectionTypeEnumerable == null)
