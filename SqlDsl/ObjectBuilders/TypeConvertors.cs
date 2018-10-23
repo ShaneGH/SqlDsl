@@ -19,45 +19,21 @@ namespace SqlDsl.ObjectBuilders
             new Dictionary<Type, object>
             {
                 { typeof(byte), ForNonNullable(Convert.ToByte) },
-                { typeof(byte?), ForNullable(Convert.ToByte) },
-                
                 { typeof(sbyte), ForNonNullable(Convert.ToSByte) },
-                { typeof(sbyte?), ForNullable(Convert.ToSByte) },
-                
                 { typeof(bool), ForNonNullable(Convert.ToBoolean) },
-                { typeof(bool?), ForNullable(Convert.ToBoolean) },
-
                 { typeof(short), ForNonNullable(Convert.ToInt16) },
                 { typeof(int), ForNonNullable(Convert.ToInt32) },
                 { typeof(long), ForNonNullable(Convert.ToInt64) },
-                { typeof(short?), ForNullable(Convert.ToInt16) },
-                { typeof(int?), ForNullable(Convert.ToInt32) },
-                { typeof(long?), ForNullable(Convert.ToInt64) },
-
                 { typeof(ushort), ForNonNullable(Convert.ToUInt16) },
                 { typeof(uint), ForNonNullable(Convert.ToUInt32) },
                 { typeof(ulong), ForNonNullable(Convert.ToUInt64) },
-                { typeof(ushort?), ForNullable(Convert.ToUInt16) },
-                { typeof(uint?), ForNullable(Convert.ToUInt32) },
-                { typeof(ulong?), ForNullable(Convert.ToUInt64) },
-
                 { typeof(float), ForNonNullable(Convert.ToSingle) },
                 { typeof(double), ForNonNullable(Convert.ToDouble) },
                 { typeof(decimal), ForNonNullable(Convert.ToDecimal) },
-                { typeof(float?), ForNullable(Convert.ToSingle) },
-                { typeof(double?), ForNullable(Convert.ToDouble) },
-                { typeof(decimal?), ForNullable(Convert.ToDecimal) },
-                
                 { typeof(char), ForNonNullable(Convert.ToChar) },
-                { typeof(char?), ForNullable(Convert.ToChar) },
-                
                 { typeof(DateTime), ForNonNullable(Convert.ToDateTime) },
-                { typeof(DateTime?), ForNullable(Convert.ToDateTime) },
-
                 { typeof(string), ForNullableClass(Convert.ToString) },
-                
                 { typeof(Guid), ForNonNullable(ConvertGuid) },
-                { typeof(Guid?), ForNullable(ConvertGuid) }
             });
 
         /// <summary>
@@ -95,10 +71,6 @@ namespace SqlDsl.ObjectBuilders
             };
         }
 
-        static readonly MethodInfo _ForNullable = ReflectionUtils
-            .GetMethod(() => ForNullable<int>(null))
-            .GetGenericMethodDefinition();
-
         /// <summary>
         /// Convert a conversion function into something which will guard against nulls and DbNulls
         /// </summary>
@@ -114,69 +86,65 @@ namespace SqlDsl.ObjectBuilders
             };
         }
 
-        static readonly MethodInfo _ForNullableClass = ReflectionUtils
-            .GetMethod(() => ForNullableClass<string>(null))
-            .GetGenericMethodDefinition();
-
         /// <summary>
         /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
         /// </summary>
         public static Func<object, T> GetConvertor<T>()
         {
-            return (Func<object, T>)GetConvertor(typeof(T));
+            var propertyType = typeof(T);
+            if (Convertors.TryGetValue(propertyType, out object convertor))
+                return (Func<object, T>)convertor;
+
+            return (Func<object, T>)Convertors.GetOrAdd(
+                propertyType, 
+                BuildConvertor<T>());
         }
 
         /// <summary>
         /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
         /// </summary>
-        public static object GetConvertor(Type propertyType)
+        public static Func<object, T> BuildConvertor<T>()
         {
-            if (Convertors.TryGetValue(propertyType, out object convertor))
-                return convertor;
+            var propertyType = typeof(T);
 
             var enumeratedType = ReflectionUtils.GetIEnumerableType(propertyType);
             if (enumeratedType != null)
-                return Convertors.GetOrAdd(propertyType, BuildEnumerableConvertor(propertyType, enumeratedType));
+                return (Func<object, T>)BuildEnumerableConvertor(propertyType, enumeratedType);
 
             if (propertyType.IsEnum)
-                return Convertors.GetOrAdd(propertyType, BuildEnumCaster(propertyType));
+                return (Func<object, T>)BuildEnumCaster(propertyType);
                 
             if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
-                var innerType = propertyType.GetGenericArguments()[0];
-                var forNullable = innerType.IsValueType ?
-                    _ForNullable.MakeGenericMethod(innerType) :
-                    _ForNullableClass.MakeGenericMethod(innerType);
-                    
-                return Convertors.GetOrAdd(
-                    propertyType, 
-                    forNullable.Invoke(null, new[] { GetConvertor(innerType) }));
+                return (Func<object, T>)ReflectionUtils
+                    .GetMethod(
+                        () => GetNullableConvertor<int>(),
+                        propertyType.GetGenericArguments()[0])
+                    .Invoke(null, new object[0]);
             }
 
             // fall back to casting
-            return Convertors.GetOrAdd(propertyType, BuildCaster(propertyType));
+            return x => (T)x;
+        }
+
+        static Func<object, T?> GetNullableConvertor<T>()
+            where T: struct
+        {
+            var inner = GetConvertor<T>();
+            return ForNullable(inner);   
         }
 
         /// <summary>
         /// Get a function which converts from (object)IEnumerable&lt;object> -> propertyType. If no function found, falls back to casting
         /// </summary>
-        public static object BuildEnumerableConvertor(Type collectionType, Type enumeratedType)
+        static object BuildEnumerableConvertor(Type collectionType, Type enumeratedType)
         {
-            var method = ReflectionUtils
+            return ReflectionUtils
                 .GetMethod(
                     () => BuildEnumerableConvertor<IEnumerable<object>, object>(),
                     collectionType,
                     enumeratedType)
                 .Invoke(null, new object[0]);
-
-            var input = Expression.Parameter(typeof(object));
-            return Expression
-                .Lambda(
-                    Expression.Invoke(
-                        Expression.Constant(method),
-                        input),
-                    input)
-                .Compile();
         }
 
         /// <summary>
@@ -257,18 +225,6 @@ namespace SqlDsl.ObjectBuilders
             return valType.IsArray ?
                 (GetTypeString(enumer.Current) + "[]") :
                 (valType.Name + "<" + GetTypeString(enumer.Current) + ">");
-        }
-
-        /// <summary>
-        /// Get a function which casts from object -> propertyType.
-        /// </summary>
-        static object BuildCaster(Type propertyType)
-        {
-            var input = Expression.Parameter(typeof(object));
-            var body = Expression.Convert(input, propertyType);
-
-            // x => (propertyType)x;
-            return Expression.Lambda(body, input).Compile();
         }
 
         /// <summary>
