@@ -44,7 +44,7 @@ namespace SqlDsl.ObjectBuilders
                 
             // compile setter for each property
             var propSetters = props
-                .Select(p => (name: p.name, BuildPropertySetter<T>(p.name, p.type), p.type))
+                .Select(p => (name: p.name, BuildPropertySetter2<T>(p.name, p.type), p.type))
                 .ToDictionary(x => x.name, x => (setter: x.Item2, type: x.Item3));
 
             T build(ObjectGraph vals, ILogger logger) => BuildObject(propSetters, vals, logger);
@@ -71,7 +71,7 @@ namespace SqlDsl.ObjectBuilders
         /// </summary>
         /// <param name="propSetters">A set of objects which can set the value of a property</param>
         /// <param name="vals">The values of the object</param>
-        static T BuildObject<T>(Dictionary<string, (Action<T, IEnumerable<object>> setter, Type propertyType)> propSetters, ObjectGraph vals, ILogger logger)
+        static T BuildObject<T>(Dictionary<string, (Action<T, IEnumerable<object>, ILogger> setter, Type propertyType)> propSetters, ObjectGraph vals, ILogger logger)
         {
             // Create output object
             var obj = (T)ConstructObject(typeof(T));
@@ -86,7 +86,7 @@ namespace SqlDsl.ObjectBuilders
                 if (prop.customSetter != null)
                     prop.customSetter(obj, prop.value, logger);
                 else if (propSetters.ContainsKey(prop.name))
-                    propSetters[prop.name].setter(obj, prop.value);
+                    propSetters[prop.name].setter(obj, prop.value, logger);
             }
 
             // use a setter to set each complex property
@@ -105,7 +105,7 @@ namespace SqlDsl.ObjectBuilders
                         .Enumerate();
 
                     // set the value of the property
-                    propSetters[prop.name].setter(obj, values);
+                    propSetters[prop.name].setter(obj, values, logger);
                 }
             }
 
@@ -153,8 +153,60 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compile a function which sets the value of a property
         /// </summary>
+        static Action<T, IEnumerable<object>, ILogger> BuildPropertySetter2<T>(string propertyName, Type propertyType)
+        {
+            return (Action<T, IEnumerable<object>, ILogger>)ReflectionUtils
+                .GetMethod(
+                    () => BuildPropertySetter2<object, object>(""),
+                    typeof(T),
+                    propertyType)
+                .Invoke(null, new object[] { propertyName });
+        }
+
+        /// <summary>
+        /// Compile a function which sets the value of a property
+        /// </summary>
+        static Action<T, IEnumerable<object>, ILogger> BuildPropertySetter2<T, TProp>(string propertyName)
+        {
+            var builder = TypeConvertors.GetConvertor<TProp>();
+
+            var setterObj = Ex.Parameter(typeof(T));
+            var setterProp = Ex.Parameter(typeof(TProp));
+            var setter = Ex
+                .Lambda<Action<T, TProp>>(
+                    Ex.Assign(
+                        Ex.PropertyOrField(
+                            setterObj,
+                            propertyName),
+                        setterProp),
+                    setterObj,
+                    setterProp)
+                .Compile();
+
+            return ReflectionUtils.GetIEnumerableType(typeof(TProp)) == null ?
+                (Action<T, IEnumerable<object>, ILogger>)Set :
+                SetEnumerable;
+
+            void Set(T obj, IEnumerable<object> vals, ILogger logger)
+            {
+                var one = GetOne(propertyName, vals);
+                setter(obj, builder(one, logger));
+            }
+
+            void SetEnumerable(T obj, IEnumerable<object> vals, ILogger logger)
+            {
+                setter(obj, builder(vals, logger));
+            }
+        }
+
+        /// <summary>
+        /// Compile a function which sets the value of a property
+        /// </summary>
         static Action<T, IEnumerable<object>> BuildPropertySetter<T>(string propertyName, Type propertyType)
         {
+
+
+
             // get the type of the property if it is inside an IEnumerable
             var iEnumerableType = ReflectionUtils.GetIEnumerableType(propertyType);
             
@@ -206,7 +258,7 @@ namespace SqlDsl.ObjectBuilders
         /// If the enumerable contains 1 item, return it.
         /// If the enumerable contains more than 1 item, throw an exception
         /// </summary>
-        public static T GetOne<T>(string propertyName, IEnumerable<T> items)
+        static T GetOne<T>(string propertyName, IEnumerable<T> items)
         {
             using (var enumerator = items.GetEnumerator())
             {

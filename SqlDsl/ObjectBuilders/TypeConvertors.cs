@@ -18,28 +18,40 @@ namespace SqlDsl.ObjectBuilders
         static readonly ConcurrentDictionary<Type, object> Convertors = new ConcurrentDictionary<Type, object>(
             new Dictionary<Type, object>
             {
-                { typeof(byte), ForNonNullable(Convert.ToByte) },
-                { typeof(sbyte), ForNonNullable(Convert.ToSByte) },
-                { typeof(bool), ForNonNullable(Convert.ToBoolean) },
-                { typeof(short), ForNonNullable(Convert.ToInt16) },
-                { typeof(int), ForNonNullable(Convert.ToInt32) },
-                { typeof(long), ForNonNullable(Convert.ToInt64) },
-                { typeof(ushort), ForNonNullable(Convert.ToUInt16) },
-                { typeof(uint), ForNonNullable(Convert.ToUInt32) },
-                { typeof(ulong), ForNonNullable(Convert.ToUInt64) },
-                { typeof(float), ForNonNullable(Convert.ToSingle) },
-                { typeof(double), ForNonNullable(Convert.ToDouble) },
-                { typeof(decimal), ForNonNullable(Convert.ToDecimal) },
-                { typeof(char), ForNonNullable(Convert.ToChar) },
-                { typeof(DateTime), ForNonNullable(Convert.ToDateTime) },
-                { typeof(string), ForNullableClass(Convert.ToString) },
-                { typeof(Guid), ForNonNullable(ConvertGuid) },
+                { typeof(byte), ForNonNullable(AddDummyLogger(Convert.ToByte)) },
+                { typeof(sbyte), ForNonNullable(AddDummyLogger(Convert.ToSByte)) },
+                { typeof(bool), ForNonNullable(AddDummyLogger(Convert.ToBoolean)) },
+                { typeof(short), ForNonNullable(AddDummyLogger(Convert.ToInt16)) },
+                { typeof(int), ForNonNullable(AddDummyLogger(Convert.ToInt32)) },
+                { typeof(long), ForNonNullable(AddDummyLogger(Convert.ToInt64)) },
+                { typeof(ushort), ForNonNullable(AddDummyLogger(Convert.ToUInt16)) },
+                { typeof(uint), ForNonNullable(AddDummyLogger(Convert.ToUInt32)) },
+                { typeof(ulong), ForNonNullable(AddDummyLogger(Convert.ToUInt64)) },
+                { typeof(float), ForNonNullable(AddDummyLogger(Convert.ToSingle)) },
+                { typeof(double), ForNonNullable(AddDummyLogger(Convert.ToDouble)) },
+                { typeof(decimal), ForNonNullable(AddDummyLogger(Convert.ToDecimal)) },
+                { typeof(char), ForNonNullable(AddDummyLogger(Convert.ToChar)) },
+                { typeof(DateTime), ForNonNullable(AddDummyLogger(Convert.ToDateTime)) },
+                { typeof(string), ForNullableClass(AddDummyLogger(Convert.ToString)) },
+                { typeof(Guid), ForNonNullable(AddDummyLogger(ConvertGuid)) },
             });
+
+        static Func<object, T> RemoveLogger<T>(Func<object, ILogger, T> basedOn)
+        {
+            return Removed;
+            T Removed(object x) => basedOn(x, null);
+        }
+
+        static Func<object, ILogger, T> AddDummyLogger<T>(Func<object, T> basedOn)
+        {
+            return Removed;
+            T Removed(object x, ILogger logger) => basedOn(x);
+        }
 
         /// <summary>
         /// Convert a conversion function into something which thrpw exceptions on nulls and DbNulls
         /// </summary>
-        static Func<object, T> ForNonNullable<T>(Func<object, T> basedOn)
+        static Func<object, ILogger, T> ForNonNullable<T>(Func<object, ILogger, T> basedOn)
             where T: struct
         {
             var err1 = $"Cannot convert from null to {typeof(T)}";
@@ -47,76 +59,76 @@ namespace SqlDsl.ObjectBuilders
 
             return Result;
 
-            T Result(object x)
+            T Result(object x, ILogger logger)
             {
                 if (x == null) throw new InvalidOperationException(err1);
                 if (x is DBNull) throw new InvalidOperationException(err2);
                 
-                return basedOn(x);
+                return basedOn(x, logger);
             };
         }
 
         /// <summary>
         /// Convert a conversion function into something which will guard against nulls and DbNulls
         /// </summary>
-        static Func<object, T?> ForNullable<T>(Func<object, T> basedOn)
+        static Func<object, ILogger, T?> ForNullable<T>(Func<object, ILogger, T> basedOn)
             where T: struct
         {
             return Result;
             
-            T? Result(object x)
+            T? Result(object x, ILogger logger)
             {
                 if (x is DBNull || x == null) return null;
-                return basedOn(x);
+                return basedOn(x, logger);
             };
         }
 
         /// <summary>
         /// Convert a conversion function into something which will guard against nulls and DbNulls
         /// </summary>
-        static Func<object, T> ForNullableClass<T>(Func<object, T> basedOn)
+        static Func<object, ILogger, T> ForNullableClass<T>(Func<object, ILogger, T> basedOn)
             where T: class
         {
             return Result;
             
-            T Result(object x)
+            T Result(object x, ILogger logger)
             {
                 if (x is DBNull || x == null) return null;
-                return basedOn(x);
+                return basedOn(x, logger);
             };
         }
 
         /// <summary>
         /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
         /// </summary>
-        public static Func<object, T> GetConvertor<T>()
+        public static Func<object, ILogger, T> GetConvertor<T>()
         {
             var propertyType = typeof(T);
             if (Convertors.TryGetValue(propertyType, out object convertor))
-                return (Func<object, T>)convertor;
+                return (Func<object, ILogger, T>)convertor;
 
-            return (Func<object, T>)Convertors.GetOrAdd(
-                propertyType, 
-                BuildConvertor<T>());
+            var convertor2 = BuildConvertor<T>();
+            Convertors.GetOrAdd(propertyType, convertor2);
+            return convertor2;
         }
 
         /// <summary>
         /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
         /// </summary>
-        public static Func<object, T> BuildConvertor<T>()
+        static Func<object, ILogger, T> BuildConvertor<T>()
         {
             var propertyType = typeof(T);
 
             var enumeratedType = ReflectionUtils.GetIEnumerableType(propertyType);
             if (enumeratedType != null)
-                return (Func<object, T>)BuildEnumerableConvertor(propertyType, enumeratedType);
+                return (Func<object, ILogger, T>)BuildEnumerableConvertor(propertyType, enumeratedType);
 
             if (propertyType.IsEnum)
-                return (Func<object, T>)BuildEnumCaster(propertyType);
+                return (Func<object, ILogger, T>)BuildEnumCaster(propertyType);
                 
             if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
-                return (Func<object, T>)ReflectionUtils
+                return (Func<object, ILogger, T>)ReflectionUtils
                     .GetMethod(
                         () => GetNullableConvertor<int>(),
                         propertyType.GetGenericArguments()[0])
@@ -124,10 +136,10 @@ namespace SqlDsl.ObjectBuilders
             }
 
             // fall back to casting
-            return x => (T)x;
+            return (x, _) => (T)x;
         }
 
-        static Func<object, T?> GetNullableConvertor<T>()
+        static Func<object, ILogger, T?> GetNullableConvertor<T>()
             where T: struct
         {
             var inner = GetConvertor<T>();
@@ -150,19 +162,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Get a function which converts from (object)IEnumerable&lt;object> -> propertyType. If no function found, falls back to casting
         /// </summary>
-        public static Func<object, TCollection> BuildEnumerableConvertor<TCollection, T>()
-            where TCollection : IEnumerable<T>
-        {
-            var c = BuildAnotherEnumerableConvertor<TCollection, T>();
-            return Convert;
-
-            TCollection Convert(object input) => c(input, null);
-        }
-
-        /// <summary>
-        /// Get a function which converts from (object)IEnumerable&lt;object> -> propertyType. If no function found, falls back to casting
-        /// </summary>
-        public static Func<object, ILogger, TCollection> BuildAnotherEnumerableConvertor<TCollection, T>()
+        public static Func<object, ILogger, TCollection> BuildEnumerableConvertor<TCollection, T>()
             where TCollection : IEnumerable<T>
         {
             var innerConvertor = GetConvertor<T>();
@@ -183,6 +183,7 @@ namespace SqlDsl.ObjectBuilders
             TCollection Convert(object input, ILogger logger)
             {
                 if (input is TCollection) return (TCollection)input;
+
                 if (!(input is IEnumerable))
                 {
                     var valsType = GetTypeString(input);
@@ -204,7 +205,7 @@ namespace SqlDsl.ObjectBuilders
 
                 var converted = (input as IEnumerable)
                     .Cast<object>()
-                    .Select(innerConvertor);
+                    .Select(x => innerConvertor(x, logger));
 
                 return createCollection(converted);
             }
@@ -233,14 +234,16 @@ namespace SqlDsl.ObjectBuilders
         static object BuildEnumCaster(Type enumType)
         {
             var input = Expression.Parameter(typeof(object));
+            var logger = Expression.Parameter(typeof(ILogger));
             var body = Expression.Convert(
                 Expression.Invoke(
                     Expression.Constant(Convertors[typeof(int)]),
-                    input), 
+                    input,
+                    logger), 
                 enumType);
 
             // x => (enumType)Convertors[typeof(int)](x);
-            return Expression.Lambda(body, input).Compile();
+            return Expression.Lambda(body, input, logger).Compile();
         }
 
         static Guid ConvertGuid(object x)

@@ -38,7 +38,7 @@ namespace SqlDsl.DataParser
 
             var convertor = TypeConvertors.GetConvertor<TResult>();
             foreach (var value in values)
-                yield return convertor(value);
+                yield return convertor(value, logger);
         }
 
         /// <summary>
