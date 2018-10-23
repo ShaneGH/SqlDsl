@@ -57,15 +57,7 @@ namespace SqlDsl.ObjectBuilders
                 { typeof(string), ForNullableClass(Convert.ToString) },
                 
                 { typeof(Guid), ForNonNullable(ConvertGuid) },
-                { typeof(Guid?), ForNullable(ConvertGuid) },
-                
-                // { typeof(IEnumerable<char>), ForNullableClass(ConvertCharEnumerable) },
-                // { typeof(List<char>), ForNullableClass(ConvertCharList) },
-                // { typeof(char[]), ForNullableClass(ConvertCharArray) },
-                
-                // { typeof(IEnumerable<byte>), ForNullableClass(ConvertCharEnumerable) },
-                // { typeof(List<byte>), ForNullableClass(ConvertByteList) },
-                // { typeof(byte[]), ForNullableClass(ConvertByteArray) }
+                { typeof(Guid?), ForNullable(ConvertGuid) }
             });
 
         /// <summary>

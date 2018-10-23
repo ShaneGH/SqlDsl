@@ -372,9 +372,6 @@ namespace SqlDsl.ObjectBuilders
                 if (logger.CanLogWarning())
                 {
                     var valsType = GetTypeString(values);
-                    logger.LogWarning($"Converting {valsType} to type {collectionType} for property " + 
-                        $"\"{propertyName}\". This conversion is inefficient. Consider changing the " + 
-                        $"data type of \"{propertyName}\" to {valsType}");
                 }
 
                 try
