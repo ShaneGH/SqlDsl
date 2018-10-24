@@ -296,6 +296,44 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        [Ignore("TODO")]
+        public async Task ArrayDataType6()
+        {
+            // // arrange
+            // // act
+            // var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            //     .From(x => x.Person)
+            //     .InnerJoin(x => x.Classes)
+            //         .On((q, pd) => q.Person.Id == pd.PersonId)
+            //     .InnerJoin(x => x.ClassData)
+            //         .On((q, cd) => q.Classes.ClassId == cd.ClassId)
+            //     .Map(p => new ArrayDataType2Result { Data = p.ClassData.Select(cd => cd.Data).ToArray() })
+            //     .ExecuteAsync(Executor, logger: Logger);
+
+            // // assert
+            // do assert
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ArrayDataType7()
+        {
+            // // arrange
+            // // act
+            // var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            //     .From(x => x.Person)
+            //     .InnerJoin(x => x.Classes)
+            //         .On((q, pd) => q.Person.Id == pd.PersonId)
+            //     .InnerJoin(x => x.ClassData)
+            //         .On((q, cd) => q.Classes.ClassId == cd.ClassId)
+            //     .Map(p => p.ClassData.Select(cd => cd.Data))
+            //     .ExecuteAsync(Executor, logger: Logger);
+
+            // // assert
+            // do assert
+        }
+
+        [Test]
         public void ArrayDataType_JoinReturnsTooMany_ThrowsException()
         {
             // arrange
