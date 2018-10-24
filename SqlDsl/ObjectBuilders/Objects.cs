@@ -44,7 +44,7 @@ namespace SqlDsl.ObjectBuilders
                 
             // compile setter for each property
             var propSetters = props
-                .Select(p => (name: p.name, BuildPropertySetter2<T>(p.name, p.type), p.type))
+                .Select(p => (name: p.name, BuildPropertySetter<T>(p.name, p.type), p.type))
                 .ToDictionary(x => x.name, x => (setter: x.Item2, type: x.Item3));
 
             T build(ObjectGraph vals, ILogger logger) => BuildObject(propSetters, vals, logger);
@@ -153,11 +153,11 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compile a function which sets the value of a property
         /// </summary>
-        static Action<T, IEnumerable<object>, ILogger> BuildPropertySetter2<T>(string propertyName, Type propertyType)
+        static Action<T, IEnumerable<object>, ILogger> BuildPropertySetter<T>(string propertyName, Type propertyType)
         {
             return (Action<T, IEnumerable<object>, ILogger>)ReflectionUtils
                 .GetMethod(
-                    () => BuildPropertySetter2<object, object>(""),
+                    () => BuildPropertySetter<object, object>(""),
                     typeof(T),
                     propertyType)
                 .Invoke(null, new object[] { propertyName });
@@ -166,7 +166,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compile a function which sets the value of a property
         /// </summary>
-        static Action<T, IEnumerable<object>, ILogger> BuildPropertySetter2<T, TProp>(string propertyName)
+        static Action<T, IEnumerable<object>, ILogger> BuildPropertySetter<T, TProp>(string propertyName)
         {
             var builder = TypeConvertors.GetConvertor<TProp>();
 
@@ -200,60 +200,6 @@ namespace SqlDsl.ObjectBuilders
         }
 
         /// <summary>
-        /// Compile a function which sets the value of a property
-        /// </summary>
-        static Action<T, IEnumerable<object>> BuildPropertySetter<T>(string propertyName, Type propertyType)
-        {
-
-
-
-            // get the type of the property if it is inside an IEnumerable
-            var iEnumerableType = ReflectionUtils.GetIEnumerableType(propertyType);
-            
-            // Build expression inputs
-            var objectParam = Ex.Parameter(typeof(T));
-            var valParam = Ex.Parameter(typeof(IEnumerable<object>));
-
-            // vals.Select(x => Convertors.GetConvertor(propertyType)(x))
-            var nonGenericConvertor = ReflectionUtils
-                .GetMethod(() => TypeConvertors.GetConvertor<object>(), iEnumerableType ?? propertyType)
-                .Invoke(null, new object[0]);
-
-            var convertor = Ex.Constant(nonGenericConvertor);
-            var castMethod = ReflectionUtils.GetMethod<IEnumerable<object>>(
-                x => x.Select(_ => _), 
-                typeof(object), iEnumerableType ?? propertyType);
-            var valuesOfType = Ex.Call(null, castMethod, valParam, convertor);
-
-            // if property is enumerable: new List<T>(valuesOfType)
-            // otherwise null
-            var (isCollection, builder) = Enumerables
-                .CreateCollectionExpression(propertyType, valuesOfType);
-
-            // if the property is not an enumerable
-            if (!isCollection)
-            {
-                // create a function which will allow 
-                // 0 or 1 values in an array of inputs
-                // for a non enumerable result
-                var singularGetter = ReflectionUtils
-                    .GetMethod(() => BuildGetterForSingularProp<int>(""), propertyType)
-                    .Invoke(null, new [] { propertyName });
-
-                builder = Ex.Invoke(Ex.Constant(singularGetter), valuesOfType);
-            }
-
-            // objectParam.propertyName = valuesOfType
-            var body = Ex.Assign(
-                Ex.PropertyOrField(objectParam, propertyName),
-                builder);
-
-            return Ex
-                .Lambda<Action<T, IEnumerable<object>>>(body, objectParam, valParam)
-                .Compile();
-        }
-
-        /// <summary>
         /// If the enumerable contains 0 items, return default.
         /// If the enumerable contains 1 item, return it.
         /// If the enumerable contains more than 1 item, throw an exception
@@ -273,20 +219,6 @@ namespace SqlDsl.ObjectBuilders
                 }
 
                 return result;
-            }
-        }
-
-        /// <summary>
-        /// Create a function which converts an enumerable value to a singular one,
-        /// throwing an exception if there is more than 1 value
-        /// </summary>
-        static Func<IEnumerable<T>, T> BuildGetterForSingularProp<T>(string propertyName)
-        {
-            return Get;
-
-            T Get(IEnumerable<T> input)
-            {
-                return GetOne(propertyName, input);
             }
         }
 
