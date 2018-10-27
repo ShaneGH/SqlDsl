@@ -34,7 +34,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compile a function to set all null enumerable properties of an object to empty
         /// </summary>
-        static Action<T, IEnumerable<string>> CompileEnumerabeAdder<T>(IEnumerable<((string name, Type) prop, (bool isCollection, Expression builder) collection)> enumerableProperties)
+        static Action<T, IEnumerable<string>> CompileEnumerabeAdder<T>(IEnumerable<((string name, Type, bool isReadOnly) prop, (bool isCollection, Expression builder) collection)> enumerableProperties)
         {
             // the input of the output Action
             var input = Expression.Parameter(typeof(T));
@@ -50,6 +50,7 @@ namespace SqlDsl.ObjectBuilders
 
             // for each property, build a setter
             var setters = enumerableProperties
+                .Where(x => !x.prop.isReadOnly)
                 // if (input.Prop == null && !enumerableDbFields.Contains("Prop")) { input.Prop = new List<...>(); }
                 .Select(p => (Expression)Expression.IfThen(
                     Expression.And(
