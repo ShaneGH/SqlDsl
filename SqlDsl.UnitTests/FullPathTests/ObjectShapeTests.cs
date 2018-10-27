@@ -211,21 +211,22 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .ExecuteAsync(Executor));
         }
 
-        // [Test]
-        // public async Task ObjectWithConstructorArgs1()
-        // {
-        //     // arrange
-        //     // act
-        //     var data = await Sql.Query.Sqlite<Person>()
-        //         .From()
-        //         .Map(x => new Person(x.Id, x.Name, x.Gender))
-        //         .ExecuteAsync(Executor);
+        [Test]
+        [Ignore("TODO")]
+        public async Task ObjectWithConstructorArgs1()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<Person>()
+                .From()
+                .Map(x => new Person(x.Id, x.Name, x.Gender))
+                .ExecuteAsync(Executor);
 
-        //     // assert
-        //     Assert.AreEqual(2, data.Count());
-        //     Assert.AreEqual(Data.People.John, data.First());
-        //     Assert.AreEqual(Data.People.Mary, data.ElementAt(1));
-        // }
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John, data.First());
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1));
+        }
 
         class ObjectWithConstructorArgs2Test
         {
@@ -237,23 +238,25 @@ namespace SqlDsl.UnitTests.FullPathTests
             }
         }
 
-        // [Test]
-        // public async Task ObjectWithConstructorArgs2()
-        // {
-        //     // arrange
-        //     // act
-        //     var data = await Sql.Query.Sqlite<Person>()
-        //         .From()
-        //         .Map(x => new ObjectWithConstructorArgs2Test(x))
-        //         .ExecuteAsync(Executor);
+        [Test]
+        [Ignore("TODO")]
+        public async Task ObjectWithConstructorArgs2()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<Person>()
+                .From()
+                .Map(x => new ObjectWithConstructorArgs2Test(x))
+                .ExecuteAsync(Executor);
 
-        //     // assert
-        //     Assert.AreEqual(2, data.Count());
-        //     Assert.AreEqual(Data.People.John, data.First().TheClassPerson);
-        //     Assert.AreEqual(Data.People.Mary, data.ElementAt(1).TheClassPerson);
-        // }
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John, data.First().TheClassPerson);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).TheClassPerson);
+        }
 
         [Test]
+        [Ignore("TODO")]
         public async Task ObjectWithConstructorArgs3()
         {
             // arrange

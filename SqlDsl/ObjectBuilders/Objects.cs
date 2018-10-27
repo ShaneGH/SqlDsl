@@ -54,6 +54,9 @@ namespace SqlDsl.ObjectBuilders
                 && (type.Attributes & TypeAttributes.NotPublic) == TypeAttributes.NotPublic;
         }
 
+        public static readonly Type[] EmptyTypes = new Type[0];
+        public static readonly object[] EmptyObjects = new object[0];
+
         /// <summary>
         /// Build an object
         /// </summary>
@@ -61,10 +64,14 @@ namespace SqlDsl.ObjectBuilders
         /// <param name="vals">The values of the object</param>
         static T BuildObject<T>(Dictionary<string, (Action<T, IEnumerable<object>> setter, Type propertyType)> propSetters, ObjectGraph vals, ILogger logger)
         {
-            // Create output object
-            var obj = (T)ConstructObject(typeof(T), new Type[0], new object[0]);
             if (vals == null)
-                return obj;
+                return (T)ConstructObject(typeof(T), EmptyTypes, EmptyObjects);
+
+            // Create output object
+            var obj = (T)ConstructObject(
+                typeof(T), 
+                vals.ConstructorArgTypes, 
+                new object[0]);
 
             // use a setter to set each simple property
             foreach (var prop in vals.SimpleProps.OrEmpty())

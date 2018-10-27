@@ -20,6 +20,8 @@ namespace SqlDsl.ObjectBuilders
         /// </summary>
         public IEnumerable<(string name, IEnumerable<ObjectGraph> value)> ComplexProps { get; set; }
 
+        public readonly Type[] ConstructorArgTypes = new Type[0];
+
         public override string ToString()
         {
             var simple = SimpleProps
