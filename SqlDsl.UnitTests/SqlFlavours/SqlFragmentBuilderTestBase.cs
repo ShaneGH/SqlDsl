@@ -319,7 +319,7 @@ namespace SqlDsl.UnitTests.SqlFlavours
             };
         }
 
-        static ColumnDescriptor GetColumn((string name, Type type) coll)
+        static ColumnDescriptor GetColumn((string name, Type type, bool isReadOnly) coll)
         {
             return new ColumnDescriptor
             {
