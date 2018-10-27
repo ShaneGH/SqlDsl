@@ -31,6 +31,15 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         public string Name { get; set; }
         public Gender Gender { get; set; }
 
+        public Person() { }
+
+        public Person(int id, string name, Gender gender)
+        {
+            Id = id;
+            Name = name;
+            Gender = gender;
+        }
+
         public override int GetHashCode() => $"{Id}.{Name}.{Gender}".GetHashCode();
         public override bool Equals(object p)
         {

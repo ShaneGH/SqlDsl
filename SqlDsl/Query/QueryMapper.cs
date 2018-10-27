@@ -247,7 +247,11 @@ namespace SqlDsl.Query
             return state.WrappedSqlStatement.ContainsTable(property);
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMap(BuildMapState state, Expression expr, string toPrefix = null, bool isExprTip = false)
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMap(
+            BuildMapState state, 
+            Expression expr, 
+            string toPrefix = null, 
+            bool isExprTip = false)
         {
             if (IsConstant(expr))
             {
@@ -295,7 +299,7 @@ namespace SqlDsl.Query
 
                 case ExpressionType.New:
                     return (expr as NewExpression).Arguments
-                        .Select(ex => BuildMap(state, ex, toPrefix))
+                        .Select(ex => BuildMap(state, ex, toPrefix, isExprTip: true))
                         .AggregateTuple2();
 
                 case ExpressionType.MemberInit:

@@ -284,7 +284,8 @@ namespace SqlDsl.Utils
                 Expression.New(constructor),
                 ReflectionUtils
                     .GetFieldAndPropertyMembers(original.Type)
-                    .Select(m => Expression.Bind(m, Expression.PropertyOrField(original, m.Name))));
+                    .Where(x => !x.isReadonly)
+                    .Select(m => Expression.Bind(m.Item1, Expression.PropertyOrField(original, m.Item1.Name))));
         }
 
         /// <summary>
@@ -387,17 +388,18 @@ namespace SqlDsl.Utils
                 .Select(f => (name: f.Name, type: f.FieldType, readOnly: f.IsInitOnly))
                 .Concat(objectType
                     .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                    .Select(f => (name: f.Name, type: f.PropertyType, readOnly: f.GetSetMethod() == null)));
+                    .Select(p => (name: p.Name, type: p.PropertyType, readOnly: p.GetSetMethod() == null)));
         }
 
         /// <summary>
         /// Get the public instance fields and properties from a class
         /// </summary>
-        public static IEnumerable<MemberInfo> GetFieldAndPropertyMembers(this Type objectType) => objectType
+        public static IEnumerable<(MemberInfo, bool isReadonly)> GetFieldAndPropertyMembers(this Type objectType) => objectType
             .GetFields(BindingFlags.Public | BindingFlags.Instance)
-            .Cast<MemberInfo>()
+            .Select(f => (f as MemberInfo, f.IsInitOnly))
             .Concat(objectType
-                .GetProperties(BindingFlags.Public | BindingFlags.Instance));
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Select(p => (p as MemberInfo, p.GetSetMethod() == null)));
 
         /// <summary>
         /// Get the type for a PropertyInfo or FieldInfo. Throw an exception otherwise

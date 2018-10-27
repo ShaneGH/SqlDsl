@@ -210,5 +210,63 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .Where(q => q.Person1 == q.Person2)
                     .ExecuteAsync(Executor));
         }
+
+        // [Test]
+        // public async Task ObjectWithConstructorArgs1()
+        // {
+        //     // arrange
+        //     // act
+        //     var data = await Sql.Query.Sqlite<Person>()
+        //         .From()
+        //         .Map(x => new Person(x.Id, x.Name, x.Gender))
+        //         .ExecuteAsync(Executor);
+
+        //     // assert
+        //     Assert.AreEqual(2, data.Count());
+        //     Assert.AreEqual(Data.People.John, data.First());
+        //     Assert.AreEqual(Data.People.Mary, data.ElementAt(1));
+        // }
+
+        class ObjectWithConstructorArgs2Test
+        {
+            public readonly Person TheClassPerson;
+
+            public ObjectWithConstructorArgs2Test(Person person)
+            {
+                TheClassPerson = person;
+            }
+        }
+
+        // [Test]
+        // public async Task ObjectWithConstructorArgs2()
+        // {
+        //     // arrange
+        //     // act
+        //     var data = await Sql.Query.Sqlite<Person>()
+        //         .From()
+        //         .Map(x => new ObjectWithConstructorArgs2Test(x))
+        //         .ExecuteAsync(Executor);
+
+        //     // assert
+        //     Assert.AreEqual(2, data.Count());
+        //     Assert.AreEqual(Data.People.John, data.First().TheClassPerson);
+        //     Assert.AreEqual(Data.People.Mary, data.ElementAt(1).TheClassPerson);
+        // }
+
+        [Test]
+        public async Task ObjectWithConstructorArgs3()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<QueryClass1>()
+                .From(x => x.Person)
+                .Map(x => new ObjectWithConstructorArgs2Test(x.Person))
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John, data.First().TheClassPerson);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).TheClassPerson);
+        }
     }
 }

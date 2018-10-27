@@ -44,6 +44,7 @@ namespace SqlDsl.ObjectBuilders
                 
             // compile setter for each property
             var propSetters = props
+                .Where(p => !p.readOnly)
                 .Select(p => (name: p.name, BuildPropertySetter<T>(p.name, p.type), p.type))
                 .ToDictionary(x => x.name, x => (setter: x.Item2, type: x.Item3));
 
