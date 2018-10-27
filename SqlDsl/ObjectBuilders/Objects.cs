@@ -62,7 +62,7 @@ namespace SqlDsl.ObjectBuilders
         static T BuildObject<T>(Dictionary<string, (Action<T, IEnumerable<object>> setter, Type propertyType)> propSetters, ObjectGraph vals, ILogger logger)
         {
             // Create output object
-            var obj = (T)ConstructObject(typeof(T));
+            var obj = (T)ConstructObject(typeof(T), new Type[0], new object[0]);
             if (vals == null)
                 return obj;
 
@@ -103,39 +103,56 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Create an object by calling its default constructor
         /// </summary>
-        static object ConstructObject(Type type) => GetConstructorFromCache(type)();
+        static object ConstructObject(Type type, Type[] constructorArgTypes, object[] constructorArgs) => GetConstructorFromCache(type, constructorArgTypes)(constructorArgs);
 
         /// <summary>
         /// A cahce of object constructors
         /// </summary>
-        static readonly ConcurrentDictionary<Type, Func<object>> Constructors = new ConcurrentDictionary<Type, Func<object>>();
+        static readonly ConcurrentDictionary<Tuple<Type, Type[]>, Func<object[], object>> Constructors = 
+            new ConcurrentDictionary<Tuple<Type, Type[]>, Func<object[], object>>(new ConstructorKeyComparer());
 
         /// <summary>
         /// Get a cached constructor or build and add a new one to the cache
         /// </summary>
-        static Func<object> GetConstructorFromCache(Type type)
+        static Func<object[], object> GetConstructorFromCache(Type type, Type[] constructorArgTypes)
         {
             // try get object from cache
-            if (Constructors.TryGetValue(type, out Func<object> constructor))
+            var key = new Tuple<Type, Type[]>(type, constructorArgTypes);
+            if (Constructors.TryGetValue(key, out Func<object[], object> constructor))
                 return constructor;
 
+            // add to cache and construct object
+            return Constructors.GetOrAdd(key, BuildConstructor(type, constructorArgTypes));
+        }
+
+        /// <summary>
+        /// Build a constructor
+        /// </summary>
+        static Func<object[], object> BuildConstructor(Type type, Type[] constructorArgTypes)
+        {
             // get default constructor for object
             var constr = type
-                .GetConstructors()
-                .Where(c => c.GetParameters().Length == 0)
-                .FirstOrDefault() ?? 
-                throw new InvalidOperationException($"Object {type} does not have a default constructor");
+                .GetConstructor(constructorArgTypes) ?? 
+                throw new InvalidOperationException(
+                    $"Object {type} does not have a constructor with args: {constructorArgTypes.JoinString(", ")}");
 
             // compile expression for constructor
-            constructor = Ex
-                .Lambda<Func<object>>(
-                    Ex.Convert(
-                        Ex.New(constr),
-                        typeof(object)))
-                .Compile();
+            var args = Expression.Parameter(typeof(object[]));
+            var constructorArgs = constructorArgTypes
+                .Select((x, i) => 
+                    Expression.Convert(
+                        Expression.ArrayIndex(
+                            args, 
+                            Expression.Constant(i)),
+                        x));
 
-            // add to cache and construct object
-            return Constructors.GetOrAdd(type, constructor);
+            return Ex
+                .Lambda<Func<object[], object>>(
+                    Ex.Convert(
+                        Ex.New(constr, constructorArgs),
+                        typeof(object)),
+                    args)
+                .Compile();
         }
 
         /// <summary>
@@ -391,6 +408,35 @@ namespace SqlDsl.ObjectBuilders
             return valType.IsArray ?
                 (GetTypeString(enumer.Current) + "[]") :
                 (valType.Name + "<" + GetTypeString(enumer.Current) + ">");
+        }
+
+        class ConstructorKeyComparer : IEqualityComparer<Tuple<Type, Type[]>>
+        {
+            public bool Equals(Tuple<Type, Type[]> x, Tuple<Type, Type[]> y)
+            {
+                if (x == null && y == null) return true;
+                if (x == null || y == null) return false;
+
+                if (x.Item1 != y.Item1) return false;
+                
+                if (x.Item2 == null && y.Item2 == null) return true;
+                if (x.Item2 == null || y.Item2 == null) return false;
+
+                if (x.Item2.Length != y.Item2.Length) return false;
+
+                for (var i = 0; i < x.Item2.Length; i++)
+                {
+                    if (x.Item2[i] != y.Item2[i]) return false;
+                }
+
+                return true;
+            }
+
+            public int GetHashCode(Tuple<Type, Type[]> obj)
+            {
+                return obj.Item2
+                    .Aggregate(obj.Item1.GetHashCode(), (hash, t) => hash ^ t.GetHashCode());
+            }
         }
     }
 }
