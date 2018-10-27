@@ -271,5 +271,59 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.People.John, data.First().TheClassPerson);
             Assert.AreEqual(Data.People.Mary, data.ElementAt(1).TheClassPerson);
         }
+
+        class ObjectWithConstructorArgs4Test
+        {
+            public readonly byte[] Datas;
+
+            public ObjectWithConstructorArgs4Test(byte[] data)
+            {
+                Datas = data;
+            }
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ObjectWithConstructorArgs4()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<PersonsData>()
+                .From()
+                .Map(x => new ObjectWithConstructorArgs4Test(x.Data))
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.PeoplesData.JohnsData.Data, data.First().Datas);
+            Assert.AreEqual(Data.PeoplesData.MarysData.Data, data.ElementAt(1).Datas);
+        }
+
+        class ObjectWithConstructorArgs5Test
+        {
+            public readonly List<byte> Datas;
+
+            public ObjectWithConstructorArgs5Test(List<byte> data)
+            {
+                Datas = data;
+            }
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ObjectWithConstructorArgs5()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<PersonsData>()
+                .From()
+                .Map(x => new ObjectWithConstructorArgs5Test(x.Data.ToList()))
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.PeoplesData.JohnsData.Data, data.First().Datas);
+            Assert.AreEqual(Data.PeoplesData.MarysData.Data, data.ElementAt(1).Datas);
+        }
     }
 }
