@@ -27,23 +27,10 @@ namespace SqlDsl.ObjectBuilders
             // different process for creating anonymous objects
             if (IsAnonymousType(type))
                 return AnonymousObjects.CompileAnonymousObjectBuilder<T>();
-            
-            // get the default construcor
-            Func<T> constructor = () => (T)ConstructObject(type);
-                
-            var objectVar = Ex.Variable(type);
-
-            // var objectVar = constructor()
-            var createObject = Ex.Assign(
-                objectVar, 
-                Ex.Invoke(
-                    Ex.Constant(constructor)));
-
-            // get list of properties
-            var props = type.GetFieldsAndProperties();
                 
             // compile setter for each property
-            var propSetters = props
+            var propSetters = type
+                .GetFieldsAndProperties()
                 .Where(p => !p.readOnly)
                 .Select(p => (name: p.name, BuildPropertySetter<T>(p.name, p.type), p.type))
                 .ToDictionary(x => x.name, x => (setter: x.Item2, type: x.Item3));
