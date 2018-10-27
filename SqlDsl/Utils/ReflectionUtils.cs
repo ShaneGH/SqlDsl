@@ -380,12 +380,15 @@ namespace SqlDsl.Utils
         /// <summary>
         /// Get the public instance fields and properties from a class
         /// </summary>
-        public static IEnumerable<(string name, Type type)> GetFieldsAndProperties(this Type objectType) => objectType
-            .GetFields(BindingFlags.Public | BindingFlags.Instance)
-            .Select(f => (name: f.Name, type: f.FieldType))
-            .Concat(objectType
-                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Select(f => (name: f.Name, type: f.PropertyType)));
+        public static IEnumerable<(string name, Type type, bool readOnly)> GetFieldsAndProperties(this Type objectType)
+        {
+            return objectType
+                .GetFields(BindingFlags.Public | BindingFlags.Instance)
+                .Select(f => (name: f.Name, type: f.FieldType, readOnly: f.IsInitOnly))
+                .Concat(objectType
+                    .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Select(f => (name: f.Name, type: f.PropertyType, readOnly: f.GetSetMethod() == null)));
+        }
 
         /// <summary>
         /// Get the public instance fields and properties from a class
