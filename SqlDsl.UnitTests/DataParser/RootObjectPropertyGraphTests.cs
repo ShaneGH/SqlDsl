@@ -744,6 +744,54 @@ namespace SqlDsl.UnitTests.DataParser
 
             Compare(expected, actual);
         }
+
+        class SemiPerson
+        {
+            public readonly string Name;
+            public readonly Gender Gender;
+
+            public SemiPerson(Person person, Gender gender)
+            {
+                Name = person.Name;
+                Gender = gender;
+            }
+        }
+
+        [Test]
+        public void PropertyGraph_MappedValHasConstructorArgs_ReturnsCorrectOPG()
+        {
+            // arrange
+            // act
+            var actual = Sql.Query.Sqlite<Person>()
+                .From()
+                .Map(x => new SemiPerson(x, x.Gender))
+                .BuildObjetPropertyGraph<SemiPerson, Person>(true);
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                typeof(SemiPerson),
+                null, 
+                null, 
+                new[] { 0 },
+                simpleConstructorArgs: new[]
+                {
+                    (4, 1, new [] {1}.Skip(0), typeof(int[]), typeof(int))
+                },
+                complexConstructorArgs: new [] 
+                {
+                    (0, new ObjectPropertyGraph(
+                        typeof(Person),
+                        new[]
+                        {
+                            (3, "Data", new [] {2}.Skip(0), typeof(byte[][]), typeof(byte[])),
+                            (4, "ClassIds", new [] {1}.Skip(0), typeof(int[]), typeof(int))
+                        }, 
+                        null, 
+                        new[] { 0 }))
+                });
+
+            Compare(expected, actual);
+        }
     }
 
     public static class RootObjectPropertyGraphTestUtils
@@ -756,11 +804,13 @@ namespace SqlDsl.UnitTests.DataParser
             return compiled.PropertyGraph;
         }
         
-        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.ISqlBuilder<TResult> builder)
+        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.ISqlBuilder<TResult> builder, bool printQuery = true)
         {
             var mapper = (QueryMapper<TResult>)builder;
             var compiled = (CompiledQuery<TResult>)mapper
                 .Compile();
+
+            if (printQuery) Console.WriteLine(compiled.Sql);
 
             return compiled.PropertyGraph;
         }
