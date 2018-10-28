@@ -325,5 +325,47 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.PeoplesData.JohnsData.Data, data.First().Datas);
             Assert.AreEqual(Data.PeoplesData.MarysData.Data, data.ElementAt(1).Datas);
         }
+
+        class ObjectWithConstructorArgs6Test
+        {
+            public Person PersonWithName { get; set; }
+            public Person PersonWithGender { get; set; }
+
+            public ObjectWithConstructorArgs6Test Inner { get; set; }
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ObjectWithConstructorArgs_NestedObjectsAndMultipleCArgsObjectsOnOneLevel()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<Person>()
+                .From()
+                .Map(x => new ObjectWithConstructorArgs6Test
+                {
+                    PersonWithName = new Person(0, x.Name, 0),
+                    PersonWithGender = new Person(0, null, x.Gender),
+                    Inner = new ObjectWithConstructorArgs6Test
+                    {
+                        PersonWithName = new Person(0, x.Name, 0),
+                        PersonWithGender = new Person(0, null, x.Gender),
+                    }
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            
+            Assert.AreEqual(new Person(0, null, 0), data.First().PersonWithName);
+            Assert.AreEqual(new Person(0, "John", Gender.Male), data.First().PersonWithGender);
+            Assert.AreEqual(new Person(0, null, 0), data.First().Inner.PersonWithName);
+            Assert.AreEqual(new Person(0, "John", Gender.Male), data.First().Inner.PersonWithGender);
+            
+            Assert.AreEqual(new Person(0, null, 0), data.ElementAt(1).PersonWithName);
+            Assert.AreEqual(new Person(0, "Mary", Gender.Female), data.ElementAt(1).PersonWithGender);
+            Assert.AreEqual(new Person(0, null, 0), data.ElementAt(1).Inner.PersonWithName);
+            Assert.AreEqual(new Person(0, "Mary", Gender.Female), data.ElementAt(1).Inner.PersonWithGender);
+        }
     }
 }
