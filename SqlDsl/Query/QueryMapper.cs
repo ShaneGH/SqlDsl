@@ -244,6 +244,7 @@ namespace SqlDsl.Query
             }
 
             var property = chainPrefix.Concat(chain).JoinString(".");
+            if (string.IsNullOrEmpty(property)) property = SqlStatementConstants.RootObjectAlias;
             return state.WrappedSqlStatement.ContainsTable(property);
         }
 

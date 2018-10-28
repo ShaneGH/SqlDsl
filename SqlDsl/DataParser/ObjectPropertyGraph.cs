@@ -24,6 +24,16 @@ namespace SqlDsl.DataParser
         /// Properties of an object which have sub properies
         /// </summary>
         public readonly IEnumerable<(string name, ObjectPropertyGraph value)> ComplexProps;
+
+        /// <summary>
+        /// Constructor args of an object with simple values like strings, ints etc... The index is the index of the column in the sql query resuts table.
+        /// </summary>
+        public readonly IEnumerable<(int index, int argIndex, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType)> SimpleConstructorArgs;
+        
+        /// <summary>
+        /// Constructor args of an object which have sub properies
+        /// </summary>
+        public readonly IEnumerable<(int argIndex, ObjectPropertyGraph value)> ComplexConstructorArgs;
         
         /// <summary>
         /// A composite of the row numbers which point to this object
@@ -46,12 +56,16 @@ namespace SqlDsl.DataParser
             Type objectType,
             IEnumerable<(int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType)> simpleProps, 
             IEnumerable<(string name, ObjectPropertyGraph value)> complexProps, 
-            IEnumerable<int> rowIdColumnNumbers)
+            IEnumerable<int> rowIdColumnNumbers,
+            IEnumerable<(int index, int argIndex, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType)> simpleConstructorArgs = null,
+            IEnumerable<(int argIndex, ObjectPropertyGraph value)> complexConstructorArgs = null)
         {
             ObjectType = objectType ?? throw new ArgumentNullException(nameof(objectType));
             SimpleProps = simpleProps.OrEmpty();
             ComplexProps = complexProps.OrEmpty();
             RowIdColumnNumbers = rowIdColumnNumbers.OrEmpty();
+            SimpleConstructorArgs = simpleConstructorArgs.OrEmpty();
+            ComplexConstructorArgs = complexConstructorArgs.OrEmpty();
         }
 
         /// <summary>
@@ -67,11 +81,26 @@ namespace SqlDsl.DataParser
                 .JoinString(";");
         }
 
-        public override string ToString() =>
-            $"RowNumberColumnIds: [{RowIdColumnNumbers.JoinString(",")}]\n" +
-            SimpleProps
-                .Select(p => $"{p.name}: {{ index: {p.index}, rids: [{p.rowNumberColumnIds.JoinString(",")}], resultPropertyType: {p.resultPropertyType?.Name ?? "null"}, dataCellType: {p.dataCellType?.Name ?? "null"} }}")
-                .Concat(ComplexProps.Select(p => $"{p.name}:\n  {p.value.ToString().Replace("\n", "\n  ")}"))
+        public override string ToString()
+        {
+            var rowNumbers = $"RowNumberColumnIds: [{RowIdColumnNumbers.JoinString(",")}]";
+
+            var simpleProps = SimpleProps
+                .Select(p => $"{p.name}: {{ index: {p.index}, rids: [{p.rowNumberColumnIds.JoinString(",")}], resultPropertyType: {p.resultPropertyType?.Name ?? "null"}, dataCellType: {p.dataCellType?.Name ?? "null"} }}");
+
+            var complexProps = ComplexProps.Select(p => $"{p.name}:\n  {p.value.ToString().Replace("\n", "\n  ")}");
+
+            var simpleConstructorArgs = SimpleConstructorArgs
+                .Select(p => $"CArg_{p.argIndex}: {{ index: {p.index}, rids: [{p.rowNumberColumnIds.JoinString(",")}], resultPropertyType: {p.resultPropertyType?.Name ?? "null"}, dataCellType: {p.dataCellType?.Name ?? "null"} }}");
+
+            var complexConstructorArgs = ComplexConstructorArgs.Select(p => $"CArg_{p.argIndex}:\n  {p.value.ToString().Replace("\n", "\n  ")}");
+
+            return new [] { rowNumbers }
+                .Concat(simpleConstructorArgs)
+                .Concat(complexConstructorArgs)
+                .Concat(simpleProps)
+                .Concat(complexProps)
                 .JoinString("\n");
+        }
     }
 }

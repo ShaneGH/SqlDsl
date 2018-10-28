@@ -96,7 +96,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                     return col;
             }
 
-            throw new InvalidOperationException($"There is no column with alias: {alias}.");
+            throw new InvalidOperationException($"There is no column with alias: \"{alias}\".");
         }
     }
 }

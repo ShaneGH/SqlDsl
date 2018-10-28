@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -40,7 +41,7 @@ namespace SqlDsl
 
     public class CompiledQuery<TArgs, TResult> : ICompiledQuery<TArgs, TResult>
     {
-        readonly string Sql;
+        internal readonly string Sql;
         readonly IEnumerable<object> Parameters;
         readonly string[] SelectColumns;
         public readonly RootObjectPropertyGraph PropertyGraph;
@@ -94,12 +95,17 @@ namespace SqlDsl
         /// Debug only (TODO: make internal)
         /// </summary>
         public RootObjectPropertyGraph PropertyGraph => (Worker as CompiledQuery<object, TResult>)?.PropertyGraph;
+        
+        /// <summary>
+        /// Debug only (TODO: make internal)
+        /// </summary>
+        public string Sql => (Worker as CompiledQuery<object, TResult>)?.Sql;
 
         readonly ICompiledQuery<object, TResult> Worker;
 
         public CompiledQuery(ICompiledQuery<object, TResult> worker)
         {
-            Worker = worker;
+            Worker = worker ?? throw new ArgumentNullException(nameof(worker));
         }
 
         public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, ILogger logger = null) => Worker.ExecuteAsync(executor, null, logger: logger);
