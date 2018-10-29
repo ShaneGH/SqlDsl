@@ -25,6 +25,11 @@ namespace SqlDsl
         /// The minimum level to log at
         /// </summary>
         LogLevel LogLevel { get; }
+
+        /// <summary>
+        /// A set of log messages to supress
+        /// </summary>
+        HashSet<LogMessages> SupressLogMessages { get; }
     }
 
     public enum LogLevel
@@ -32,6 +37,14 @@ namespace SqlDsl
         Info = 1,
         Warning = 2,
         DoNotLog = 3
+    }
+
+    public enum LogMessages
+    {
+        /// <summary>
+        /// A log message which is fired when value types need to be casted and boxed
+        /// </summary>
+        InefficientCastWarning = 10000
     }
     
     internal static class ILoggerUtils
@@ -42,35 +55,41 @@ namespace SqlDsl
         /// <summary>
         /// Determine whether a logger can log an info message
         /// </summary>
-        public static bool CanLogInfo(this ILogger logger)
+        public static bool CanLogInfo(this ILogger logger, LogMessages? messageType)
         {
-            return logger != null && (int)logger.LogLevel <= InfoLevel;
+            return logger != null && 
+                (int)logger.LogLevel <= InfoLevel &&
+                (messageType == null || !logger.SupressLogMessages.Contains(messageType.Value));
         }
 
         /// <summary>
         /// Determine whether a logger can log a warning
         /// </summary>
-        public static bool CanLogWarning(this ILogger logger)
+        public static bool CanLogWarning(this ILogger logger, LogMessages? messageType)
         {
-            return logger != null && (int)logger.LogLevel <= WarningLevel;
+            return logger != null && 
+                (int)logger.LogLevel <= WarningLevel &&
+                (messageType == null || !logger.SupressLogMessages.Contains(messageType.Value));
         }
 
-        const string SqlDslPrefix = "[SqlDsl] ";
+        static string SqlDslPrefix(LogMessages? messageType) => messageType == null ?
+            "[SqlDsl] " :
+            $"[SqlDsl, {(int)messageType.Value}] ";
 
         /// <summary>
         /// Log an info message
         /// </summary>
-        public static void LogInfo(this ILogger logger, string message)
+        public static void LogInfo(this ILogger logger, string message, LogMessages? messageType)
         {
-            logger.Info($"{SqlDslPrefix}{message}");
+            logger.Info($"{SqlDslPrefix(messageType)}{message}");
         }
 
         /// <summary>
         /// Log a warning message
         /// </summary>
-        public static void LogWarning(this ILogger logger, string message)
+        public static void LogWarning(this ILogger logger, string message, LogMessages? messageType)
         {
-            logger.Warning($"{SqlDslPrefix}{message}");
+            logger.Warning($"{SqlDslPrefix(messageType)}{message}");
         }
     }
 }

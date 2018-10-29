@@ -105,12 +105,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.Fail("Do asserts");
         }
 
-        [Test]
-        public async Task ArrayDataType1()
+        Task<IEnumerable<ArrayDataType1Result>> ADT1()
         {
-            // arrange
-            // act
-            var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
                 .InnerJoin(x => x.PersonsData)
                     .On((q, pd) => q.Person.Id == pd.PersonId)
@@ -123,6 +120,14 @@ namespace SqlDsl.UnitTests.FullPathTests
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
                 .ExecuteAsync(Executor, logger: Logger);
+        }
+
+        [Test]
+        public async Task ArrayDataType1()
+        {
+            // arrange
+            // act
+            var data = await ADT1();
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -132,14 +137,24 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, john.ClassIds.Length);
             Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);
             Assert.AreEqual(Data.Classes.Archery.Id, john.ClassIds[1]);
+            
+            Assert.IsEmpty(Logger.WarningMessages);
         }
 
         [Test]
-        public async Task ArrayDataType1_ConvertArrayToList()
+        public async Task ArrayDataType1_DoesntLogWarning()
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            await ADT1();
+
+            // assert
+            Assert.IsEmpty(Logger.WarningMessages);
+        }
+
+        Task<IEnumerable<ArrayDataType1_1Result>> ADT1_ConvertArrayToList()
+        {
+            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
                 .InnerJoin(x => x.PersonsData)
                     .On((q, pd) => q.Person.Id == pd.PersonId)
@@ -152,6 +167,14 @@ namespace SqlDsl.UnitTests.FullPathTests
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
                 .ExecuteAsync(Executor, logger: Logger);
+        }
+
+        [Test]
+        public async Task ArrayDataType1_ConvertArrayToList()
+        {
+            // arrange
+            // act
+            var data = await ADT1_ConvertArrayToList();
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -164,11 +187,19 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task ArrayDataType2()
+        public async Task ArrayDataType1_ConvertArrayToList_LogsWarning()
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            await ADT1_ConvertArrayToList();
+
+            // assert
+            Assert.AreEqual(1, Logger.WarningMessages.Count);
+        }
+
+        Task<IEnumerable<ArrayDataType2Result>> ADT2()
+        {
+            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
                 .InnerJoin(x => x.PersonsData)
                     .On((q, pd) => q.Person.Id == pd.PersonId)
@@ -181,6 +212,14 @@ namespace SqlDsl.UnitTests.FullPathTests
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
                 .ExecuteAsync(Executor, logger: Logger);
+        }
+
+        [Test]
+        public async Task ArrayDataType2()
+        {
+            // arrange
+            // act
+            var data = await ADT2();
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -195,27 +234,25 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task ArrayDataType2_DoesNotWarn()
         {
             // arrange
             // act
-            await Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.Person)
-                .InnerJoin(x => x.PersonsData)
-                    .On((q, pd) => q.Person.Id == pd.PersonId)
-                .InnerJoin(x => x.Classes)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
-                .Where(p => p.Person.Id == Data.People.John.Id)
-                .Map(x => new ArrayDataType2Result
-                {
-                    Data = x.PersonsData.Select(d => d.Data).ToArray(),
-                    ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
-                })
-                .ExecuteAsync(Executor, logger: Logger);
+            await ADT2();
 
             // assert
             Assert.IsEmpty(Logger.WarningMessages);
+        }
+
+        Task<IEnumerable<List<byte>>> ADT3()
+        {
+            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                .From(x => x.Person)
+                .InnerJoin(x => x.PersonsData)
+                    .On((q, pd) => q.Person.Id == pd.PersonId)
+                .Where(p => p.Person.Id == Data.People.John.Id)
+                .Map(p => p.PersonsData.One().Data.ToList())
+                .ExecuteAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -223,13 +260,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.Person)
-                .InnerJoin(x => x.PersonsData)
-                    .On((q, pd) => q.Person.Id == pd.PersonId)
-                .Where(p => p.Person.Id == Data.People.John.Id)
-                .Map(p => p.PersonsData.One().Data.ToList())
-                .ExecuteAsync(Executor, logger: Logger);
+            var data = await ADT3();
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -239,23 +270,52 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task ArrayDataType4()
+        [Ignore("The fix is in Parser.ParseSimple, in the call [var convertor = " + 
+        "TypeConvertors.GetConvertor<TResult>();] need a way of passing [true] into get covertor (private overload)")]
+        public async Task ArrayDataType3_LogsWarning()
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            await ADT3();
+
+            // assert
+            Assert.IsNotEmpty(Logger.WarningMessages);
+        }
+
+        Task<IEnumerable<byte[]>> ADT4()
+        {
+            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
                 .InnerJoin(x => x.PersonsData)
                     .On((q, pd) => q.Person.Id == pd.PersonId)
                 .Where(p => p.Person.Id == Data.People.John.Id)
                 .Map(p => p.PersonsData.One().Data.ToArray())
                 .ExecuteAsync(Executor, logger: Logger);
+        }
+
+        [Test]
+        public async Task ArrayDataType4()
+        {
+            // arrange
+            // act
+            var data = await ADT4();
 
             // assert
             Assert.AreEqual(1, data.Count());
             var john = data.First();
 
             CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john);
+        }
+
+        [Test]
+        public async Task ArrayDataType4_DoesNotWarn()
+        {
+            // arrange
+            // act
+            await ADT4();
+
+            // assert
+            CollectionAssert.IsEmpty(Logger.WarningMessages);
         }
 
         class ArrayDataType3Result
@@ -264,12 +324,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             public List<List<byte>> Data;
         }
 
-        [Test]
-        public async Task ArrayDataType5()
+        Task<IEnumerable<ArrayDataType3Result>> ADT5()
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
                 .InnerJoin(x => x.PersonsData)
                     .On((q, pd) => q.Person.Id == pd.PersonId)
@@ -282,6 +341,14 @@ namespace SqlDsl.UnitTests.FullPathTests
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
                 .ExecuteAsync(Executor, logger: Logger);
+        }
+
+        [Test]
+        public async Task ArrayDataType5()
+        {
+            // arrange
+            // act
+            var data = await ADT5();
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -296,8 +363,19 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public async Task ArrayDataType5_LogsWarning()
+        {
+            // arrange
+            // act
+            var data = await ADT5();
+
+            // assert
+            CollectionAssert.IsNotEmpty(Logger.WarningMessages);
+        }
+
+        [Test]
         [Ignore("TODO")]
-        public async Task ArrayDataType6()
+        public void ArrayDataType6()
         {
             // // arrange
             // // act
@@ -316,7 +394,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         [Test]
         [Ignore("TODO")]
-        public async Task ArrayDataType7()
+        public void ArrayDataType7()
         {
             // // arrange
             // // act
@@ -331,6 +409,90 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // // assert
             // do assert
+        }
+
+        Task<IEnumerable<IEnumerable<byte[]>>> ADT8()
+        {
+            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                .From(x => x.Person)
+                .InnerJoin(x => x.PersonsData)
+                    .On((q, pd) => q.Person.Id == pd.PersonId)
+                .Where(p => p.Person.Id == Data.People.John.Id)
+                .Map(p => p.PersonsData.Select(pd => pd.Data))
+                .ExecuteAsync(Executor, logger: Logger);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ArrayDataType8()
+        {
+            // arrange
+            // act
+            var data = await ADT8();
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            var john = data.First();
+
+            CollectionAssert.AreEqual(new [] 
+            { 
+                Data.PeoplesData.JohnsData.Data,
+                Data.PeoplesData.MarysData.Data 
+            }, john);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ArrayDataType8_DoesNotLogWarning()
+        {
+            // arrange
+            // act
+            await ADT8();
+
+            // assert
+            Assert.IsEmpty(Logger.WarningMessages);
+        }
+
+        Task<IEnumerable<IEnumerable<List<byte>>>> ADT9()
+        {
+            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                .From(x => x.Person)
+                .InnerJoin(x => x.PersonsData)
+                    .On((q, pd) => q.Person.Id == pd.PersonId)
+                .Where(p => p.Person.Id == Data.People.John.Id)
+                .Map(p => p.PersonsData.Select(pd => pd.Data.ToList()))
+                .ExecuteAsync(Executor, logger: Logger);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ArrayDataType9()
+        {
+            // arrange
+            // act
+            var data = await ADT9();
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            var john = data.First();
+
+            CollectionAssert.AreEqual(new [] 
+            { 
+                Data.PeoplesData.JohnsData.Data,
+                Data.PeoplesData.MarysData.Data 
+            }, john);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ArrayDataType9_DoesNotLogWarning()
+        {
+            // arrange
+            // act
+            await ADT9();
+
+            // assert
+            Assert.IsNotEmpty(Logger.WarningMessages);
         }
 
         [Test]

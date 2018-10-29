@@ -59,7 +59,9 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         internal class TestLogger : ILogger
         {
-            public LogLevel LogLevel => LogLevel.Info;
+            public LogLevel LogLevel { get; set; } = LogLevel.Info;
+
+            public HashSet<LogMessages> SupressLogMessages { get; set; } = new HashSet<LogMessages>();
 
             public readonly List<string> InfoMessages = new List<string>();
             public readonly List<string> WarningMessages = new List<string>();

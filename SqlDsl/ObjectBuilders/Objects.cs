@@ -201,36 +201,13 @@ namespace SqlDsl.ObjectBuilders
 
             void Set(T obj, IEnumerable<object> vals, ILogger logger)
             {
-                var one = GetOne(propertyName, vals);
+                var one = TypeConvertors.GetOne(propertyName, vals);
                 setter(obj, builder(one, logger));
             }
 
             void SetEnumerable(T obj, IEnumerable<object> vals, ILogger logger)
             {
                 setter(obj, builder(vals, logger));
-            }
-        }
-
-        /// <summary>
-        /// If the enumerable contains 0 items, return default.
-        /// If the enumerable contains 1 item, return it.
-        /// If the enumerable contains more than 1 item, throw an exception
-        /// </summary>
-        static T GetOne<T>(string propertyName, IEnumerable<T> items)
-        {
-            using (var enumerator = items.GetEnumerator())
-            {
-                if (!enumerator.MoveNext())
-                    return default(T);
-
-                var result = enumerator.Current;
-                if (enumerator.MoveNext())
-                {
-                    throw new InvalidOperationException($"Database has returned more than one item for " +
-                        $"{propertyName}, however it only accepts a single item.");   
-                }
-
-                return result;
             }
         }
 
@@ -247,158 +224,28 @@ namespace SqlDsl.ObjectBuilders
 
         static Action<object, IEnumerable<object>, ILogger> BuildEnumerableSetter(Type objectType, string propertyName, Type enumeratedType, Type resultPropertyType)
         {
-            //TODO: is enumeratedType arg needed?
+            var obj = Ex.Parameter(typeof(object));
+            var vals = Ex.Parameter(typeof(IEnumerable<object>));
+            var logger = Ex.Parameter(typeof(ILogger));
 
-            // ((objectType)objParam).propertyName = (resultPropertyType)valueParam
-            var objParam = Ex.Parameter(typeof(object));
-            var valueParam = Ex.Parameter(typeof(object));
-            var setterBody = Ex.Assign(
-                Ex.PropertyOrField(
-                    Ex.Convert(
-                        objParam,
-                        objectType),
-                    propertyName),
-                Ex.Convert(
-                    valueParam,
-                    resultPropertyType));
-
-            var setter = Ex
-                .Lambda<Action<object, object>>(setterBody, objParam, valueParam)
+            var dataResultIsCollection = ReflectionUtils.CountEnumerables(resultPropertyType) >= 2;
+         
+            // object, ILogger -> collection type   
+            var getter = TypeConvertors.BuildEnumerableConvertor(resultPropertyType, ReflectionUtils.GetIEnumerableType(resultPropertyType), dataResultIsCollection, true);
+            return Ex
+                .Lambda<Action<object, IEnumerable<object>, ILogger>>(
+                    Ex.Assign(
+                        Ex.PropertyOrField(
+                            Ex.Convert(obj, objectType), 
+                            propertyName),
+                        Ex.Invoke(
+                            Ex.Constant(getter),
+                            Ex.Convert(vals, typeof(object)),
+                            logger)),
+                    obj,
+                    vals,
+                    logger)
                 .Compile();
-
-            var ensureCollectionType = EnsureCollectionType(resultPropertyType, propertyName);
-            var singleCollectionOnly = ReflectionUtils.CountEnumerables(resultPropertyType) <= 1;
-
-            return Setter;
-            
-            void Setter(object obj, IEnumerable<object> values, ILogger logger)
-            {
-                var value = singleCollectionOnly ?
-                    GetOne(propertyName, values) :
-                    values;
-
-                if (value == DBNull.Value)
-                    value = null;
-                else if (value != null)
-                    value = ensureCollectionType(value, logger);
-                
-                setter(obj, value);
-            }
-        }
-        
-        /// <summary>
-        /// Given a (nested) collection type, create a function which takes in 
-        /// an object with variable collection types and converts them to the correct
-        /// type.
-        /// e.g. collectionType = List&lt;byte[]>, obj = (object)IEnumerable&lt;IEnumerable&lt;byte>>
-        /// Returns null if collectionType is not actually a collection
-        /// </summary>
-        public static Func<object, ILogger, object> EnsureCollectionType(Type collectionType, string propertyName)
-        {
-            var collectionTypeEnumerable = ReflectionUtils.GetIEnumerableType(collectionType);
-            if (collectionTypeEnumerable == null)
-            {
-                return null;
-            }
-
-            var iEnumerableOfType = typeof(IEnumerable<>).MakeGenericType(collectionTypeEnumerable);
-            var input = Ex.Parameter(typeof(object));
-            var loggerArg = Ex.Parameter(typeof(ILogger));
-
-            Expression inputAsEnumerable;
-            
-            // if enumType is also enum => IEnumerable<IEnumerable<T>> = IEnumerable<object>.Select(EnsureCollectionType)
-            var innerCollectionBuilder = EnsureCollectionType(collectionTypeEnumerable, propertyName);
-            if (innerCollectionBuilder != null)
-            {
-                var casterInput = Ex.Parameter(typeof(object));
-
-                // cast output of innerCollectionBuilder to byte array
-                var castedCollectionBuilder = Ex
-                    .Lambda(
-                        Ex.Convert(
-                            Ex.Invoke(
-                                Ex.Constant(innerCollectionBuilder),
-                                casterInput,
-                                Ex.Constant(null, typeof(ILogger))),
-                            collectionTypeEnumerable),
-                        casterInput)
-                    .Compile();
-
-                inputAsEnumerable = Ex.Call(
-                    null,
-                    ReflectionUtils.GetMethod<IEnumerable<object>>(
-                        xs => xs.Select(x => x),
-                        typeof(object),
-                        collectionTypeEnumerable),
-                    Ex.Convert(
-                        input,
-                        typeof(IEnumerable<object>)),
-                    Ex.Constant(castedCollectionBuilder));  
-            }
-            else
-            {
-                // cast object => IEnumerable<T>
-                inputAsEnumerable = Ex.Convert(
-                    input,
-                    iEnumerableOfType);
-            }
-
-            var (isCollection, cr) = Enumerables.CreateCollectionExpression(
-                collectionType, 
-                inputAsEnumerable);
-
-            if (!isCollection)
-            {
-                throw new InvalidOperationException(
-                    $"Property {propertyName} ({collectionType}) must be a collection type " + 
-                    "(e.g. List<T>, T[], IEnumerable<T>).");   
-            }
-
-            var create = Ex
-                .Lambda<Func<object, ILogger, object>>(cr, input, loggerArg)
-                .Compile();
-            
-            return Ensure;
-
-            object Ensure(object values, ILogger logger)
-            {
-                if (collectionType.IsAssignableFrom(values.GetType()))
-                {
-                    return values;
-                }
-
-                if (logger.CanLogWarning())
-                {
-                    var valsType = GetTypeString(values);
-                }
-
-                try
-                {
-                    return create(values, logger);
-                }
-                catch (Exception e)
-                {
-                    throw new InvalidOperationException(
-                        $"Value {GetTypeString(values)} cannot be converted to type {collectionType}", e);
-                }
-            }
-        }
-
-        static string GetTypeString(object values)
-        {
-            if (values == null) return "?";
-
-            var valType = values.GetType();
-            if (!(values is IEnumerable))
-                return valType.Name;
-
-            var enumer = (values as IEnumerable).GetEnumerator();
-            enumer.MoveNext();
-
-            return valType.IsArray ?
-                (GetTypeString(enumer.Current) + "[]") :
-                (valType.Name + "<" + GetTypeString(enumer.Current) + ">");
         }
 
         class ConstructorKeyComparer : IEqualityComparer<Tuple<Type, Type[]>>
