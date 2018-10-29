@@ -27,13 +27,13 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
     
     class Person : EqComparer
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string Name { get; set; }
         public Gender Gender { get; set; }
 
         public Person() { }
 
-        public Person(int id, string name, Gender gender)
+        public Person(long id, string name, Gender gender)
         {
             Id = id;
             Name = name;
@@ -55,7 +55,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
     
     class PersonsData : EqComparer
     {
-        public int PersonId { get; set; }
+        public long PersonId { get; set; }
         public byte[] Data { get; set; }
 
         public override int GetHashCode() => $"{PersonId}.{Data.Select(b => (int)b).JoinString(",")}".GetHashCode();
@@ -93,8 +93,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
     
     class PersonClass : EqComparer
     {
-        public int PersonId { get; set; }
-        public int ClassId { get; set; }
+        public long PersonId { get; set; }
+        public long ClassId { get; set; }
 
         public override int GetHashCode() => $"{PersonId}.{ClassId}".GetHashCode();
         public override bool Equals(object p)
@@ -106,7 +106,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
     
     class Class : EqComparer
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string Name { get; set; }
 
         public override int GetHashCode() => $"{Id}.{Name}".GetHashCode();
@@ -119,7 +119,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
     
     class Tag : EqComparer
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string Name { get; set; }
 
         public override int GetHashCode() => $"{Id}.{Name}".GetHashCode();
@@ -132,8 +132,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
     
     class ClassTag : EqComparer
     {
-        public int ClassId { get; set; }
-        public int TagId { get; set; }
+        public long ClassId { get; set; }
+        public long TagId { get; set; }
 
         public override int GetHashCode() => $"{ClassId}.{TagId}".GetHashCode();
         public override bool Equals(object p)
@@ -145,11 +145,11 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
     
     class Purchase : EqComparer
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public float Amount { get; set; }
-        public int PersonId { get; set; }
-        public int PurchaedForPersonId { get; set; }
-        public int? ClassId { get; set; }
+        public long PersonId { get; set; }
+        public long PurchaedForPersonId { get; set; }
+        public long? ClassId { get; set; }
 
         public override int GetHashCode() => $"{Id}.{Amount}.{PersonId}.{ClassId}.{PurchaedForPersonId}".GetHashCode();
         public override bool Equals(object p)

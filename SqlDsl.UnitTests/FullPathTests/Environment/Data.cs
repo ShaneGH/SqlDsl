@@ -118,6 +118,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             if (t == typeof(string)) return "TEXT";
             if (t == typeof(int)) return "INTEGER";
             if (t == typeof(int?)) return "INTEGER";
+            if (t == typeof(long)) return "INTEGER";
+            if (t == typeof(long?)) return "INTEGER";
             if (t == typeof(float)) return "REAL";
             if (t == typeof(byte[])) return "BLOB";
             if (t.IsEnum) return "INTEGER";
@@ -131,6 +133,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         {
             if (t == typeof(int)) return val.ToString();
             if (t == typeof(int?)) return val == null ? "NULL" : val.ToString();
+            if (t == typeof(long)) return val.ToString();
+            if (t == typeof(long?)) return val == null ? "NULL" : val.ToString();
             if (t == typeof(float)) return val.ToString();
             if (t == typeof(string)) return val == null ? "NULL" : ("'" + val.ToString() + "'");
             if (t == typeof(byte[])) 

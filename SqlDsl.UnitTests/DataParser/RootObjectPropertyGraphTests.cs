@@ -151,7 +151,7 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             (0, "##rowid", new int[0].Skip(0), null, null),
-                            (4, "Id", new int[0].Skip(0), typeof(int), typeof(int)),
+                            (4, "Id", new int[0].Skip(0), typeof(long), typeof(long)),
                             (5, "Name", new int[0].Skip(0), typeof(string), typeof(string)),
                             (6, "Gender", new int[0].Skip(0), typeof(Gender), typeof(Gender))
                         }, 
@@ -162,8 +162,8 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             (1, "##rowid", new int[0].Skip(0), null, null),
-                            (2, "PersonId", new int[0].Skip(0), typeof(int), typeof(int)),
-                            (3, "ClassId", new int[0].Skip(0), typeof(int), typeof(int))
+                            (2, "PersonId", new int[0].Skip(0), typeof(long), typeof(long)),
+                            (3, "ClassId", new int[0].Skip(0), typeof(long), typeof(long))
                         }, 
                         null, 
                         new[]{1}))
@@ -193,7 +193,7 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             (0, "##rowid", new int[0].Skip(0), null, null),
-                            (13, "Id", new int[0].Skip(0), typeof(int), typeof(int)),
+                            (13, "Id", new int[0].Skip(0), typeof(long), typeof(long)),
                             (14, "Name", new int[0].Skip(0), typeof(string), typeof(string)),
                             (15, "Gender", new int[0].Skip(0), typeof(Gender), typeof(Gender))
                         }, 
@@ -204,8 +204,8 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             (1, "##rowid", new int[0].Skip(0), null, null),
-                            (5, "PersonId", new int[0].Skip(0), typeof(int), typeof(int)),
-                            (6, "ClassId", new int[0].Skip(0), typeof(int), typeof(int))
+                            (5, "PersonId", new int[0].Skip(0), typeof(long), typeof(long)),
+                            (6, "ClassId", new int[0].Skip(0), typeof(long), typeof(long))
                         }, 
                         null, 
                         new[]{1})),
@@ -214,7 +214,7 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             (2, "##rowid", new int[0].Skip(0), null, null),
-                            (7, "Id", new int[0].Skip(0), typeof(int), typeof(int)),
+                            (7, "Id", new int[0].Skip(0), typeof(long), typeof(long)),
                             (8, "Name", new int[0].Skip(0), typeof(string), typeof(string))
                         }, 
                         null, 
@@ -224,8 +224,8 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             (3, "##rowid", new int[0].Skip(0), null, null),
-                            (9, "ClassId", new int[0].Skip(0), typeof(int), typeof(int)),
-                            (10, "TagId", new int[0].Skip(0), typeof(int), typeof(int))
+                            (9, "ClassId", new int[0].Skip(0), typeof(long), typeof(long)),
+                            (10, "TagId", new int[0].Skip(0), typeof(long), typeof(long))
                         }, 
                         null, 
                         new[]{3})),
@@ -234,7 +234,7 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             (4, "##rowid", new int[0].Skip(0), null, null),
-                            (11, "Id", new int[0].Skip(0), typeof(int), typeof(int)),
+                            (11, "Id", new int[0].Skip(0), typeof(long), typeof(long)),
                             (12, "Name", new int[0].Skip(0), typeof(string), typeof(string))
                         }, 
                         null, 
@@ -447,7 +447,7 @@ namespace SqlDsl.UnitTests.DataParser
 
         class DifficultScenarioInner
         {
-            public int[] TagIds;
+            public long[] TagIds;
         }
 
         [Test]
@@ -480,7 +480,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(DifficultScenarioInner),
                         new[]
                         {
-                            (5, "TagIds", new int[]{3}.Skip(0), typeof(int[]), typeof(int))
+                            (5, "TagIds", new int[]{3}.Skip(0), typeof(long[]), typeof(long))
                         }, 
                         null, 
                         new[]{1,2}))
@@ -492,7 +492,7 @@ namespace SqlDsl.UnitTests.DataParser
 
         class DifficultScenario2
         {
-            public int[] TagIds;
+            public long[] TagIds;
         }
 
         [Test]
@@ -514,7 +514,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(DifficultScenario2),
                 new []
                 {
-                    (5, "TagIds", new int[]{1,2,3}.Skip(0), typeof(int[]), typeof(int))
+                    (5, "TagIds", new int[]{1,2,3}.Skip(0), typeof(long[]), typeof(long))
                 },
                 null,
                 new[] { 0 });
@@ -531,7 +531,7 @@ namespace SqlDsl.UnitTests.DataParser
 
         class DeepJoinedClassData
         {
-            public int[] TagIds;
+            public long[] TagIds;
         }
 
         [Test]
@@ -582,7 +582,7 @@ namespace SqlDsl.UnitTests.DataParser
                                         typeof(DeepJoinedClassData),
                                         new[] 
                                         {
-                                            (5, "TagIds", new int[]{3}.Skip(0), typeof(int[]), typeof(int))
+                                            (5, "TagIds", new int[]{3}.Skip(0), typeof(long[]), typeof(long))
                                         },
                                         null,
                                         new[]{1, 2}
@@ -621,7 +621,7 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             (0, "##rowid", new int[0].Skip(0), null, null),
-                            (4, "Id", new int[0].Skip(0), typeof(int), typeof(int)),
+                            (4, "Id", new int[0].Skip(0), typeof(long), typeof(long)),
                             (5, "Name", new int[0].Skip(0), typeof(string), typeof(string)),
                             (6, "Gender", new int[0].Skip(0), typeof(Gender), typeof(Gender))
                         }, 
@@ -632,8 +632,8 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             (1, "##rowid", new int[0].Skip(0), null, null),
-                            (2, "PersonId", new int[0].Skip(0), typeof(int), typeof(int)),
-                            (3, "ClassId", new int[0].Skip(0), typeof(int), typeof(int))
+                            (2, "PersonId", new int[0].Skip(0), typeof(long), typeof(long)),
+                            (3, "ClassId", new int[0].Skip(0), typeof(long), typeof(long))
                         }, 
                         null, 
                         new[]{1}))
@@ -655,7 +655,7 @@ namespace SqlDsl.UnitTests.DataParser
 
         class DataCellTypeIsArray1Result
         {
-            public int[] TheClassIds;
+            public long[] TheClassIds;
             public byte[] TheData;
         }
 
@@ -685,7 +685,7 @@ namespace SqlDsl.UnitTests.DataParser
                 new[]
                 {
                     (3, "TheData", new [] {2}.Skip(0), typeof(byte[]), typeof(byte[])),
-                    (4, "TheClassIds", new [] {1}.Skip(0), typeof(int[]), typeof(int))
+                    (4, "TheClassIds", new [] {1}.Skip(0), typeof(long[]), typeof(long))
                 }, 
                 null, 
                 new[] { 0 });
@@ -705,7 +705,7 @@ namespace SqlDsl.UnitTests.DataParser
 
         class DataCellTypeIsArray2Result
         {
-            public int[] ClassIds;
+            public long[] ClassIds;
             public byte[][] Data;
         }
 
@@ -737,7 +737,7 @@ namespace SqlDsl.UnitTests.DataParser
                 new[]
                 {
                     (3, "Data", new [] {2}.Skip(0), typeof(byte[][]), typeof(byte[])),
-                    (4, "ClassIds", new [] {1}.Skip(0), typeof(int[]), typeof(int))
+                    (4, "ClassIds", new [] {1}.Skip(0), typeof(long[]), typeof(long))
                 }, 
                 null, 
                 new[] { 0 });
@@ -776,7 +776,7 @@ namespace SqlDsl.UnitTests.DataParser
                 new[] { 0 },
                 simpleConstructorArgs: new[]
                 {
-                    (4, 1, new [] {1}.Skip(0), typeof(int[]), typeof(int))
+                    (4, 1, new [] {1}.Skip(0), typeof(long[]), typeof(long))
                 },
                 complexConstructorArgs: new [] 
                 {
@@ -785,7 +785,7 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             (3, "Data", new [] {2}.Skip(0), typeof(byte[][]), typeof(byte[])),
-                            (4, "ClassIds", new [] {1}.Skip(0), typeof(int[]), typeof(int))
+                            (4, "ClassIds", new [] {1}.Skip(0), typeof(long[]), typeof(long))
                         }, 
                         null, 
                         new[] { 0 }))

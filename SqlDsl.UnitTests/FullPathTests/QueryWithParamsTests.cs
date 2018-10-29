@@ -31,7 +31,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         public class Arguments
         {
-            public int AValue;
+            public long AValue;
         }
 
         [Test]

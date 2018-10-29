@@ -57,19 +57,19 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class ArrayDataType1Result
         {
-            public int[] ClassIds;
+            public long[] ClassIds;
             public byte[] Data;
         }
 
         class ArrayDataType1_1Result
         {
-            public int[] ClassIds;
+            public long[] ClassIds;
             public List<byte> Data;
         }
 
         class ArrayDataType2Result
         {
-            public int[] ClassIds;
+            public long[] ClassIds;
             public byte[][] Data;
         }
 
@@ -260,7 +260,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class ArrayDataType3Result
         {
-            public int[] ClassIds;
+            public long[] ClassIds;
             public List<List<byte>> Data;
         }
 

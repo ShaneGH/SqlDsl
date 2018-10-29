@@ -66,8 +66,8 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             public string TheName { get; set; }
             public SimpleMapClass Inner { get; set; }
-            public IEnumerable<int> TheClassIds { get; set; }
-            public IEnumerable<int> TheClassTagIds { get; set; }
+            public IEnumerable<long> TheClassIds { get; set; }
+            public IEnumerable<long> TheClassTagIds { get; set; }
         }
 
         [Test]
@@ -481,7 +481,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class SmartJoinedClass4
         {
-            public int[] TagIds;
+            public long[] TagIds;
         }
 
         [Test]
@@ -582,7 +582,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class SmartJoinedClass4_1
         {
-            public int TagId;
+            public long TagId;
         }
 
         [Test]
@@ -616,7 +616,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class SmartJoinedClass4_2
         {
-            public int[] TagIds;
+            public long[] TagIds;
         }
 
         [Test]
