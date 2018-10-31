@@ -41,7 +41,8 @@ namespace SqlDsl.Query
             if (i == -1)
                 throw new InvalidOperationException($"Could not find column {property} in wrapped statement.");
 
-            var graph = new RootObjectPropertyGraph(typeof(TResult), i, statement.SelectColumns[i].RowNumberColumnIndex);
+            var col = statement.SelectColumns[i];
+            var graph = new RootObjectPropertyGraph(typeof(TResult), i, col.RowNumberColumnIndex, ReflectionUtils.GetIEnumerableType(col.DataType) != null);
             return new CompiledQuery<TArgs, TResult>(sqlBuilder.ToSql(), parameters, statement.SelectColumns.Select(Alias).ToArray(), graph);
         }
 

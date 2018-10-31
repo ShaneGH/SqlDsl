@@ -18,7 +18,7 @@ namespace SqlDsl.DataParser
         /// <summary>
         /// If null, ignore. If not null, this object references a simple value
         /// </summary>
-        readonly (int columnIndex, int rowNumberColumnIndex)? SimpleProperty;
+        readonly (int columnIndex, int rowNumberColumnIndex, bool simplePropertyCellIsTypeEnumerable)? SimpleProperty;
 
         /// <summary>
         /// Specifies the type of this graph. If true graph only has one node which represents a simple value (e.g. a string, int etc...).
@@ -37,6 +37,12 @@ namespace SqlDsl.DataParser
         /// Otherwise the value of this property should be ignored
         /// </summary>
         public int SimpleValueRowNumberColumnIndex => SimpleProperty?.rowNumberColumnIndex ?? 0;
+
+        /// <summary>
+        /// If IsSimpleValue == true, will specify whether the values in SimpleValueColumnIndex are enumerable, e.g. byte[]
+        /// Otherwise the value of this property should be ignored
+        /// </summary>
+        public bool SimplePropertyCellIsTypeEnumerable => SimpleProperty?.simplePropertyCellIsTypeEnumerable ?? false;
 
         /// <summary>
         /// Build an object graph
@@ -61,14 +67,14 @@ namespace SqlDsl.DataParser
         /// Build an object graph for a simple value.
         /// </summary>
         /// <param name="objectType">The type of the object.</param>
-        public RootObjectPropertyGraph(Type objectType, int columnIndex, int rowNumberColumnIndex)
+        public RootObjectPropertyGraph(Type objectType, int columnIndex, int rowNumberColumnIndex, bool cellTypeIsEnumerable)
             : this(objectType,
                 Enumerable.Empty<string>(),
                 Enumerable.Empty<(int, string, IEnumerable<int>, Type, Type)>(), 
                 Enumerable.Empty<(string, ObjectPropertyGraph)>(), 
                 Enumerable.Empty<int>())
         {
-            SimpleProperty = (columnIndex, rowNumberColumnIndex);
+            SimpleProperty = (columnIndex, rowNumberColumnIndex, cellTypeIsEnumerable);
         }
 
         public override string ToString() =>

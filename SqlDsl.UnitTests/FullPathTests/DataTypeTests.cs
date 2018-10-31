@@ -270,8 +270,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("The fix is in Parser.ParseSimple, in the call [var convertor = " + 
-        "TypeConvertors.GetConvertor<TResult>();] need a way of passing [true] into get covertor (private overload)")]
         public async Task ArrayDataType3_LogsWarning()
         {
             // arrange

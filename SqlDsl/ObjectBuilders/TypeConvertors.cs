@@ -106,7 +106,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
         /// </summary>
-        static Func<object, ILogger, T> GetConvertor<T>(bool cellTypeIsEnumerable /* TODO: arg name doesn't make sense in this context */)
+        public static Func<object, ILogger, T> GetConvertor<T>(bool cellTypeIsEnumerable /* TODO: arg name doesn't make sense in this context */)
         {
             var key = Tuple.Create(typeof(T), cellTypeIsEnumerable);
             if (Convertors.TryGetValue(key, out object convertor))
