@@ -42,7 +42,7 @@ namespace SqlDsl.DataParser
         /// If IsSimpleValue == true, will specify whether the values in SimpleValueColumnIndex are enumerable, e.g. byte[]
         /// Otherwise the value of this property should be ignored
         /// </summary>
-        public bool SimplePropertyCellIsTypeEnumerable => SimpleProperty?.simplePropertyCellIsTypeEnumerable ?? false;
+        public bool SimplePropertyCellTypeIsEnumerable => SimpleProperty?.simplePropertyCellIsTypeEnumerable ?? false;
 
         /// <summary>
         /// Build an object graph

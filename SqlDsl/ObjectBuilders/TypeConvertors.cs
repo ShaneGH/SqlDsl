@@ -141,8 +141,10 @@ namespace SqlDsl.ObjectBuilders
             }
 
             // fall back to casting
-            return (x, _) => (T)x;
+            return Cast<T>;
         }
+
+        static T Cast<T>(object x, ILogger _) => (T)x;
 
         static Func<object, ILogger, T?> GetNullableConvertor<T>()
             where T: struct
