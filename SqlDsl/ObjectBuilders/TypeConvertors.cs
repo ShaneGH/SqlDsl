@@ -188,6 +188,9 @@ namespace SqlDsl.ObjectBuilders
                 .Lambda<Func<IEnumerable<T>, TCollection>>(builder, createCollectionInput)
                 .Compile();
 
+            var collectionIsNullable = typeof(TCollection).IsInterface || 
+                !typeof(TCollection).IsValueType ||
+                ReflectionUtils.IsNullable(typeof(TCollection));
             var innerIsEnumerable = ReflectionUtils.GetIEnumerableType(typeof(T)) != null;
 
             return Convert;
@@ -207,6 +210,14 @@ namespace SqlDsl.ObjectBuilders
                 }
                 
                 if (input is TCollection) return (TCollection)input;
+
+                if (input == null || DBNull.Value.Equals(input))
+                {
+                    if (collectionIsNullable)
+                        return default(TCollection);
+
+                    throw new InvalidOperationException($"Cannot use value of null for type {typeof(TCollection)}");
+                }
 
                 if (!(input is IEnumerable))
                 {

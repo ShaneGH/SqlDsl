@@ -56,6 +56,16 @@ namespace SqlDsl.Utils
                 .MakeGenericMethod(generics);
         }
 
+        static readonly Type _Nullable = typeof(Nullable<>);
+
+        /// <summary>
+        /// Determine if a type is a Nullable&lt;T>
+        /// </summary>
+        public static bool IsNullable(Type type)
+        {
+            return type.IsGenericType && type.GetGenericTypeDefinition() == _Nullable;
+        }
+
         /// <summary>
         /// Get the T from an IEnumerable&lt;T> type, or null if the type is not IEnumerable.
         /// In this case System.String is not considered to be an IEnumerable
