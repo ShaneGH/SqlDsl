@@ -2,6 +2,7 @@ using SqlDsl.ObjectBuilders;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -36,7 +37,7 @@ namespace SqlDsl.DataParser
                 .GroupBy(r => r[propertyGraph.SimpleValueRowNumberColumnIndex])
                 .Select(r => r.First()[propertyGraph.SimpleValueColumnIndex]);
 
-            var convertor = TypeConvertors.GetConvertor<TResult>();
+            var convertor = TypeConvertors.GetConvertor<TResult>(propertyGraph.SimplePropertyCellTypeIsEnumerable);
             foreach (var value in values)
                 yield return convertor(value, logger);
         }
@@ -86,7 +87,7 @@ namespace SqlDsl.DataParser
                         .Enumerate()
                 };
 
-                (string name, IEnumerable<object> value, Action<object, IEnumerable<object>, ILogger> customSetter, bool isEnumerableDataCell) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                (string name, IEnumerable<object> value, Action<object, IEnumerable, ILogger> customSetter, bool isEnumerableDataCell) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
                 {
                     // run a "Distinct" on the rowNumbers
                     var dataRowsForProp = objectData
@@ -105,7 +106,7 @@ namespace SqlDsl.DataParser
                     // e.g. byte[]
                     var customSetter = cellEnumType == null ?
                         null :
-                        Objects.GetEnumerableSetter(propertyGraph.ObjectType, p.name, cellEnumType, p.resultPropertyType);
+                        Objects.GetEnumerableSetter(propertyGraph.ObjectType, p.name, p.resultPropertyType);
 
                     return (p.name, data, customSetter, cellEnumType != null);
                 }

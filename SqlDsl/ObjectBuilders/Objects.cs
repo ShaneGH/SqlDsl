@@ -172,6 +172,7 @@ namespace SqlDsl.ObjectBuilders
                     () => BuildPropertySetter<object, object>(""),
                     typeof(T),
                     propertyType)
+                    // todo: boxing cellTypeIsEnumerable
                 .Invoke(null, new object[] { propertyName });
         }
 
@@ -180,7 +181,7 @@ namespace SqlDsl.ObjectBuilders
         /// </summary>
         static Action<T, IEnumerable<object>, ILogger> BuildPropertySetter<T, TProp>(string propertyName)
         {
-            var builder = TypeConvertors.GetConvertor<TProp>();
+            var builder = TypeConvertors.GetConvertor<TProp>(false);
 
             var setterObj = Ex.Parameter(typeof(T));
             var setterProp = Ex.Parameter(typeof(TProp));
@@ -211,29 +212,27 @@ namespace SqlDsl.ObjectBuilders
             }
         }
 
-        static readonly ConcurrentDictionary<EnumerableSettersKey, Action<object, IEnumerable<object>, ILogger>> EnumerableSetterCache = new ConcurrentDictionary<EnumerableSettersKey, Action<object, IEnumerable<object>, ILogger>>();
+        static readonly ConcurrentDictionary<EnumerableSettersKey, Action<object, IEnumerable, ILogger>> EnumerableSetterCache = new ConcurrentDictionary<EnumerableSettersKey, Action<object, IEnumerable, ILogger>>();
 
-        public static Action<object, IEnumerable<object>, ILogger> GetEnumerableSetter(Type objectType, string propertyName, Type enumeratedType, Type resultPropertyType)
+        public static Action<object, IEnumerable, ILogger> GetEnumerableSetter(Type objectType, string propertyName, Type resultPropertyType)
         {
-            var key = new EnumerableSettersKey(objectType, propertyName, enumeratedType, resultPropertyType);
-            if (EnumerableSetterCache.TryGetValue(key, out Action<object, IEnumerable<object>, ILogger> val))
+            var key = new EnumerableSettersKey(objectType, propertyName, resultPropertyType);
+            if (EnumerableSetterCache.TryGetValue(key, out Action<object, IEnumerable, ILogger> val))
                 return val;
 
-            return EnumerableSetterCache.GetOrAdd(key, BuildEnumerableSetter(objectType, propertyName, enumeratedType, resultPropertyType));
+            return EnumerableSetterCache.GetOrAdd(key, BuildEnumerableSetter(objectType, propertyName, resultPropertyType));
         }
 
-        static Action<object, IEnumerable<object>, ILogger> BuildEnumerableSetter(Type objectType, string propertyName, Type enumeratedType, Type resultPropertyType)
+        static Action<object, IEnumerable, ILogger> BuildEnumerableSetter(Type objectType, string propertyName, Type resultPropertyType)
         {
             var obj = Ex.Parameter(typeof(object));
-            var vals = Ex.Parameter(typeof(IEnumerable<object>));
+            var vals = Ex.Parameter(typeof(IEnumerable));
             var logger = Ex.Parameter(typeof(ILogger));
-
-            var dataResultIsCollection = ReflectionUtils.CountEnumerables(resultPropertyType) >= 2;
          
-            // object, ILogger -> collection type   
-            var getter = TypeConvertors.BuildEnumerableConvertor(resultPropertyType, ReflectionUtils.GetIEnumerableType(resultPropertyType));
-            return Ex
-                .Lambda<Action<object, IEnumerable<object>, ILogger>>(
+            // IEnumerable, ILogger -> collection type   
+            var getter = TypeConvertors.BuildEnumerableConvertor(resultPropertyType, ReflectionUtils.GetIEnumerableType(resultPropertyType), true);
+            var setter = Ex
+                .Lambda<Action<object, IEnumerable, ILogger>>(
                     Ex.Assign(
                         Ex.PropertyOrField(
                             ReflectionUtils.Convert(obj, objectType), 
@@ -246,6 +245,16 @@ namespace SqlDsl.ObjectBuilders
                     vals,
                     logger)
                 .Compile();
+
+            return ReflectionUtils.CountEnumerables(resultPropertyType) <= 1 ?
+                Single :
+                setter;
+
+            void Single(object o, IEnumerable v, ILogger l)
+            {
+                var val = TypeConvertors.GetOne(propertyName, v);
+                setter(o, val as IEnumerable, l);
+            }
         }
 
         class ConstructorKeyComparer : IEqualityComparer<Tuple<Type, Type[]>>

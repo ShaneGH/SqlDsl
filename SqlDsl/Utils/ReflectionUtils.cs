@@ -443,27 +443,27 @@ namespace SqlDsl.Utils
         /// </summary>
         public static Expression Convert(Expression from, Type t)
         {
-            Func<Expression, Expression, Expression> stringConcat = (x, y) =>
-                Expression.Call(
-                    GetMethod(() => string.Concat("", "")),
-                    x,
-                    y);
+            // Func<Expression, Expression, Expression> stringConcat = (x, y) =>
+            //     Expression.Call(
+            //         GetMethod(() => string.Concat("", "")),
+            //         x,
+            //         y);
 
-            var fromTypeName = Expression.Call(
-                GetMethod(() => GetTypeString(null)),
-                Expression.Convert(from, typeof(object)));
+            // var fromTypeName = Expression.Call(
+            //     GetMethod(() => GetTypeString(null)),
+            //     Expression.Convert(from, typeof(object)));
 
-            var message = stringConcat(
-                Expression.Constant("Attempting to cast from ["),
-                stringConcat(
-                    fromTypeName,
-                    Expression.Constant($"] to [{t.FullName}].")));
+            // var message = stringConcat(
+            //     Expression.Constant("Attempting to cast from ["),
+            //     stringConcat(
+            //         fromTypeName,
+            //         Expression.Constant($"] to [{t.FullName}].")));
 
-            var log = Expression.Call(
-                GetMethod(() => Console.WriteLine("")),
-                message);
+            // var log = Expression.Call(
+            //     GetMethod(() => Console.WriteLine("")),
+            //     message);
 
-            return Expression.Block(log, Expression.Convert(from, t));
+            // return Expression.Block(log, Expression.Convert(from, t));
 
             return Expression.Convert(from, t);
         }

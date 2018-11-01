@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using SqlDsl.ObjectBuilders;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,7 +16,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             public int Property2 { get; set; } 
         }
 
-        public static Action<object, IEnumerable<object>, ILogger> NullAction = null;
+        public static Action<object, IEnumerable, ILogger> NullAction = null;
 
         [Test]
         public void Build_WithNullInput_BuildsCorrectly()

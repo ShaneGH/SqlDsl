@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -54,8 +55,8 @@ namespace SqlDsl.ObjectBuilders
 
             return obj;
 
-            bool isEnumerableDataCell((string name, IEnumerable<object> value, Action<object, IEnumerable<object>, ILogger> customSetter, bool isEnumerableDataCell) c) => c.isEnumerableDataCell;
-            string name((string name, IEnumerable<object> value, Action<object, IEnumerable<object>, ILogger> customSetter, bool isEnumerableDataCell) c) => c.name;
+            bool isEnumerableDataCell((string name, IEnumerable<object> value, Action<object, IEnumerable, ILogger> customSetter, bool isEnumerableDataCell) c) => c.isEnumerableDataCell;
+            string name((string name, IEnumerable<object> value, Action<object, IEnumerable, ILogger> customSetter, bool isEnumerableDataCell) c) => c.name;
         }
 
         /// <summary>

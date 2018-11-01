@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -61,7 +62,7 @@ namespace SqlDsl.ObjectBuilders
             {
                 while (enumerators[0].en.MoveNext())
                 {
-                    var newProps = new List<(string name, IEnumerable<object> value, Action<object, IEnumerable<object>, ILogger> customSetter, bool isEnumerableDataCell)>
+                    var newProps = new List<(string name, IEnumerable<object> value, Action<object, IEnumerable, ILogger> customSetter, bool isEnumerableDataCell)>
                     {
                         (
                             enumerators[0].prop.name, 

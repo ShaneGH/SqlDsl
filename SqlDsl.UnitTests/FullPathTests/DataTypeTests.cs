@@ -137,8 +137,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, john.ClassIds.Length);
             Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);
             Assert.AreEqual(Data.Classes.Archery.Id, john.ClassIds[1]);
-            
-            Assert.IsEmpty(Logger.WarningMessages);
         }
 
         [Test]
@@ -194,6 +192,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             await ADT1_ConvertArrayToList();
 
             // assert
+            Logger.WarningMessages.ForEach(Console.WriteLine);
             Assert.AreEqual(1, Logger.WarningMessages.Count);
         }
 
