@@ -147,7 +147,7 @@ namespace SqlDsl.ObjectBuilders
             var args = Expression.Parameter(typeof(object[]));
             var constructorArgs = constructorArgTypes
                 .Select((x, i) => 
-                    Expression.Convert(
+                    ReflectionUtils.Convert(
                         Expression.ArrayIndex(
                             args, 
                             Expression.Constant(i)),
@@ -155,7 +155,7 @@ namespace SqlDsl.ObjectBuilders
 
             return Ex
                 .Lambda<Func<object[], object>>(
-                    Ex.Convert(
+                    ReflectionUtils.Convert(
                         Ex.New(constr, constructorArgs),
                         typeof(object)),
                     args)
@@ -231,16 +231,16 @@ namespace SqlDsl.ObjectBuilders
             var dataResultIsCollection = ReflectionUtils.CountEnumerables(resultPropertyType) >= 2;
          
             // object, ILogger -> collection type   
-            var getter = TypeConvertors.BuildEnumerableConvertor(resultPropertyType, ReflectionUtils.GetIEnumerableType(resultPropertyType), dataResultIsCollection, true);
+            var getter = TypeConvertors.BuildEnumerableConvertor(resultPropertyType, ReflectionUtils.GetIEnumerableType(resultPropertyType));
             return Ex
                 .Lambda<Action<object, IEnumerable<object>, ILogger>>(
                     Ex.Assign(
                         Ex.PropertyOrField(
-                            Ex.Convert(obj, objectType), 
+                            ReflectionUtils.Convert(obj, objectType), 
                             propertyName),
                         Ex.Invoke(
                             Ex.Constant(getter),
-                            Ex.Convert(vals, typeof(object)),
+                            vals,
                             logger)),
                     obj,
                     vals,

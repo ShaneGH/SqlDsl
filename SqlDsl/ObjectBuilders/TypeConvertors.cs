@@ -98,21 +98,22 @@ namespace SqlDsl.ObjectBuilders
             };
         }
 
-        /// <summary>
-        /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
-        /// </summary>
-        public static Func<object, ILogger, T> GetConvertor<T>() => GetConvertor<T>(false);
+        // /// <summary>
+        // /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
+        // /// </summary>
+        // public static Func<object, ILogger, T> GetConvertor<T>() => GetConvertor<T>(false);
 
         /// <summary>
         /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
         /// </summary>
-        public static Func<object, ILogger, T> GetConvertor<T>(bool cellTypeIsEnumerable /* TODO: arg name doesn't make sense in this context */)
+        public static Func<object, ILogger, T> GetConvertor<T>()
         {
-            var key = Tuple.Create(typeof(T), cellTypeIsEnumerable);
+            // TODO: key is defunct here (second arg is always true). Use tyoe as key instead
+            var key = Tuple.Create(typeof(T), false);
             if (Convertors.TryGetValue(key, out object convertor))
                 return (Func<object, ILogger, T>)convertor;
 
-            var convertor2 = BuildConvertor<T>(cellTypeIsEnumerable);
+            var convertor2 = BuildConvertor<T>();
             Convertors.GetOrAdd(key, convertor2);
             return convertor2;
         }
@@ -120,13 +121,16 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
         /// </summary>
-        static Func<object, ILogger, T> BuildConvertor<T>(bool cellTypeIsEnumerable = false)
+        static Func<object, ILogger, T> BuildConvertor<T>()
         {
             var propertyType = typeof(T);
 
             var enumeratedType = ReflectionUtils.GetIEnumerableType(propertyType);
             if (enumeratedType != null)
-                return (Func<object, ILogger, T>)BuildEnumerableConvertor(propertyType, enumeratedType, true, cellTypeIsEnumerable);
+            {
+                var enumConvertor = (Func<IEnumerable, ILogger, T>)BuildEnumerableConvertor(propertyType, enumeratedType);
+                return BuildConvertor(enumConvertor);
+            }
 
             if (propertyType.IsEnum)
                 return (Func<object, ILogger, T>)BuildEnumCaster(propertyType);
@@ -146,6 +150,22 @@ namespace SqlDsl.ObjectBuilders
 
         static T Cast<T>(object x, ILogger _) => (T)x;
 
+        static Func<object, ILogger, T> BuildConvertor<T>(Func<IEnumerable, ILogger, T> enumerableConvertor)
+        {
+            return Convertor;
+
+            T Convertor(object obj, ILogger logger)
+            {
+                if (!(obj is IEnumerable))
+                {
+                    var valsType = GetTypeString(obj);
+                    throw new InvalidOperationException($"Expecting input type {valsType} to be enumerable.");
+                }
+
+                return enumerableConvertor(obj as IEnumerable, logger);
+            }
+        }
+
         static Func<object, ILogger, T?> GetNullableConvertor<T>()
             where T: struct
         {
@@ -155,31 +175,28 @@ namespace SqlDsl.ObjectBuilders
 
         static object TrueObject = true;
         static object FalseObject = false;
+        static object[] EmptyObjects = new object[0];
 
         /// <summary>
         /// Get a function which converts from (object)IEnumerable&lt;object> -> propertyType. If no function found, falls back to casting
         /// </summary>
-        public static object BuildEnumerableConvertor(Type collectionType, Type enumeratedType, bool resultIsCollectionOfCells, bool cellTypeIsEnumerable)
+        public static object BuildEnumerableConvertor(Type collectionType, Type enumeratedType)
         {
             return ReflectionUtils
                 .GetMethod(
-                    () => BuildEnumerableConvertor<IEnumerable<object>, object>(true, true),
+                    () => BuildEnumerableConvertor<IEnumerable<object>, object>(),
                     collectionType,
                     enumeratedType)
-                .Invoke(null, new [] 
-                {
-                    resultIsCollectionOfCells ? TrueObject : FalseObject,
-                    cellTypeIsEnumerable ? TrueObject : FalseObject
-                });
+                .Invoke(null, EmptyObjects);
         }
 
         /// <summary>
         /// Get a function which converts from (object)IEnumerable&lt;object> -> propertyType. If no function found, falls back to casting
         /// </summary>
-        public static Func<object, ILogger, TCollection> BuildEnumerableConvertor<TCollection, T>(bool resultIsCollectionOfCells, bool cellTypeIsEnumerable)
+        public static Func<IEnumerable, ILogger, TCollection> BuildEnumerableConvertor<TCollection, T>() //bool resultIsCollectionOfCellsCCC, bool cellTypeIsEnumerableCCC)
             where TCollection : IEnumerable<T>
         {
-            var innerConvertor = GetConvertor<T>(cellTypeIsEnumerable);
+            var innerConvertor = GetConvertor<T>();
 
             var createCollectionInput = Expression.Parameter(typeof(IEnumerable<T>));
             var (isCollection, builder) = Enumerables.CreateCollectionExpression(typeof(TCollection), createCollectionInput);
@@ -197,19 +214,19 @@ namespace SqlDsl.ObjectBuilders
 
             return Convert;
 
-            TCollection Convert(object input, ILogger logger)
+            TCollection Convert(IEnumerable input, ILogger logger)
             {
-                if (!resultIsCollectionOfCells)
-                {
-                    if (!(input is IEnumerable))
-                    {
-                        var valsType = GetTypeString(input);
-                        throw new InvalidOperationException($"Expecting input type {valsType} to be enumerable.");
-                    }
+                // if (!resultIsCollectionOfCells)
+                // {
+                //     if (!(input is IEnumerable))
+                //     {
+                //         var valsType = GetTypeString(input);
+                //         throw new InvalidOperationException($"Expecting input type {valsType} to be enumerable.");
+                //     }
 
-                    // TODO: the null here creates an ambigous exception message
-                    input = GetOne(null, input as IEnumerable);
-                }
+                //     // TODO: the null here creates an ambigous exception message
+                //     input = GetOne(null, input as IEnumerable);
+                // }
                 
                 if (input is TCollection) return (TCollection)input;
 
@@ -221,15 +238,17 @@ namespace SqlDsl.ObjectBuilders
                     throw new InvalidOperationException($"Cannot use value of null for type {typeof(TCollection)}");
                 }
 
-                if (!(input is IEnumerable))
-                {
-                    var valsType = GetTypeString(input);
-                    throw new InvalidOperationException($"Expecting input type {valsType} to be enumerable.");
-                }
+                // if (!(input is IEnumerable))
+                // {
+                //     var valsType = GetTypeString(input);
+                //     throw new InvalidOperationException($"Expecting input type {valsType} to be enumerable.");
+                // }
 
                 // if value type, there will be 
                 // 1 expensive box per value
-                if (cellTypeIsEnumerable && !innerIsEnumerable && logger.CanLogWarning(LogMessages.InefficientCastWarning))
+                // if (cellTypeIsEnumerable && !innerIsEnumerable && logger.CanLogWarning(LogMessages.InefficientCastWarning))
+                // {
+                if (logger.CanLogWarning(LogMessages.InefficientCastWarning))
                 {
                     var valsType = GetTypeString(input);
                     logger.LogWarning($"Converting {valsType} to type {typeof(TCollection)}. " + 
@@ -240,9 +259,10 @@ namespace SqlDsl.ObjectBuilders
                     $"Converting {valsType} to type {collectionType} for property " + 
                         $"\"{propertyName}\". This conversion is inefficient. Consider changing the " + 
                         $"data type of \"{propertyName}\" to {valsType}" */
+                //}
                 }
 
-                var converted = ConvertToType(input as IEnumerable, logger);
+                var converted = ConvertToType(input, logger);
                 return createCollection(converted);
             }
 
@@ -303,7 +323,7 @@ namespace SqlDsl.ObjectBuilders
         {
             var input = Expression.Parameter(typeof(object));
             var logger = Expression.Parameter(typeof(ILogger));
-            var body = Expression.Convert(
+            var body = ReflectionUtils.Convert(
                 Expression.Invoke(
                     Expression.Constant(IntConvertor),
                     input,

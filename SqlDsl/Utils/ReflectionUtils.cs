@@ -138,7 +138,7 @@ namespace SqlDsl.Utils
                 // compile the expression
                 var valueGetter = Expression
                     .Lambda<Func<object>>(
-                        Expression.Convert(
+                        Convert(
                             expr, 
                             typeof(object)))
                     .Compile();
@@ -436,6 +436,42 @@ namespace SqlDsl.Utils
                 return (member as FieldInfo).FieldType;
 
             throw new InvalidOperationException("Member must be a property or field: " + member);
+        }
+
+        /// <summary>
+        /// Proxy to Expression.Convert. This function is convenient for debugging as it can optionally add console.log statements
+        /// </summary>
+        public static Expression Convert(Expression from, Type t)
+        {
+            Func<Expression, Expression, Expression> stringConcat = (x, y) =>
+                Expression.Call(
+                    GetMethod(() => string.Concat("", "")),
+                    x,
+                    y);
+
+            var fromTypeName = Expression.Call(
+                GetMethod(() => GetTypeString(null)),
+                Expression.Convert(from, typeof(object)));
+
+            var message = stringConcat(
+                Expression.Constant("Attempting to cast from ["),
+                stringConcat(
+                    fromTypeName,
+                    Expression.Constant($"] to [{t.FullName}].")));
+
+            var log = Expression.Call(
+                GetMethod(() => Console.WriteLine("")),
+                message);
+
+            return Expression.Block(log, Expression.Convert(from, t));
+
+            return Expression.Convert(from, t);
+        }
+
+        public static string GetTypeString(object obj)
+        {
+            if (obj == null) return "null";
+            return obj.GetType().FullName;
         }
     }
 }

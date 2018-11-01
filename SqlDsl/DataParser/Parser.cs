@@ -36,7 +36,7 @@ namespace SqlDsl.DataParser
                 .GroupBy(r => r[propertyGraph.SimpleValueRowNumberColumnIndex])
                 .Select(r => r.First()[propertyGraph.SimpleValueColumnIndex]);
 
-            var convertor = TypeConvertors.GetConvertor<TResult>(propertyGraph.SimplePropertyCellTypeIsEnumerable);
+            var convertor = TypeConvertors.GetConvertor<TResult>();
             foreach (var value in values)
                 yield return convertor(value, logger);
         }

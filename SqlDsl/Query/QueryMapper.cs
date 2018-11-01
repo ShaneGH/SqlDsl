@@ -258,7 +258,7 @@ namespace SqlDsl.Query
             {
                 var result = Expression
                     .Lambda<Func<object>>(
-                        Expression.Convert(
+                        ReflectionUtils.Convert(
                             expr,
                             typeof(object)))
                     .Compile()();

@@ -29,7 +29,7 @@ namespace SqlDsl.SqlBuilders
                     parameter.Type,
                     Expression
                         .Lambda<Func<ParameterExpression, Expression, object>>(
-                            Expression.Convert(
+                            ReflectionUtils.Convert(
                                 Expression.New(constructor, param1, param2),
                                 typeof(object)),
                             param1, param2)
@@ -48,7 +48,7 @@ namespace SqlDsl.SqlBuilders
         {
             // compile accessor into function
             GetParam = Expression.Lambda<Func<TArgs, object>>(
-                Expression.Convert(accessor, typeof(object)), 
+                ReflectionUtils.Convert(accessor, typeof(object)), 
                 parameter).Compile();
         }
 

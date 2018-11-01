@@ -123,7 +123,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task ArrayDataType1()
+        public async Task ArrayDataType1xxx()
         {
             // arrange
             // act

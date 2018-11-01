@@ -38,6 +38,7 @@ namespace SqlDsl.DataParser
         /// </summary>
         public int SimpleValueRowNumberColumnIndex => SimpleProperty?.rowNumberColumnIndex ?? 0;
 
+        // TODO: Is this prop used
         /// <summary>
         /// If IsSimpleValue == true, will specify whether the values in SimpleValueColumnIndex are enumerable, e.g. byte[]
         /// Otherwise the value of this property should be ignored
