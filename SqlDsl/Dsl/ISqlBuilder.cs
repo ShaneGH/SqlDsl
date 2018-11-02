@@ -18,6 +18,8 @@ namespace SqlDsl.Dsl
         /// </param>
         /// <param name="logger">A logger to capture info and warning messages</param>
         Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, ILogger logger = null);
+
+        // TODO: add a ToListAsync, ToArrayAsync, ToLazyAsync
         
         /// <summary>
         /// Execute the sql query and get a list of results
