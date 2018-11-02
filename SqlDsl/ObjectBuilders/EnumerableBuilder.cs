@@ -53,7 +53,7 @@ namespace SqlDsl.ObjectBuilders
                 .Select(p => (prop: p, en: p.value.GetEnumerator()))
                 .ToArray();
 
-            if (!enumerators.Any())
+            if (enumerators.Length == 0)
                 return Enumerable.Empty<ObjectGraph>();
 
             var vals = new List<ObjectGraph>();

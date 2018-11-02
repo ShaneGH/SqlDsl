@@ -31,24 +31,22 @@ namespace SqlDsl.ObjectBuilders
         static IBuilder GetBuilder(Type type)
         {
             // try to get an existing builder
-            if (!_Builders.TryGetValue(type, out IBuilder builder))
+            if (_Builders.TryGetValue(type, out IBuilder builder))
+                return builder;
+                
+            var enumeratedType = ReflectionUtils.GetIEnumerableType(type);
+            if (enumeratedType != null)
             {
-                var enumeratedType = ReflectionUtils.GetIEnumerableType(type);
-                if (enumeratedType != null)
-                {
-                    var innerBuilder = GetBuilder(enumeratedType);
-                    builder = BuildAnEnumerableBuilder(type, enumeratedType, innerBuilder);
-                }
-                else
-                {
-                    builder = BuildABuilder(type);
-                }
-
-                // add to cache
-                _Builders.TryAdd(type, builder);
+                var innerBuilder = GetBuilder(enumeratedType);
+                builder = BuildAnEnumerableBuilder(type, enumeratedType, innerBuilder);
+            }
+            else
+            {
+                builder = BuildABuilder(type);
             }
 
-            return builder;
+            // add to cache
+            return _Builders.GetOrAdd(type, builder);
         }
 
         /// <summary>
