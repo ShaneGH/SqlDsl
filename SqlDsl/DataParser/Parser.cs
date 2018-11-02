@@ -33,13 +33,24 @@ namespace SqlDsl.DataParser
         static IEnumerable<TResult> ParseSimple<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
         {
             // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
-            var values = rows
+            var dbValuesPerRecord = rows
                 // simple mapped properties are always grouped around the primary select
                 .GroupBy(r => r[0])
-                .Select(r => r.First()[propertyGraph.SimpleValueColumnIndex]);
+                .Select(singleRecord => singleRecord
+                    .GroupBy(r => r[propertyGraph.SimpleValueRowNumberColumnIndex])
+                    .Select(Enumerable.First))
+                .Select(rs => rs.Select(r => r[propertyGraph.SimpleValueColumnIndex]));
+
+            // TODO: this is done on each query. can it be cached?
+            var resultIsCollection = ReflectionUtils.CountEnumerables(typeof(TResult)) > 
+                ReflectionUtils.CountEnumerables(propertyGraph.SimplePropertyCellType);
+
+            var actualValuesPerRecord = resultIsCollection ?
+                dbValuesPerRecord :
+                dbValuesPerRecord.Select(rs => Objects.GetOne("Values", rs));
 
             var convertor = TypeConvertors.GetConvertor<TResult>(propertyGraph.SimplePropertyCellTypeIsEnumerable);
-            foreach (var value in values)
+            foreach (var value in actualValuesPerRecord)
                 yield return convertor(value, logger);
         }
 

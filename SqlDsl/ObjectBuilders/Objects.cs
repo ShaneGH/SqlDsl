@@ -262,7 +262,7 @@ namespace SqlDsl.ObjectBuilders
         /// If the enumerable contains 1 item, return it.
         /// If the enumerable contains more than 1 item, throw an exception
         /// </summary>
-        static object GetOne(string propertyName, IEnumerable items)
+        public static object GetOne(string propertyName, IEnumerable items)
         {
             var enumerator = items.GetEnumerator();
             if (!enumerator.MoveNext())
