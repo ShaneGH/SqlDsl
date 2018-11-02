@@ -413,7 +413,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
                 .InnerJoin(x => x.PersonsData)
-                    .On((q, pd) => q.Person.Id == pd.PersonId)
+                    .On((q, pd) => pd.PersonId > -1)
                 .Where(p => p.Person.Id == Data.People.John.Id)
                 .Map(p => p.PersonsData.Select(pd => pd.Data))
                 .ExecuteAsync(Executor, logger: Logger);

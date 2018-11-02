@@ -202,7 +202,7 @@ namespace SqlDsl.ObjectBuilders
 
             void Set(T obj, IEnumerable<object> vals, ILogger logger)
             {
-                var one = TypeConvertors.GetOne(propertyName, vals);
+                var one = GetOne(propertyName, vals);
                 setter(obj, builder(one, logger));
             }
 
@@ -252,9 +252,30 @@ namespace SqlDsl.ObjectBuilders
 
             void Single(object o, IEnumerable v, ILogger l)
             {
-                var val = TypeConvertors.GetOne(propertyName, v);
+                var val = GetOne(propertyName, v);
                 setter(o, val as IEnumerable, l);
             }
+        }
+
+        /// <summary>
+        /// If the enumerable contains 0 items, return default.
+        /// If the enumerable contains 1 item, return it.
+        /// If the enumerable contains more than 1 item, throw an exception
+        /// </summary>
+        static object GetOne(string propertyName, IEnumerable items)
+        {
+            var enumerator = items.GetEnumerator();
+            if (!enumerator.MoveNext())
+                return null;
+
+            var result = enumerator.Current;
+            if (enumerator.MoveNext())
+            {
+                throw new InvalidOperationException($"Database has returned more than one item for " +
+                    $"{propertyName}, however it only accepts a single item.");   
+            }
+
+            return result;
         }
 
         class ConstructorKeyComparer : IEqualityComparer<Tuple<Type, Type[]>>

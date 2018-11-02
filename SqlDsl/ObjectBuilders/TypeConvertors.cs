@@ -158,7 +158,7 @@ namespace SqlDsl.ObjectBuilders
                 if (!(obj is IEnumerable))
                 {
                     var valsType = GetTypeString(obj);
-                    throw new InvalidOperationException($"Expecting input type {valsType} to be enumerable.");
+                    throw new InvalidOperationException($"Expecting input type {valsType} to be IEnumerable.");
                 }
 
                 return enumerableConvertor(obj as IEnumerable, logger);
@@ -247,27 +247,6 @@ namespace SqlDsl.ObjectBuilders
                 foreach (var val in values)
                     yield return innerConvertor(val, logger);
             } 
-        }
-
-        /// <summary>
-        /// If the enumerable contains 0 items, return default.
-        /// If the enumerable contains 1 item, return it.
-        /// If the enumerable contains more than 1 item, throw an exception
-        /// </summary>
-        public static object GetOne(string propertyName, IEnumerable items)
-        {
-            var enumerator = items.GetEnumerator();
-            if (!enumerator.MoveNext())
-                return null;
-
-            var result = enumerator.Current;
-            if (enumerator.MoveNext())
-            {
-                throw new InvalidOperationException($"Database has returned more than one item for " +
-                    $"{propertyName}, however it only accepts a single item.");   
-            }
-
-            return result;
         }
 
         /// <summary>
