@@ -124,7 +124,6 @@ namespace SqlDsl.ObjectBuilders
 
         public TCollection Build(ObjectGraph values, ILogger logger)
         {
-            var os = SplitObjectGraph(values);
             var objects = SplitObjectGraph(values).Select(x => SingleObjBuilder.Build(x, logger));
             return CollectionBuilder(objects);
         }
