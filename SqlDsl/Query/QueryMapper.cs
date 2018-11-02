@@ -136,12 +136,12 @@ namespace SqlDsl.Query
                 mapper);
         }
 
-        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(string propertyName, Type propertyType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
+        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(string propertyName, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
         {
             var builder = new SqlStatementBuilder<TSqlBuilder>();
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
             builder.AddSelectColumn(
-                propertyType,
+                cellDataType,
                 propertyName, 
                 tableName: wrappedStatement.UniqueAlias);
                 
@@ -191,7 +191,7 @@ namespace SqlDsl.Query
                     {
                         return (
                             BuildMapResult.SimpleProp,
-                            new[]{ new MappedProperty(pChain, null, expr.Type) },
+                            new[]{ new MappedProperty(pChain, null, GetSimplePropertyCellType(expr)) },
                             EmptyMapped
                         );
                     }
@@ -206,6 +206,12 @@ namespace SqlDsl.Query
             // if expression returns an object (e.g. a => a) the To param might be null
             tables = tables.Where(t => t.To != null);
             return (BuildMapResult.Map, properties, tables);
+        }
+
+        static Type GetSimplePropertyCellType(Expression simpleProperty)
+        {
+            throw new NotImplementedException();
+            return simpleProperty.Type;
         }
 
         static bool IsConstant(Expression expr)
@@ -461,7 +467,7 @@ namespace SqlDsl.Query
 
                     break;
                 default:
-                    throw new InvalidOperationException($"{from.GetType()}         Property joined from is invalid\nfrom: {from}, to: {to}");
+                    throw new InvalidOperationException($"Property joined from is invalid\nfrom: {from}, to: {to}");
                     // TODO: better error message
             }
         }

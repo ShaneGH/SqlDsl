@@ -370,44 +370,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.IsNotEmpty(Logger.WarningMessages);
         }
 
-        [Test]
-        [Ignore("TODO")]
-        public void ArrayDataType6()
-        {
-            // // arrange
-            // // act
-            // var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
-            //     .From(x => x.Person)
-            //     .InnerJoin(x => x.Classes)
-            //         .On((q, pd) => q.Person.Id == pd.PersonId)
-            //     .InnerJoin(x => x.ClassData)
-            //         .On((q, cd) => q.Classes.ClassId == cd.ClassId)
-            //     .Map(p => new ArrayDataType2Result { Data = p.ClassData.Select(cd => cd.Data).ToArray() })
-            //     .ExecuteAsync(Executor, logger: Logger);
-
-            // // assert
-            // do assert
-        }
-
-        [Test]
-        [Ignore("TODO")]
-        public void ArrayDataType7()
-        {
-            // // arrange
-            // // act
-            // var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
-            //     .From(x => x.Person)
-            //     .InnerJoin(x => x.Classes)
-            //         .On((q, pd) => q.Person.Id == pd.PersonId)
-            //     .InnerJoin(x => x.ClassData)
-            //         .On((q, cd) => q.Classes.ClassId == cd.ClassId)
-            //     .Map(p => p.ClassData.Select(cd => cd.Data))
-            //     .ExecuteAsync(Executor, logger: Logger);
-
-            // // assert
-            // do assert
-        }
-
         Task<IEnumerable<IEnumerable<byte[]>>> ADT8()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
@@ -478,7 +440,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task ArrayDataType8_1_DoesNotLogWarning()
         {
             // arrange
@@ -502,7 +463,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task ArrayDataType9()
         {
             // arrange
@@ -515,18 +475,20 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             CollectionAssert.AreEqual(new [] 
             { 
-                Data.PeoplesData.JohnsData.Data,
-                Data.PeoplesData.MarysData.Data 
+                Data.PeoplesData.JohnsData.Data 
             }, john);
         }
 
         [Test]
-        [Ignore("TODO")]
-        public async Task ArrayDataType9_DoesNotLogWarning()
+        public async Task ArrayDataType9_LogsWarning()
         {
             // arrange
             // act
             await ADT9();
+            // TODO: enumerate inner values
+            
+            // foreach (var x in await ADT9())
+            //     foreach (var y in x.Enumerate());
 
             // assert
             Assert.IsNotEmpty(Logger.WarningMessages);
