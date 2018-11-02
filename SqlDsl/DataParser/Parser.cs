@@ -34,7 +34,8 @@ namespace SqlDsl.DataParser
         {
             // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
             var values = rows
-                .GroupBy(r => r[propertyGraph.SimpleValueRowNumberColumnIndex])
+                // simple mapped properties are always grouped around the primary select
+                .GroupBy(r => r[0])
                 .Select(r => r.First()[propertyGraph.SimpleValueColumnIndex]);
 
             var convertor = TypeConvertors.GetConvertor<TResult>(propertyGraph.SimplePropertyCellTypeIsEnumerable);

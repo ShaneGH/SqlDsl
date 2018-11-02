@@ -420,7 +420,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task ArrayDataType8()
         {
             // arrange
@@ -439,12 +438,53 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task ArrayDataType8_DoesNotLogWarning()
         {
             // arrange
             // act
-            await ADT8();
+            foreach (var x in await ADT8())
+                foreach (var y in x.Enumerate());
+
+            // assert
+            Assert.IsEmpty(Logger.WarningMessages);
+        }
+
+        Task<IEnumerable<IEnumerable<byte[]>>> ADT8_1()
+        {
+            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                .From(x => x.Person)
+                .InnerJoin(x => x.PersonsData)
+                    .On((q, pd) => pd.PersonId == q.Person.Id)
+                .Where(p => p.Person.Id == Data.People.John.Id)
+                .Map(p => p.PersonsData.Select(pd => pd.Data))
+                .ExecuteAsync(Executor, logger: Logger);
+        }
+
+        [Test]
+        public async Task ArrayDataType8_1()
+        {
+            // arrange
+            // act
+            var data = await ADT8_1();
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            var john = data.First();
+
+            CollectionAssert.AreEqual(new [] 
+            { 
+                Data.PeoplesData.JohnsData.Data 
+            }, john);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ArrayDataType8_1_DoesNotLogWarning()
+        {
+            // arrange
+            // act
+            foreach (var x in await ADT8_1())
+                foreach (var y in x.Enumerate());
 
             // assert
             Assert.IsEmpty(Logger.WarningMessages);
