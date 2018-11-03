@@ -26,6 +26,15 @@ namespace SqlDsl.ObjectBuilders
         }
 
         /// <summary>
+        /// Build an object of a given type with the object graph provided
+        /// </summary>
+        public static T Build<T>(ObjectGraph values, ILogger logger)
+        {
+            // use cached builder to create concrete object
+            return ((IBuilder<T>)GetBuilder(typeof(T))).Build(values, logger);
+        }
+
+        /// <summary>
         /// Get a builder for a specific object type
         /// </summary>
         static IBuilder GetBuilder(Type type)

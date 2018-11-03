@@ -62,7 +62,7 @@ namespace SqlDsl.DataParser
         static IEnumerable<TResult> ParseComplex<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
         {
             foreach (var obj in CreateObject(propertyGraph, rows))
-                yield return (TResult)Builders.Build(typeof(TResult), obj, logger);
+                yield return Builders.Build<TResult>(obj, logger);
         }
 
         /// <summary>

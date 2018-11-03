@@ -12,7 +12,7 @@ namespace SqlDsl.ObjectBuilders
     /// Should only be used as the root builder. It uses a convention which is a little quirky compared to
     /// other builders. See SplitObjectGraph(...) method for details
     /// </summary>
-    public class EnumerableBuilder<TCollection, T> : IBuilder
+    public class EnumerableBuilder<TCollection, T> : IBuilder, IBuilder<TCollection>
         where TCollection : IEnumerable<T>
     {
         readonly Builder<T> SingleObjBuilder;
@@ -39,7 +39,7 @@ namespace SqlDsl.ObjectBuilders
         }
 
         /// <summary>
-        /// Slit an object graph in the form of {P1: [1, 2], P2: [3, 4]} into [{P1: [1], P2: [3]}, {P1: [2], P2: [4]}]
+        /// Split an object graph in the form of {P1: [1, 2], P2: [3, 4]} into [{P1: [1], P2: [3]}, {P1: [2], P2: [4]}]
         /// </summary>
         static IEnumerable<ObjectGraph> SplitObjectGraph(ObjectGraph values)
         {

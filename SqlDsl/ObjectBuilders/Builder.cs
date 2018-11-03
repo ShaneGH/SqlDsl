@@ -7,7 +7,6 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.ObjectBuilders
 {
-
     /// <summary>
     /// A generic builder interface
     /// </summary>
@@ -18,11 +17,22 @@ namespace SqlDsl.ObjectBuilders
         /// </summary>
         object Build(ObjectGraph values, ILogger logger);
     }
+    
+    /// <summary>
+    /// A generic builder interface
+    /// </summary>
+    public interface IBuilder<T>
+    {
+        /// <summary>
+        /// Build a concrete object from an object graph
+        /// </summary>
+        T Build(ObjectGraph values, ILogger logger);
+    }
 
     /// <summary>
     /// A compiled (at runtime) builder class which builds a concrete object from an object graph
     /// </summary>
-    public class Builder<T> : IBuilder
+    public class Builder<T> : IBuilder<T>, IBuilder
     {
         /// <summary>
         /// Compiled function to build an object
