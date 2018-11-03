@@ -24,7 +24,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (Level2)Builders.Build(typeof(Level2), null, null);
+            var result = Builders.GetBuilder<Level2>().Build(null, null);
 
             // assert
             Assert.NotNull(result);
@@ -36,7 +36,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (Level2)Builders.Build(typeof(Level2), new ObjectGraph
+            var result = Builders.GetBuilder<Level2>().Build(new ObjectGraph
             {
                 ComplexProps = new []
                 {
@@ -67,7 +67,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             // arrange
             // act
             // assert
-            Assert.Throws(typeof(InvalidOperationException), () => Builders.Build(typeof(Level2), new ObjectGraph
+            Assert.Throws(typeof(InvalidOperationException), () => Builders.GetBuilder<Level2>().Build(new ObjectGraph
             {
                 ComplexProps = new []
                 {
@@ -104,7 +104,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (Level1Multiple)Builders.Build(typeof(Level1Multiple), new ObjectGraph
+            var result = Builders.GetBuilder<Level1Multiple>().Build(new ObjectGraph
             {
                 ComplexProps = new []
                 {
@@ -145,7 +145,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (Level1Multiple)Builders.Build(typeof(Level1Multiple), null, null);
+            var result = Builders.GetBuilder<Level1Multiple>().Build(null, null);
 
             // assert
             Assert.NotNull(result);

@@ -61,8 +61,9 @@ namespace SqlDsl.DataParser
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
         static IEnumerable<TResult> ParseComplex<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
         {
+            var builder = Builders.GetBuilder<TResult>();
             foreach (var obj in CreateObject(propertyGraph, rows))
-                yield return Builders.Build<TResult>(obj, logger);
+                yield return builder.Build(obj, logger);
         }
 
         /// <summary>

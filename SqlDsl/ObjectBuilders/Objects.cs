@@ -95,8 +95,9 @@ namespace SqlDsl.ObjectBuilders
                         propSetters[prop.name].propertyType;
 
                     // recurse to get actual values
+                    var builder = Builders.GetBuilder(singlePropertyType);
                     var values = prop.value
-                        .Select(v => Builders.Build(singlePropertyType, v, logger))
+                        .Select(v => builder.Build(v, logger))
                         .Enumerate();
 
                     // set the value of the property

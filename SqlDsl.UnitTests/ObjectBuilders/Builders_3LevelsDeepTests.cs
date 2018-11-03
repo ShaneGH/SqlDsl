@@ -28,7 +28,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (Level3)Builders.Build(typeof(Level3), new ObjectGraph
+            var result = Builders.GetBuilder<Level3>().Build(new ObjectGraph
             {
                 ComplexProps = new []
                 {

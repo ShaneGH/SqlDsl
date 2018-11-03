@@ -23,7 +23,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (SimpleProperties)Builders.Build(typeof(SimpleProperties), null, null);
+            var result = Builders.GetBuilder<SimpleProperties>().Build(null, null);
 
             // assert
             Assert.NotNull(result);
@@ -34,7 +34,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (SimpleProperties)Builders.Build(typeof(SimpleProperties), new ObjectGraph
+            var result = Builders.GetBuilder<SimpleProperties>().Build(new ObjectGraph
             {
                 SimpleProps = new [] 
                 {
@@ -56,7 +56,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             // assert
             Assert.Throws(
                 typeof(InvalidOperationException), 
-                () => Builders.Build(typeof(SimpleProperties), new ObjectGraph
+                () => Builders.GetBuilder<SimpleProperties>().Build(new ObjectGraph
                 {
                     SimpleProps = new [] 
                     {
@@ -73,7 +73,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             // assert
             Assert.Throws(
                 typeof(InvalidCastException), 
-                () => Builders.Build(typeof(SimpleProperties), new ObjectGraph
+                () => Builders.GetBuilder<SimpleProperties>().Build(new ObjectGraph
                 {
                     SimpleProps = new [] 
                     {
@@ -90,7 +90,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             // assert
             Assert.Throws(
                 typeof(InvalidOperationException), 
-                () => Builders.Build(typeof(SimpleProperties), new ObjectGraph
+                () => Builders.GetBuilder<SimpleProperties>().Build(new ObjectGraph
                 {
                     SimpleProps = new [] 
                     {
@@ -107,7 +107,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (SimplePropertiesChild)Builders.Build(typeof(SimplePropertiesChild), new ObjectGraph
+            var result = Builders.GetBuilder<SimplePropertiesChild>().Build(new ObjectGraph
             {
                 SimpleProps = new [] 
                 {
@@ -132,7 +132,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (MultipleSimpleProperties)Builders.Build(typeof(MultipleSimpleProperties), new ObjectGraph
+            var result = Builders.GetBuilder<MultipleSimpleProperties>().Build(new ObjectGraph
             {
                 SimpleProps = new [] 
                 {
@@ -156,7 +156,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (MultipleSimpleProperties)Builders.Build(typeof(MultipleSimpleProperties), null, null);
+            var result = Builders.GetBuilder<MultipleSimpleProperties>().Build(null, null);
 
             // assert
             Assert.NotNull(result.Property1);
@@ -226,13 +226,12 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         [TestCase(typeof(WithIReadOnlyCollection))]
         [TestCase(typeof(WithIReadOnlyList))]
         [TestCase(typeof(WithHashSet))]
-        // [TestCase(typeof(WithArray))]
+        [TestCase(typeof(WithArray))]
         public void Build_WithAllSuportedCollectionTypes_BuildsCorrectly(Type testType)
         {
             // arrange
             // act
-            var result = (ITheCollection)Builders.Build(
-                testType, 
+            var result = (ITheCollection)Builders.GetBuilder(testType).Build(
                 CollectionTestValues(), null);
 
             // assert
@@ -252,8 +251,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = (ITheCollection)Builders.Build(
-                testType, 
+            var result = (ITheCollection)Builders.GetBuilder(testType).Build( 
                 null, null);
 
             // assert
