@@ -1,6 +1,7 @@
 using SqlDsl.ObjectBuilders;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
+using SqlDsl.Utils.EqualityComparers;
 using System;
 using System.Collections;
 using System.Collections.Generic;

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SqlDsl.DataParser
+namespace SqlDsl.Utils.EqualityComparers
 {
     /// <summary>
     /// Comparer which ignores the outer array and compares the elements of an array

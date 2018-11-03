@@ -1,4 +1,5 @@
 using SqlDsl.Utils;
+using SqlDsl.Utils.EqualityComparers;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -118,7 +119,7 @@ namespace SqlDsl.ObjectBuilders
         /// A cahce of object constructors
         /// </summary>
         static readonly ConcurrentDictionary<Tuple<Type, Type[]>, Func<object[], object>> Constructors = 
-            new ConcurrentDictionary<Tuple<Type, Type[]>, Func<object[], object>>(new ConstructorKeyComparer());
+            new ConcurrentDictionary<Tuple<Type, Type[]>, Func<object[], object>>(ConstructorKeyComparer.Instance);
 
         /// <summary>
         /// Get a cached constructor or build and add a new one to the cache
@@ -278,35 +279,6 @@ namespace SqlDsl.ObjectBuilders
             }
 
             return result;
-        }
-
-        class ConstructorKeyComparer : IEqualityComparer<Tuple<Type, Type[]>>
-        {
-            public bool Equals(Tuple<Type, Type[]> x, Tuple<Type, Type[]> y)
-            {
-                if (x == null && y == null) return true;
-                if (x == null || y == null) return false;
-
-                if (x.Item1 != y.Item1) return false;
-                
-                if (x.Item2 == null && y.Item2 == null) return true;
-                if (x.Item2 == null || y.Item2 == null) return false;
-
-                if (x.Item2.Length != y.Item2.Length) return false;
-
-                for (var i = 0; i < x.Item2.Length; i++)
-                {
-                    if (x.Item2[i] != y.Item2[i]) return false;
-                }
-
-                return true;
-            }
-
-            public int GetHashCode(Tuple<Type, Type[]> obj)
-            {
-                return obj.Item2
-                    .Aggregate(obj.Item1.GetHashCode(), (hash, t) => hash ^ t.GetHashCode());
-            }
         }
     }
 }
