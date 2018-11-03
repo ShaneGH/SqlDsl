@@ -87,22 +87,23 @@ namespace SqlDsl.ObjectBuilders
             // use a setter to set each complex property
             foreach (var prop in vals.ComplexProps.OrEmpty())
             {
-                if (propSetters.ContainsKey(prop.name))
-                {
-                    // test if the property is a T or IEnumerable<T>
-                    var singlePropertyType = 
-                        ReflectionUtils.GetIEnumerableType(propSetters[prop.name].propertyType) ??
-                        propSetters[prop.name].propertyType;
+                if (!propSetters.ContainsKey(prop.name))
+                    continue;
+                    
+                // test if the property is a T or IEnumerable<T>
+                var singlePropertyType = 
+                    ReflectionUtils.GetIEnumerableType(propSetters[prop.name].propertyType) ??
+                    propSetters[prop.name].propertyType;
 
-                    // recurse to get actual values
-                    var builder = Builders.GetBuilder(singlePropertyType);
-                    var values = prop.value
-                        .Select(v => builder.Build(v, logger))
-                        .Enumerate();
+                // recurse to get actual values
+                var builder = Builders.GetBuilder(singlePropertyType);
+                var values = prop.value
+                    // TODO: there is a cast here (possibly a boxing if complex prop is struct)
+                    .Select(v => builder.Build(v, logger))
+                    .Enumerate();
 
-                    // set the value of the property
-                    propSetters[prop.name].setter(obj, values, logger);
-                }
+                // set the value of the property
+                propSetters[prop.name].setter(obj, values, logger);
             }
 
             return obj;
