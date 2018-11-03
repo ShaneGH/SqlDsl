@@ -191,7 +191,7 @@ namespace SqlDsl.Query
                     {
                         return (
                             BuildMapResult.SimpleProp,
-                            new[]{ new MappedProperty(pChain, null, GetSimplePropertyCellType(expr)) },
+                            new[]{ new MappedProperty(pChain, null, GetSimplePropertyCellType(expr, state.QueryObject)) },
                             EmptyMapped
                         );
                     }
@@ -208,10 +208,27 @@ namespace SqlDsl.Query
             return (BuildMapResult.Map, properties, tables);
         }
 
-        static Type GetSimplePropertyCellType(Expression simpleProperty)
+        static Type GetSimplePropertyCellType(Expression simpleProperty, ParameterExpression queryRoot)
         {
-            throw new NotImplementedException();
-            return simpleProperty.Type;
+            var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(simpleProperty, allowOne: true, allowSelect: true);
+            if (!isPropertyChain)
+            {
+                throw new InvalidOperationException($"Cannot find data cell type for expression {simpleProperty}");
+            }
+
+            chain = chain.Enumerate();
+            if (chain.Count() != 2)
+            {
+                throw new InvalidOperationException($"Cannot find data cell type for expression {simpleProperty}");
+            }
+
+            var (chainIsValid, type) = ReflectionUtils.GetTypeForPropertyChain(queryRoot.Type, chain);
+            if (!chainIsValid)
+            {
+                throw new InvalidOperationException($"Cannot find data cell type for expression {simpleProperty}");
+            }
+            
+            return type;
         }
 
         static bool IsConstant(Expression expr)

@@ -304,10 +304,31 @@ namespace SqlDsl.Utils
         }
 
         /// <summary>
+        /// Given a type and chain of properties, get the type of the last prop in the chain.
+        /// If any if the props in the middle are IEnumerable, their enumerated type is used
+        /// </summary>
+        public static (bool chainIsValid, Type type) GetTypeForPropertyChain(Type root, IEnumerable<string> chain)
+        {
+            chain = chain.Enumerate();
+            if (!chain.Any())
+                return (true, root);
+
+            root = GetIEnumerableType(root) ?? root;
+            var current = chain.First();
+            foreach (var prop in GetFieldsAndProperties(root))
+            {
+                if (prop.name == current)
+                    return GetTypeForPropertyChain(prop.type, chain.Skip(1));
+            }
+            
+            return (false, null);
+        }
+
+        /// <summary>
         /// If an expression is a property chain, return it's root and the property names, otherwise, return false for isPropertyChain
         /// </summary>
         /// <param name="allowOne">If true, calls to .One() will be ignored in the chain</param>
-        /// <param name="allowOne">If true, calls to .Select(...) will be considered part of the the chain if the mapping is also a property chain</param>
+        /// <param name="allowSelect">If true, calls to .Select(...) will be considered part of the the chain if the mapping is also a property chain</param>
         public static (bool isPropertyChain, ParameterExpression root, IEnumerable<string> chain) GetPropertyChain(
             Expression e, 
             bool allowOne = false,
