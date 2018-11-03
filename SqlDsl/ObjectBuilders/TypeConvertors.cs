@@ -238,7 +238,7 @@ namespace SqlDsl.ObjectBuilders
                         $"data type of \"{propertyName}\" to {valsType}" */
                 }
 
-                var converted = ConvertToType(input, logger);
+                var converted = ConvertToType(input, logger).ToArray();
                 return createCollection(converted);
             }
 

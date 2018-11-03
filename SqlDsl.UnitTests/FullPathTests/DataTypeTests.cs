@@ -484,11 +484,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            //await ADT9();
-            // TODO: enumerate inner values
-            
-            foreach (var x in await ADT9())
-                foreach (var y in x.Enumerate());
+            await ADT9();
 
             // assert
             Assert.IsNotEmpty(Logger.WarningMessages);
