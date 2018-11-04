@@ -43,16 +43,12 @@ namespace SqlDsl.DataParser
                 .Select(rs => rs.Select(r => r[propertyGraph.SimpleValueColumnIndex]));
 
             // TODO: this is done on each query. can it be cached?
-            var resultIsCollection = ReflectionUtils.CountEnumerables(typeof(TResult)) > 
-                ReflectionUtils.CountEnumerables(propertyGraph.SimplePropertyCellType);
+            var resultEnumCount = ReflectionUtils.CountEnumerables(typeof(TResult));
+            var cellEnumType = ReflectionUtils.CountEnumerables(propertyGraph.SimplePropertyCellType);
 
-            var actualValuesPerRecord = resultIsCollection ?
-                dbValuesPerRecord :
-                dbValuesPerRecord.Select(rs => ValueGetters.GetOne(rs, "Values"));
-
-            var convertor = TypeConvertors.GetConvertor<TResult>(propertyGraph.SimplePropertyCellTypeIsEnumerable);
-            foreach (var value in actualValuesPerRecord)
-                yield return convertor(value, logger);
+            var getter = ValueGetters.GetValueGetter<TResult>(resultEnumCount > cellEnumType, cellEnumType > 0);
+            foreach (var value in dbValuesPerRecord)
+                yield return getter(value, logger);
         }
 
         /// <summary>

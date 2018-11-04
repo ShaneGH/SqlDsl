@@ -159,7 +159,7 @@ namespace SqlDsl.ObjectBuilders
 
             T Convertor(object obj, ILogger logger)
             {
-                if (obj == null && collectionIsNullable)
+                if ((obj == null || DBNull.Value.Equals(obj)) && collectionIsNullable)
                     return default(T);
 
                 if (!(obj is IEnumerable))

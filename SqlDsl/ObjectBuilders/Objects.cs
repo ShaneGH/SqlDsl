@@ -87,7 +87,6 @@ namespace SqlDsl.ObjectBuilders
                     case true:
                         setter.setter.SetEnumerable(obj, prop.value, logger);
                         break;
-
                     case false:
                         setter.setter.Set(obj, prop.value, logger);
                         break;
@@ -173,51 +172,6 @@ namespace SqlDsl.ObjectBuilders
                         typeof(object)),
                     args)
                 .Compile();
-        }
-
-        static readonly ConcurrentDictionary<EnumerableSettersKey, Action<object, IEnumerable, ILogger>> EnumerableSetterCache = new ConcurrentDictionary<EnumerableSettersKey, Action<object, IEnumerable, ILogger>>();
-
-        public static Action<object, IEnumerable, ILogger> GetEnumerableSetter(Type objectType, string propertyName, Type resultPropertyType)
-        {
-            var key = new EnumerableSettersKey(objectType, propertyName, resultPropertyType);
-            if (EnumerableSetterCache.TryGetValue(key, out Action<object, IEnumerable, ILogger> val))
-                return val;
-
-            return EnumerableSetterCache.GetOrAdd(key, BuildEnumerableSetter(objectType, propertyName, resultPropertyType));
-        }
-
-        static Action<object, IEnumerable, ILogger> BuildEnumerableSetter(Type objectType, string propertyName, Type resultPropertyType)
-        {
-            var obj = Ex.Parameter(typeof(object));
-            var vals = Ex.Parameter(typeof(IEnumerable));
-            var logger = Ex.Parameter(typeof(ILogger));
-         
-            // IEnumerable, ILogger -> collection type   
-            var getter = TypeConvertors.GetConvertor(resultPropertyType, true);
-            var setter = Ex
-                .Lambda<Action<object, IEnumerable, ILogger>>(
-                    Ex.Assign(
-                        Ex.PropertyOrField(
-                            ReflectionUtils.Convert(obj, objectType), 
-                            propertyName),
-                        Ex.Invoke(
-                            Ex.Constant(getter),
-                            vals,
-                            logger)),
-                    obj,
-                    vals,
-                    logger)
-                .Compile();
-
-            return ReflectionUtils.CountEnumerables(resultPropertyType) <= 1 ?
-                Single :
-                setter;
-
-            void Single(object o, IEnumerable v, ILogger l)
-            {
-                var val = ValueGetters.GetOne(v, propertyName);
-                setter(o, val as IEnumerable, l);
-            }
         }
     }
 }
