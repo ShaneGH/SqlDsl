@@ -9,7 +9,7 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests.Environment
 {
-    class TestExecutor : IDebugExecutor
+    public class TestExecutor : IDebugExecutor
     {
         public readonly IExecutor Executor;
         readonly List<(string sql, string[] colNames, List<object[]> results)> SqlStatements = new List<(string, string[], List<object[]>)>();

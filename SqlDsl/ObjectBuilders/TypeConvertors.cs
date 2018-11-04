@@ -150,10 +150,18 @@ namespace SqlDsl.ObjectBuilders
 
         static Func<object, ILogger, T> BuildConvertor<T>(Func<IEnumerable, ILogger, T> enumerableConvertor)
         {
+            var t = typeof(T);
+            var collectionIsNullable = t.IsInterface || 
+                !t.IsValueType ||
+                ReflectionUtils.IsNullable(t);
+
             return Convertor;
 
             T Convertor(object obj, ILogger logger)
             {
+                if (obj == null && collectionIsNullable)
+                    return default(T);
+
                 if (!(obj is IEnumerable))
                 {
                     var valsType = GetTypeString(obj);
