@@ -55,8 +55,8 @@ namespace SqlDsl.ObjectBuilders
                 && (type.Attributes & TypeAttributes.NotPublic) == TypeAttributes.NotPublic;
         }
 
-        public static readonly Type[] EmptyTypes = new Type[0];
-        public static readonly object[] EmptyObjects = new object[0];
+        static readonly Type[] EmptyTypes = new Type[0];
+        static readonly object[] EmptyObjects = new object[0];
 
         /// <summary>
         /// Build an object
