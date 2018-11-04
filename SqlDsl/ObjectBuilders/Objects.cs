@@ -141,8 +141,7 @@ namespace SqlDsl.ObjectBuilders
         static Func<object[], object> BuildConstructor(Type type, Type[] constructorArgTypes)
         {
             // get default constructor for object
-            var constr = type
-                .GetConstructor(constructorArgTypes) ?? 
+            var constr = type.GetConstructor(constructorArgTypes) ?? 
                 throw new InvalidOperationException(
                     $"Object {type} does not have a constructor with args: {constructorArgTypes.JoinString(", ")}");
 

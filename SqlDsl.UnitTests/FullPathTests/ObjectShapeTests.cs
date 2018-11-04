@@ -20,6 +20,35 @@ namespace SqlDsl.UnitTests.FullPathTests
     [TestFixture]
     public class ObjectShapeTests : FullPathTestBase
     {
+        class JoinedQueryClass
+        {
+            public Person ThePerson { get; set; }
+            public List<PersonClass> PersonClasses { get; set; }
+            public List<Class> Classes { get; set; }
+            public List<ClassTag> ClassTags { get; set; }
+            public List<Tag> Tags { get; set; }
+            public List<Purchase> PurchasesByMe { get; set; }
+            public List<Purchase> PurchasesByMeForMyClasses { get; set; }
+        }
+
+        static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
+        {
+            return Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.ThePerson)
+                .LeftJoin<PersonClass>(q => q.PersonClasses)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                .LeftJoin<Class>(q => q.Classes)
+                    .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
+                .LeftJoin<ClassTag>(q => q.ClassTags)
+                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
+                .LeftJoin<Tag>(q => q.Tags)
+                    .On((q, t) => q.ClassTags.One().TagId == t.Id)
+                .LeftJoin<Purchase>(q => q.PurchasesByMe)
+                    .On((q, t) => q.ThePerson.Id == t.PersonId)
+                .LeftJoin<Purchase>(q => q.PurchasesByMeForMyClasses)
+                    .On((q, t) => q.ThePerson.Id == t.PersonId && q.Classes.One().Id == t.ClassId);
+        }
+
         class QueryClass1
         {
             public Person Person { get; set; }
@@ -357,15 +386,101 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.AreEqual(2, data.Count());
             
-            Assert.AreEqual(new Person(0, null, 0), data.First().PersonWithName);
-            Assert.AreEqual(new Person(0, "John", Gender.Male), data.First().PersonWithGender);
-            Assert.AreEqual(new Person(0, null, 0), data.First().Inner.PersonWithName);
-            Assert.AreEqual(new Person(0, "John", Gender.Male), data.First().Inner.PersonWithGender);
+            Assert.AreEqual(new Person(0, "John", 0), data.First().PersonWithName);
+            Assert.AreEqual(new Person(0, null, Gender.Male), data.First().PersonWithGender);
+            Assert.AreEqual(new Person(0, "John", 0), data.First().Inner.PersonWithName);
+            Assert.AreEqual(new Person(0, null, Gender.Male), data.First().Inner.PersonWithGender);
             
-            Assert.AreEqual(new Person(0, null, 0), data.ElementAt(1).PersonWithName);
-            Assert.AreEqual(new Person(0, "Mary", Gender.Female), data.ElementAt(1).PersonWithGender);
-            Assert.AreEqual(new Person(0, null, 0), data.ElementAt(1).Inner.PersonWithName);
-            Assert.AreEqual(new Person(0, "Mary", Gender.Female), data.ElementAt(1).Inner.PersonWithGender);
+            Assert.AreEqual(new Person(0, "Mary", 0), data.ElementAt(1).PersonWithName);
+            Assert.AreEqual(new Person(0, null, Gender.Female), data.ElementAt(1).PersonWithGender);
+            Assert.AreEqual(new Person(0, "Mary", 0), data.ElementAt(1).Inner.PersonWithName);
+            Assert.AreEqual(new Person(0, null, Gender.Female), data.ElementAt(1).Inner.PersonWithGender);
+        }
+
+        class ObjectWithConstructorArgs_OuterSelectTest
+        {
+            public readonly IEnumerable<Class> Classes;
+
+            public ObjectWithConstructorArgs_OuterSelectTest(IEnumerable<Class> classes)
+            {
+                Classes = classes;
+            }
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ObjectWithConstructorArgs_OuterSelect()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(x => new
+                {
+                    personName = x.ThePerson.Name,
+                    classes = new ObjectWithConstructorArgs_OuterSelectTest(
+                        x.ThePerson.Joined(x.PersonClasses).Joined(x.Classes))
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            
+            Assert.AreEqual(Data.People.John.Name, data.First().personName);
+            CollectionAssert.AreEqual(new [] { Data.Classes.Tennis, Data.Classes.Archery }, data.First().classes.Classes);
+            
+            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).personName);
+            CollectionAssert.AreEqual(new [] { Data.Classes.Tennis }, data.ElementAt(1).classes.Classes);
+        }
+
+        class ObjectWithConstructorArgs_InnerSelectTest : EqComparer
+        {
+            public readonly Class Class;
+
+            public ObjectWithConstructorArgs_InnerSelectTest(Class theClass)
+            {
+                Class = theClass;
+            }
+
+            public override int GetHashCode() => Class.GetHashCode();
+            public override bool Equals(object p)
+            {
+                var cls = (p as ObjectWithConstructorArgs_InnerSelectTest)?.Class;
+                return cls == Class;
+            }
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task ObjectWithConstructorArgs_InnerSelect()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(x => new
+                {
+                    personName = x.ThePerson.Name,
+                    classes = x.ThePerson
+                        .Joined(x.PersonClasses)
+                        .Joined(x.Classes)
+                        .Select(c => new ObjectWithConstructorArgs_InnerSelectTest(c))
+                })
+                .ExecuteAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            
+            Assert.AreEqual(Data.People.John.Name, data.First().personName);
+            CollectionAssert.AreEqual(new [] 
+            {
+                new ObjectWithConstructorArgs_InnerSelectTest(Data.Classes.Tennis), 
+                new ObjectWithConstructorArgs_InnerSelectTest(Data.Classes.Archery)
+            }, data.First().classes);
+            
+            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).personName);
+            CollectionAssert.AreEqual(new [] 
+            { 
+                new ObjectWithConstructorArgs_InnerSelectTest(Data.Classes.Tennis)
+            }, data.ElementAt(1).classes);
         }
     }
 }

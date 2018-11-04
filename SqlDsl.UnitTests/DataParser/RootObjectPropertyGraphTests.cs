@@ -80,6 +80,29 @@ namespace SqlDsl.UnitTests.DataParser
                 Compare(x_.value, y_.value);
             }
 
+            if (expected.SimpleConstructorArgs.Count() != actual.SimpleConstructorArgs.Count()) Fail("Simple c args count");
+            for (var i = 0; i < expected.SimpleConstructorArgs.Count(); i++)
+            {
+                var x_ = expected.SimpleConstructorArgs.ElementAt(i);
+                var y_ = actual.SimpleConstructorArgs.ElementAt(i);
+                
+                Assert.AreEqual(x_.index, y_.index, "Simple cArg " + i + " index");
+                Assert.AreEqual(x_.argIndex, y_.argIndex, "Simple cArg " + i + " argIndex");
+                Assert.AreEqual(x_.resultPropertyType, y_.resultPropertyType, "Simple cArg " + i + " resultPropertyType");
+                Assert.AreEqual(x_.dataCellType, y_.dataCellType, "Simple cArg " + i + " dataCellType");
+                CollectionAssert.AreEqual(x_.rowNumberColumnIds, y_.rowNumberColumnIds, ErrMessage("Simple cArg " + i));
+            }
+
+            if (expected.ComplexConstructorArgs.Count() != actual.ComplexConstructorArgs.Count()) Fail("Complex cArgs count");
+            for (var i = 0; i < expected.ComplexConstructorArgs.Count(); i++)
+            {
+                var x_ = expected.ComplexConstructorArgs.ElementAt(i);
+                var y_ = actual.ComplexConstructorArgs.ElementAt(i);
+                
+                Assert.AreEqual(x_.argIndex, y_.argIndex, "Complex prop " + i);
+                Compare(x_.value, y_.value);
+            }
+
             string ErrMessage(string message = null) 
             {
                 message = message == null ? "" : (" " + message);
@@ -776,7 +799,7 @@ namespace SqlDsl.UnitTests.DataParser
                 new[] { 0 },
                 simpleConstructorArgs: new[]
                 {
-                    (4, 1, new [] {1}.Skip(0), typeof(long[]), typeof(long))
+                    (4, 1, new int[0].Skip(0), typeof(Gender), typeof(Gender))
                 },
                 complexConstructorArgs: new [] 
                 {
@@ -784,11 +807,12 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(Person),
                         new[]
                         {
-                            (3, "Data", new [] {2}.Skip(0), typeof(byte[][]), typeof(byte[])),
-                            (4, "ClassIds", new [] {1}.Skip(0), typeof(long[]), typeof(long))
+                            (1, "Id", new int[0].Skip(0), typeof(int), typeof(int)),
+                            (2, "Name", new int[0].Skip(0), typeof(string), typeof(string)),
+                            (3, "Gender", new int[0].Skip(0), typeof(Gender), typeof(Gender))
                         }, 
                         null, 
-                        new[] { 0 }))
+                        null))
                 });
 
             Compare(expected, actual);
