@@ -11,7 +11,7 @@ using SqlDsl.Utils;
 namespace SqlDsl.ObjectBuilders
 {
     /// <summary>
-    /// Utils to convert objects from one type to another
+    /// Builds functions which convert from an object to a necessary type
     /// </summary>
     static class TypeConvertors
     {
@@ -245,6 +245,8 @@ namespace SqlDsl.ObjectBuilders
                         $"data type of \"{propertyName}\" to {valsType}" */
                 }
 
+                // ToArray ensures that properties of type IEnumerable<T> will
+                // have a concrete type (and not an enumerator)
                 var converted = ConvertToType(input, logger).ToArray();
                 return createCollection(converted);
             }

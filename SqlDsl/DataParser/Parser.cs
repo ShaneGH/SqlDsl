@@ -48,7 +48,7 @@ namespace SqlDsl.DataParser
 
             var actualValuesPerRecord = resultIsCollection ?
                 dbValuesPerRecord :
-                dbValuesPerRecord.Select(rs => Objects.GetOne("Values", rs));
+                dbValuesPerRecord.Select(rs => ValueGetters.GetOne(rs, "Values"));
 
             var convertor = TypeConvertors.GetConvertor<TResult>(propertyGraph.SimplePropertyCellTypeIsEnumerable);
             foreach (var value in actualValuesPerRecord)
