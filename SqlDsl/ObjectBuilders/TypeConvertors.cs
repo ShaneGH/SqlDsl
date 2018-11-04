@@ -36,16 +36,10 @@ namespace SqlDsl.ObjectBuilders
                 { Tuple.Create(typeof(Guid), false), ForNonNullable(AddDummyLogger(ConvertGuid)) },
             });
 
-        static Func<object, T> RemoveLogger<T>(Func<object, ILogger, T> basedOn)
-        {
-            return Removed;
-            T Removed(object x) => basedOn(x, null);
-        }
-
         static Func<object, ILogger, T> AddDummyLogger<T>(Func<object, T> basedOn)
         {
-            return Removed;
-            T Removed(object x, ILogger logger) => basedOn(x);
+            return Added;
+            T Added(object x, ILogger logger) => basedOn(x);
         }
 
         /// <summary>
@@ -98,13 +92,8 @@ namespace SqlDsl.ObjectBuilders
             };
         }
 
-        // /// <summary>
-        // /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
-        // /// </summary>
-        // public static Func<object, ILogger, T> GetConvertor<T>() => GetConvertor<T>(false);
-
         /// <summary>
-        /// Get a function which converts from object -> propertyType. If no function found, falls back to casting
+        /// Get a function which converts from object -> ILogger -> propertyType. If no function found, falls back to casting
         /// </summary>
         public static Func<object, ILogger, T> GetConvertor<T>(bool cellTypeIsEnumerable)
         {
@@ -115,6 +104,16 @@ namespace SqlDsl.ObjectBuilders
             var convertor2 = BuildConvertor<T>(cellTypeIsEnumerable);
             Convertors.GetOrAdd(key, convertor2);
             return convertor2;
+        }
+
+        /// <summary>
+        /// Get a function which converts from object -> ILogger -> propertyType. If no function found, falls back to casting
+        /// </summary>
+        public static object GetConvertor(Type convertType, bool cellTypeIsEnumerable)
+        {
+            return ReflectionUtils
+                .GetMethod(() => GetConvertor<object>(true), convertType)
+                .Invoke(null, new[] { cellTypeIsEnumerable ? TrueObject : FalseObject });
         }
 
         /// <summary>
@@ -179,7 +178,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Get a function which converts from IEnumerable -> propertyType. If no function found, falls back to casting
         /// </summary>
-        public static object BuildEnumerableConvertor(Type collectionType, Type enumeratedType, bool cellTypeIsEnumerable)
+        static object BuildEnumerableConvertor(Type collectionType, Type enumeratedType, bool cellTypeIsEnumerable)
         {
             return ReflectionUtils
                 .GetMethod(
@@ -192,7 +191,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Get a function which converts from IEnumerable -> propertyType. If no function found, falls back to casting
         /// </summary>
-        public static Func<IEnumerable, ILogger, TCollection> BuildEnumerableConvertor<TCollection, T>(bool cellTypeIsEnumerable) //bool resultIsCollectionOfCellsCCC, bool cellTypeIsEnumerableCCC)
+        static Func<IEnumerable, ILogger, TCollection> BuildEnumerableConvertor<TCollection, T>(bool cellTypeIsEnumerable) //bool resultIsCollectionOfCellsCCC, bool cellTypeIsEnumerableCCC)
             where TCollection : IEnumerable<T>
         {
             var innerConvertor = GetConvertor<T>(cellTypeIsEnumerable);
@@ -265,8 +264,8 @@ namespace SqlDsl.ObjectBuilders
             enumer.MoveNext();
 
             return valType.IsArray ?
-                (GetTypeString(enumer.Current) + "[]") :
-                (valType.Name + "<" + GetTypeString(enumer.Current) + ">");
+                $"{GetTypeString(enumer.Current)}[]" :
+                $"{valType.Name}<{GetTypeString(enumer.Current)}>";
         }
 
         static readonly object IntConvertor = Convertors[Tuple.Create(typeof(int), false)];

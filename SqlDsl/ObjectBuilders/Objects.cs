@@ -232,7 +232,7 @@ namespace SqlDsl.ObjectBuilders
             var logger = Ex.Parameter(typeof(ILogger));
          
             // IEnumerable, ILogger -> collection type   
-            var getter = TypeConvertors.BuildEnumerableConvertor(resultPropertyType, ReflectionUtils.GetIEnumerableType(resultPropertyType), true);
+            var getter = TypeConvertors.GetConvertor(resultPropertyType, true);
             var setter = Ex
                 .Lambda<Action<object, IEnumerable, ILogger>>(
                     Ex.Assign(
