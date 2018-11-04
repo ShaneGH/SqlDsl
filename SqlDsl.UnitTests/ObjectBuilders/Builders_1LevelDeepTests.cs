@@ -38,8 +38,8 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             {
                 SimpleProps = new [] 
                 {
-                    ("Property1", new object[] { "Hello" }.Skip(0), NullAction, false),
-                    ("Property2", new object[] { 7 }.Skip(0), NullAction, false)
+                    ("Property1", new object[] { "Hello" }.Skip(0), false),
+                    ("Property2", new object[] { 7 }.Skip(0), false)
                 }
             }, null);
 
@@ -60,7 +60,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                 {
                     SimpleProps = new [] 
                     {
-                        ("Property2", new object[] { null }.Skip(0), NullAction, false)
+                        ("Property2", new object[] { null }.Skip(0), false)
                     }
                 }, null));
         }
@@ -77,7 +77,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                 {
                     SimpleProps = new [] 
                     {
-                        ("Property2", new object[] { DateTime.Now }.Skip(0), NullAction, false)
+                        ("Property2", new object[] { DateTime.Now }.Skip(0), false)
                     }
                 }, null));
         }
@@ -94,8 +94,8 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                 {
                     SimpleProps = new [] 
                     {
-                        ("Property1", new object[] { "Hello", "Hello again" }.Skip(0), NullAction, false),
-                        ("Property2", new object[] { 7, 8 }.Skip(0), NullAction, false)
+                        ("Property1", new object[] { "Hello", "Hello again" }.Skip(0), false),
+                        ("Property2", new object[] { 7, 8 }.Skip(0), false)
                     }
                 }, null));
         }
@@ -111,8 +111,8 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             {
                 SimpleProps = new [] 
                 {
-                    ("Property1", new object[] { "Hello" }.Skip(0), NullAction, false),
-                    ("Property2", new object[] { 7 }.Skip(0), NullAction, false)
+                    ("Property1", new object[] { "Hello" }.Skip(0), false),
+                    ("Property2", new object[] { 7 }.Skip(0), false)
                 }
             }, null);
 
@@ -136,8 +136,8 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             {
                 SimpleProps = new [] 
                 {
-                    ("Property1", new object[] { "Hello", "Hello again" }.Skip(0), NullAction, false),
-                    ("Property2", new object[] { 7, 8 }.Skip(0), NullAction, false)
+                    ("Property1", new object[] { "Hello", "Hello again" }.Skip(0), false),
+                    ("Property2", new object[] { 7, 8 }.Skip(0), false)
                 }
             }, null);
 
@@ -165,7 +165,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
 
         static ObjectGraph CollectionTestValues() => new ObjectGraph
         {
-            SimpleProps = new [] { ("Property1", new object[] { "Hello", "Hello again" }.Skip(0), NullAction, false) }
+            SimpleProps = new [] { ("Property1", new object[] { "Hello", "Hello again" }.Skip(0), false) }
         };
             
         static void AssertCollectionTest(IEnumerable<string> values)

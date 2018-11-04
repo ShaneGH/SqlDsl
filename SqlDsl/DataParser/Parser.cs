@@ -101,7 +101,7 @@ namespace SqlDsl.DataParser
                         .Enumerate()
                 };
 
-                (string name, IEnumerable<object> value, Action<object, IEnumerable, ILogger> customSetter, bool isEnumerableDataCell) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
                 {
                     // run a "Distinct" on the rowNumbers
                     var dataRowsForProp = objectData
@@ -116,13 +116,7 @@ namespace SqlDsl.DataParser
                         null :
                         ReflectionUtils.GetIEnumerableType(p.dataCellType);
 
-                    // regular parsers will not work if the cell contains an array
-                    // e.g. byte[]
-                    var customSetter = cellEnumType == null ?
-                        null :
-                        Objects.GetEnumerableSetter(propertyGraph.ObjectType, p.name, p.resultPropertyType);
-
-                    return (p.name, data, customSetter, cellEnumType != null);
+                    return (p.name, data, cellEnumType != null);
                 }
             }
         }

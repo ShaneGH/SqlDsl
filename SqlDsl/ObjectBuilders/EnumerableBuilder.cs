@@ -62,12 +62,11 @@ namespace SqlDsl.ObjectBuilders
             {
                 while (enumerators[0].en.MoveNext())
                 {
-                    var newProps = new List<(string name, IEnumerable<object> value, Action<object, IEnumerable, ILogger> customSetter, bool isEnumerableDataCell)>
+                    var newProps = new List<(string name, IEnumerable<object> value, bool isEnumerableDataCell)>
                     {
                         (
                             enumerators[0].prop.name, 
                             new [] { enumerators[0].en.Current }, 
-                            enumerators[0].prop.customSetter, 
                             enumerators[0].prop.isEnumerableDataCell)
                     };
 
@@ -78,7 +77,7 @@ namespace SqlDsl.ObjectBuilders
                             throw new InvalidOperationException($"Expected to have value for property {en.prop.name}");
                         }
 
-                        newProps.Add((en.prop.name, new [] { en.en.Current }, en.prop.customSetter, en.prop.isEnumerableDataCell)); 
+                        newProps.Add((en.prop.name, new [] { en.en.Current }, en.prop.isEnumerableDataCell)); 
                     }
 
                     vals.Add(new ObjectGraph

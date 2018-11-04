@@ -65,8 +65,8 @@ namespace SqlDsl.ObjectBuilders
 
             return obj;
 
-            bool isEnumerableDataCell((string name, IEnumerable<object> value, Action<object, IEnumerable, ILogger> customSetter, bool isEnumerableDataCell) c) => c.isEnumerableDataCell;
-            string name((string name, IEnumerable<object> value, Action<object, IEnumerable, ILogger> customSetter, bool isEnumerableDataCell) c) => c.name;
+            bool isEnumerableDataCell((string, IEnumerable<object>, bool isEnumerableDataCell) c) => c.isEnumerableDataCell;
+            string name((string name, IEnumerable<object>, bool) c) => c.name;
         }
 
         /// <summary>
