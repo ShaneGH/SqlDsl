@@ -321,6 +321,16 @@ namespace SqlDsl.UnitTests.SqlFlavours
 
         static ColumnDescriptor GetColumn((string name, Type type, bool isReadOnly) coll)
         {
+            switch (coll.name)
+            {
+                case "NullableValueTypeAsObject":
+                    coll = (coll.name, typeof(int?), coll.isReadOnly);
+                    break;
+                case "ReferenceTypeAsObject":
+                    coll = (coll.name, typeof(string), coll.isReadOnly);
+                    break;
+            }
+
             return new ColumnDescriptor
             {
                 Name = coll.name,
@@ -380,6 +390,8 @@ namespace SqlDsl.UnitTests.SqlFlavours
             Assert.AreEqual(expected.ULong_N, actual.ULong_N);
             Assert.AreEqual(expected.UShort, actual.UShort);
             Assert.AreEqual(expected.UShort_N, actual.UShort_N);
+            Assert.AreEqual(expected.ReferenceTypeAsObject, actual.ReferenceTypeAsObject);
+            Assert.AreEqual(expected.NullableValueTypeAsObject, actual.NullableValueTypeAsObject);
         }
     }
 }

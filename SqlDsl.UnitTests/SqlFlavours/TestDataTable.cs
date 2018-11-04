@@ -56,6 +56,9 @@ namespace SqlDsl.UnitTests.SqlFlavours
 
         public TestEnum TestEnum;
         public TestEnum? TestEnum_N;
+
+        public object NullableValueTypeAsObject;
+        public object ReferenceTypeAsObject;
     }
 
     public enum TestEnum
@@ -116,7 +119,10 @@ namespace SqlDsl.UnitTests.SqlFlavours
             ByteList = new List<byte> { 29, 30 },
 
             TestEnum = TestEnum.Option1,
-            TestEnum_N = TestEnum.Option2
+            TestEnum_N = TestEnum.Option2,
+
+            NullableValueTypeAsObject = 123,
+            ReferenceTypeAsObject = "j"
         };
         
         public static readonly TestDataTable DataTypeTestNulled = new TestDataTable
@@ -169,7 +175,10 @@ namespace SqlDsl.UnitTests.SqlFlavours
             ByteList = null,
 
             TestEnum = TestEnum.Option1,
-            TestEnum_N = null
+            TestEnum_N = null,
+
+            NullableValueTypeAsObject = 123,
+            ReferenceTypeAsObject = "j"
         };
     }
 }
