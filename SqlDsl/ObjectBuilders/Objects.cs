@@ -33,9 +33,9 @@ namespace SqlDsl.ObjectBuilders
             var propSetters = type
                 .GetFieldsAndProperties()
                 .Where(p => !p.readOnly)
-                .Select(p => (name: p.name, setter: PropertySetters.GetPropertySetter<T>(p.type, p.name), p.type, ReflectionUtils.CountEnumerables(p.type)))
+                .Select(p => (name: p.name, setter: PropertySetters.GetPropertySetter<T>(p.type, p.name), p.type))
                 //TODO: can enumerableDepth be part of the setter logic?
-                .ToDictionary(x => x.name, x => (setter: x.Item2, type: x.Item3, enumerableDepth: x.Item4));
+                .ToDictionary(x => x.name, x => (setter: x.Item2, type: x.Item3));
 
             T build(ObjectGraph vals, ILogger logger) => BuildObject(propSetters, vals, logger);
             return build;
@@ -64,7 +64,7 @@ namespace SqlDsl.ObjectBuilders
         /// </summary>
         /// <param name="propSetters">A set of objects which can set the value of a property</param>
         /// <param name="vals">The values of the object</param>
-        static T BuildObject<T>(Dictionary<string, (PropertySetter<T> setter, Type propertyType, int enumerableDepth)> propSetters, ObjectGraph vals, ILogger logger)
+        static T BuildObject<T>(Dictionary<string, (PropertySetter<T> setter, Type propertyType)> propSetters, ObjectGraph vals, ILogger logger)
         {
             if (vals == null)
                 return (T)ConstructObject(typeof(T), EmptyTypes, EmptyObjects);
