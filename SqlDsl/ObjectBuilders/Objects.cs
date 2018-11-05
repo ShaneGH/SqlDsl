@@ -33,12 +33,42 @@ namespace SqlDsl.ObjectBuilders
             var propSetters = type
                 .GetFieldsAndProperties()
                 .Where(p => !p.readOnly)
-                .Select(p => (name: p.name, setter: PropertySetters.GetPropertySetter<T>(p.type, p.name), p.type))
+                .Select(p => (p.name, PropertySetters.GetPropertySetter<T>(p.type, p.name), p.type))
                 //TODO: can enumerableDepth be part of the setter logic?
-                .ToDictionary(x => x.name, x => (setter: x.Item2, type: x.Item3));
+                .ToDictionary(x => x.Item1, x => (setter: x.Item2, type: x.Item3));
 
-            T build(ObjectGraph vals, ILogger logger) => BuildObject(propSetters, vals, logger);
+            // compile getters for each constructor type
+            var cArgGetters = type
+                .GetConstructors()
+                .Select(c => c.GetParameters().Select(p => p.ParameterType).ToArray())
+                .ToDictionary(x => x, x => x.Select(BuildValueGetter).ToArray(), ArrayComparer<Type>.Instance);
+
+            T build(ObjectGraph vals, ILogger logger) => BuildObject(cArgGetters, propSetters, vals, logger);
             return build;
+        }
+
+        static IValueGetter BuildValueGetter(Type forType)
+        {
+            return (IValueGetter)ReflectionUtils
+                .GetMethod(() => BuildValueGetter<object>(), forType)
+                .Invoke(null, EmptyObjects);
+        }
+
+        static ValueGetter<T> BuildValueGetter<T>()
+        {
+            var enumCount = ReflectionUtils.CountEnumerables(typeof(T));
+            if (enumCount > 0)
+            {
+                var singleGetter = ValueGetters.GetValueGetter<T>(true, false);
+                var enumerableGetter = ValueGetters.GetValueGetter<T>(enumCount > 1, true);
+
+                return new ValueGetter<T>(singleGetter, enumerableGetter);
+            }
+            else
+            {
+                var getter = ValueGetters.GetValueGetter<T>(false, false);
+                return new ValueGetter<T>(getter);
+            }
         }
 
         /// <summary>
@@ -64,16 +94,65 @@ namespace SqlDsl.ObjectBuilders
         /// </summary>
         /// <param name="propSetters">A set of objects which can set the value of a property</param>
         /// <param name="vals">The values of the object</param>
-        static T BuildObject<T>(Dictionary<string, (PropertySetter<T> setter, Type propertyType)> propSetters, ObjectGraph vals, ILogger logger)
+        static T BuildObject<T>(
+            Dictionary<Type[], IValueGetter[]> cArgGetters, 
+            Dictionary<string, (PropertySetter<T> setter, Type propertyType)> propSetters, 
+            ObjectGraph vals, 
+            ILogger logger)
         {
             if (vals == null)
                 return (T)ConstructObject(typeof(T), EmptyTypes, EmptyObjects);
 
+            var constructorArgTypes = vals.ConstructorArgTypes ?? EmptyTypes;
+            if (!cArgGetters.ContainsKey(constructorArgTypes))
+                throw new InvalidOperationException($"Unable to find constructor for object {typeof(T)} with constructor args [{constructorArgTypes.JoinString(", ")}].");
+
+            var constructor = cArgGetters[constructorArgTypes];
+            var cargs = vals.SimpleConstructorArgs
+                .OrEmpty()
+                .Select(ca =>
+                {
+                    var getter = constructor[ca.argIndex];
+                    var value = ca.isEnumerableDataCell ?
+                        getter.GetEnumerable(ca.value, logger) :
+                        getter.Get(ca.value, logger);
+
+                    return (i: ca.argIndex, v: value);
+                })
+                .Concat(vals.ComplexConstructorArgs.OrEmpty().Select(ca =>
+                {
+                    var getter = constructor[ca.argIndex];
+
+                    // test if the property is a T or IEnumerable<T>
+                    var singlePropertyType = 
+                        ReflectionUtils.GetIEnumerableType(constructorArgTypes[ca.argIndex]) ??
+                        constructorArgTypes[ca.argIndex];
+
+                    // recurse to get actual values
+                    var builder = Builders.GetBuilder(singlePropertyType);
+                    var values = ca.value
+                        // TODO: there is a cast here (possibly a boxing if complex prop is struct)
+                        .Select(v => builder.Build(v, logger))
+                        .Enumerate();
+                        
+                    var value = getter.Get(values, logger);
+                    return (i: ca.argIndex, v: value);
+                }))
+                .OrderBy(ca => ca.i)
+                .Select((ca, i) => 
+                {
+                    if (i != ca.i)
+                        throw new InvalidOperationException($"Expecting constructor arg {i}, but got {ca.i}.");
+
+                    return ca.v;
+                });
+
+
             // Create output object
             var obj = (T)ConstructObject(
                 typeof(T), 
-                vals.ConstructorArgTypes, 
-                new object[0]);
+                constructorArgTypes, 
+                cargs.ToArray());
 
             // use a setter to set each simple property
             foreach (var prop in vals.SimpleProps.OrEmpty())

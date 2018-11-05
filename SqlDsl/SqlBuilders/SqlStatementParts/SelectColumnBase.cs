@@ -14,29 +14,29 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     /// </summary>
     abstract class SelectColumnBase : ISelectColumn
     {
-        /// <summary>
-        /// The alias of the column
-        /// </summary>
+        /// <inheritdoc />
         public string Alias { get; }
 
-        /// <summary>
-        /// If true, this column is a row number
-        /// </summary>
+        /// <inheritdoc />
         public bool IsRowNumber { get; }
 
         /// <inheritdoc />
         public Type DataType { get; }
+        
+         /// <inheritdoc />
+        public ConstructorInfo IsArgForConstructor { get; }
         
         /// <summary>
         /// The index of the row number column for the table which exposes this column
         /// </summary>
         public abstract int RowNumberColumnIndex { get; }
 
-        public SelectColumnBase(string alias, bool isRowNumber, Type dataType)
+        public SelectColumnBase(string alias, bool isRowNumber, Type dataType, ConstructorInfo isArgForConstructor)
         {
             Alias = alias;
             IsRowNumber = isRowNumber;
             DataType = dataType;
+            IsArgForConstructor = isArgForConstructor;
         }
     }
 }

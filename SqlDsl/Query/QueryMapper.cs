@@ -31,7 +31,7 @@ namespace SqlDsl.Query
                 .Enumerate();
 
             var mappedValues = properties
-                .Select(x => (type: x.MappedPropertyType, from: RemoveRoot(x.From), to: RemoveRoot(x.To)))
+                .Select(x => (type: x.MappedPropertyType, from: RemoveRoot(x.From), to: RemoveRoot(x.To), isConstructorArg: x.IsConstructorArg))
                 .Enumerate();
 
             var builder = new SqlStatementBuilder<TSqlBuilder>();
@@ -43,7 +43,8 @@ namespace SqlDsl.Query
                     col.type,
                     col.from, 
                     tableName: (col.from ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias, 
-                    alias: col.to);
+                    alias: col.to,
+                    isForConstructor: col.isConstructorArg);
             }
 
             foreach (var col in rowIdPropertyMap)
@@ -322,9 +323,7 @@ namespace SqlDsl.Query
                         .AggregateTuple2();
 
                 case ExpressionType.New:
-                    return (expr as NewExpression).Arguments
-                        .Select(ex => BuildMap(state, ex, toPrefix, isExprTip: true))
-                        .AggregateTuple2();
+                    return BuildMapForConstructor(state, expr as NewExpression, toPrefix: toPrefix);
 
                 case ExpressionType.MemberInit:
                     return BuildMapForMemberInit(state, expr as MemberInitExpression, toPrefix);
@@ -357,6 +356,20 @@ namespace SqlDsl.Query
             }
 
             throw new InvalidOperationException($"Unsupported mapping expression \"{expr}\".");
+        }
+
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForConstructor(BuildMapState state, NewExpression expr, string toPrefix = null)
+        { 
+            return expr.Arguments
+                .Select(ex => BuildMap(state, ex, toPrefix: null, isExprTip: true))
+                .Select((map, i) => (
+                    map.properties.Select(p => new MappedProperty(
+                        p.From, 
+                        CombineStrings(toPrefix, CombineStrings($"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}", p.To)), 
+                        p.MappedPropertyType,
+                        isConstructorArg: expr.Constructor)), 
+                    map.tables))
+                .AggregateTuple2();
         }
 
         static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMemberAccess(BuildMapState state, MemberExpression expr, string toPrefix = null)
@@ -396,7 +409,7 @@ namespace SqlDsl.Query
                                     .Select(mem => new MappedProperty(CombineStrings(x.From, mem.name), CombineStrings(x.To, mem.name), mem.type));
                             }
 
-                            return new MappedProperty(x.From, CombineStrings(toPrefix, x.To), x.MappedPropertyType).ToEnumerable();
+                            return new MappedProperty(x.From, CombineStrings(toPrefix, x.To), x.MappedPropertyType, x.IsConstructorArg).ToEnumerable();
                         }),
                         m.map.tables.Select(x => new MappedTable(x.From, CombineStrings(m.memberName, x.To))))))
                 .AggregateTuple2();
@@ -443,7 +456,7 @@ namespace SqlDsl.Query
             return (
                 outerMapProperties
                     .SelectMany(r => innerMap.properties
-                        .Select(m => new MappedProperty(CombineStrings(r.From, m.From), CombineStrings(r.To, m.To), m.MappedPropertyType))),
+                        .Select(m => new MappedProperty(CombineStrings(r.From, m.From), CombineStrings(r.To, m.To), m.MappedPropertyType, m.IsConstructorArg))),
                 outerMap.tables
                     .Concat(innerMap.tables)
                     .Concat(newTableMap)
@@ -510,7 +523,7 @@ namespace SqlDsl.Query
 
             return (
                 propsEnumerated
-                    .Select(x => new MappedProperty($"{SqlStatementConstants.RootObjectAlias}.{x.From}", x.To, x.MappedPropertyType)),
+                    .Select(x => new MappedProperty($"{SqlStatementConstants.RootObjectAlias}.{x.From}", x.To, x.MappedPropertyType, x.IsConstructorArg)),
                 op.tables);
         }
 
@@ -580,11 +593,13 @@ namespace SqlDsl.Query
     class MappedProperty : MappedTable
     {
         public readonly Type MappedPropertyType;
+        public readonly ConstructorInfo IsConstructorArg;
 
-        public MappedProperty(string from, string to, Type mappedPropertyType)
+        public MappedProperty(string from, string to, Type mappedPropertyType, ConstructorInfo isConstructorArg = null)
             : base(from, to)
         {
             MappedPropertyType = mappedPropertyType;
+            IsConstructorArg = isConstructorArg;
         }
     }
 }

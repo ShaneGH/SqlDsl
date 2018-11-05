@@ -65,8 +65,10 @@ namespace SqlDsl.DataParser
             IEnumerable<string> colNames,
             IEnumerable<(int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType)> simpleProps, 
             IEnumerable<(string name, ObjectPropertyGraph value)> complexProps, 
-            IEnumerable<int> rowIdColumnNumbers)
-            : base(objectType, simpleProps, complexProps, rowIdColumnNumbers)
+            IEnumerable<int> rowIdColumnNumbers,
+            IEnumerable<(int index, int argIndex, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType)> simpleConstructorArgs = null,
+            IEnumerable<(int argIndex, ObjectPropertyGraph value)> complexConstructorArgs = null)
+            : base(objectType, simpleProps, complexProps, rowIdColumnNumbers, simpleConstructorArgs, complexConstructorArgs)
         {
             ColumnNames = colNames.ToArray();
         }

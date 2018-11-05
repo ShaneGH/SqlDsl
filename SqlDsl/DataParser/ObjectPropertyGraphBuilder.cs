@@ -1,8 +1,10 @@
+using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace SqlDsl.DataParser
 {
@@ -14,7 +16,7 @@ namespace SqlDsl.DataParser
         public static RootObjectPropertyGraph Build(
             Type objectType, 
             IEnumerable<(string name, int[] rowIdColumnMap)> mappedTableProperties, 
-            IEnumerable<(string name, int[] rowIdColumnMap, Type cellType)> columns, 
+            IEnumerable<(string name, int[] rowIdColumnMap, Type cellType, ConstructorInfo isConstructorArg)> columns, 
             QueryParseType queryParseType)
         {
             columns = columns.Enumerate();
@@ -23,7 +25,7 @@ namespace SqlDsl.DataParser
                 objectType, 
                 new [] { 0 },
                 mappedTableProperties.Select(c => (c.name.Split('.'), c.rowIdColumnMap)),
-                columns.OrEmpty().Select((c, i) => (i, c.name.Split('.'), c.rowIdColumnMap, c.cellType)), 
+                columns.OrEmpty().Select((c, i) => (i, c.name.Split('.'), c.rowIdColumnMap, c.cellType, c.isConstructorArg)), 
                 queryParseType);
 
             return new RootObjectPropertyGraph(
@@ -31,19 +33,25 @@ namespace SqlDsl.DataParser
                 columns.Select(x => x.name), 
                 opg.SimpleProps, 
                 opg.ComplexProps, 
-                opg.RowIdColumnNumbers);
+                opg.RowIdColumnNumbers,
+                opg.SimpleConstructorArgs,
+                opg.ComplexConstructorArgs);
         }
+
+        static readonly Type[] EmptyType = new Type[0];
 
         static ObjectPropertyGraph _Build(
             Type objectType, 
             int[] rowIdColumnNumbers, 
             IEnumerable<(string[] name, int[] rowIdColumnMap)> mappedTableProperties, 
-            IEnumerable<(int index, string[] name, int[] rowIdColumnMap, Type cellType)> columns, 
+            IEnumerable<(int index, string[] name, int[] rowIdColumnMap, Type cellType, ConstructorInfo isConstructorArg)> columns, 
             QueryParseType queryParseType)
         {
             // TODO: rowIdColumnNumbers should be int[]
             var simpleProps = new List<(int index, string propertyName, IEnumerable<int> rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();
-            var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType)>();
+            var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType, ConstructorInfo isConstructorParam)>();
+            var simpleCArgs = new List<(int index, int argIndex, IEnumerable<int> rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();
+            var complexCArgs = new List<(int index, int argIndex, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType, ConstructorInfo isConstructorParam)>();
 
             mappedTableProperties = mappedTableProperties
                 .Select(p => (
@@ -53,55 +61,109 @@ namespace SqlDsl.DataParser
                 .Enumerate();
 
             var typedColNames = GetProperties(objectType);
+            var typedConstructorArgs = columns
+                .Where(c => c.isConstructorArg != null)
+                .Select(c => c.isConstructorArg.GetParameters().Select(p => p.ParameterType).ToArray())
+                .FirstOrDefault() ?? EmptyType;
+
             foreach (var col in columns)
             {
                 // if there is only one name, the property belongs to this object
                 if (col.name.Length == 1)
                 {
-                    var colType = typedColNames.ContainsKey(col.name[0]) ?
-                        typedColNames[col.name[0]] :
-                        null;
+                    if (col.name[0].StartsWith(SqlStatementConstants.ConstructorArgPrefixAlias))
+                    {
+                        var indexString = col.name[0].Substring(SqlStatementConstants.ConstructorArgPrefixAlias.Length);
+                        if (!int.TryParse(indexString, out int index))
+                            throw new InvalidOperationException($"Expected constructor arg index: \"{indexString}\".");
+                            
+                        if (typedConstructorArgs.Length <= index)
+                            throw new InvalidOperationException($"Expected constructor with at least {index} arguments.");
 
-                    simpleProps.Add((
-                        col.index, 
-                        col.name[0], 
-                        FilterRowIdColumnNumbers(
-                            RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap)),
-                        colType,
-                        col.cellType
-                    ));
+                        simpleCArgs.Add((
+                            col.index, 
+                            index, 
+                            FilterRowIdColumnNumbers(
+                                RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap)),
+                            typedConstructorArgs[index],
+                            col.cellType
+                        ));
+                    }
+                    else
+                    {
+                        var colType = typedColNames.ContainsKey(col.name[0]) ?
+                            typedColNames[col.name[0]] :
+                            null;
+
+                        simpleProps.Add((
+                            col.index, 
+                            col.name[0], 
+                            FilterRowIdColumnNumbers(
+                                RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap)),
+                            colType,
+                            col.cellType
+                        ));
+                    }
                 }
                 // if there are more than one, the property belongs to a child of this object
-                else if (col.name.Length > 1 && typedColNames.ContainsKey(col.name[0]))
-                {
-                    // unwrap from IEnumerable    
-                    var colType = 
-                        ReflectionUtils.GetIEnumerableType(typedColNames[col.name[0]]) ?? 
-                        typedColNames[col.name[0]];
+                else if (col.name.Length > 1)
+                {                        
+                    if (col.name[0].StartsWith(SqlStatementConstants.ConstructorArgPrefixAlias))
+                    {
+                        var indexString = col.name[0].Substring(SqlStatementConstants.ConstructorArgPrefixAlias.Length);
+                        if (!int.TryParse(indexString, out int index))
+                            throw new InvalidOperationException($"Expected constructor arg index: \"{indexString}\"");
+                            
+                        var colType = typedConstructorArgs[index];
 
-                    // separate the property from this object (index == 0) from the properties of
-                    // child objects
-                    complexProps.Add((
-                        col.index, 
-                        col.name[0], 
-                        col.name.Skip(1).ToArray(),
-                        RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap),
-                        colType,
-                        col.cellType));
+                        // separate the property from this object (index == 0) from the properties of
+                        // child objects
+                        complexCArgs.Add((
+                            col.index, 
+                            index, 
+                            col.name.Skip(1).ToArray(),
+                            RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap),
+                            colType,
+                            col.cellType,
+                            col.isConstructorArg));
+                    }
+                    else if (typedColNames.ContainsKey(col.name[0]))
+                    {
+                        // unwrap from IEnumerable    
+                        var colType = 
+                            ReflectionUtils.GetIEnumerableType(typedColNames[col.name[0]]) ?? 
+                            typedColNames[col.name[0]];
+
+                        // separate the property from this object (index == 0) from the properties of
+                        // child objects
+                        complexProps.Add((
+                            col.index, 
+                            col.name[0], 
+                            col.name.Skip(1).ToArray(),
+                            RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap),
+                            colType,
+                            col.cellType,
+                            col.isConstructorArg));
+                    }
                 }
             }
 
             var cplxProps = complexProps
                 .GroupBy(PropertyName)
-
                 .Select(BuildComplexProp)
                 .Enumerate();
 
-            return new ObjectPropertyGraph(objectType, simpleProps, cplxProps, rowIdColumnNumbers);
+            var cplxCArgs = complexCArgs
+                .GroupBy(ArgIndex)
+                .Select(BuildComplexCArg)
+                .Enumerate();
 
-            string PropertyName((int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType) value) => value.propertyName;
+            return new ObjectPropertyGraph(objectType, simpleProps, cplxProps, rowIdColumnNumbers, simpleCArgs, cplxCArgs);
 
-            (string, ObjectPropertyGraph) BuildComplexProp(IEnumerable<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType)> values)
+            string PropertyName((int, string propertyName, string[], int[], Type, Type, ConstructorInfo) value) => value.propertyName;
+            int ArgIndex((int, int argIndex, string[], int[], Type, Type, ConstructorInfo) value) => value.argIndex;
+
+            (string, ObjectPropertyGraph) BuildComplexProp(IEnumerable<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType, ConstructorInfo isConstructorParam)> values)
             {
                 values = values.Enumerate();
                 var propertyName = values.First().propertyName;
@@ -130,7 +192,42 @@ namespace SqlDsl.DataParser
                         values.First().propertyType,
                         FilterRowIdColumnNumbers(propertyTableMap).ToArray(),
                         mappedTableProperties.Where(p => p.name.Length > 1).Select(p => (p.name.Skip(1).ToArray(), p.rowIdColumnMap)),
-                        values.Select(v => (v.index, v.subPropName, v.subPropRowIdColumnNumbers, v.dataCellType)),
+                        values.Select(v => (v.index, v.subPropName, v.subPropRowIdColumnNumbers, v.dataCellType, v.isConstructorParam)),
+                        queryParseType));
+            }
+
+            (int, ObjectPropertyGraph) BuildComplexCArg(IEnumerable<(int index, int argIndex, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType, ConstructorInfo isConstructorParam)> values)
+            {
+                values = values.Enumerate();
+                var argIndex = values.First().argIndex;
+
+                // // try to get row ids from property table map
+                // var propertyTableMap = mappedTableProperties
+                //     .Where(p => p.name.Length == 1 && p.name[0] == propertyName)
+                //     .Select(x => x.rowIdColumnMap)
+                //     .FirstOrDefault();
+
+                int[] propertyTableMap = null;
+
+                // if there is no map, use the common root for all properties
+                // this will happen when it is not a mapped query, 
+                // or for properties not bound to a Select(...) statement in a map
+                if (propertyTableMap == null)
+                {
+                    propertyTableMap = values
+                        .Where(x => x.subPropName.Length == 1)
+                        .Select(x => x.subPropRowIdColumnNumbers)
+                        .OrderedIntersection()
+                        .ToArray();
+                }
+
+                return (
+                    argIndex,
+                    _Build(
+                        values.First().propertyType,
+                        FilterRowIdColumnNumbers(propertyTableMap).ToArray(),
+                        mappedTableProperties.Where(p => p.name.Length > 1).Select(p => (p.name.Skip(1).ToArray(), p.rowIdColumnMap)),
+                        values.Select(v => (v.index, v.subPropName, v.subPropRowIdColumnNumbers, v.dataCellType, v.isConstructorParam)),
                         queryParseType));
             }
 

@@ -20,8 +20,21 @@ namespace SqlDsl.ObjectBuilders
         /// Complex properties will have properties of their own
         /// </summary>
         public IEnumerable<(string name, IEnumerable<ObjectGraph> value)> ComplexProps { get; set; }
+        
+        /// <summary>
+        /// Simple constructor args such as int, string, List&lt;int>, List&lt;string> etc...
+        /// </summary>
+        public IEnumerable<(int argIndex, IEnumerable<object> value, bool isEnumerableDataCell)> SimpleConstructorArgs { get; set; }
+        
+        /// <summary>
+        /// Complex constructor args will have properties of their own
+        /// </summary>
+        public IEnumerable<(int argIndex, IEnumerable<ObjectGraph> value)> ComplexConstructorArgs { get; set; }
 
-        public readonly Type[] ConstructorArgTypes = new Type[0];
+        /// <summary>
+        /// The type of the constructor args to be used with this object
+        /// </summary>
+        public Type[] ConstructorArgTypes { get; set; }
 
         public override string ToString()
         {

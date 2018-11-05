@@ -176,18 +176,18 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// A list of columns in the SELECT statement
         /// </summary>
-        readonly List<(Type cellDataType, string columnName, string tableName, string alias)> _Select = new List<(Type, string, string, string)>();
+        readonly List<(Type cellDataType, string columnName, string tableName, string alias, ConstructorInfo isForConstructor)> _Select = new List<(Type, string, string, string, ConstructorInfo)>();
 
         /// <summary>
         /// A list of columns in the SELECT statement
         /// </summary>
-        public IEnumerable<(Type cellDataType, string columnName, string tableName, string alias)> Select => _Select.Skip(0);
+        public IEnumerable<(Type cellDataType, string columnName, string tableName, string alias, ConstructorInfo isForConstructor)> Select => _Select.Skip(0);
         
         /// <summary>
         /// Add a column to the SELECT statement
         /// </summary>
-        public void AddSelectColumn(Type cellDataType, string columnName, string tableName = null, string alias = null) =>
-            _Select.Add((cellDataType, columnName, tableName, alias));
+        public void AddSelectColumn(Type cellDataType, string columnName, string tableName = null, string alias = null, ConstructorInfo isForConstructor = null) =>
+            _Select.Add((cellDataType, columnName, tableName, alias, isForConstructor));
 
         /// <summary>
         /// The WHERE statement, if necessary
@@ -317,7 +317,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Concat DB table columns with row id columns
         /// </summary>
-        IEnumerable<(Type dataType, string columnName, string tableName, string alias)> GetAllSelectColumns() =>
-            GetRowIdSelectColumns().Select(x => ((Type)null, x.rowIdColumnName, x.tableAlias, x.rowIdColumnNameAlias)).Concat(_Select);
+        IEnumerable<(Type dataType, string columnName, string tableName, string alias, ConstructorInfo constructor)> GetAllSelectColumns() =>
+            GetRowIdSelectColumns().Select(x => ((Type)null, x.rowIdColumnName, x.tableAlias, x.rowIdColumnNameAlias, (ConstructorInfo)null)).Concat(_Select);
     }
 }

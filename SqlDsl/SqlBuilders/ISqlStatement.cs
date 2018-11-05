@@ -127,5 +127,10 @@ namespace SqlDsl.SqlBuilders
         /// The data type of the cell
         /// </summary>
         Type DataType { get; }
+        
+         /// <summary>
+        /// The constructor that this column will be passed into, or null
+        /// </summary>
+        ConstructorInfo IsArgForConstructor { get; }
     }
 }

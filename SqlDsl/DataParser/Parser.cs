@@ -94,25 +94,64 @@ namespace SqlDsl.DataParser
                     // complex prop values are built recursively
                     ComplexProps = propertyGraph.ComplexProps
                         .Select(p => (p.name, CreateObject(p.value, objectData).Enumerate()))
-                        .Enumerate()
+                        .Enumerate(),
+                    ConstructorArgTypes = BuildConstructorArgTypes().ToArray(),
+                    SimpleConstructorArgs = propertyGraph.SimpleConstructorArgs
+                        .Select(GetSimpleCArg)
+                        .Enumerate(),
+                    ComplexConstructorArgs = propertyGraph.ComplexConstructorArgs
+                        .Select(p => (p.argIndex, CreateObject(p.value, objectData).Enumerate()))
+                        .Enumerate(),
                 };
 
-                (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                IEnumerable<Type> BuildConstructorArgTypes()
+                {
+                    var args = propertyGraph.SimpleConstructorArgs
+                        .Select(a => (a.argIndex, a.resultPropertyType))
+                        .Concat(propertyGraph.ComplexConstructorArgs
+                            .Select(a => (a.argIndex, a.value.ObjectType)))
+                        .OrderBy(a => a.argIndex);
+
+                    var i = 0;
+                    foreach (var arg in args)
+                    {
+                        if (arg.argIndex != i)
+                            throw new InvalidOperationException($"Expecting arg with index of {i}, but got {arg.argIndex}.");
+
+                        i++;
+                        yield return arg.Item2;   
+                    }
+                }
+
+                (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, IEnumerable<int> rowNumberColumnIds, Type dataCellType)
                 {
                     // run a "Distinct" on the rowNumbers
                     var dataRowsForProp = objectData
-                        .GroupBy(d => propertyGraph.GetUniqueIdForSimpleProp(d, p.rowNumberColumnIds))
+                        .GroupBy(d => propertyGraph.GetUniqueIdForSimpleProp(d, rowNumberColumnIds))
                         .Select(Enumerable.First);
 
                     var data = dataRowsForProp
-                        .Select(o => o[p.index])
+                        .Select(o => o[index])
                         .ToArray();
 
-                    var cellEnumType = p.dataCellType == null ?
+                    var cellEnumType = dataCellType == null ?
                         null :
-                        ReflectionUtils.GetIEnumerableType(p.dataCellType);
+                        ReflectionUtils.GetIEnumerableType(dataCellType);
 
+                    return (data, cellEnumType);
+                }
+
+                (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                {
+                    var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
                     return (p.name, data, cellEnumType != null);
+                }
+
+                (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleCArg(
+                    (int index, int argIndex, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                {
+                    var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
+                    return (p.argIndex, data, cellEnumType != null);
                 }
             }
         }

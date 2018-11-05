@@ -6,6 +6,7 @@ using System.Linq;
 using SqlDsl.Utils;
 using SqlDsl.DataParser;
 using SqlDsl.SqlBuilders.SqlStatementParts;
+using System.Reflection;
 
 namespace SqlDsl.Query
 {
@@ -72,10 +73,11 @@ namespace SqlDsl.Query
                 map.columnGroupPrefix,
                 sqlBuilder.GetRowNumberColumnIndexes(map.rowNumberColumnIndex).ToArray());
 
-            (string name, int[] rowIdColumnMap, Type dataCellType) GetMappedColumn(ISelectColumn column) => (
+            (string name, int[] rowIdColumnMap, Type dataCellType, ConstructorInfo isConstructorArg) GetMappedColumn(ISelectColumn column) => (
                 column.Alias,
                 sqlBuilder.GetRowNumberColumnIndexes(column.Alias).ToArray(),
-                column.DataType);
+                column.DataType,
+                column.IsArgForConstructor);
         }
 
         /// <summary>

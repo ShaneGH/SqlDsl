@@ -241,7 +241,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task ObjectWithConstructorArgs1()
         {
             // arrange
@@ -268,7 +267,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task ObjectWithConstructorArgs2()
         {
             // arrange
@@ -285,7 +283,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task ObjectWithConstructorArgs3()
         {
             // arrange
@@ -312,7 +309,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task ObjectWithConstructorArgs4()
         {
             // arrange
@@ -339,7 +335,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task ObjectWithConstructorArgs5()
         {
             // arrange
@@ -364,7 +359,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task ObjectWithConstructorArgs_NestedObjectsAndMultipleCArgsObjectsOnOneLevel()
         {
             // arrange

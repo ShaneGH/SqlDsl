@@ -781,7 +781,6 @@ namespace SqlDsl.UnitTests.DataParser
         }
 
         [Test]
-        [Ignore("The fix to this test is on a different branch (tmp-constructorargs or tmp-enumerableseters)")]
         public void PropertyGraph_MappedValHasConstructorArgs_ReturnsCorrectOPG()
         {
             // arrange
@@ -794,7 +793,10 @@ namespace SqlDsl.UnitTests.DataParser
             // assert
             var expected = new ObjectPropertyGraph(
                 typeof(SemiPerson),
-                null, 
+                new[]
+                {
+                    (0, "##rowid", new int[0].Skip(0), (Type)null, (Type)null)
+                }, 
                 null, 
                 new[] { 0 },
                 simpleConstructorArgs: new[]
@@ -807,7 +809,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(Person),
                         new[]
                         {
-                            (1, "Id", new int[0].Skip(0), typeof(int), typeof(int)),
+                            (1, "Id", new int[0].Skip(0), typeof(long), typeof(long)),
                             (2, "Name", new int[0].Skip(0), typeof(string), typeof(string)),
                             (3, "Gender", new int[0].Skip(0), typeof(Gender), typeof(Gender))
                         }, 
