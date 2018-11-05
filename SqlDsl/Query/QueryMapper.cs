@@ -498,8 +498,6 @@ namespace SqlDsl.Query
 
                     break;
 
-                // removed this case for now. It has worked in the past but
-                // it is was never fully trusted/verified
                 case ExpressionType.MemberAccess:
                     var member = from as MemberExpression;
                     if (member.Expression != state.QueryObject)
@@ -509,7 +507,7 @@ namespace SqlDsl.Query
                     VerifyJoin(state, member.Member.Name, to);
 
                     break;
-                    
+
                 default:
                     throw new InvalidOperationException($"Property joined from is invalid\nfrom: {from}, to: {to}");
                     // TODO: better error message
