@@ -484,7 +484,8 @@ namespace SqlDsl.Query
                     VerifyJoin(state, joinedFrom, chain.JoinString("."));
                     break;
                 case ExpressionType.Parameter:
-                    var from_ = state.ParameterRepresentsProperty
+                    string from_ = null;
+                    from_ = state.ParameterRepresentsProperty
                         .Where(s => s.parameter == from)
                         .Select(s => s.property.JoinString("."))
                         .FirstOrDefault();
@@ -496,6 +497,18 @@ namespace SqlDsl.Query
                     VerifyJoin(state, from_, to);
 
                     break;
+
+                // removed this case for now. It has worked in the past but
+                // it is was never fully trusted/verified
+                // case ExpressionType.MemberAccess:
+                //     var member = from as MemberExpression;
+                //     if (member.Expression != state.QueryObject)
+                //         throw new InvalidOperationException($"Property joined from is invalid\nfrom: {from}, to: {to}");
+                //         // TODO: better error message
+
+                //     VerifyJoin(state, member.Member.Name, to);
+
+                //     break;
                 default:
                     throw new InvalidOperationException($"Property joined from is invalid\nfrom: {from}, to: {to}");
                     // TODO: better error message
