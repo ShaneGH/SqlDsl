@@ -110,34 +110,10 @@ namespace SqlDsl.ObjectBuilders
             var constructor = cArgGetters[constructorArgTypes];
             var cargs = vals.SimpleConstructorArgs
                 .OrEmpty()
-                .Select(ca =>
-                {
-                    var getter = constructor[ca.argIndex];
-                    var value = ca.isEnumerableDataCell ?
-                        getter.GetEnumerable(ca.value, logger) :
-                        getter.Get(ca.value, logger);
-
-                    return (i: ca.argIndex, v: value);
-                })
-                .Concat(vals.ComplexConstructorArgs.OrEmpty().Select(ca =>
-                {
-                    var getter = constructor[ca.argIndex];
-
-                    // test if the property is a T or IEnumerable<T>
-                    var singlePropertyType = 
-                        ReflectionUtils.GetIEnumerableType(constructorArgTypes[ca.argIndex]) ??
-                        constructorArgTypes[ca.argIndex];
-
-                    // recurse to get actual values
-                    var builder = Builders.GetBuilder(singlePropertyType);
-                    var values = ca.value
-                        // TODO: there is a cast here (possibly a boxing if complex prop is struct)
-                        .Select(v => builder.Build(v, logger))
-                        .Enumerate();
-                        
-                    var value = getter.Get(values, logger);
-                    return (i: ca.argIndex, v: value);
-                }))
+                .Select(SimpleConstructorArg)
+                .Concat(vals.ComplexConstructorArgs
+                    .OrEmpty()
+                    .Select(ComplexConstructorArg))
                 .OrderBy(ca => ca.i)
                 .Select((ca, i) => 
                 {
@@ -146,7 +122,6 @@ namespace SqlDsl.ObjectBuilders
 
                     return ca.v;
                 });
-
 
             // Create output object
             var obj = (T)ConstructObject(
@@ -197,6 +172,42 @@ namespace SqlDsl.ObjectBuilders
             }
 
             return obj;
+
+            (int i, object v) SimpleConstructorArg((int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) arg) =>
+                GetSimpleConstructorArg(constructor, arg, logger);
+
+            (int i, object v) ComplexConstructorArg((int argIndex, IEnumerable<ObjectGraph> value) arg) =>
+                GetComplexConstructorArg(constructorArgTypes, constructor, arg, logger);
+        }
+
+        static (int index, object value) GetSimpleConstructorArg(IValueGetter[] argGetters, (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) arg, ILogger logger)
+        {
+            var getter = argGetters[arg.argIndex];
+            var value = arg.isEnumerableDataCell ?
+                getter.GetEnumerable(arg.value, logger) :
+                getter.Get(arg.value, logger);
+
+            return (arg.argIndex, value);
+        }
+
+        static (int index, object value) GetComplexConstructorArg(Type[] constructorArgTypes, IValueGetter[] argGetters, (int argIndex, IEnumerable<ObjectGraph> value) arg, ILogger logger)
+        {
+            var getter = argGetters[arg.argIndex];
+
+            // test if the property is a T or IEnumerable<T>
+            var singlePropertyType = 
+                ReflectionUtils.GetIEnumerableType(constructorArgTypes[arg.argIndex]) ??
+                constructorArgTypes[arg.argIndex];
+
+            // recurse to get actual values
+            var builder = Builders.GetBuilder(singlePropertyType);
+            var values = arg.value
+                // TODO: there is a cast here (possibly a boxing if complex prop is struct)
+                .Select(v => builder.Build(v, logger))
+                .Enumerate();
+                
+            var value = getter.Get(values, logger);
+            return (arg.argIndex, value);
         }
 
         /// <summary>
