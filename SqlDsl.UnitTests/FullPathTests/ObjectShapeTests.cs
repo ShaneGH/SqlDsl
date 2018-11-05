@@ -241,6 +241,80 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public async Task AnonymousObjects_Simple()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
+                .From(result => result.ThePerson)
+                .Where(result => result.ThePerson.Id == Data.People.John.Id)
+                .Map(q => new
+                {
+                    name = q.ThePerson.Name,
+                    person = q.ThePerson
+                })
+                .ExecuteAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            var john = data.First();
+            Assert.AreEqual(Data.People.John.Name, john.name);
+            Assert.AreEqual(Data.People.John, john.person);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task AnonymousObjects_Complex()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
+                .From(result => result.ThePerson)
+                .LeftJoin<PersonClass>(result => result.PersonClasses)
+                    .On((r, pc) => r.ThePerson.Id == pc.PersonId)
+                .LeftJoin<Class>(result => result.Classes)
+                    .On((r, pc) => r.PersonClasses.One().ClassId == pc.Id)
+                .LeftJoin<ClassTag>(result => result.ClassTags)
+                    .On((r, pc) => r.Classes.One().Id == pc.ClassId)
+                .LeftJoin<Tag>(result => result.Tags)
+                    .On((r, pc) => r.ClassTags.One().TagId == pc.Id)
+                .Where(result => result.ThePerson.Id == Data.People.John.Id)
+                .Map(q => new
+                {
+                    name = q.ThePerson.Name,
+                    person = q.ThePerson,
+                    classes = q.ThePerson
+                        .Joined(q.PersonClasses)
+                        .Joined(q.Classes)
+                        .Select(c => new
+                        {
+                            className = c.Name,
+                            tags = c
+                                .Joined(q.ClassTags)
+                                .Joined(q.Tags)
+                                .Select(t => t.Name)
+                                .ToArray()
+                        })
+                        .ToArray()
+                })
+                .ExecuteAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            var john = data.First();
+            Assert.AreEqual(Data.People.John.Name, john.name);
+            Assert.AreEqual(Data.People.John, john.person);
+            
+            Assert.AreEqual(2, john.classes.Length);
+            
+            Assert.AreEqual(Data.Classes.Tennis.Name, john.classes[0].className);
+            CollectionAssert.AreEqual(new [] { Data.Tags.BallSport.Name, Data.Tags.Sport.Name }, john.classes[0].tags);
+            
+            Assert.AreEqual(Data.Classes.Archery.Name, john.classes[1].className);
+            CollectionAssert.AreEqual(new [] { Data.Tags.Sport.Name }, john.classes[1].tags);
+        }
+
+        [Test]
         public async Task ObjectWithConstructorArgs1()
         {
             // arrange

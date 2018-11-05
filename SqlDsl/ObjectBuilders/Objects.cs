@@ -24,17 +24,12 @@ namespace SqlDsl.ObjectBuilders
         public static Func<ObjectGraph, ILogger, T> CompileObjectBuilder<T>()
         {
             var type = typeof(T);
-
-            // different process for creating anonymous objects
-            if (IsAnonymousType(type))
-                return AnonymousObjects.CompileAnonymousObjectBuilder<T>();
                 
             // compile setter for each property
             var propSetters = type
                 .GetFieldsAndProperties()
                 .Where(p => !p.readOnly)
                 .Select(p => (p.name, PropertySetters.GetPropertySetter<T>(p.type, p.name), p.type))
-                //TODO: can enumerableDepth be part of the setter logic?
                 .ToDictionary(x => x.Item1, x => (setter: x.Item2, type: x.Item3));
 
             // compile getters for each constructor type
