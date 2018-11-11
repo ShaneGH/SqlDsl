@@ -36,9 +36,9 @@ namespace SqlDsl.Query
         /// <param name="executor">
         /// An expression to map the selected table to a property on the result
         /// </param>
-        public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor, ILogger logger = null)
+        public Task<IEnumerable<TMapped>> ToIEnumerableAsync(IExecutor executor, ILogger logger = null)
         {
-            return Worker.ExecuteAsync(executor, null, logger: logger);
+            return Worker.ToIEnumerableAsync(executor, null, logger: logger);
         }
 
         /// <summary>
@@ -47,9 +47,9 @@ namespace SqlDsl.Query
         /// <param name="executor">
         /// An expression to map the selected table to a property on the result
         /// </param>
-        public IEnumerable<TMapped> Execute(IExecutor executor, ILogger logger = null)
+        public IEnumerable<TMapped> ToIEnumerable(IExecutor executor, ILogger logger = null)
         {
-            return Worker.Execute(executor, null, logger: logger);
+            return Worker.ToIEnumerable(executor, null, logger: logger);
         }
     }
 }

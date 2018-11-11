@@ -72,7 +72,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<Person>()
                 .From(result => result)
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
                 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -87,7 +87,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<QueryClass1>()
                 .From(result => result.Person)
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -102,7 +102,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<QueryClass2>()
                 .From(result => result.Inner.Person)
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -118,7 +118,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await Sql.Query.Sqlite<QueryClass2>()
                 .From(result => result.Inner.Person)
                 .Where(result => result.Inner.Person.Id == Data.People.Mary.Id)
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -135,7 +135,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .LeftJoin<PersonClass>(result => result.Inner.PersonClasses)
                     .On((r, pc) => r.Inner.Person.Id == pc.PersonId)
                 .Where(result => result.Inner.Person.Id == Data.People.Mary.Id)
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -154,7 +154,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .LeftJoin<PersonClass>(result => result.Inner.One().PersonClasses)
                     .On((r, pc) => r.Inner.FirstOrDefault().Person.Id == pc.PersonId)
                 .Where(result => result.Inner.One().Person.Id == Data.People.Mary.Id)
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -180,7 +180,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .LeftJoin<PersonClass>(result => result.PersonClass)
                     .On((r, pc) => r.Person.Id == pc.PersonId)
                 .Where(result => result.Person.Id == Data.People.Mary.Id)
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -199,7 +199,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .LeftJoin<PersonClass>(result => result.PersonClass)
                     .On((r, pc) => r.Person.Id == pc.PersonId)
                 .Where(result => result.Person.Id == Data.People.John.Id)
-                .ExecuteAsync(Executor));
+                .ToIEnumerableAsync(Executor));
         }
 
         class WhereErrorQueryClass
@@ -237,7 +237,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .InnerJoin(result => result.Person2)
                         .On((q, p) => q.Person1.Id == p.Id)
                     .Where(q => q.Person1 == q.Person2)
-                    .ExecuteAsync(Executor));
+                    .ToIEnumerableAsync(Executor));
         }
 
         [Test]
@@ -253,7 +253,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     name = q.ThePerson.Name,
                     person = q.ThePerson
                 })
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -297,7 +297,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -322,7 +322,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await Sql.Query.Sqlite<Person>()
                 .From()
                 .Map(x => new Person(x.Id, x.Name, x.Gender))
-                .ExecuteAsync(Executor);
+                .ToIEnumerableAsync(Executor);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -348,7 +348,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await Sql.Query.Sqlite<Person>()
                 .From()
                 .Map(x => new ObjectWithConstructorArgs2Test(x))
-                .ExecuteAsync(Executor);
+                .ToIEnumerableAsync(Executor);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -364,7 +364,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await Sql.Query.Sqlite<QueryClass1>()
                 .From(x => x.Person)
                 .Map(x => new ObjectWithConstructorArgs2Test(x.Person))
-                .ExecuteAsync(Executor);
+                .ToIEnumerableAsync(Executor);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -390,7 +390,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await Sql.Query.Sqlite<PersonsData>()
                 .From()
                 .Map(x => new ObjectWithConstructorArgs4Test(x.Data))
-                .ExecuteAsync(Executor);
+                .ToIEnumerableAsync(Executor);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -416,7 +416,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await Sql.Query.Sqlite<PersonsData>()
                 .From()
                 .Map(x => new ObjectWithConstructorArgs5Test(x.Data.ToList()))
-                .ExecuteAsync(Executor);
+                .ToIEnumerableAsync(Executor);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -449,7 +449,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         PersonWithGender = new Person(0, null, x.Gender),
                     }
                 })
-                .ExecuteAsync(Executor);
+                .ToIEnumerableAsync(Executor);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -488,7 +488,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     classes = new ObjectWithConstructorArgs_OuterSelectTest(
                         x.ThePerson.Joined(x.PersonClasses).Joined(x.Classes))
                 })
-                .ExecuteAsync(Executor);
+                .ToIEnumerableAsync(Executor);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -532,7 +532,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         .Joined(x.Classes)
                         .Select(c => new ObjectWithConstructorArgs_InnerSelectTest(c))
                 })
-                .ExecuteAsync(Executor);
+                .ToIEnumerableAsync(Executor);
 
             // assert
             Assert.AreEqual(2, data.Count());

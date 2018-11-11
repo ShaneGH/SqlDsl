@@ -15,12 +15,12 @@ namespace SqlDsl
         /// <summary>
         /// Execute the compiled query
         /// </summary>
-        Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, ILogger logger = null);
+        Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, ILogger logger = null);
         
         /// <summary>
         /// Execute the compiled query
         /// </summary>
-        IEnumerable<TResult> Execute(IExecutor executor, ILogger logger = null);
+        IEnumerable<TResult> ToIEnumerable(IExecutor executor, ILogger logger = null);
     }
 
     /// <summary>
@@ -31,12 +31,12 @@ namespace SqlDsl
         /// <summary>
         /// Execute the compiled query
         /// </summary>
-        Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args, ILogger logger = null);
+        Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null);
         
         /// <summary>
         /// Execute the compiled query
         /// </summary>
-        IEnumerable<TResult> Execute(IExecutor executor, TArgs args, ILogger logger = null);
+        IEnumerable<TResult> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null);
     }
 
     public class CompiledQuery<TArgs, TResult> : ICompiledQuery<TArgs, TResult>
@@ -58,7 +58,7 @@ namespace SqlDsl
             PropertyGraph = propertyGraph;
         }
 
-        public async Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args, ILogger logger = null)
+        public async Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null)
         {
             // build sql params
             var parameters = Parameters.Select(p =>
@@ -73,7 +73,7 @@ namespace SqlDsl
             return results.Parse<TResult>(PropertyGraph, logger);
         }
 
-        public IEnumerable<TResult> Execute(IExecutor executor, TArgs args, ILogger logger = null)
+        public IEnumerable<TResult> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null)
         {
             // build sql params
             var parameters = Parameters.Select(p =>
@@ -108,8 +108,8 @@ namespace SqlDsl
             Worker = worker ?? throw new ArgumentNullException(nameof(worker));
         }
 
-        public Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, ILogger logger = null) => Worker.ExecuteAsync(executor, null, logger: logger);
+        public Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, ILogger logger = null) => Worker.ToIEnumerableAsync(executor, null, logger: logger);
 
-        public IEnumerable<TResult> Execute(IExecutor executor, ILogger logger = null) => Worker.Execute(executor, null, logger: logger);
+        public IEnumerable<TResult> ToIEnumerable(IExecutor executor, ILogger logger = null) => Worker.ToIEnumerable(executor, null, logger: logger);
     }
 }

@@ -17,7 +17,7 @@ namespace SqlDsl.Dsl
         /// An expression to map the selected table to a property on the result
         /// </param>
         /// <param name="logger">A logger to capture info and warning messages</param>
-        Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, ILogger logger = null);
+        Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, ILogger logger = null);
 
         // TODO: add a ToListAsync, ToArrayAsync, ToLazyAsync
         
@@ -28,7 +28,7 @@ namespace SqlDsl.Dsl
         /// An expression to map the selected table to a property on the result
         /// </param>
         /// <param name="logger">A logger to capture info and warning messages</param>
-        IEnumerable<TResult> Execute(IExecutor executor, ILogger logger = null);
+        IEnumerable<TResult> ToIEnumerable(IExecutor executor, ILogger logger = null);
         
         /// <summary>
         /// Compile the query into something which can be executed multiple times
@@ -52,7 +52,7 @@ namespace SqlDsl.Dsl
         /// The args needed to execute the query
         /// </param>
         /// <param name="logger">A logger to capture info and warning messages</param>
-        Task<IEnumerable<TResult>> ExecuteAsync(IExecutor executor, TArgs args, ILogger logger = null);
+        Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null);
         
         /// <summary>
         /// Execute the sql query and get a list of results
@@ -64,7 +64,7 @@ namespace SqlDsl.Dsl
         /// The args needed to execute the query
         /// </param>
         /// <param name="logger">A logger to capture info and warning messages</param>
-        IEnumerable<TResult> Execute(IExecutor executor, TArgs args, ILogger logger = null);
+        IEnumerable<TResult> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null);
         
         /// <summary>
         /// Compile the query into something which can be executed multiple times

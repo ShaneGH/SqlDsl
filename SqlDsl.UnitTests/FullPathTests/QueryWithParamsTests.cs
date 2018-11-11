@@ -47,7 +47,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Compile();
 
             // act
-            var result = await query.ExecuteAsync(Executor, new Arguments { AValue = Data.Classes.Tennis.Id });
+            var result = await query.ToIEnumerableAsync(Executor, new Arguments { AValue = Data.Classes.Tennis.Id });
 
             // assert
             Assert.AreEqual(2, result.Count());
@@ -70,7 +70,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From(nameof(Person), result => result.ThePerson)
                 .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c, a) => c.ClassId == a.AValue)
-                .ExecuteAsync(Executor, new Arguments { AValue = Data.Classes.Archery.Id });
+                .ToIEnumerableAsync(Executor, new Arguments { AValue = Data.Classes.Archery.Id });
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -93,7 +93,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From(nameof(Person), result => result.ThePerson)
                 .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c, a) => c.ClassId == a.AValue)
-                .ExecuteAsync(Executor, new Arguments { AValue = Data.Classes.Tennis.Id });
+                .ToIEnumerableAsync(Executor, new Arguments { AValue = Data.Classes.Tennis.Id });
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -117,7 +117,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From(nameof(Person), result => result.ThePerson)
                 .InnerJoin<PersonClass>(nameof(PersonClass), result => result.PersonClasses)
                     .On((q, c, a) => q.ThePerson.Id == c.PersonId && c.ClassId == a.AValue)
-                .ExecuteAsync(Executor, new Arguments { AValue = Data.Classes.Tennis.Id });
+                .ToIEnumerableAsync(Executor, new Arguments { AValue = Data.Classes.Tennis.Id });
 
             // assert
             Assert.AreEqual(2, data.Count());

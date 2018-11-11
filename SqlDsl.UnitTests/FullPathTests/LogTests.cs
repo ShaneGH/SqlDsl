@@ -54,7 +54,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             await FullyJoinedQuery()
                 .Map(p => p.PersonsData.Data.ToList())
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             var valsType = "";

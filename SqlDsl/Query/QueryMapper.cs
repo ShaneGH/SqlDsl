@@ -149,11 +149,11 @@ namespace SqlDsl.Query
             return builder;
         }
        
-        public Task<IEnumerable<TMapped>> ExecuteAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ExecuteAsync(executor, args, logger: logger);
+        public Task<IEnumerable<TMapped>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).ToIEnumerableAsync(executor, args, logger: logger);
         
-        public IEnumerable<TMapped> Execute(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).Execute(executor, args, logger: logger);
+        public IEnumerable<TMapped> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).ToIEnumerable(executor, args, logger: logger);
 
         static readonly IEnumerable<MappedProperty> EmptyMapped = Enumerable.Empty<MappedProperty>();
 

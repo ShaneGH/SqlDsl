@@ -22,8 +22,8 @@ namespace SqlDsl.DataParser
         internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
         {
             return propertyGraph.IsSimpleValue ?
-                ParseSimple<TResult>(rows, propertyGraph, logger).Enumerate() :
-                ParseComplex<TResult>(rows, propertyGraph, logger).Enumerate();
+                ParseSimple<TResult>(rows, propertyGraph, logger) :
+                ParseComplex<TResult>(rows, propertyGraph, logger);
         }
 
         /// <summary>

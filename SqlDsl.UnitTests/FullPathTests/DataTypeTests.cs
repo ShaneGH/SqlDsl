@@ -38,7 +38,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await Sql.Query.Sqlite<Purchase>()
                 .From()
                 .Where(p => p.Id == Data.Purchases.JohnPurchasedHimselfShoes.Id)
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -119,7 +119,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data = x.PersonsData.One().Data,
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -164,7 +164,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data = x.PersonsData.One().Data.ToList(),
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -210,7 +210,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data = x.PersonsData.Select(d => d.Data).ToArray(),
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -251,7 +251,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, pd) => q.Person.Id == pd.PersonId)
                 .Where(p => p.Person.Id == Data.People.John.Id)
                 .Map(p => p.PersonsData.One().Data.ToList())
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -287,7 +287,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, pd) => q.Person.Id == pd.PersonId)
                 .Where(p => p.Person.Id == Data.People.John.Id)
                 .Map(p => p.PersonsData.One().Data.ToArray())
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -337,7 +337,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data = x.PersonsData.Select(d => d.Data.ToList()).ToList(),
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -378,7 +378,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, pd) => pd.PersonId > -1)
                 .Where(p => p.Person.Id == Data.People.John.Id)
                 .Map(p => p.PersonsData.Select(pd => pd.Data))
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -419,7 +419,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, pd) => pd.PersonId == q.Person.Id)
                 .Where(p => p.Person.Id == Data.People.John.Id)
                 .Map(p => p.PersonsData.Select(pd => pd.Data))
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -459,7 +459,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, pd) => q.Person.Id == pd.PersonId)
                 .Where(p => p.Person.Id == Data.People.John.Id)
                 .Map(p => p.PersonsData.Select(pd => pd.Data.ToList()))
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -510,7 +510,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         Data = x.PersonsData.One().Data,
                         ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                     })
-                    .ExecuteAsync(Executor));
+                    .ToIEnumerableAsync(Executor));
         }
     }
 }

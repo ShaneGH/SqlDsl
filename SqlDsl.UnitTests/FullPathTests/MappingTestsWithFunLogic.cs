@@ -50,7 +50,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery<object>()
                 .Map(p => new object())
-                .ExecuteAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -65,7 +65,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePerson)
-                .ExecuteAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -80,7 +80,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePerson.Name)
-                .ExecuteAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -96,7 +96,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await FullyJoinedQuery<object>()
                 .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
                 .Map(p => p.PersonClasses.One())
-                .ExecuteAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -111,7 +111,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery<object>()
                 .Map(p => p.PersonClasses)
-                .ExecuteAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -130,7 +130,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await FullyJoinedQuery<object>()
                 .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
                 .Map(p => p.PersonClasses.One().ClassId)
-                .ExecuteAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -146,7 +146,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await FullyJoinedQuery<object>()
                 .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
                 .Map(p => p.PersonClasses.Select(x => x.ClassId).One())
-                .ExecuteAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -162,7 +162,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery<object>()
                 .Map(p => p.PersonClasses.Select(pc => pc.ClassId))
-                .ExecuteAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -180,7 +180,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery<object>()
                 .Map(p => 77)
-                .ExecuteAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -196,7 +196,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery<int>()
                 .Map((p, a) => a)
-                .ExecuteAsync(Executor, 77, logger: Logger);
+                .ToIEnumerableAsync(Executor, 77, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -217,7 +217,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery<AnInt>()
                 .Map((p, a) => a)
-                .ExecuteAsync(Executor, new AnInt { IntValue = 77 }, logger: Logger);
+                .ToIEnumerableAsync(Executor, new AnInt { IntValue = 77 }, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -232,7 +232,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery<object>()
                 .Map(p => new Person { Id = 77 })
-                .ExecuteAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -248,7 +248,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePerson.Id + 1)
-                .ExecuteAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
@@ -266,7 +266,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePerson.Id + one)
-                .ExecuteAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());

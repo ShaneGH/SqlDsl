@@ -64,7 +64,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 //         TheName = p.Name
                 //     }
                 // })
-                .ExecuteAsync(Executor, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             // Assert.AreEqual(2, data.Count());
