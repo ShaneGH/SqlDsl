@@ -155,6 +155,18 @@ namespace SqlDsl.Query
         public IEnumerable<TMapped> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null) =>
             Compile(logger: logger).ToIEnumerable(executor, args, logger: logger);
 
+        public Task<List<TMapped>> ToListAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).ToListAsync(executor, args, logger: logger);
+
+        public List<TMapped> ToList(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).ToList(executor, args, logger: logger);
+
+        public Task<TMapped[]> ToArrayAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).ToArrayAsync(executor, args, logger: logger);
+
+        public TMapped[] ToArray(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).ToArray(executor, args, logger: logger);
+
         static readonly IEnumerable<MappedProperty> EmptyMapped = Enumerable.Empty<MappedProperty>();
 
         static (BuildMapResult resultType, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expr)

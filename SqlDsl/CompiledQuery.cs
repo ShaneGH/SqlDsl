@@ -21,6 +21,25 @@ namespace SqlDsl
         /// Execute the compiled query
         /// </summary>
         IEnumerable<TResult> ToIEnumerable(IExecutor executor, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        Task<List<TResult>> ToListAsync(IExecutor executor, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        List<TResult> ToList(IExecutor executor, ILogger logger = null);
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        Task<TResult[]> ToArrayAsync(IExecutor executor, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        TResult[] ToArray(IExecutor executor, ILogger logger = null);
     }
 
     /// <summary>
@@ -37,6 +56,26 @@ namespace SqlDsl
         /// Execute the compiled query
         /// </summary>
         IEnumerable<TResult> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        Task<List<TResult>> ToListAsync(IExecutor executor, TArgs args, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        List<TResult> ToList(IExecutor executor, TArgs args, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        Task<TResult[]> ToArrayAsync(IExecutor executor, TArgs args, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        TResult[] ToArray(IExecutor executor, TArgs args, ILogger logger = null);
     }
 
     public class CompiledQuery<TArgs, TResult> : ICompiledQuery<TArgs, TResult>
@@ -58,6 +97,7 @@ namespace SqlDsl
             PropertyGraph = propertyGraph;
         }
 
+        // <inheritdoc />
         public async Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null)
         {
             // build sql params
@@ -73,6 +113,7 @@ namespace SqlDsl
             return results.Parse<TResult>(PropertyGraph, logger);
         }
 
+        // <inheritdoc />
         public IEnumerable<TResult> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null)
         {
             // build sql params
@@ -87,6 +128,18 @@ namespace SqlDsl
 
             return results.Parse<TResult>(PropertyGraph, logger);
         }
+
+        // <inheritdoc />
+        public async Task<List<TResult>> ToListAsync(IExecutor executor, TArgs args, ILogger logger = null) => (await ToIEnumerableAsync(executor, args, logger)).ToList();
+
+        // <inheritdoc />
+        public List<TResult> ToList(IExecutor executor, TArgs args, ILogger logger = null) =>  ToIEnumerable(executor, args, logger).ToList();
+
+        // <inheritdoc />
+        public async Task<TResult[]> ToArrayAsync(IExecutor executor, TArgs args, ILogger logger = null) => (await ToIEnumerableAsync(executor, args, logger)).ToArray();
+
+        // <inheritdoc />
+        public TResult[] ToArray(IExecutor executor, TArgs args, ILogger logger = null) =>  ToIEnumerable(executor, args, logger).ToArray();
     }
 
     public class CompiledQuery<TResult> : ICompiledQuery<TResult>
@@ -108,8 +161,22 @@ namespace SqlDsl
             Worker = worker ?? throw new ArgumentNullException(nameof(worker));
         }
 
+        // <inheritdoc />
         public Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, ILogger logger = null) => Worker.ToIEnumerableAsync(executor, null, logger: logger);
 
+        // <inheritdoc />
         public IEnumerable<TResult> ToIEnumerable(IExecutor executor, ILogger logger = null) => Worker.ToIEnumerable(executor, null, logger: logger);
+
+        // <inheritdoc />
+        public async Task<List<TResult>> ToListAsync(IExecutor executor, ILogger logger = null) => (await ToIEnumerableAsync(executor, logger)).ToList();
+
+        // <inheritdoc />
+        public List<TResult> ToList(IExecutor executor, ILogger logger = null) => ToIEnumerable(executor, logger).ToList();
+
+        // <inheritdoc />
+        public async Task<TResult[]> ToArrayAsync(IExecutor executor, ILogger logger = null) => (await ToIEnumerableAsync(executor, logger)).ToArray();
+
+        // <inheritdoc />
+        public TResult[] ToArray(IExecutor executor, ILogger logger = null) => ToIEnumerable(executor, logger).ToArray();
     }
 }

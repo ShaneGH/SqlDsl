@@ -604,7 +604,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ToIEnumerableAsync(Executor));
+                .ToArrayAsync(Executor));
         }
 
         class SmartJoinedClass3_2

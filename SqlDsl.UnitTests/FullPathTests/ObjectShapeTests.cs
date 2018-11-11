@@ -199,7 +199,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .LeftJoin<PersonClass>(result => result.PersonClass)
                     .On((r, pc) => r.Person.Id == pc.PersonId)
                 .Where(result => result.Person.Id == Data.People.John.Id)
-                .ToIEnumerableAsync(Executor));
+                .ToListAsync(Executor));
         }
 
         class WhereErrorQueryClass

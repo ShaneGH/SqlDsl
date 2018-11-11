@@ -15,24 +15,29 @@ namespace SqlDsl.Query
 {
     public partial class QueryBuilder<TSqlBuilder, TArgs, TResult>
     {
-        /// <summary>
-        /// Execute the sql query and get a list of results
-        /// </summary>
-        /// <param name="executor">
-        /// An expression to map the selected table to a property on the result
-        /// </param>
-        
+        /// <inheritdoc />
         public Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
             Compile(logger).ToIEnumerableAsync(executor, args, logger);
 
-        /// <summary>
-        /// Execute the sql query and get a list of results
-        /// </summary>
-        /// <param name="executor">
-        /// An expression to map the selected table to a property on the result
-        /// </param>
+        /// <inheritdoc />
         public IEnumerable<TResult> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null) =>
             Compile(logger).ToIEnumerable(executor, args, logger);
+            
+        /// <inheritdoc />
+        public Task<List<TResult>> ToListAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).ToListAsync(executor, args, logger);
+
+        /// <inheritdoc />
+        public List<TResult> ToList(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).ToList(executor, args, logger);
+            
+        /// <inheritdoc />
+        public Task<TResult[]> ToArrayAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).ToArrayAsync(executor, args, logger);
+
+        /// <inheritdoc />
+        public TResult[] ToArray(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).ToArray(executor, args, logger);
 
         /// <summary>
         /// Compile the query into something which can be executed multiple times

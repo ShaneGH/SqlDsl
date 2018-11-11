@@ -38,7 +38,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await Sql.Query.Sqlite<Purchase>()
                 .From()
                 .Where(p => p.Id == Data.Purchases.JohnPurchasedHimselfShoes.Id)
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .ToListAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
@@ -105,7 +105,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.Fail("Do asserts");
         }
 
-        Task<IEnumerable<ArrayDataType1Result>> ADT1()
+        Task<List<ArrayDataType1Result>> ADT1()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
@@ -119,7 +119,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data = x.PersonsData.One().Data,
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .ToListAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -150,7 +150,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.IsEmpty(Logger.WarningMessages);
         }
 
-        Task<IEnumerable<ArrayDataType1_1Result>> ADT1_ConvertArrayToList()
+        Task<List<ArrayDataType1_1Result>> ADT1_ConvertArrayToList()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
@@ -164,7 +164,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data = x.PersonsData.One().Data.ToList(),
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .ToListAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -196,7 +196,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(1, Logger.WarningMessages.Count);
         }
 
-        Task<IEnumerable<ArrayDataType2Result>> ADT2()
+        Task<List<ArrayDataType2Result>> ADT2()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
@@ -210,7 +210,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data = x.PersonsData.Select(d => d.Data).ToArray(),
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .ToListAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -243,7 +243,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.IsEmpty(Logger.WarningMessages);
         }
 
-        Task<IEnumerable<List<byte>>> ADT3()
+        Task<List<List<byte>>> ADT3()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
@@ -251,7 +251,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, pd) => q.Person.Id == pd.PersonId)
                 .Where(p => p.Person.Id == Data.People.John.Id)
                 .Map(p => p.PersonsData.One().Data.ToList())
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .ToListAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -279,7 +279,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.IsNotEmpty(Logger.WarningMessages);
         }
 
-        Task<IEnumerable<byte[]>> ADT4()
+        Task<List<byte[]>> ADT4()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
@@ -287,7 +287,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, pd) => q.Person.Id == pd.PersonId)
                 .Where(p => p.Person.Id == Data.People.John.Id)
                 .Map(p => p.PersonsData.One().Data.ToArray())
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .ToListAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -321,7 +321,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             public List<List<byte>> Data;
         }
 
-        Task<IEnumerable<ArrayDataType3Result>> ADT5()
+        Task<List<ArrayDataType3Result>> ADT5()
         {
             // arrange
             // act
@@ -337,7 +337,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data = x.PersonsData.Select(d => d.Data.ToList()).ToList(),
                     ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                 })
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .ToListAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -370,7 +370,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.IsNotEmpty(Logger.WarningMessages);
         }
 
-        Task<IEnumerable<IEnumerable<byte[]>>> ADT8()
+        Task<List<IEnumerable<byte[]>>> ADT8()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
@@ -378,7 +378,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, pd) => pd.PersonId > -1)
                 .Where(p => p.Person.Id == Data.People.John.Id)
                 .Map(p => p.PersonsData.Select(pd => pd.Data))
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .ToListAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -411,7 +411,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.IsEmpty(Logger.WarningMessages);
         }
 
-        Task<IEnumerable<IEnumerable<byte[]>>> ADT8_1()
+        Task<List<IEnumerable<byte[]>>> ADT8_1()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
@@ -419,7 +419,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, pd) => pd.PersonId == q.Person.Id)
                 .Where(p => p.Person.Id == Data.People.John.Id)
                 .Map(p => p.PersonsData.Select(pd => pd.Data))
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .ToListAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -451,7 +451,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.IsEmpty(Logger.WarningMessages);
         }
 
-        Task<IEnumerable<IEnumerable<List<byte>>>> ADT9()
+        Task<List<IEnumerable<List<byte>>>> ADT9()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
                 .From(x => x.Person)
@@ -459,7 +459,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, pd) => q.Person.Id == pd.PersonId)
                 .Where(p => p.Person.Id == Data.People.John.Id)
                 .Map(p => p.PersonsData.Select(pd => pd.Data.ToList()))
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .ToListAsync(Executor, logger: Logger);
         }
 
         [Test]
@@ -510,7 +510,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         Data = x.PersonsData.One().Data,
                         ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
                     })
-                    .ToIEnumerableAsync(Executor));
+                    .ToListAsync(Executor));
         }
     }
 }

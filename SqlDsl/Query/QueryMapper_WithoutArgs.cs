@@ -22,34 +22,46 @@ namespace SqlDsl.Query
             Worker = worker ?? throw new ArgumentNullException(nameof(worker));
         }
 
-        /// <summary>
-        /// Compile the query into something which can be executed multiple times
-        /// </summary>
+        /// <inheritdoc />
         public ICompiledQuery<TMapped> Compile(ILogger logger = null)
         {
             return new CompiledQuery<TMapped>(Worker.Compile(logger: logger));
         }
 
-        /// <summary>
-        /// Execute the sql query and get a list of results
-        /// </summary>
-        /// <param name="executor">
-        /// An expression to map the selected table to a property on the result
-        /// </param>
+        /// <inheritdoc />
         public Task<IEnumerable<TMapped>> ToIEnumerableAsync(IExecutor executor, ILogger logger = null)
         {
             return Worker.ToIEnumerableAsync(executor, null, logger: logger);
         }
 
-        /// <summary>
-        /// Execute the sql query and get a list of results
-        /// </summary>
-        /// <param name="executor">
-        /// An expression to map the selected table to a property on the result
-        /// </param>
+        /// <inheritdoc />
         public IEnumerable<TMapped> ToIEnumerable(IExecutor executor, ILogger logger = null)
         {
             return Worker.ToIEnumerable(executor, null, logger: logger);
+        }
+
+        /// <inheritdoc />
+        public Task<List<TMapped>> ToListAsync(IExecutor executor, ILogger logger = null)
+        {
+            return Worker.ToListAsync(executor, null, logger: logger);
+        }
+
+        /// <inheritdoc />
+        public List<TMapped> ToList(IExecutor executor, ILogger logger = null)
+        {
+            return Worker.ToList(executor, null, logger: logger);
+        }
+
+        /// <inheritdoc />
+        public Task<TMapped[]> ToArrayAsync(IExecutor executor, ILogger logger = null)
+        {
+            return Worker.ToArrayAsync(executor, null, logger: logger);
+        }
+
+        /// <inheritdoc />
+        public TMapped[] ToArray(IExecutor executor, ILogger logger = null)
+        {
+            return Worker.ToArray(executor, null, logger: logger);
         }
     }
 }

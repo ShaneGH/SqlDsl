@@ -24,6 +24,14 @@ namespace SqlDsl.Query
 
         IEnumerable<TResult> ISqlBuilder<TResult>.ToIEnumerable(IExecutor executor, ILogger logger) => ToIEnumerable(executor, null, logger: logger);
 
+        Task<List<TResult>> ISqlBuilder<TResult>.ToListAsync(IExecutor executor, ILogger logger) => ToListAsync(executor, null, logger: logger);
+
+        List<TResult> ISqlBuilder<TResult>.ToList(IExecutor executor, ILogger logger) => ToList(executor, null, logger: logger);
+
+        Task<TResult[]> ISqlBuilder<TResult>.ToArrayAsync(IExecutor executor, ILogger logger) => ToArrayAsync(executor, null, logger: logger);
+
+        TResult[] ISqlBuilder<TResult>.ToArray(IExecutor executor, ILogger logger) => ToArray(executor, null, logger: logger);
+
         ICompiledQuery<TResult> ISqlBuilder<TResult>.Compile(ILogger logger) => new CompiledQuery<TResult>(base.Compile(logger: logger));
 
         IQuery<TResult> ITable<TResult>.From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty) =>
@@ -67,7 +75,27 @@ namespace SqlDsl.Query
 
         IResultMapper<TResult> IFilter<TResult>.Where(Expression<Func<TResult, bool>> filter) =>
             (QueryBuilder<TSqlBuilder, TResult>)base.Where(filter);
-        
+
+        public Task<List<TResult>> ToListAsync(IExecutor executor, ILogger logger = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public List<TResult> ToList(IExecutor executor, ILogger logger = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TResult[]> ToArrayAsync(IExecutor executor, ILogger logger = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public TResult[] ToArray(IExecutor executor, ILogger logger = null)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Holds partial join state and can build a join
         /// </summary>
