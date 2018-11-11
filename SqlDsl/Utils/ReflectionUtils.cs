@@ -285,10 +285,15 @@ namespace SqlDsl.Utils
         }
 
         /// <summary>
-        /// Convert an "a => a.b" to "a => new b { b1 = a.b.b1, b2 = a.b.b2 ... }"
+        /// Convert an "a => a.b" to "a => new b { b1 = a.b.b1, b2 = a.b.b2 ... }". Also works for enumerables
         /// </summary>
         public static Expression ConvertToFullMemberInit(Expression original)
         {
+            var enumeratedType = ReflectionUtils.GetIEnumerableType(original.Type);
+            if (enumeratedType != null)
+                return ConvertEnumerableToFullMemberInit(original, enumeratedType);
+
+
             var constructor = original.Type.GetConstructor(new Type[0]);
             if (constructor == null)
             {
@@ -301,6 +306,19 @@ namespace SqlDsl.Utils
                     .GetFieldAndPropertyMembers(original.Type)
                     .Where(x => !x.isReadonly)
                     .Select(m => Expression.Bind(m.Item1, Expression.PropertyOrField(original, m.Item1.Name))));
+        }
+
+        /// <summary>
+        /// Convert an "a => a.bs" to "a => a.bs.Select(b => new b { b1 = a.b.b1, b2 = a.b.b2 ... })".
+        /// </summary>
+        static Expression ConvertEnumerableToFullMemberInit(Expression original, Type enumeratedType)
+        {
+            var mapperInput = Expression.Parameter(enumeratedType);
+            var mapper = ConvertToFullMemberInit(mapperInput);
+            return Expression.Call(
+                ReflectionUtils.GetMethod(() => Enumerable.Select<object, object>(null, x => x), enumeratedType, enumeratedType),
+                original,
+                Expression.Lambda(mapper, mapperInput));
         }
 
         /// <summary>
