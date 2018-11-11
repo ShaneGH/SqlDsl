@@ -34,6 +34,11 @@ namespace SqlDsl.DataParser
         /// Constructor args of an object which have sub properies
         /// </summary>
         public readonly IEnumerable<(int argIndex, ObjectPropertyGraph value)> ComplexConstructorArgs;
+
+        /// <summary>
+        /// Constructor args of an object with simple values like strings, ints etc... The index is the index of the column in the sql query resuts table.
+        /// </summary>
+        public readonly Type[] ConstructorArgTypes;
         
         /// <summary>
         /// A composite of the row numbers which point to this object
@@ -66,6 +71,31 @@ namespace SqlDsl.DataParser
             RowIdColumnNumbers = rowIdColumnNumbers.OrEmpty();
             SimpleConstructorArgs = simpleConstructorArgs.OrEmpty();
             ComplexConstructorArgs = complexConstructorArgs.OrEmpty();
+            ConstructorArgTypes = CompileConstructorArgTypes(SimpleConstructorArgs, ComplexConstructorArgs).ToArray();
+        }
+
+        /// <summary>
+        /// Build constructor arg types and validate that all args are present
+        /// </summary>
+        static IEnumerable<Type> CompileConstructorArgTypes(
+            IEnumerable<(int index, int argIndex, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType)> simpleConstructorArgs,
+            IEnumerable<(int argIndex, ObjectPropertyGraph value)> complexConstructorArgs)
+        {
+            var args = simpleConstructorArgs
+                .Select(a => (a.argIndex, a.resultPropertyType))
+                .Concat(complexConstructorArgs
+                    .Select(a => (a.argIndex, a.value.ObjectType)))
+                .OrderBy(a => a.argIndex);
+
+            var i = 0;
+            foreach (var arg in args)
+            {
+                if (arg.argIndex != i)
+                    throw new InvalidOperationException($"Expecting arg with index of {i}, but got {arg.argIndex}.");
+
+                i++;
+                yield return arg.Item2;   
+            }
         }
 
         /// <summary>

@@ -95,7 +95,7 @@ namespace SqlDsl.DataParser
                     ComplexProps = propertyGraph.ComplexProps
                         .Select(p => (p.name, CreateObject(p.value, objectData).Enumerate()))
                         .Enumerate(),
-                    ConstructorArgTypes = BuildConstructorArgTypes().ToArray(),
+                    ConstructorArgTypes = propertyGraph.ConstructorArgTypes,
                     SimpleConstructorArgs = propertyGraph.SimpleConstructorArgs
                         .Select(GetSimpleCArg)
                         .Enumerate(),
@@ -103,25 +103,6 @@ namespace SqlDsl.DataParser
                         .Select(p => (p.argIndex, CreateObject(p.value, objectData).Enumerate()))
                         .Enumerate(),
                 };
-
-                IEnumerable<Type> BuildConstructorArgTypes()
-                {
-                    var args = propertyGraph.SimpleConstructorArgs
-                        .Select(a => (a.argIndex, a.resultPropertyType))
-                        .Concat(propertyGraph.ComplexConstructorArgs
-                            .Select(a => (a.argIndex, a.value.ObjectType)))
-                        .OrderBy(a => a.argIndex);
-
-                    var i = 0;
-                    foreach (var arg in args)
-                    {
-                        if (arg.argIndex != i)
-                            throw new InvalidOperationException($"Expecting arg with index of {i}, but got {arg.argIndex}.");
-
-                        i++;
-                        yield return arg.Item2;   
-                    }
-                }
 
                 (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, IEnumerable<int> rowNumberColumnIds, Type dataCellType)
                 {
