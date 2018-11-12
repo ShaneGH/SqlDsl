@@ -293,7 +293,6 @@ namespace SqlDsl.Utils
             if (enumeratedType != null)
                 return ConvertEnumerableToFullMemberInit(original, enumeratedType);
 
-
             var constructor = original.Type.GetConstructor(new Type[0]);
             if (constructor == null)
             {

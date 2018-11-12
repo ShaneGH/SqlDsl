@@ -176,18 +176,20 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// A list of columns in the SELECT statement
         /// </summary>
-        readonly List<(Type cellDataType, string columnName, string tableName, string alias, ConstructorInfo isForConstructor)> _Select = new List<(Type, string, string, string, ConstructorInfo)>();
+        readonly List<(Type cellDataType, string columnName, string tableName, string alias, ConstructorInfo[] argConstructors)> _Select = new List<(Type, string, string, string, ConstructorInfo[])>();
 
         /// <summary>
         /// A list of columns in the SELECT statement
         /// </summary>
-        public IEnumerable<(Type cellDataType, string columnName, string tableName, string alias, ConstructorInfo isForConstructor)> Select => _Select.Skip(0);
+        public IEnumerable<(Type cellDataType, string columnName, string tableName, string alias, ConstructorInfo[] argConstructors)> Select => _Select.Skip(0);
         
+        private static readonly ConstructorInfo[] EmptyConstructorInfo = new ConstructorInfo[0];
+
         /// <summary>
         /// Add a column to the SELECT statement
         /// </summary>
-        public void AddSelectColumn(Type cellDataType, string columnName, string tableName = null, string alias = null, ConstructorInfo isForConstructor = null) =>
-            _Select.Add((cellDataType, columnName, tableName, alias, isForConstructor));
+        public void AddSelectColumn(Type cellDataType, string columnName, string tableName = null, string alias = null, ConstructorInfo[] argConstructors = null) =>
+            _Select.Add((cellDataType, columnName, tableName, alias, argConstructors ?? EmptyConstructorInfo));
 
         /// <summary>
         /// The WHERE statement, if necessary
@@ -317,7 +319,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Concat DB table columns with row id columns
         /// </summary>
-        IEnumerable<(Type dataType, string columnName, string tableName, string alias, ConstructorInfo constructor)> GetAllSelectColumns() =>
-            GetRowIdSelectColumns().Select(x => ((Type)null, x.rowIdColumnName, x.tableAlias, x.rowIdColumnNameAlias, (ConstructorInfo)null)).Concat(_Select);
+        IEnumerable<(Type dataType, string columnName, string tableName, string alias, ConstructorInfo[] constructors)> GetAllSelectColumns() =>
+            GetRowIdSelectColumns().Select(x => ((Type)null, x.rowIdColumnName, x.tableAlias, x.rowIdColumnNameAlias, EmptyConstructorInfo)).Concat(_Select);
     }
 }

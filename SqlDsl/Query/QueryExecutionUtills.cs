@@ -73,11 +73,11 @@ namespace SqlDsl.Query
                 map.columnGroupPrefix,
                 sqlBuilder.GetRowNumberColumnIndexes(map.rowNumberColumnIndex).ToArray());
 
-            (string name, int[] rowIdColumnMap, Type dataCellType, ConstructorInfo isConstructorArg) GetMappedColumn(ISelectColumn column) => (
+            (string name, int[] rowIdColumnMap, Type dataCellType, ConstructorInfo[] isConstructorArg) GetMappedColumn(ISelectColumn column) => (
                 column.Alias,
                 sqlBuilder.GetRowNumberColumnIndexes(column.Alias).ToArray(),
                 column.DataType,
-                column.IsArgForConstructor);
+                column.ArgConstructors);
         }
 
         /// <summary>

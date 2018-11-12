@@ -24,19 +24,19 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public Type DataType { get; }
         
          /// <inheritdoc />
-        public ConstructorInfo IsArgForConstructor { get; }
+        public ConstructorInfo[] ArgConstructors { get; }
         
         /// <summary>
         /// The index of the row number column for the table which exposes this column
         /// </summary>
         public abstract int RowNumberColumnIndex { get; }
 
-        public SelectColumnBase(string alias, bool isRowNumber, Type dataType, ConstructorInfo isArgForConstructor)
+        public SelectColumnBase(string alias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors)
         {
             Alias = alias;
             IsRowNumber = isRowNumber;
             DataType = dataType;
-            IsArgForConstructor = isArgForConstructor;
+            ArgConstructors = argConstructors;
         }
     }
 }

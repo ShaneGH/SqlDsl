@@ -100,6 +100,7 @@ namespace SqlDsl.UnitTests.DataParser
                 var y_ = actual.ComplexConstructorArgs.ElementAt(i);
                 
                 Assert.AreEqual(x_.argIndex, y_.argIndex, "Complex prop " + i);
+                Assert.AreEqual(x_.constuctorArgType, y_.constuctorArgType, "Complex prop " + i);
                 Compare(x_.value, y_.value);
             }
 
@@ -805,7 +806,7 @@ namespace SqlDsl.UnitTests.DataParser
                 },
                 complexConstructorArgs: new [] 
                 {
-                    (0, new ObjectPropertyGraph(
+                    (0, typeof(Person), new ObjectPropertyGraph(
                         typeof(Person),
                         new[]
                         {
@@ -815,6 +816,124 @@ namespace SqlDsl.UnitTests.DataParser
                         }, 
                         null, 
                         null))
+                });
+
+            Compare(expected, actual);
+        }
+
+        class Inner
+        {
+            public Class[] classes2;
+
+            public Inner(Class[] classes2)
+            {
+                this.classes2 = classes2;
+            }
+
+            public Inner()
+            {
+            }
+        }
+
+        class Outer
+        {
+            public Inner[] classes1;
+
+            public Outer(Inner[] classes1)
+            {
+                this.classes1 = classes1;
+            }
+
+            public Outer()
+            {
+            }
+        }
+
+        [Test]
+        public void PropertyGraph_WithMultiLevelProperties_ReturnsCorrectOPG()
+        {
+            // arrange
+            // act
+            var actual = FullyJoinedQuery()
+                .Map(q => new Outer
+                {
+                    classes1 = q.PersonClasses
+                        .Select(pc => new Inner
+                        {
+                            classes2 = pc.Joined(q.Classes).ToArray()
+                        })
+                        .ToArray()
+                })
+                .BuildObjetPropertyGraph<Outer, JoinedQueryClass>();
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                typeof(Outer),
+                null, 
+                new[]
+                {
+                    ("classes1", new ObjectPropertyGraph(
+                        typeof(Inner),
+                        null,
+                        new[] 
+                        {
+                            ("classes2", new ObjectPropertyGraph(
+                                typeof(Class),
+                                new[] 
+                                {
+                                    (5, "Id", new int[0].Skip(0), typeof(long), typeof(long)),
+                                    (6, "Name", new int[0].Skip(0), typeof(string), typeof(string))
+                                },
+                                null,
+                                new[]{2}
+                            ))
+                        },
+                        new[]{1}
+                    ))
+                }, 
+                new[] { 0 });
+
+            Compare(expected, actual);
+        }
+
+        [Test]
+        public void PropertyGraph_WithMultiLevelConstructorArgs_ReturnsCorrectOPG()
+        {
+            // arrange
+            // act
+            var actual = FullyJoinedQuery()
+                .Map(q => new Outer(q.PersonClasses
+                    .Select(pc => new Inner(pc.Joined(q.Classes).ToArray()))
+                    .ToArray()))
+                .BuildObjetPropertyGraph<Outer, JoinedQueryClass>();
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                typeof(Outer),
+                null,
+                null, 
+                new[] { 0 },
+                complexConstructorArgs: new[]
+                {
+                    (0, typeof(Inner[]), new ObjectPropertyGraph(
+                        typeof(Inner),
+                        null,
+                        null,
+                        new[]{1},
+                        complexConstructorArgs: new[] 
+                        {
+                            (0, typeof(Class[]), new ObjectPropertyGraph(
+                                typeof(Class),
+                                new[] 
+                                {
+                                    (5, "Id", new int[0].Skip(0), typeof(long), typeof(long)),
+                                    (6, "Name", new int[0].Skip(0), typeof(string), typeof(string))
+                                },
+                                null,
+                                new[]{2}
+                            ))
+                        }
+                    ))
                 });
 
             Compare(expected, actual);

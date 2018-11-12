@@ -129,8 +129,8 @@ namespace SqlDsl.SqlBuilders
         Type DataType { get; }
         
          /// <summary>
-        /// The constructor that this column will be passed into, or null
+        /// The constructors that this column will be passed into. A column can have more than one constructor if constructors are nested
         /// </summary>
-        ConstructorInfo IsArgForConstructor { get; }
+        ConstructorInfo[] ArgConstructors { get; }
     }
 }

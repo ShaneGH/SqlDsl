@@ -33,7 +33,7 @@ namespace SqlDsl.DataParser
         /// <summary>
         /// Constructor args of an object which have sub properies
         /// </summary>
-        public readonly IEnumerable<(int argIndex, ObjectPropertyGraph value)> ComplexConstructorArgs;
+        public readonly IEnumerable<(int argIndex, Type constuctorArgType, ObjectPropertyGraph value)> ComplexConstructorArgs;
 
         /// <summary>
         /// Constructor args of an object with simple values like strings, ints etc... The index is the index of the column in the sql query resuts table.
@@ -63,7 +63,7 @@ namespace SqlDsl.DataParser
             IEnumerable<(string name, ObjectPropertyGraph value)> complexProps, 
             IEnumerable<int> rowIdColumnNumbers,
             IEnumerable<(int index, int argIndex, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType)> simpleConstructorArgs = null,
-            IEnumerable<(int argIndex, ObjectPropertyGraph value)> complexConstructorArgs = null)
+            IEnumerable<(int argIndex, Type constuctorArgType, ObjectPropertyGraph value)> complexConstructorArgs = null)
         {
             ObjectType = objectType ?? throw new ArgumentNullException(nameof(objectType));
             SimpleProps = simpleProps.OrEmpty();
@@ -79,12 +79,12 @@ namespace SqlDsl.DataParser
         /// </summary>
         static IEnumerable<Type> CompileConstructorArgTypes(
             IEnumerable<(int index, int argIndex, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType)> simpleConstructorArgs,
-            IEnumerable<(int argIndex, ObjectPropertyGraph value)> complexConstructorArgs)
+            IEnumerable<(int argIndex, Type constuctorArgType, ObjectPropertyGraph value)> complexConstructorArgs)
         {
             var args = simpleConstructorArgs
                 .Select(a => (a.argIndex, a.resultPropertyType))
                 .Concat(complexConstructorArgs
-                    .Select(a => (a.argIndex, a.value.ObjectType)))
+                    .Select(a => (a.argIndex, a.constuctorArgType)))
                 .OrderBy(a => a.argIndex);
 
             var i = 0;
@@ -113,7 +113,7 @@ namespace SqlDsl.DataParser
 
         public override string ToString()
         {
-            var rowNumbers = $"RowNumberColumnIds: [{RowIdColumnNumbers.JoinString(",")}]";
+            var rowNumbers = $"RowIdColumnNumbers: [{RowIdColumnNumbers.JoinString(",")}]";
 
             var simpleProps = SimpleProps
                 .Select(p => $"{p.name}: {{ index: {p.index}, rids: [{p.rowNumberColumnIds.JoinString(",")}], resultPropertyType: {p.resultPropertyType?.Name ?? "null"}, dataCellType: {p.dataCellType?.Name ?? "null"} }}");
@@ -125,7 +125,7 @@ namespace SqlDsl.DataParser
 
             var complexConstructorArgs = ComplexConstructorArgs.Select(p => $"CArg_{p.argIndex}:\n  {p.value.ToString().Replace("\n", "\n  ")}");
 
-            return new [] { rowNumbers }
+            return new [] { ObjectType.FullName, rowNumbers }
                 .Concat(simpleConstructorArgs)
                 .Concat(complexConstructorArgs)
                 .Concat(simpleProps)
