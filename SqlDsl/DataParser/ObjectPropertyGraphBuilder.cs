@@ -49,8 +49,6 @@ namespace SqlDsl.DataParser
                 if (col.constructorArgInfo.Length != constructorCount)
                     throw new InvalidOperationException($"Expecting {col.constructorArgInfo.Length} constructors, but got {constructorCount}.");
             }
-            // TODO: validate that each ##carg\d has a corresponding constructorArgInfo element
-            // e.g. if name == #carg2.#carg5, there should be 2 in the constructorArgInfo array
         }
 
         static readonly Type[] EmptyType = new Type[0];

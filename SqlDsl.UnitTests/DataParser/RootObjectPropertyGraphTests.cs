@@ -936,6 +936,7 @@ namespace SqlDsl.UnitTests.DataParser
                     ))
                 });
 
+//Assert.Fail();
             Compare(expected, actual);
         }
     }

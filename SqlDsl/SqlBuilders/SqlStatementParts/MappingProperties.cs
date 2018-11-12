@@ -42,10 +42,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         IEnumerable<(string columnGroupPrefix, int rowNumberColumnIndex)> GetColumnGroupRowNumberColumIndex()
         {
             return InnerQuery.RowIdsForMappedProperties
-                .Select(x => {
-                    return (x.resultClassProperty, InnerStatement.SelectColumns[x.rowIdColumnName].RowNumberColumnIndex);
-                })
-                .ToArray();
+                .Select(x => (x.resultClassProperty, InnerStatement.SelectColumns[x.rowIdColumnName].RowNumberColumnIndex));
         }
     }
 }

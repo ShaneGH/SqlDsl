@@ -398,7 +398,8 @@ namespace SqlDsl.Query
                         CombineStrings(toPrefix, CombineStrings($"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}", p.To)), 
                         p.MappedPropertyType,
                         constructorArgs: p.ConstructorArgs.Prepend(expr.Constructor).ToArray())), 
-                    map.tables))
+                        // TODO: $"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}" is repeated in code a lot
+                    map.tables.Select(x => new MappedTable(x.From, CombineStrings($"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}", x.To)))))
                 .AggregateTuple2();
         }
 
@@ -479,9 +480,20 @@ namespace SqlDsl.Query
             var innerMap = BuildMap(state, mapper.Body, MapType.Other, isExprTip: isExprTip);
             var outerMapProperties  = outerMap.properties.Enumerate();
             
-            var newTableMap = enumerable is MemberExpression ?
-                new MappedTable(CompileMemberName(enumerable as MemberExpression), null).ToEnumerable() :
-                EmptyMapped;
+            // TODO: put this block in its own method
+            IEnumerable<MappedTable> newTableMap = EmptyMapped;
+            if (enumerable is MemberExpression)
+            {
+                newTableMap = new MappedTable(CompileMemberName(enumerable as MemberExpression), null).ToEnumerable();
+            }
+            else if (enumerable is MethodCallExpression)
+            {
+                var (isJoined, joinedFrom, joinedTo) = ReflectionUtils.IsJoined(enumerable as MethodCallExpression);
+                if (isJoined && joinedTo is MemberExpression)
+                {
+                    newTableMap = new MappedTable(CompileMemberName(joinedTo as MemberExpression), null).ToEnumerable();
+                }
+            }
 
             return (
                 outerMapProperties
