@@ -268,26 +268,6 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .ToIEnumerableAsync(Executor, logger: Logger));
         }
 
-        class Inner
-        {
-            public readonly Class[] classes;
-
-            public Inner(Class[] c)
-            {
-                classes = c;
-            }
-        }
-
-        class Outer
-        {
-            public readonly Inner[] classes;
-
-            public Outer(Inner[] c)
-            {
-                classes = c;
-            }
-        }
-
         [Test]
         public async Task Join2Levels_WithSelect_2()
         {

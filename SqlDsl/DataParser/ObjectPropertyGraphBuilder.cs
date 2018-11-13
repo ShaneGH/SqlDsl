@@ -66,6 +66,8 @@ namespace SqlDsl.DataParser
             var simpleCArgs = new List<(int index, int argIndex, IEnumerable<int> rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();
             var complexCArgs = new List<(int index, int argIndex, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)>();
 
+            // if mappedTableProperties are invalid
+            // check mapped tables in QueryMapper.BuildMapForSelect(...)
             mappedTableProperties = mappedTableProperties
                 .Select(p => (
                     p.name, 
@@ -220,13 +222,13 @@ namespace SqlDsl.DataParser
                 if (constructorInfo == null)
                     throw new InvalidOperationException("A constructor is required for constructor args.");
 
-                // // try to get row ids from property table map
-                // var propertyTableMap = mappedTableProperties
-                //     .Where(p => p.name.Length == 1 && $"{SqlStatementConstants.ConstructorArgPrefixAlias}{p.name[0]}" == argIndex.ToString())
-                //     .Select(x => x.rowIdColumnMap)
-                //     .FirstOrDefault();
+                // try to get row ids from property table map
+                var propertyTableMap = mappedTableProperties
+                    .Where(p => p.name.Length == 1 && $"{SqlStatementConstants.ConstructorArgPrefixAlias}{argIndex}" == p.name[0])
+                    .Select(x => x.rowIdColumnMap)
+                    .FirstOrDefault();
 
-                int[] propertyTableMap = null;
+                //int[] propertyTableMap = null;
 
                 // if there is no map, use the common root for all properties
                 // this will happen when it is not a mapped query, 

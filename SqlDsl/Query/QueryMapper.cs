@@ -31,7 +31,7 @@ namespace SqlDsl.Query
                 .Enumerate();
 
             var mappedValues = properties
-                .Select(x => (type: x.MappedPropertyType, from: RemoveRoot(x.From), to: RemoveRoot(x.To), isConstructorArg: x.ConstructorArgs))
+                .Select(x => (type: x.MappedPropertyType, from: RemoveRoot(x.From), to: RemoveRoot(x.To), propertySegmentConstructors: x.PropertySegmentConstructors))
                 .Enumerate();
 
             var builder = new SqlStatementBuilder<TSqlBuilder>();
@@ -44,7 +44,7 @@ namespace SqlDsl.Query
                     col.from, 
                     tableName: (col.from ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias, 
                     alias: col.to,
-                    argConstructors: col.isConstructorArg);
+                    argConstructors: col.propertySegmentConstructors);
             }
 
             foreach (var col in rowIdPropertyMap)
@@ -397,7 +397,7 @@ namespace SqlDsl.Query
                         p.From, 
                         CombineStrings(toPrefix, CombineStrings($"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}", p.To)), 
                         p.MappedPropertyType,
-                        constructorArgs: p.ConstructorArgs.Prepend(expr.Constructor).ToArray())), 
+                        constructorArgs: p.PropertySegmentConstructors.Prepend(expr.Constructor).ToArray())), 
                         // TODO: $"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}" is repeated in code a lot
                     map.tables.Select(x => new MappedTable(x.From, CombineStrings($"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}", x.To)))))
                 .AggregateTuple2();
@@ -440,7 +440,7 @@ namespace SqlDsl.Query
                                     .Select(mem => new MappedProperty(CombineStrings(x.From, mem.name), CombineStrings(x.To, mem.name), mem.type));
                             }
 
-                            return new MappedProperty(x.From, CombineStrings(toPrefix, x.To), x.MappedPropertyType, x.ConstructorArgs).ToEnumerable();
+                            return new MappedProperty(x.From, CombineStrings(toPrefix, x.To), x.MappedPropertyType, x.PropertySegmentConstructors).ToEnumerable();
                         }),
                         m.map.tables.Select(x => new MappedTable(x.From, CombineStrings(m.memberName, x.To))))))
                 .AggregateTuple2();
@@ -488,7 +488,7 @@ namespace SqlDsl.Query
             return (
                 outerMapProperties
                     .SelectMany(r => innerMap.properties
-                        .Select(m => new MappedProperty(CombineStrings(r.From, m.From), CombineStrings(r.To, m.To), m.MappedPropertyType, m.ConstructorArgs))),
+                        .Select(m => new MappedProperty(CombineStrings(r.From, m.From), CombineStrings(r.To, m.To), m.MappedPropertyType, m.PropertySegmentConstructors))),
                 outerMap.tables
                     .Concat(innerMap.tables)
                     .Concat(newTableMap)
@@ -572,7 +572,7 @@ namespace SqlDsl.Query
                 propsEnumerated.Select(BuildProp),
                 op.tables);
 
-            MappedProperty BuildProp(MappedProperty x) => new MappedProperty($"{SqlStatementConstants.RootObjectAlias}.{x.From}", x.To, x.MappedPropertyType, x.ConstructorArgs);
+            MappedProperty BuildProp(MappedProperty x) => new MappedProperty($"{SqlStatementConstants.RootObjectAlias}.{x.From}", x.To, x.MappedPropertyType, x.PropertySegmentConstructors);
         }
 
         static string RootObjectAsPrefix => $"{SqlStatementConstants.RootObjectAlias}.";
@@ -653,13 +653,13 @@ namespace SqlDsl.Query
         static readonly ConstructorInfo[] EmptyConstructorArgs = new ConstructorInfo[0];
 
         public readonly Type MappedPropertyType;
-        public readonly ConstructorInfo[] ConstructorArgs;
+        public readonly ConstructorInfo[] PropertySegmentConstructors;
 
         public MappedProperty(string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
             : base(from, to)
         {
             MappedPropertyType = mappedPropertyType;
-            ConstructorArgs = constructorArgs ?? EmptyConstructorArgs;
+            PropertySegmentConstructors = constructorArgs ?? EmptyConstructorArgs;
         }
     }
 }
