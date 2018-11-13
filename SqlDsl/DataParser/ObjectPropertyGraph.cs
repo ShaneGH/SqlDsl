@@ -44,6 +44,8 @@ namespace SqlDsl.DataParser
         /// A composite of the row numbers which point to this object
         /// </summary>
         public readonly IEnumerable<int> RowIdColumnNumbers;
+        // if RowIdColumnNumbers are invalid
+        // check mapped tables in QueryMapper.BuildMapForSelect(...)
         
         /// <summary>
         /// The type of the object

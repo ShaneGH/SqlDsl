@@ -480,20 +480,10 @@ namespace SqlDsl.Query
             var innerMap = BuildMap(state, mapper.Body, MapType.Other, isExprTip: isExprTip);
             var outerMapProperties  = outerMap.properties.Enumerate();
             
-            // TODO: put this block in its own method
-            IEnumerable<MappedTable> newTableMap = EmptyMapped;
-            if (enumerable is MemberExpression)
-            {
-                newTableMap = new MappedTable(CompileMemberName(enumerable as MemberExpression), null).ToEnumerable();
-            }
-            else if (enumerable is MethodCallExpression)
-            {
-                var (isJoined, joinedFrom, joinedTo) = ReflectionUtils.IsJoined(enumerable as MethodCallExpression);
-                if (isJoined && joinedTo is MemberExpression)
-                {
-                    newTableMap = new MappedTable(CompileMemberName(joinedTo as MemberExpression), null).ToEnumerable();
-                }
-            }
+            var (isSuccess, name) = CompileMemberName(enumerable);
+            var newTableMap = isSuccess ?
+                new MappedTable(name, null).ToEnumerable()
+                : EmptyMapped;
 
             return (
                 outerMapProperties
@@ -604,12 +594,12 @@ namespace SqlDsl.Query
                 s.Substring(RootObjectAsPrefix.Length) :
                 s;
 
-        static string CompileMemberName(MemberExpression expr)
+        static (bool isSuccess, string name) CompileMemberName(Expression expr)
         {
-            var next = expr.Expression as MemberExpression;
-            return next != null ?
-                $"{CompileMemberName(next)}.{expr.Member.Name}" :
-                expr.Member.Name;
+            var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(expr, allow1Join: true);
+            if (!isPropertyChain) return (false, null);
+
+            return (true, chain.JoinString("."));
         }
 
         class BuildMapState

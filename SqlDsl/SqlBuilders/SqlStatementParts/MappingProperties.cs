@@ -41,6 +41,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         IEnumerable<(string columnGroupPrefix, int rowNumberColumnIndex)> GetColumnGroupRowNumberColumIndex()
         {
+            // if this function is not returning the correct data or RowIdColumnNumbers of ObjectPropertyGraph are invalid
+            // check mapped tables in QueryMapper.BuildMapForSelect(...)
+
             return InnerQuery.RowIdsForMappedProperties
                 .Select(x => (x.resultClassProperty, InnerStatement.SelectColumns[x.rowIdColumnName].RowNumberColumnIndex));
         }

@@ -349,7 +349,8 @@ namespace SqlDsl.Utils
         public static (bool isPropertyChain, ParameterExpression root, IEnumerable<string> chain) GetPropertyChain(
             Expression e, 
             bool allowOne = false,
-            bool allowSelect = false)
+            bool allowSelect = false,
+            bool allow1Join = false)
         {
             switch (e.NodeType)
             {
@@ -358,7 +359,7 @@ namespace SqlDsl.Utils
                     
                 case ExpressionType.MemberAccess:
                     var acc = e as MemberExpression;
-                    var (isPropertyChain1, root1, chain1) = GetPropertyChain(acc.Expression, allowOne: allowOne, allowSelect: allowSelect);
+                    var (isPropertyChain1, root1, chain1) = GetPropertyChain(acc.Expression, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
                     return (isPropertyChain1, root1, chain1.Append(acc.Member.Name));
                     
                 case ExpressionType.Parameter:
@@ -368,18 +369,18 @@ namespace SqlDsl.Utils
                     var methodCallE = e as MethodCallExpression;
                     var (isToArray, enumerableA) = ReflectionUtils.IsToArray(methodCallE);
                     if (isToArray)
-                        return GetPropertyChain(enumerableA, allowOne: allowOne, allowSelect: allowSelect);
+                        return GetPropertyChain(enumerableA, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
                         
                     var (isToList, enumerableL) = ReflectionUtils.IsToList(methodCallE);
                     if (isToList)
-                        return GetPropertyChain(enumerableL, allowOne: allowOne, allowSelect: allowSelect);
+                        return GetPropertyChain(enumerableL, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
 
                     if (allowOne)
                     {
                         var oneExpr = ReflectionUtils.IsOne(e);
                         if (oneExpr != null)
                         {
-                            return GetPropertyChain(oneExpr, allowOne: allowOne, allowSelect: allowSelect);
+                            return GetPropertyChain(oneExpr, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
                         } 
                     }
 
@@ -388,13 +389,26 @@ namespace SqlDsl.Utils
                         var (isSelect, enumerable, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(methodCallE);
                         if (isSelect)
                         {
-                            var (isPropertyChain2, root2, chain2) = GetPropertyChain(enumerable, allowOne: allowOne, allowSelect: allowSelect);
-                            var (isPropertyChain3, _, chain3) = GetPropertyChain(mapper.Body, allowOne: allowOne, allowSelect: allowSelect);
+                            var (isPropertyChain2, root2, chain2) = GetPropertyChain(enumerable, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
+                            var (isPropertyChain3, _, chain3) = GetPropertyChain(mapper.Body, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
                             if (isPropertyChain2 && isPropertyChain3)
                             {
                                 return (true, root2, chain2.Concat(chain3));
                             }
                         } 
+                    }
+
+                    if (allow1Join)
+                    {
+                        var (isJoined, joinedFrom, joinedTo) = ReflectionUtils.IsJoined(methodCallE);
+                        if (isJoined)
+                        {
+                            var joinedToMember = joinedTo as MemberExpression;
+                            if (joinedToMember != null && joinedToMember.Expression is ParameterExpression)
+                            {
+                                return (true, joinedToMember.Expression as ParameterExpression, joinedToMember.Member.Name.ToEnumerable());
+                            }
+                        }
                     }
                     
                     return (false, null, null);
