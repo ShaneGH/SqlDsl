@@ -263,7 +263,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task AnonymousObjects_Complex()
         {
             // arrange
@@ -308,10 +307,50 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, john.classes.Length);
             
             Assert.AreEqual(Data.Classes.Tennis.Name, john.classes[0].className);
-            CollectionAssert.AreEqual(new [] { Data.Tags.BallSport.Name, Data.Tags.Sport.Name }, john.classes[0].tags);
+            CollectionAssert.AreEqual(new [] { Data.Tags.Sport.Name, Data.Tags.BallSport.Name }, john.classes[0].tags);
             
             Assert.AreEqual(Data.Classes.Archery.Name, john.classes[1].className);
             CollectionAssert.AreEqual(new [] { Data.Tags.Sport.Name }, john.classes[1].tags);
+        }
+
+        [Test]
+        public async Task ValueTuplesInQueryFirstPart()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<(Person person, PersonClass[] personClasses, Class[] classes)>()
+                .From(result => result.person)
+                .LeftJoin<PersonClass>(result => result.personClasses)
+                    .On((r, pc) => r.person.Id == pc.PersonId)
+                .LeftJoin<Class>(result => result.classes)
+                    .On((r, pc) => r.personClasses.One().ClassId == pc.Id)
+                .Where(result => result.person.Id == Data.People.John.Id)
+                .Map(q => new
+                {
+                    name = q.person.Name,
+                    person = q.person,
+                    classes = q.person
+                        .Joined(q.personClasses)
+                        .Joined(q.classes)
+                        .Select(c => new
+                        {
+                            className = c.Name
+                        })
+                        .ToArray()
+                })
+                .ToIEnumerableAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            var john = data.First();
+            Assert.AreEqual(Data.People.John.Name, john.name);
+            Assert.AreEqual(Data.People.John, john.person);
+            
+            Assert.AreEqual(2, john.classes.Length);
+            
+            Assert.AreEqual(Data.Classes.Tennis.Name, john.classes[0].className);
+            
+            Assert.AreEqual(Data.Classes.Archery.Name, john.classes[1].className);
         }
 
         [Test]

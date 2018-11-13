@@ -64,22 +64,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
-        public void Join1Level_1_Invalid()
-        {
-            // arrange
-            // act
-            // assert
-            Assert.ThrowsAsync(typeof(InvalidOperationException), () =>
-                FullyJoinedQuery()
-                    .Map(q => new
-                    {
-                        personClasses = q.Classes
-                    })
-                    .ToIEnumerableAsync(Executor, logger: Logger));
-        }
-
-        [Test]
         public async Task Join1Level_2()
         {
             // arrange
@@ -167,7 +151,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public void Join2Levels_1_Invalid()
         {
             // arrange
