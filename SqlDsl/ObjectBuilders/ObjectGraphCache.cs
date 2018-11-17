@@ -14,7 +14,7 @@ namespace SqlDsl.ObjectBuilders
 
     class ObjectGraphCache : IObjectGraphCache
     {
-        private readonly List<ObjectGraph> Objects = new List<ObjectGraph>(256);
+        private readonly List<ObjectGraph> Objects = new List<ObjectGraph>(16);
         
         public ObjectGraph GetGraph(ILogger logger)
         {
