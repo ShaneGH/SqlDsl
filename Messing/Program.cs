@@ -15,13 +15,101 @@ namespace SqlDsl
 {
     public class Program
     {
+        static (List<Person>, List<PersonClass>, List<Class>, List<ClassTag>, List<Tag>) BuildData()
+        {
+            var cs = new List<Class>
+            {
+                new Class { Id = 1, Name = "Tesselation" },
+                new Class { Id = 2, Name = "Underpants knitting" },
+                new Class { Id = 3, Name = "Kickboxing" },
+                new Class { Id = 4, Name = "Pro gaming" }
+            };
+
+            var tags = new List<Tag>
+            {
+                new Tag { Id = 1, Name = "Is good" },
+                new Tag { Id = 2, Name = "Is bad" }
+            };
+
+            var cltg = new List<ClassTag>
+            {
+                new ClassTag
+                {
+                    ClassId = 1,
+                    TagId = 1
+                },
+                new ClassTag
+                {
+                    ClassId = 2,
+                    TagId = 2
+                },
+                new ClassTag
+                {
+                    ClassId = 3,
+                    TagId = 1
+                },
+                new ClassTag
+                {
+                    ClassId = 3,
+                    TagId = 2
+                }
+            };
+
+            var ps = new List<Person>();
+            var pcs = new List<PersonClass>();
+            for (var i = 1; i <= 100; i++)
+            {
+                ps.Add(new Person(i, $"person {i.ToString()}", i %2 == 0 ? Gender.Male : Gender.Female));
+                foreach (var c in cs)
+                {
+                    pcs.Add(new PersonClass
+                    {
+                        PersonId = i,
+                        ClassId = c.Id
+                    });
+                }
+            }
+
+            return (ps, pcs, cs, cltg, tags);
+        }
+
         static void Main(string[] args)
         {
-            InitData.EnsureInit();
+            var (p, pc, c, clt, t) = BuildData();
+            InitData.InitWithData(p, null, pc, c, clt, t);
+
             using (var connection = InitData.CreateConnection())
             {
                 connection.Open();
-                var Executor = new TestExecutor(new SqliteExecutor(connection));
+                var executor = new TestExecutor(new SqliteExecutor(connection));
+
+                var results = Sql.Query
+                    .Sqlite<(Person person, IEnumerable<PersonClass> personClass, IEnumerable<Class> cls, IEnumerable<ClassTag> classTags, IEnumerable<Tag> tags)>()
+                    .From(x => x.person)
+                    .InnerJoin(x => x.personClass).On((q, x) => q.person.Id == x.PersonId)
+                    .InnerJoin(x => x.cls).On((q, x) => q.personClass.One().ClassId == x.Id)
+                    .InnerJoin(x => x.classTags).On((q, x) => q.cls.One().Id == x.ClassId)
+                    .InnerJoin(x => x.tags).On((q, x) => q.classTags.One().TagId == x.Id)
+                    .Map(x => new 
+                    {
+                        name = x.person.Name,
+                        classes = x.personClass
+                            .Joined(x.cls)
+                            .Select(cl => new 
+                            {
+                                name = cl.Name,
+                                tags = cl
+                                    .Joined(x.classTags)
+                                    .Joined(x.tags)
+                                    .Select(z => z.Name)
+                                    .ToArray()
+                            })
+                            .ToArray()
+                    })
+                    .ToArray(executor);
+
+                Console.Write(results.Count());
+
             }
         }
     }
