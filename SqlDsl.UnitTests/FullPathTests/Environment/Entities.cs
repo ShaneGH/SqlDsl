@@ -11,7 +11,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
 {
 #pragma warning disable CS0660
 #pragma warning disable CS0661
-    abstract class EqComparer
+    public abstract class EqComparer
 #pragma warning restore CS0661
 #pragma warning restore CS0660
     {        
@@ -25,7 +25,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         }
     }
     
-    class Person : EqComparer
+    public class Person : EqComparer
     {
         public long Id { get; set; }
         public string Name { get; set; }
@@ -53,7 +53,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         }
     }
     
-    class PersonsData : EqComparer
+    public class PersonsData : EqComparer
     {
         public long PersonId { get; set; }
         public byte[] Data { get; set; }
@@ -85,13 +85,13 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         }
     }
 
-    enum Gender
+    public enum Gender
     {
         Female = 1,
         Male = 2
     }
     
-    class PersonClass : EqComparer
+    public class PersonClass : EqComparer
     {
         public long PersonId { get; set; }
         public long ClassId { get; set; }
@@ -104,7 +104,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         }
     }
     
-    class Class : EqComparer
+    public class Class : EqComparer
     {
         public long Id { get; set; }
         public string Name { get; set; }
@@ -117,7 +117,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         }
     }
     
-    class Tag : EqComparer
+    public class Tag : EqComparer
     {
         public long Id { get; set; }
         public string Name { get; set; }
@@ -130,7 +130,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         }
     }
     
-    class ClassTag : EqComparer
+    public class ClassTag : EqComparer
     {
         public long ClassId { get; set; }
         public long TagId { get; set; }
@@ -143,7 +143,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         }
     }
     
-    class Purchase : EqComparer
+    public class Purchase : EqComparer
     {
         public long Id { get; set; }
         public float Amount { get; set; }

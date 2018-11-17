@@ -48,7 +48,24 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
 
         public static SqliteConnection CreateConnection() => new SqliteConnection($@"Data Source={GetDbLocation()}");
 
-        static void Init()
+        static void Init() =>
+            InitWithData(
+                people: Data.People,
+                peoplesData: Data.PeoplesData,
+                classes: Data.Classes,
+                tags: Data.Tags,
+                personClasses: Data.PersonClasses,
+                classTags: Data.ClassTags,
+                purchases: Data.Purchases);
+
+        public static void InitWithData(
+            IEnumerable<Person> people = null,
+            IEnumerable<PersonsData> peoplesData = null,
+            IEnumerable<PersonClass> personClasses = null,
+            IEnumerable<Class> classes = null,
+            IEnumerable<ClassTag> classTags = null,
+            IEnumerable<Tag> tags = null,
+            IEnumerable<Purchase> purchases = null)
         {
             var location = GetDbLocation();
             if (File.Exists(location)) File.Delete(location);
@@ -59,13 +76,13 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 var paramaters = new List<object>();
                 var sql = new[]
                 {
-                    PopulatedTableSql(Data.People, paramaters),
-                    PopulatedTableSql(Data.PeoplesData, paramaters),
-                    PopulatedTableSql(Data.Classes, paramaters),
-                    PopulatedTableSql(Data.Tags, paramaters),
-                    PopulatedTableSql(Data.PersonClasses, paramaters),
-                    PopulatedTableSql(Data.ClassTags, paramaters),
-                    PopulatedTableSql(Data.Purchases, paramaters)
+                    PopulatedTableSql(people.OrEmpty(), paramaters),
+                    PopulatedTableSql(peoplesData.OrEmpty(), paramaters),
+                    PopulatedTableSql(classes.OrEmpty(), paramaters),
+                    PopulatedTableSql(tags.OrEmpty(), paramaters),
+                    PopulatedTableSql(personClasses.OrEmpty(), paramaters),
+                    PopulatedTableSql(classTags.OrEmpty(), paramaters),
+                    PopulatedTableSql(purchases.OrEmpty(), paramaters)
                 }.JoinString("\n");
                 
                 Console.WriteLine($" * Adding data");
