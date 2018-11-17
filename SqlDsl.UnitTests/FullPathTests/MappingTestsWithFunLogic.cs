@@ -14,6 +14,7 @@ using SqlDsl.Utils;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 using SqlDsl.Sqlite;
 using NUnit.Framework.Interfaces;
+using SqlDsl.ObjectBuilders;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
@@ -41,6 +42,38 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, ct) => q.Classes.One().Id == ct.ClassId)
                 .InnerJoin<Tag>(q => q.Tags)
                     .On((q, t) => q.ClassTags.One().TagId == t.Id);
+        }
+
+        [Test]
+        public async Task CountObjectGraphAllocations_ToList()
+        {
+            // arrange
+            // act
+            var tt= await FullyJoinedQuery<object>()
+                .Map(x => new 
+                {
+                    name = x.ThePerson.Name,
+                    classes = x.PersonClasses
+                        .Joined(x.Classes)
+                        .Select(cl => new 
+                        {
+                            name = cl.Name,
+                            tags = cl
+                                .Joined(x.ClassTags)
+                                .Joined(x.Tags)
+                                .Select(z => z.Name)
+                                .ToArray()
+                        })
+                        .ToArray()
+                })
+                .ToArrayAsync(Executor, null, logger: Logger);
+
+            // assert
+            var debugCount = Logger.DebugMessages
+                .Where(m => m.Contains(((int)LogMessages.CreatedObjectGraphAllocation).ToString()))
+                .Count();
+
+            Assert.AreEqual(3, debugCount);
         }
 
         [Test]

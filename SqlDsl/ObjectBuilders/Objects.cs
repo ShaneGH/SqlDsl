@@ -106,9 +106,9 @@ namespace SqlDsl.ObjectBuilders
             var cargs = vals.SimpleConstructorArgs
                 .OrEmpty()
                 .Select(SimpleConstructorArg)
-                .Concat(vals.ComplexConstructorArgs
+                .Concat(vals.BuildComplexConstructorArgs()
                     .OrEmpty()
-                    .Select(ComplexConstructorArg))
+                    .Select(BuildAndDisposeofComplexConstructorArg))
                 .OrderBy(ca => ca.i)
                 .Select((ca, i) => 
                 {
@@ -142,8 +142,7 @@ namespace SqlDsl.ObjectBuilders
                 }
             }
 
-            // use a setter to set each complex property
-            foreach (var prop in vals.ComplexProps.OrEmpty())
+            foreach (var prop in vals.BuildComplexProps())
             {
                 if (!propSetters.ContainsKey(prop.name))
                     continue;
@@ -164,6 +163,10 @@ namespace SqlDsl.ObjectBuilders
 
                 // set the value of the property
                 setter.setter.Set(obj, values, logger);
+
+                // release each ObjectGraph so that it can be re-used
+                foreach (var val in prop.value)
+                    val.Dispose();
             }
 
             return obj;
@@ -171,8 +174,14 @@ namespace SqlDsl.ObjectBuilders
             (int i, object v) SimpleConstructorArg((int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) arg) =>
                 GetSimpleConstructorArg(constructor, arg, logger);
 
-            (int i, object v) ComplexConstructorArg((int argIndex, IEnumerable<ObjectGraph> value) arg) =>
-                GetComplexConstructorArg(constructorArgTypes, constructor, arg, logger);
+            (int i, object v) BuildAndDisposeofComplexConstructorArg((int argIndex, ObjectGraph[] value) arg)
+            {
+                var result = GetComplexConstructorArg(constructorArgTypes, constructor, arg, logger);
+                for (var i = 0; i < arg.value.Length; i++)
+                    arg.value[i].Dispose();
+
+                return result;
+            }
         }
 
         static (int index, object value) GetSimpleConstructorArg(IValueGetter[] argGetters, (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) arg, ILogger logger)

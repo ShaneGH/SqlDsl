@@ -38,10 +38,25 @@ namespace SqlDsl.ObjectBuilders
                 .Compile();
         }
 
+        public TCollection Build(ObjectGraph values, ILogger logger)
+        {
+            var objects = SplitObjectGraph(values, logger).Select(BuildSingleObject);
+            return CollectionBuilder(objects);
+
+            T BuildSingleObject(ObjectGraph obj)
+            {
+                var result = SingleObjBuilder.Build(obj, logger);
+                obj.Dispose();
+                return result;
+            }
+        }
+
+        object IBuilder.Build(ObjectGraph values, ILogger logger) => Build(values, logger);
+
         /// <summary>
         /// Split an object graph in the form of {P1: [1, 2], P2: [3, 4]} into [{P1: [1], P2: [3]}, {P1: [2], P2: [4]}]
         /// </summary>
-        static IEnumerable<ObjectGraph> SplitObjectGraph(ObjectGraph values)
+        static IEnumerable<ObjectGraph> SplitObjectGraph(ObjectGraph values, ILogger logger)
         {
             // this is a bit of a hack.
             // when this is used as the root builder, the parser
@@ -80,10 +95,9 @@ namespace SqlDsl.ObjectBuilders
                         newProps.Add((en.prop.name, new [] { en.en.Current }, en.prop.isEnumerableDataCell)); 
                     }
 
-                    vals.Add(new ObjectGraph
-                    {
-                        SimpleProps = newProps
-                    });
+                    var graph = values.Cache.GetGraph(logger);
+                    graph.SimpleProps = newProps;
+                    vals.Add(graph);
                 }
                 
                 foreach (var en in enumerators.Skip(1))
@@ -120,13 +134,5 @@ namespace SqlDsl.ObjectBuilders
 
             return vals;
         }
-
-        public TCollection Build(ObjectGraph values, ILogger logger)
-        {
-            var objects = SplitObjectGraph(values).Select(x => SingleObjBuilder.Build(x, logger));
-            return CollectionBuilder(objects);
-        }
-
-        object IBuilder.Build(ObjectGraph values, ILogger logger) => Build(values, logger);
     }
 }

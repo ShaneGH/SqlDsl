@@ -34,7 +34,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = Builders.GetBuilder<SimpleProperties>().Build(new ObjectGraph
+            var result = Builders.GetBuilder<SimpleProperties>().Build(new ObjectGraph()
             {
                 SimpleProps = new [] 
                 {
@@ -56,7 +56,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             // assert
             Assert.Throws(
                 typeof(InvalidOperationException), 
-                () => Builders.GetBuilder<SimpleProperties>().Build(new ObjectGraph
+                () => Builders.GetBuilder<SimpleProperties>().Build(new ObjectGraph()
                 {
                     SimpleProps = new [] 
                     {
@@ -73,7 +73,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             // assert
             Assert.Throws(
                 typeof(InvalidCastException), 
-                () => Builders.GetBuilder<SimpleProperties>().Build(new ObjectGraph
+                () => Builders.GetBuilder<SimpleProperties>().Build(new ObjectGraph()
                 {
                     SimpleProps = new [] 
                     {
@@ -90,7 +90,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             // assert
             Assert.Throws(
                 typeof(InvalidOperationException), 
-                () => Builders.GetBuilder<SimpleProperties>().Build(new ObjectGraph
+                () => Builders.GetBuilder<SimpleProperties>().Build(new ObjectGraph()
                 {
                     SimpleProps = new [] 
                     {
@@ -107,7 +107,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = Builders.GetBuilder<SimplePropertiesChild>().Build(new ObjectGraph
+            var result = Builders.GetBuilder<SimplePropertiesChild>().Build(new ObjectGraph()
             {
                 SimpleProps = new [] 
                 {
@@ -132,7 +132,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = Builders.GetBuilder<MultipleSimpleProperties>().Build(new ObjectGraph
+            var result = Builders.GetBuilder<MultipleSimpleProperties>().Build(new ObjectGraph()
             {
                 SimpleProps = new [] 
                 {
@@ -163,7 +163,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             Assert.NotNull(result.Property2);
         }
 
-        static ObjectGraph CollectionTestValues() => new ObjectGraph
+        static ObjectGraph CollectionTestValues() => new ObjectGraph()
         {
             SimpleProps = new [] { ("Property1", new object[] { "Hello", "Hello again" }.Skip(0), false) }
         };

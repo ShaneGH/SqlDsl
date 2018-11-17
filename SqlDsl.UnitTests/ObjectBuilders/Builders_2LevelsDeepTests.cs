@@ -36,13 +36,13 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = Builders.GetBuilder<Level2>().Build(new ObjectGraph
+            var result = Builders.GetBuilder<Level2>().Build(new ObjectGraph()
             {
-                ComplexProps = new []
+                BuildComplexProps = () => new []
                 {
                     (nameof(Level2.Level1Properties), new []
                     {
-                        new ObjectGraph
+                        new ObjectGraph()
                         {
                             SimpleProps = new [] 
                             {
@@ -50,7 +50,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                                 ("Property2", new object[] { 7 }.Skip(0), false)
                             }.Skip(0)
                         }
-                    }.Skip(0))
+                    })
                 }
             }, null);
 
@@ -67,13 +67,13 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             // arrange
             // act
             // assert
-            Assert.Throws(typeof(InvalidOperationException), () => Builders.GetBuilder<Level2>().Build(new ObjectGraph
+            Assert.Throws(typeof(InvalidOperationException), () => Builders.GetBuilder<Level2>().Build(new ObjectGraph()
             {
-                ComplexProps = new []
+                BuildComplexProps = () => new []
                 {
                     (nameof(Level2.Level1Properties), new []
                     {
-                        new ObjectGraph
+                        new ObjectGraph()
                         {
                             SimpleProps = new [] 
                             {
@@ -81,7 +81,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                                 ("Property2", new object[] { 7 }.Skip(0), false)
                             }.Skip(0)
                         },
-                        new ObjectGraph
+                        new ObjectGraph()
                         {
                             SimpleProps = new [] 
                             {
@@ -89,7 +89,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                                 ("Property2", new object[] { 7 }.Skip(0), false)
                             }.Skip(0)
                         }
-                    }.Skip(0))
+                    })
                 }
             }, null));
         }
@@ -104,13 +104,13 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = Builders.GetBuilder<Level1Multiple>().Build(new ObjectGraph
+            var result = Builders.GetBuilder<Level1Multiple>().Build(new ObjectGraph()
             {
-                ComplexProps = new []
+                BuildComplexProps = () => new []
                 {
                     (nameof(Level1Multiple.SimpleProperties), new []
                     {
-                        new ObjectGraph
+                        new ObjectGraph()
                         {
                             SimpleProps = new [] 
                             {
@@ -118,7 +118,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                                 ("Property2", new object[] { 7 }.Skip(0), false)
                             }.Skip(0)
                         },
-                        new ObjectGraph
+                        new ObjectGraph()
                         {
                             SimpleProps = new [] 
                             {
@@ -126,7 +126,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                                 ("Property2", new object[] { 8 }.Skip(0), false)
                             }.Skip(0)
                         }
-                    }.Skip(0))
+                    })
                 }
             }, null);
 

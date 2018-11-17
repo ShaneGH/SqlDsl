@@ -57,52 +57,59 @@ namespace SqlDsl.DataParser
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
         static IEnumerable<TResult> ParseComplex<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
-        {
+        {   
+            var objectGraphCache = new ObjectGraphCache();
             var builder = Builders.GetBuilder<TResult>();
-            foreach (var obj in CreateObject(propertyGraph, rows))
-                yield return builder.Build(obj, logger);
+            foreach (var obj in CreateObject(propertyGraph, objectGraphCache, rows, logger))
+            {
+                var result = builder.Build(obj, logger);
+                obj.Dispose();
+                yield return result;
+            }
         }
 
         /// <summary>
         /// Map a group of rows to an object property graph to an object graph with properties
         /// </summary>
         /// <param name="objects">A raw block of data, which has not been grouped into objects</param>
-        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> rows)
+        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<object[]> rows, ILogger logger)
         {
             // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
             var objectsData = rows.GroupBy(r => 
                 propertyGraph.RowIdColumnNumbers.Select(i => r[i]).ToArray(), 
                 ArrayComparer<object>.Instance);
 
-            return CreateObject(propertyGraph, objectsData);
+            return CreateObject(propertyGraph, objectGraphCache, objectsData, logger);
         }
 
         /// <summary>
         /// Map a group of rows to an object property graph to an object graph with properties
         /// </summary>
         /// <param name="objects">An enumerable of objects. Each object can span multiple rows (corresponding to sub properties which are enumerable)</param>
-        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, IEnumerable<IEnumerable<object[]>> objects)
+        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<IEnumerable<object[]>> objects, ILogger logger)
         {
             foreach (var objectData in objects)
             {
-                yield return new ObjectGraph
-                {
-                    // simple prop values can be found by their column index
-                    SimpleProps = propertyGraph.SimpleProps
-                        .Select(GetSimpleProp)
-                        .Enumerate(),
-                    // complex prop values are built recursively
-                    ComplexProps = propertyGraph.ComplexProps
-                        .Select(p => (p.name, CreateObject(p.value, objectData).Enumerate()))
-                        .Enumerate(),
-                    ConstructorArgTypes = propertyGraph.ConstructorArgTypes,
-                    SimpleConstructorArgs = propertyGraph.SimpleConstructorArgs
-                        .Select(GetSimpleCArg)
-                        .Enumerate(),
-                    ComplexConstructorArgs = propertyGraph.ComplexConstructorArgs
-                        .Select(p => (p.argIndex, CreateObject(p.value, objectData).Enumerate()))
-                        .Enumerate(),
-                };
+                var graph = objectGraphCache.GetGraph(logger);
+                graph.SimpleProps = propertyGraph.SimpleProps
+                    .Select(GetSimpleProp)
+                    .Enumerate();
+                graph.BuildComplexProps = BuildComplexProps;
+                graph.ConstructorArgTypes = propertyGraph.ConstructorArgTypes;
+                graph.SimpleConstructorArgs = propertyGraph.SimpleConstructorArgs
+                    .Select(GetSimpleCArg)
+                    .Enumerate();
+                graph.BuildComplexConstructorArgs = BuildComplexConstructorArgs;
+
+                yield return graph;
+
+                IEnumerable<(string, ObjectGraph[])> BuildComplexProps() => propertyGraph.ComplexProps
+                    .Select(p => (p.name, CreateObject(p.value, objectGraphCache, objectData, logger).ToArray()))
+                    .Enumerate();
+
+                IEnumerable<(int, ObjectGraph[])> BuildComplexConstructorArgs() => propertyGraph.ComplexConstructorArgs
+                    .Select(p => (p.argIndex, CreateObject(p.value, objectGraphCache, objectData, logger).ToArray()))
+                    .Enumerate();
 
                 (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, IEnumerable<int> rowNumberColumnIds, Type dataCellType)
                 {
