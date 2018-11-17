@@ -63,8 +63,14 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             public HashSet<LogMessages> SupressLogMessages { get; set; } = new HashSet<LogMessages>();
 
+            public readonly List<string> DebugMessages = new List<string>();
             public readonly List<string> InfoMessages = new List<string>();
             public readonly List<string> WarningMessages = new List<string>();
+
+            public void Debug(string message)
+            {
+                DebugMessages.Add(message);
+            }
 
             public void Info(string message)
             {

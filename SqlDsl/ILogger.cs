@@ -14,6 +14,12 @@ namespace SqlDsl
         /// </summary>
         /// <param name="message">The message to log</param>
         void Info(string message);
+        
+        /// <summary>
+        /// Log a debug message
+        /// </summary>
+        /// <param name="message">The message to log</param>
+        void Debug(string message);
 
         /// <summary>
         /// Log a warning message
@@ -34,9 +40,10 @@ namespace SqlDsl
 
     public enum LogLevel
     {
-        Info = 1,
-        Warning = 2,
-        DoNotLog = 3
+        Debug = 1,
+        Info = 2,
+        Warning = 3,
+        DoNotLog = 4
     }
 
     public enum LogMessages
@@ -44,13 +51,29 @@ namespace SqlDsl
         /// <summary>
         /// A log message which is fired when value types need to be casted and boxed
         /// </summary>
-        InefficientCastWarning = 10000
+        InefficientCastWarning = 30000,
+
+        /// <summary>
+        /// A log message which is fired when a new ObjectGraph is created
+        /// </summary>
+        CreatedObjectGraphAllocation = 10000
     }
     
     internal static class ILoggerUtils
     {
+        static readonly int DebugLevel = (int)LogLevel.Debug;
         static readonly int InfoLevel = (int)LogLevel.Info;
         static readonly int WarningLevel = (int)LogLevel.Warning;
+
+        /// <summary>
+        /// Determine whether a logger can log an info message
+        /// </summary>
+        public static bool CanLogDebug(this ILogger logger, LogMessages? messageType)
+        {
+            return logger != null && 
+                (int)logger.LogLevel <= DebugLevel &&
+                (messageType == null || !logger.SupressLogMessages.Contains(messageType.Value));
+        }
 
         /// <summary>
         /// Determine whether a logger can log an info message
@@ -75,6 +98,14 @@ namespace SqlDsl
         static string SqlDslPrefix(LogMessages? messageType) => messageType == null ?
             "[SqlDsl] " :
             $"[SqlDsl, {(int)messageType.Value}] ";
+
+        /// <summary>
+        /// Log a debug message
+        /// </summary>
+        public static void LogDebug(this ILogger logger, string message, LogMessages? messageType)
+        {
+            logger.Debug($"{SqlDslPrefix(messageType)}{message}");
+        }
 
         /// <summary>
         /// Log an info message
