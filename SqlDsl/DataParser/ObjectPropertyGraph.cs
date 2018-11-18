@@ -51,7 +51,7 @@ namespace SqlDsl.DataParser
         /// The type of the object
         /// </summary>
         public readonly Type ObjectType;
-
+        
         /// <summary>
         /// Build an object graph
         /// </summary>

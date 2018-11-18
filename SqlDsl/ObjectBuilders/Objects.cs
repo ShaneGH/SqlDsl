@@ -156,17 +156,18 @@ namespace SqlDsl.ObjectBuilders
 
                 // recurse to get actual values
                 var builder = Builders.GetBuilder(singlePropertyType);
-                var values = prop.value
-                    // TODO: there is a cast here (possibly a boxing if complex prop is struct)
-                    .Select(v => builder.Build(v, logger))
-                    .Enumerate();
+                var values = prop.value.Select(BuildAndDisposeofComplexProp);
 
                 // set the value of the property
                 setter.setter.Set(obj, values, logger);
 
-                // release each ObjectGraph so that it can be re-used
-                foreach (var val in prop.value)
-                    val.Dispose();
+                object BuildAndDisposeofComplexProp(ObjectGraph v)
+                {
+                    // TODO: there is a cast here (possibly a boxing if complex prop is struct)
+                    var result = builder.Build(v, logger);
+                    v.Dispose();
+                    return result;
+                }
             }
 
             return obj;
@@ -174,14 +175,8 @@ namespace SqlDsl.ObjectBuilders
             (int i, object v) SimpleConstructorArg((int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) arg) =>
                 GetSimpleConstructorArg(constructor, arg, logger);
 
-            (int i, object v) BuildAndDisposeofComplexConstructorArg((int argIndex, ObjectGraph[] value) arg)
-            {
-                var result = GetComplexConstructorArg(constructorArgTypes, constructor, arg, logger);
-                for (var i = 0; i < arg.value.Length; i++)
-                    arg.value[i].Dispose();
-
-                return result;
-            }
+            (int i, object v) BuildAndDisposeofComplexConstructorArg((int argIndex, IEnumerable<ObjectGraph> value) arg) =>
+                GetComplexConstructorArgAndDisposeObjectGraphs(constructorArgTypes, constructor, arg, logger);
         }
 
         static (int index, object value) GetSimpleConstructorArg(IValueGetter[] argGetters, (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) arg, ILogger logger)
@@ -194,7 +189,7 @@ namespace SqlDsl.ObjectBuilders
             return (arg.argIndex, value);
         }
 
-        static (int index, object value) GetComplexConstructorArg(Type[] constructorArgTypes, IValueGetter[] argGetters, (int argIndex, IEnumerable<ObjectGraph> value) arg, ILogger logger)
+        static (int index, object value) GetComplexConstructorArgAndDisposeObjectGraphs(Type[] constructorArgTypes, IValueGetter[] argGetters, (int argIndex, IEnumerable<ObjectGraph> value) arg, ILogger logger)
         {
             var getter = argGetters[arg.argIndex];
 
@@ -205,13 +200,18 @@ namespace SqlDsl.ObjectBuilders
 
             // recurse to get actual values
             var builder = Builders.GetBuilder(singlePropertyType);
-            var values = arg.value
-                // TODO: there is a cast here (possibly a boxing if complex prop is struct)
-                .Select(v => builder.Build(v, logger))
-                .Enumerate();
+            var values = arg.value.Select(BuildAndDispose);
                 
             var value = getter.Get(values, logger);
             return (arg.argIndex, value);
+
+            object BuildAndDispose(ObjectGraph v)
+            {
+                // TODO: there is a cast here (possibly a boxing if complex prop is struct)
+                var result = builder.Build(v, logger);
+                v.Dispose();
+                return result;
+            }
         }
 
         /// <summary>

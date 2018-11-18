@@ -14,28 +14,31 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Simple properties such as int, string, List&lt;int>, List&lt;string> etc...
         /// </summary>
-        public IEnumerable<(string name, IEnumerable<object> value, bool isEnumerableDataCell)> SimpleProps { get; set; }
+        public IEnumerable<(string name, IEnumerable<object> value, bool isEnumerableDataCell)> SimpleProps;
         
         /// <summary>
         /// Complex properties will have properties of their own
         /// </summary>
-        public Func<IEnumerable<(string name, ObjectGraph[] value)>> BuildComplexProps { get; set; }
+        public Func<IEnumerable<(string name, IEnumerable<ObjectGraph> value)>> BuildComplexProps;
         
         /// <summary>
         /// Simple constructor args such as int, string, List&lt;int>, List&lt;string> etc...
         /// </summary>
-        public IEnumerable<(int argIndex, IEnumerable<object> value, bool isEnumerableDataCell)> SimpleConstructorArgs { get; set; }
+        public IEnumerable<(int argIndex, IEnumerable<object> value, bool isEnumerableDataCell)> SimpleConstructorArgs;
         
         /// <summary>
         /// Complex constructor args will have properties of their own
         /// </summary>
-        public Func<IEnumerable<(int argIndex, ObjectGraph[] value)>> BuildComplexConstructorArgs { get; set; }
+        public Func<IEnumerable<(int argIndex, IEnumerable<ObjectGraph> value)>> BuildComplexConstructorArgs;
 
         /// <summary>
         /// The type of the constructor args to be used with this object
         /// </summary>
-        public Type[] ConstructorArgTypes { get; set; }
+        public Type[] ConstructorArgTypes;
 
+        /// <summary>
+        /// The cache that this object belongs to. Calling dispose will return this object to it's cache
+        /// </summary>
         internal readonly IObjectGraphCache Cache;
 
         public ObjectGraph()
@@ -53,9 +56,9 @@ namespace SqlDsl.ObjectBuilders
         }
 
         private static readonly IEnumerable<(string, IEnumerable<object>, bool)> DefaultSimpleProps = Enumerable.Empty<(string, IEnumerable<object>, bool)>();
-        private static readonly Func<IEnumerable<(string, ObjectGraph[])>> DefaultBuildComplexProps = () => Enumerable.Empty<(string, ObjectGraph[])>();
+        private static readonly Func<IEnumerable<(string, IEnumerable<ObjectGraph>)>> DefaultBuildComplexProps = () => Enumerable.Empty<(string, IEnumerable<ObjectGraph>)>();
         private static readonly IEnumerable<(int, IEnumerable<object>, bool)> DefaultSimpleConstructorArgs = Enumerable.Empty<(int, IEnumerable<object>, bool)>();
-        private static readonly Func<IEnumerable<(int, ObjectGraph[])>> DefaultBuildComplexConstructorArgs = () => Enumerable.Empty<(int, ObjectGraph[])>();
+        private static readonly Func<IEnumerable<(int, IEnumerable<ObjectGraph>)>> DefaultBuildComplexConstructorArgs = () => Enumerable.Empty<(int, IEnumerable<ObjectGraph>)>();
         private static readonly Type[] DefaultConstructorArgTypes = new Type[0];
 
         protected void SetDefaults()
@@ -96,6 +99,9 @@ namespace SqlDsl.ObjectBuilders
                 Cache.ReleaseGraph(this);
         }
 
+        /// <summary>
+        /// A cache which does nothing. Is used for objects with no cache
+        /// </summary>
         private class PassthroughCache : IObjectGraphCache
         {
             public static PassthroughCache Instance = new PassthroughCache();

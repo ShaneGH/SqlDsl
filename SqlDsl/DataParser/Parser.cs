@@ -91,25 +91,41 @@ namespace SqlDsl.DataParser
             foreach (var objectData in objects)
             {
                 var graph = objectGraphCache.GetGraph(logger);
-                graph.SimpleProps = propertyGraph.SimpleProps
-                    .Select(GetSimpleProp)
-                    .Enumerate();
+
+                graph.SimpleProps = BuildSimpleProps();
                 graph.BuildComplexProps = BuildComplexProps;
                 graph.ConstructorArgTypes = propertyGraph.ConstructorArgTypes;
-                graph.SimpleConstructorArgs = propertyGraph.SimpleConstructorArgs
-                    .Select(GetSimpleCArg)
-                    .Enumerate();
+                graph.SimpleConstructorArgs = BuildSimpleConstructorArgs();
                 graph.BuildComplexConstructorArgs = BuildComplexConstructorArgs;
 
                 yield return graph;
 
-                IEnumerable<(string, ObjectGraph[])> BuildComplexProps() => propertyGraph.ComplexProps
-                    .Select(p => (p.name, CreateObject(p.value, objectGraphCache, objectData, logger).ToArray()))
+                IEnumerable<(string, IEnumerable<object>, bool)> BuildSimpleProps() => propertyGraph.SimpleProps
+                    .Select(GetSimpleProp)
                     .Enumerate();
 
-                IEnumerable<(int, ObjectGraph[])> BuildComplexConstructorArgs() => propertyGraph.ComplexConstructorArgs
-                    .Select(p => (p.argIndex, CreateObject(p.value, objectGraphCache, objectData, logger).ToArray()))
+                IEnumerable<(string, IEnumerable<ObjectGraph>)> BuildComplexProps() => propertyGraph.ComplexProps
+                    .Select(p => (p.name, CreateObject(p.value, objectGraphCache, objectData, logger)));
+
+                IEnumerable<(int, IEnumerable<object>, bool)> BuildSimpleConstructorArgs() => propertyGraph.SimpleConstructorArgs
+                    .Select(GetSimpleCArg)
                     .Enumerate();
+
+                IEnumerable<(int, IEnumerable<ObjectGraph>)> BuildComplexConstructorArgs() => propertyGraph.ComplexConstructorArgs
+                    .Select(p => (p.argIndex, CreateObject(p.value, objectGraphCache, objectData, logger)));
+
+                (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                {
+                    var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
+                    return (p.name, data, cellEnumType != null);
+                }
+
+                (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleCArg(
+                    (int index, int argIndex, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                {
+                    var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
+                    return (p.argIndex, data, cellEnumType != null);
+                }
 
                 (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, IEnumerable<int> rowNumberColumnIds, Type dataCellType)
                 {
@@ -127,19 +143,6 @@ namespace SqlDsl.DataParser
                         ReflectionUtils.GetIEnumerableType(dataCellType);
 
                     return (data, cellEnumType);
-                }
-
-                (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
-                {
-                    var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
-                    return (p.name, data, cellEnumType != null);
-                }
-
-                (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleCArg(
-                    (int index, int argIndex, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
-                {
-                    var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
-                    return (p.argIndex, data, cellEnumType != null);
                 }
             }
         }

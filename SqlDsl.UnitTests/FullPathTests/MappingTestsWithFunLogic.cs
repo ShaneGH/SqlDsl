@@ -44,24 +44,47 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, t) => q.ClassTags.One().TagId == t.Id);
         }
 
+        class Cls1
+        {
+            public string name;
+            public Cls2[] classes;
+        }
+
+        class Cls2
+        {
+            public string name;
+            public Cls3[] tags1;
+            public Cls3[] tags2;
+        }
+
+        class Cls3
+        {
+            public string tagName;
+        }
+
         [Test]
-        public async Task CountObjectGraphAllocations_ToList()
+        public async Task CountObjectGraphAllocations_ForProperties()
         {
             // arrange
             // act
             var tt= await FullyJoinedQuery<object>()
-                .Map(x => new 
+                .Map(x => new Cls1
                 {
                     name = x.ThePerson.Name,
                     classes = x.PersonClasses
                         .Joined(x.Classes)
-                        .Select(cl => new 
+                        .Select(cl => new Cls2
                         {
                             name = cl.Name,
-                            tags = cl
+                            tags1 = cl
                                 .Joined(x.ClassTags)
                                 .Joined(x.Tags)
-                                .Select(z => z.Name)
+                                .Select(z => new Cls3 { tagName = z.Name })
+                                .ToArray(),
+                            tags2 = cl
+                                .Joined(x.ClassTags)
+                                .Joined(x.Tags)
+                                .Select(z => new Cls3 { tagName = z.Name })
                                 .ToArray()
                         })
                         .ToArray()
@@ -73,7 +96,44 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(m => m.Contains(((int)LogMessages.CreatedObjectGraphAllocation).ToString()))
                 .Count();
 
-            Assert.AreEqual(3, debugCount);
+            Assert.AreEqual(3, debugCount, "3 objects represents 3 levels of properties");
+        }
+
+        [Test]
+        public async Task CountObjectGraphAllocations_ForConstructorArgs()
+        {
+            // arrange
+            // act
+            var tt= await FullyJoinedQuery<object>()
+                .Map(x => new
+                {
+                    name = x.ThePerson.Name,
+                    classes = x.PersonClasses
+                        .Joined(x.Classes)
+                        .Select(cl => new
+                        {
+                            name = cl.Name,
+                            tags1 = cl
+                                .Joined(x.ClassTags)
+                                .Joined(x.Tags)
+                                .Select(z => new { tagName = z.Name })
+                                .ToArray(),
+                            tags2 = cl
+                                .Joined(x.ClassTags)
+                                .Joined(x.Tags)
+                                .Select(z => new { tagName = z.Name })
+                                .ToArray()
+                        })
+                        .ToArray()
+                })
+                .ToArrayAsync(Executor, null, logger: Logger);
+
+            // assert
+            var debugCount = Logger.DebugMessages
+                .Where(m => m.Contains(((int)LogMessages.CreatedObjectGraphAllocation).ToString()))
+                .Count();
+
+            Assert.AreEqual(3, debugCount, "3 objects represents 3 levels of properties");
         }
 
         [Test]

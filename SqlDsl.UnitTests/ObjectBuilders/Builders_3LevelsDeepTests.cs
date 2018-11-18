@@ -48,10 +48,10 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                                             ("Property2", new object[] { 7 }.Skip(0), false)
                                         }.Skip(0)
                                     }
-                                })
+                                }.Skip(0))
                             }
                         }
-                    })
+                    }.Skip(0))
                 }
             }, null);
 
