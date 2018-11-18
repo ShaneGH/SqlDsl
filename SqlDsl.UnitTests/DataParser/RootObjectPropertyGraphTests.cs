@@ -957,7 +957,7 @@ namespace SqlDsl.UnitTests.DataParser
             var compiled = (CompiledQuery<TResult>)mapper
                 .Compile();
 
-            if (printQuery) Console.WriteLine(compiled.Sql);
+            if (printQuery) Console.WriteLine("NOTE: this string might not represent the full query:\n" + compiled.Sql);
 
             return compiled.PropertyGraph;
         }

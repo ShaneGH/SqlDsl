@@ -149,52 +149,55 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.People.John, data.First().Person);
         }
 
-        // [Test]
-        // public async Task Select1SimpleObject_WithWhereIn2()
-        // {
-        //     // arrange
-        //     // act
-        //     var data = await Sql.Query.Sqlite<QueryClass>()
-        //         .From(nameof(Person), result => result.Person)
-        //         .Where(result => result.Person.Id.In(new [] { Data.People.John.Id }))
-        //         .ExecuteAsync(Executor, logger: Logger);
+        [Test]
+        [Ignore("TODO")]
+        public async Task Select1SimpleObject_WithWhereIn2()
+        {
+            // // arrange
+            // // act
+            // var data = await Sql.Query.Sqlite<QueryClass>()
+            //     .From(nameof(Person), result => result.Person)
+            //     .Where(result => result.Person.Id.In(new [] { Data.People.John.Id }))
+            //     .ExecuteAsync(Executor, logger: Logger);
 
-        //     // assert
-        //     Assert.AreEqual(1, data.Count());
-        //     Assert.AreEqual(Data.People.John, data.First().Person);
-        // }
+            // // assert
+            // Assert.AreEqual(1, data.Count());
+            // Assert.AreEqual(Data.People.John, data.First().Person);
+        }
 
-        // [Test]
-        // public async Task Select1SimpleObject_WithWhereIn3()
-        // {
-        //     // arrange
-        //     var inVals = new [] { Data.People.John.Id };
+        [Test]
+        [Ignore("TODO")]
+        public async Task Select1SimpleObject_WithWhereIn3()
+        {
+            // // arrange
+            // var inVals = new [] { Data.People.John.Id };
 
-        //     // act
-        //     var data = await Sql.Query.Sqlite<QueryClass>()
-        //         .From(nameof(Person), result => result.Person)
-        //         .Where(result => inVals.Contains(result.Person.Id))
-        //         .ExecuteAsync(Executor, logger: Logger);
+            // // act
+            // var data = await Sql.Query.Sqlite<QueryClass>()
+            //     .From(nameof(Person), result => result.Person)
+            //     .Where(result => inVals.Contains(result.Person.Id))
+            //     .ExecuteAsync(Executor, logger: Logger);
 
-        //     // assert
-        //     Assert.AreEqual(1, data.Count());
-        //     Assert.AreEqual(Data.People.John, data.First().Person);
-        // }
+            // // assert
+            // Assert.AreEqual(1, data.Count());
+            // Assert.AreEqual(Data.People.John, data.First().Person);
+        }
 
-        // [Test]
-        // public async Task Select1SimpleObject_WithWhereIn4()
-        // {
-        //     // arrange
-        //     // act
-        //     var data = await Sql.Query.Sqlite<QueryClass>()
-        //         .From(nameof(Person), result => result.Person)
-        //         .Where(result => new [] { Data.People.John.Id }.Contains(result.Person.Id))
-        //         .ExecuteAsync(Executor, logger: Logger);
+        [Test]
+        [Ignore("TODO")]
+        public async Task Select1SimpleObject_WithWhereIn4()
+        {
+            // // arrange
+            // // act
+            // var data = await Sql.Query.Sqlite<QueryClass>()
+            //     .From(nameof(Person), result => result.Person)
+            //     .Where(result => new [] { Data.People.John.Id }.Contains(result.Person.Id))
+            //     .ExecuteAsync(Executor, logger: Logger);
 
-        //     // assert
-        //     Assert.AreEqual(1, data.Count());
-        //     Assert.AreEqual(Data.People.John, data.First().Person);
-        // }
+            // // assert
+            // Assert.AreEqual(1, data.Count());
+            // Assert.AreEqual(Data.People.John, data.First().Person);
+        }
 
         [Test]
         public async Task SelectJoinedObject_WithWhereOnJoin()

@@ -226,8 +226,11 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Compile the sql statment to a script
         /// </summary>
-        /// <returns>querySetupSql: sql which must be executed before the query is run. querySql: the query sql</returns>
-        public (string querySetupSql, string querySql) ToSqlString()
+        /// <returns>querySetupSql: sql which must be executed before the query is run. 
+        /// beforeWhereSql: the query sql before the WHERE statement. 
+        /// whereSql: the query sql whereSql the WHERE statement. 
+        /// afterWhereSql: the query sql after the WHERE statement</returns>
+        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString()
         {
             if (PrimaryTable != null && InnerQuery != null)
                 throw new InvalidOperationException("You can only call one overload of SetPrimaryTable.");
@@ -238,9 +241,6 @@ namespace SqlDsl.SqlBuilders
             if (PrimaryTableAlias == null)
                 throw new InvalidOperationException("You must call SetPrimaryTable before calling ToSqlString.");
 
-            // get the sql from the inner query if possible
-            var innerQuery = InnerQuery?.builder.ToSqlString();
-
             // build SELECT columns (cols and row ids)
             var select = GetAllSelectColumns()
                 .Select(s => BuildSelectColumn(s.columnName, s.tableName, s.alias))
@@ -250,13 +250,45 @@ namespace SqlDsl.SqlBuilders
             if (!select.Any())
                 select = new [] { "1" };
 
+            return InnerQuery != null ?
+                ToSqlStringWithInnerQuery(select) :
+                ToSqlStringWithoutInnerQuery(select);
+        }
+
+        /// <summary>
+        /// Compile the sql statment to a script where the statement has an inner query
+        /// </summary>
+        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlStringWithInnerQuery(IEnumerable<string> selectColumns)
+        {
+            if (Where != null)
+                throw new InvalidOperationException($"You can not have an inner query and a WHERE clause. You should put the WHERE clause inside the inner query. WHERE: {Where}");
+
+            if (_Joins.Count != 0)
+                throw new InvalidOperationException("You can not have an inner query and a JOIN clause. You should put the JOIN clauses inside the inner query");
+
+            if (Ordering.Count > 0)
+                throw new InvalidOperationException("You can not have with an ORDER BY clause. You should put the ORDER BY inside the inner query");
+
+            // get the sql from the inner query if possible
+            var (querySetupSql, beforeWhereSql, whereSql, afterWhereSql) = InnerQuery.Value.builder.ToSqlString();
+
+            beforeWhereSql = $"SELECT {selectColumns.JoinString(",")}\nFROM ({beforeWhereSql}";
+            afterWhereSql = $"{afterWhereSql}) {SqlBuilder.WrapAlias(PrimaryTableAlias)}";
+
+            return (querySetupSql, beforeWhereSql, whereSql, afterWhereSql);
+        }
+
+        /// <summary>
+        /// Compile the sql statment to a script
+        /// </summary>
+        /// <returns>querySetupSql: sql which must be executed before the query is run. querySql: the query sql</returns>
+        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlStringWithoutInnerQuery(IEnumerable<string> selectColumns)
+        {
             // build WHERE part
             var where = Where == null ? "" : $"WHERE {Where.Value.sql}";
 
             // build FROM part
-            var primaryTable = innerQuery != null ?
-                (null, innerQuery.Value.querySql) :
-                SqlBuilder.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName);
+            var primaryTable = SqlBuilder.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName);
                 
             // build the order by part
             var orderBy = Ordering
@@ -273,7 +305,6 @@ namespace SqlDsl.SqlBuilders
                 .Concat(new [] 
                 {
                     Where?.setupSql,
-                    innerQuery?.querySetupSql,
                     primaryTable.setupSql
                 })
                 .RemoveNulls()
@@ -281,16 +312,15 @@ namespace SqlDsl.SqlBuilders
 
             var query = new[]
             {
-                $"SELECT {select.JoinString(",")}",
+                $"SELECT {selectColumns.JoinString(",")}",
                 $"FROM ({primaryTable.sql}) " + SqlBuilder.WrapAlias(PrimaryTableAlias),
                 $"{_Joins.Select(j => j.sql).JoinString("\n")}",
-                $"{where}",
                 orderBy
             }
             .Where(x => !string.IsNullOrEmpty(x))
             .JoinString("\n");
 
-            return (setupSql, query);
+            return (setupSql, query, where, "");
         }
 
         /// <summary>

@@ -84,10 +84,13 @@ namespace SqlDsl.Query
         /// Get a sql statement and corresponding sql paramaters from the builder
         /// </summary>
         /// <param name="builder">The sql builder to use in order to render sql</param>
-        public static string ToSql(this ISqlBuilder builder)
+        public static QueryParts ToSql(this ISqlBuilder builder)
         {
             var sql = builder.ToSqlString();
-            return $"{sql.querySetupSql}\n\n{sql.querySql}";
+            return new QueryParts(
+                $"{sql.querySetupSql}\n\n{sql.beforeWhereSql}",
+                sql.whereSql,
+                sql.afterWhereSql);
         }  
     }
 }

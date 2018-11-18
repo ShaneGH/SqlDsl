@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SqlDsl.DataParser;
+using SqlDsl.Query;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 
@@ -81,18 +82,18 @@ namespace SqlDsl
 
     public class CompiledQuery<TArgs, TResult> : ICompiledQuery<TArgs, TResult>
     {
-        internal readonly string Sql;
+        internal readonly QueryParts SqlParts;
         readonly IEnumerable<object> Parameters;
         readonly string[] SelectColumns;
         public readonly RootObjectPropertyGraph PropertyGraph;
 
         public CompiledQuery(
-            string sql, 
+            QueryParts sql, 
             IEnumerable<object> parameters, 
             string[] selectColumns,
             RootObjectPropertyGraph propertyGraph)
         {
-            Sql = sql;
+            SqlParts = sql;
             Parameters = parameters;
             SelectColumns = selectColumns;
             PropertyGraph = propertyGraph;
@@ -107,19 +108,25 @@ namespace SqlDsl
                     (p as IQueryArgAccessor<TArgs>).GetArgValue(args) :
                     p);
                     
+            var sql = BuildSql();
             if (logger.CanLogInfo(LogMessages.ExecutingQuery))
-                logger.LogInfo($"Executing sql:{Environment.NewLine}{Sql}", LogMessages.ExecutingQuery);
+                logger.LogInfo($"Executing sql:{Environment.NewLine}{sql}", LogMessages.ExecutingQuery);
 
             var timer = new Timer(true);
 
             // execute and get all rows
-            var reader = await executor.ExecuteDebugAsync(Sql, parameters, SelectColumns);
+            var reader = await executor.ExecuteDebugAsync(sql, parameters, SelectColumns);
             var results = await reader.GetRowsAsync();
 
             if (logger.CanLogInfo(LogMessages.ExecutedQuery))
                 logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
 
             return results.Parse<TResult>(PropertyGraph, logger);
+        }
+
+        public string BuildSql()
+        {
+            return SqlParts.BeforeWhereSql + SqlParts.WhereSql + SqlParts.AfterWhereSql;
         }
 
         // <inheritdoc />
@@ -131,13 +138,14 @@ namespace SqlDsl
                     (p as IQueryArgAccessor<TArgs>).GetArgValue(args) :
                     p);
                     
+            var sql = BuildSql();
             if (logger.CanLogInfo(LogMessages.ExecutingQuery))
-                logger.LogInfo($"Executing sql:{Environment.NewLine}{Sql}", LogMessages.ExecutingQuery);
+                logger.LogInfo($"Executing sql:{Environment.NewLine}{sql}", LogMessages.ExecutingQuery);
 
             var timer = new Timer(true);
 
             // execute and get all rows
-            var reader = executor.ExecuteDebug(Sql, Parameters, SelectColumns);
+            var reader = executor.ExecuteDebug(sql, Parameters, SelectColumns);
             var results = reader.GetRows();
 
             if (logger.CanLogInfo(LogMessages.ExecutedQuery))
@@ -209,7 +217,7 @@ namespace SqlDsl
         /// <summary>
         /// Debug only (TODO: make internal)
         /// </summary>
-        public string Sql => (Worker as CompiledQuery<object, TResult>)?.Sql;
+        public string Sql => (Worker as CompiledQuery<object, TResult>)?.BuildSql();
 
         readonly ICompiledQuery<object, TResult> Worker;
 

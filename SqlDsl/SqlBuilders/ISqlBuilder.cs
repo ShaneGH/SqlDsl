@@ -13,6 +13,6 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Generate sql. Setup sql will be executd before querySql, but in the same sql script
         /// </summary>
-        (string querySetupSql, string querySql) ToSqlString();
+        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString();
     }
 }
