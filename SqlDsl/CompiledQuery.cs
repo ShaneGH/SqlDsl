@@ -154,7 +154,7 @@ namespace SqlDsl
             var result = enumerable.ToList();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
-                logger.LogInfo($"Query parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
 
             return result;
         }
@@ -167,7 +167,7 @@ namespace SqlDsl
             var result = enumerable.ToList();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
-                logger.LogInfo($"Query parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
             
             return result;
         }
@@ -180,7 +180,7 @@ namespace SqlDsl
             var result = enumerable.ToArray();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
-                logger.LogInfo($"Query parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
 
             return result;
         }
@@ -193,7 +193,7 @@ namespace SqlDsl
             var result = enumerable.ToArray();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
-                logger.LogInfo($"Query parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
 
             return result;
         }

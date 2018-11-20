@@ -209,7 +209,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"[SqlDsl, 20003] Query parsed in")).Count();
+                m.Contains(@"[SqlDsl, 20003] Data parsed in")).Count();
             Assert.True(sql > 0);
         }
 
@@ -226,7 +226,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"[SqlDsl, 20003] Query parsed in")).Count();
+                m.Contains(@"[SqlDsl, 20003] Data parsed in")).Count();
             Assert.True(sql > 0);
         }
 
@@ -243,7 +243,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"[SqlDsl, 20003] Query parsed in")).Count();
+                m.Contains(@"[SqlDsl, 20003] Data parsed in")).Count();
             Assert.True(sql > 0);
         }
 
@@ -260,22 +260,13 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"[SqlDsl, 20003] Query parsed in")).Count();
+                m.Contains(@"[SqlDsl, 20003] Data parsed in")).Count();
             Assert.True(sql > 0);
         }
 
         void PrintAllLogs()
         {
-            Console.WriteLine("DEBUG:");
-            Logger.DebugMessages.ForEach(Console.WriteLine);
-
-            Console.WriteLine();
-            Console.WriteLine("INFO:");
-            Logger.InfoMessages.ForEach(Console.WriteLine);
-
-            Console.WriteLine();
-            Console.WriteLine("WARNING");
-            Logger.WarningMessages.ForEach(Console.WriteLine);
+            Logger.PrintAllLogs();
         }
     }
 }
