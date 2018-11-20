@@ -87,6 +87,21 @@ namespace SqlDsl.SqlBuilders
             }
         }
 
+        private readonly List<(string column, OrderDirection direction)> Ordering = new List<(string, OrderDirection)>();
+
+        public void AddOrderBy(Expression orderBy, OrderDirection direction)
+        {
+            var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(orderBy, allowOne: true, allowSelect: true);
+            if (!isPropertyChain)
+                throw new InvalidOperationException($"Invalid order by statement: {orderBy}");
+
+            var ch = chain.ToArray();
+            if (ch.Length != 2)
+                throw new InvalidOperationException($"Invalid order by statement: {orderBy}");
+
+            Ordering.Add((ch.JoinString("."), direction));
+        }
+
         /// <summary>
         /// A map from a row id column to a location in a mapped property graph
         /// </summary>
@@ -243,6 +258,15 @@ namespace SqlDsl.SqlBuilders
                 (null, innerQuery.Value.querySql) :
                 SqlBuilder.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName);
                 
+            // build the order by part
+            var orderBy = Ordering
+                // TODO: test in indivisual sql languages
+                .Select(o => SqlBuilder.WrapAlias(o.column) + (o.direction == OrderDirection.Ascending ? "" : " DESC"))
+                .JoinString(", ");
+
+            if (orderBy.Length > 0)
+                orderBy = "ORDER BY " + orderBy;
+                
             // concat all setup sql from all other parts
             var setupSql = _Joins
                 .Select(j => j.setupSql)
@@ -260,7 +284,8 @@ namespace SqlDsl.SqlBuilders
                 $"SELECT {select.JoinString(",")}",
                 $"FROM ({primaryTable.sql}) " + SqlBuilder.WrapAlias(PrimaryTableAlias),
                 $"{_Joins.Select(j => j.sql).JoinString("\n")}",
-                $"{where}"
+                $"{where}",
+                orderBy
             }
             .Where(x => !string.IsNullOrEmpty(x))
             .JoinString("\n");

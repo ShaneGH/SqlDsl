@@ -106,6 +106,10 @@ namespace SqlDsl.Query
             if (WhereClause != null)
                 builder.SetWhere(WhereClause.Value.queryRoot, WhereClause.Value.args, WhereClause.Value.where, param);
 
+            // add order by if specified
+            foreach (var (orderExpression, direction) in Ordering)
+                builder.AddOrderBy(orderExpression, direction);
+
             return (builder, param);
         }
     }

@@ -15,7 +15,7 @@ namespace SqlDsl.Query
     /// <summary>
     /// Object to append query values to via underlying DSL
     /// </summary>
-    public class QueryBuilder<TSqlBuilder, TResult> : QueryBuilder<TSqlBuilder, object, TResult>, ITable<TResult>, IQuery<TResult>
+    public class QueryBuilder<TSqlBuilder, TResult> : QueryBuilder<TSqlBuilder, object, TResult>, ITable<TResult>, IQuery<TResult>, IOrdererAgain<TResult>
         where TSqlBuilder : ISqlFragmentBuilder, new()
     {
         // TODO: try to remove all casts from this class
@@ -76,25 +76,33 @@ namespace SqlDsl.Query
         IResultMapper<TResult> IFilter<TResult>.Where(Expression<Func<TResult, bool>> filter) =>
             (QueryBuilder<TSqlBuilder, TResult>)base.Where(filter);
 
-        public Task<List<TResult>> ToListAsync(IExecutor executor, ILogger logger = null)
-        {
-            throw new NotImplementedException();
-        }
+        /// <inheritdoc />
+        IOrdererAgain<TResult> IOrderer<TResult>.OrderBy<T>(Expression<Func<TResult, T>> order) => 
+            (QueryBuilder<TSqlBuilder, TResult>)base.OrderBy(order);
 
-        public List<TResult> ToList(IExecutor executor, ILogger logger = null)
-        {
-            throw new NotImplementedException();
-        }
+        /// <inheritdoc />
+        IOrdererAgain<TResult> IOrderer<TResult>.OrderByDesc<T>(Expression<Func<TResult, T>> order) => 
+            (QueryBuilder<TSqlBuilder, TResult>)base.OrderByDesc(order);
 
-        public Task<TResult[]> ToArrayAsync(IExecutor executor, ILogger logger = null)
-        {
-            throw new NotImplementedException();
-        }
+        /// <inheritdoc />
+        IOrdererAgain<TResult> IOrdererAgain<TResult>.ThenBy<T>(Expression<Func<TResult, T>> order) => 
+            (QueryBuilder<TSqlBuilder, TResult>)base.ThenBy(order);
 
-        public TResult[] ToArray(IExecutor executor, ILogger logger = null)
-        {
-            throw new NotImplementedException();
-        }
+        /// <inheritdoc />
+        IOrdererAgain<TResult> IOrdererAgain<TResult>.ThenByDesc<T>(Expression<Func<TResult, T>> order) => 
+            (QueryBuilder<TSqlBuilder, TResult>)base.ThenByDesc(order);
+
+        public Task<List<TResult>> ToListAsync(IExecutor executor, ILogger logger = null) =>
+            base.ToListAsync(executor, null, logger);
+
+        public List<TResult> ToList(IExecutor executor, ILogger logger = null) =>
+            base.ToList(executor, null, logger);
+
+        public Task<TResult[]> ToArrayAsync(IExecutor executor, ILogger logger = null) =>
+            base.ToArrayAsync(executor, null, logger);
+
+        public TResult[] ToArray(IExecutor executor, ILogger logger = null) =>
+            base.ToArray(executor, null, logger);
 
         /// <summary>
         /// Holds partial join state and can build a join

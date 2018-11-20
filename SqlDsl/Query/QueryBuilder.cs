@@ -15,7 +15,7 @@ namespace SqlDsl.Query
     /// <summary>
     /// Object to append query values to via underlying DSL
     /// </summary>
-    public partial class QueryBuilder<TSqlBuilder, TArgs, TResult> : ITable<TArgs, TResult>, IQuery<TArgs, TResult>
+    public partial class QueryBuilder<TSqlBuilder, TArgs, TResult> : ITable<TArgs, TResult>, IQuery<TArgs, TResult>, IOrdererAgain<TArgs, TResult>
         where TSqlBuilder: ISqlFragmentBuilder, new()
     {
         /// <summary>
