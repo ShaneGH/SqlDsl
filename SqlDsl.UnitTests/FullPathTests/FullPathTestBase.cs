@@ -81,6 +81,20 @@ namespace SqlDsl.UnitTests.FullPathTests
             {
                 WarningMessages.Add(message);
             }
+
+            public void PrintAllLogs()
+            {
+                Console.WriteLine("DEBUG:");
+                DebugMessages.ForEach(Console.WriteLine);
+
+                Console.WriteLine();
+                Console.WriteLine("INFO:");
+                InfoMessages.ForEach(Console.WriteLine);
+
+                Console.WriteLine();
+                Console.WriteLine("WARNING:");
+                WarningMessages.ForEach(Console.WriteLine);
+            }
         }
     }
 }
