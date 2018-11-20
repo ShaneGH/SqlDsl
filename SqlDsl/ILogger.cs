@@ -66,7 +66,17 @@ namespace SqlDsl
         /// <summary>
         /// A log message which confirms a query was executed and prints the time taken
         /// </summary>
-        ExecutedQuery = 20001
+        ExecutedQuery = 20001,
+
+        /// <summary>
+        /// A log message which confirms a query was compiled and prints the time taken
+        /// </summary>
+        CompiledQuery = 20002,
+
+        /// <summary>
+        /// A log message which confirms a query was parsed and prints the time taken
+        /// </summary>
+        ParsedQuery = 20003
     }
     
     internal static class ILoggerUtils

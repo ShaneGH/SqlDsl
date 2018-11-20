@@ -110,7 +110,7 @@ namespace SqlDsl
             if (logger.CanLogInfo(LogMessages.ExecutingQuery))
                 logger.LogInfo($"Executing sql:{Environment.NewLine}{Sql}", LogMessages.ExecutingQuery);
 
-            var timer = new Timer();
+            var timer = new Timer(true);
 
             // execute and get all rows
             var reader = await executor.ExecuteDebugAsync(Sql, parameters, SelectColumns);
@@ -134,7 +134,7 @@ namespace SqlDsl
             if (logger.CanLogInfo(LogMessages.ExecutingQuery))
                 logger.LogInfo($"Executing sql:{Environment.NewLine}{Sql}", LogMessages.ExecutingQuery);
 
-            var timer = new Timer();
+            var timer = new Timer(true);
 
             // execute and get all rows
             var reader = executor.ExecuteDebug(Sql, Parameters, SelectColumns);
@@ -147,16 +147,56 @@ namespace SqlDsl
         }
 
         // <inheritdoc />
-        public async Task<List<TResult>> ToListAsync(IExecutor executor, TArgs args, ILogger logger = null) => (await ToIEnumerableAsync(executor, args, logger)).ToList();
+        public async Task<List<TResult>> ToListAsync(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var enumerable = await ToIEnumerableAsync(executor, args, logger);
+            var result = enumerable.ToList();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Query parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+
+            return result;
+        }
 
         // <inheritdoc />
-        public List<TResult> ToList(IExecutor executor, TArgs args, ILogger logger = null) =>  ToIEnumerable(executor, args, logger).ToList();
+        public List<TResult> ToList(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var enumerable = ToIEnumerable(executor, args, logger);
+            var result = enumerable.ToList();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Query parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+            
+            return result;
+        }
 
         // <inheritdoc />
-        public async Task<TResult[]> ToArrayAsync(IExecutor executor, TArgs args, ILogger logger = null) => (await ToIEnumerableAsync(executor, args, logger)).ToArray();
+        public async Task<TResult[]> ToArrayAsync(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var enumerable = await ToIEnumerableAsync(executor, args, logger);
+            var result = enumerable.ToArray();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Query parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+
+            return result;
+        }
 
         // <inheritdoc />
-        public TResult[] ToArray(IExecutor executor, TArgs args, ILogger logger = null) =>  ToIEnumerable(executor, args, logger).ToArray();
+        public TResult[] ToArray(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var enumerable = ToIEnumerable(executor, args, logger);
+            var result = enumerable.ToArray();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Query parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+
+            return result;
+        }
     }
 
     public class CompiledQuery<TResult> : ICompiledQuery<TResult>

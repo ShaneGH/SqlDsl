@@ -56,7 +56,16 @@ namespace SqlDsl.Query
         /// <summary>
         /// Compile the query into something which can be executed multiple times
         /// </summary>
-        public ICompiledQuery<TArgs, TMapped> Compile(ILogger logger = null) => Compile(Query, Mapper, logger: logger);
+        public ICompiledQuery<TArgs, TMapped> Compile(ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var result = Compile(Query, Mapper, logger: logger);
+
+            if (logger.CanLogInfo(LogMessages.CompiledQuery))
+                logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);
+
+            return result;
+        }
 
         /// <summary>
         /// Compile the query into something which can be executed multiple times

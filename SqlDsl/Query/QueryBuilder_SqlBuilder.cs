@@ -44,9 +44,15 @@ namespace SqlDsl.Query
         /// </summary>
         public ICompiledQuery<TArgs, TResult> Compile(ILogger logger = null)
         {
+            var timer = new Timer(true);
             var sqlBuilder = ToSqlStatement(null);
-            return sqlBuilder.builder
+            var compiled = sqlBuilder.builder
                 .Compile<TArgs, TResult>(sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
+
+            if (logger.CanLogInfo(LogMessages.CompiledQuery))
+                logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);
+
+            return compiled;
         }
 
         /// <summary>

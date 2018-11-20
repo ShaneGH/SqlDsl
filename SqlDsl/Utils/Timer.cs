@@ -19,7 +19,7 @@ namespace SqlDsl.Utils
         public string SplitString()
         {
             var time = Split();
-            return $"{time.Seconds.ToString()}.{To3Digit(time.Milliseconds)}s";
+            return $"{time.TotalSeconds.ToString()}s";
         }
 
         static string To3Digit(int value)

@@ -72,8 +72,6 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(p => new { data = p.PersonsData.Data.ToList() })
                 .ToListAsync(Executor, logger: Logger);
 
-            PrintAllLogs();
-
             // assert
             CollectionAssert.Contains(Logger.DebugMessages, "[SqlDsl, 10000] Object graph created");    
         }
@@ -88,8 +86,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             await Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
                 .ToListAsync(Executor, logger: Logger);
-
-            PrintAllLogs();
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
@@ -109,8 +105,6 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From<Person>(x => x.ThePerson)
                 .ToList(Executor, logger: Logger);
 
-            PrintAllLogs();
-
             // assert
             var sql = Logger.InfoMessages.Where(m => 
                 m.Contains(@"SELECT [ThePerson].[##rowid] AS [ThePerson.##rowid],[ThePerson].[Id] AS [ThePerson.Id],[ThePerson].[Name] AS [ThePerson.Name],[ThePerson].[Gender] AS [ThePerson.Gender]") &&
@@ -129,8 +123,6 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From<Person>(x => x.ThePerson)
                 .ToListAsync(Executor, logger: Logger);
 
-            PrintAllLogs();
-
             // assert
             var sql = Logger.InfoMessages.Where(m => 
                 m.Contains(@"[SqlDsl, 20001] Executed sql in")).Count();
@@ -148,11 +140,127 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From<Person>(x => x.ThePerson)
                 .ToList(Executor, logger: Logger);
 
-            PrintAllLogs();
-
             // assert
             var sql = Logger.InfoMessages.Where(m => 
                 m.Contains(@"[SqlDsl, 20001] Executed sql in")).Count();
+            Assert.True(sql > 0);
+        }
+
+        [Test]
+        public void LogsCompileTimeQuery_Unmapped()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            FullyJoinedQuery()
+                .ToList(Executor, logger: Logger);
+
+            // assert
+            var sql = Logger.InfoMessages.Where(m => 
+                m.Contains(@"[SqlDsl, 20002] Query compiled in")).Count();
+            Assert.True(sql > 0);
+        }
+
+        [Test]
+        public void LogsCompileTimeQuery_SimpleMap()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            FullyJoinedQuery()
+                .Map(x => x.ThePerson.Name)
+                .ToList(Executor, logger: Logger);
+
+            // assert
+            var sql = Logger.InfoMessages.Where(m => 
+                m.Contains(@"[SqlDsl, 20002] Query compiled in")).Count();
+            Assert.True(sql > 0);
+        }
+
+        [Test]
+        public void LogsCompileTimeQuery_ComplexMap()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            FullyJoinedQuery()
+                .Map(x => new { val = x.Classes })
+                .ToList(Executor, logger: Logger);
+
+            // assert
+            var sql = Logger.InfoMessages.Where(m => 
+                m.Contains(@"[SqlDsl, 20002] Query compiled in")).Count();
+            Assert.True(sql > 0);
+        }
+
+        [Test]
+        public void LogsParseTime_ToList()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            FullyJoinedQuery()
+                .Map(x => new { val = x.Classes })
+                .ToList(Executor, logger: Logger);
+
+            // assert
+            var sql = Logger.InfoMessages.Where(m => 
+                m.Contains(@"[SqlDsl, 20003] Query parsed in")).Count();
+            Assert.True(sql > 0);
+        }
+
+        [Test]
+        public async Task LogsParseTime_ToListAsync()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            await FullyJoinedQuery()
+                .Map(x => new { val = x.Classes })
+                .ToListAsync(Executor, logger: Logger);
+
+            // assert
+            var sql = Logger.InfoMessages.Where(m => 
+                m.Contains(@"[SqlDsl, 20003] Query parsed in")).Count();
+            Assert.True(sql > 0);
+        }
+
+        [Test]
+        public void LogsParseTime_ToArray()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            FullyJoinedQuery()
+                .Map(x => new { val = x.Classes })
+                .ToArray(Executor, logger: Logger);
+
+            // assert
+            var sql = Logger.InfoMessages.Where(m => 
+                m.Contains(@"[SqlDsl, 20003] Query parsed in")).Count();
+            Assert.True(sql > 0);
+        }
+
+        [Test]
+        public async Task LogsParseTime_ToArrayAsync()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            await FullyJoinedQuery()
+                .Map(x => new { val = x.Classes })
+                .ToArrayAsync(Executor, logger: Logger);
+
+            // assert
+            var sql = Logger.InfoMessages.Where(m => 
+                m.Contains(@"[SqlDsl, 20003] Query parsed in")).Count();
             Assert.True(sql > 0);
         }
 
