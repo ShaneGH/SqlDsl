@@ -90,7 +90,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             var sql = Logger.InfoMessages.Where(m => 
                 m.Contains(@"SELECT [ThePerson].[##rowid] AS [ThePerson.##rowid],[ThePerson].[Id] AS [ThePerson.Id],[ThePerson].[Name] AS [ThePerson.Name],[ThePerson].[Gender] AS [ThePerson.Gender]") &&
-                m.Contains("[SqlDsl, 20000] Executing sql:")).Count();
+                m.Contains("[SqlDsl, 20001] Executing sql:")).Count();
             Assert.True(sql > 0);
         }
 
@@ -108,7 +108,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             var sql = Logger.InfoMessages.Where(m => 
                 m.Contains(@"SELECT [ThePerson].[##rowid] AS [ThePerson.##rowid],[ThePerson].[Id] AS [ThePerson.Id],[ThePerson].[Name] AS [ThePerson.Name],[ThePerson].[Gender] AS [ThePerson.Gender]") &&
-                m.Contains("[SqlDsl, 20000] Executing sql:")).Count();
+                m.Contains("[SqlDsl, 20001] Executing sql:")).Count();
             Assert.True(sql > 0);
         }
 
@@ -125,7 +125,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"[SqlDsl, 20001] Executed sql in")).Count();
+                m.Contains(@"[SqlDsl, 20002] Executed sql in")).Count();
             Assert.True(sql > 0);
         }
 
@@ -142,7 +142,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"[SqlDsl, 20001] Executed sql in")).Count();
+                m.Contains(@"[SqlDsl, 20002] Executed sql in")).Count();
             Assert.True(sql > 0);
         }
 
@@ -158,7 +158,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"[SqlDsl, 20002] Query compiled in")).Count();
+                m.Contains(@"[SqlDsl, 20000] Query compiled in")).Count();
             Assert.True(sql > 0);
         }
 
@@ -175,7 +175,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"[SqlDsl, 20002] Query compiled in")).Count();
+                m.Contains(@"[SqlDsl, 20000] Query compiled in")).Count();
             Assert.True(sql > 0);
         }
 
@@ -192,7 +192,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"[SqlDsl, 20002] Query compiled in")).Count();
+                m.Contains(@"[SqlDsl, 20000] Query compiled in")).Count();
             Assert.True(sql > 0);
         }
 
