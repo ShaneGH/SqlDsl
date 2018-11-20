@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using SqlDsl.DataParser;
 using SqlDsl.SqlBuilders;
+using SqlDsl.Utils;
 
 namespace SqlDsl
 {
@@ -105,10 +106,18 @@ namespace SqlDsl
                 p is IQueryArgAccessor<TArgs> ? 
                     (p as IQueryArgAccessor<TArgs>).GetArgValue(args) :
                     p);
+                    
+            if (logger.CanLogInfo(LogMessages.ExecutingQuery))
+                logger.LogInfo($"Executing sql:{Environment.NewLine}{Sql}", LogMessages.ExecutingQuery);
+
+            var timer = new Timer();
 
             // execute and get all rows
             var reader = await executor.ExecuteDebugAsync(Sql, parameters, SelectColumns);
             var results = await reader.GetRowsAsync();
+
+            if (logger.CanLogInfo(LogMessages.ExecutedQuery))
+                logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
 
             return results.Parse<TResult>(PropertyGraph, logger);
         }
@@ -122,9 +131,17 @@ namespace SqlDsl
                     (p as IQueryArgAccessor<TArgs>).GetArgValue(args) :
                     p);
                     
+            if (logger.CanLogInfo(LogMessages.ExecutingQuery))
+                logger.LogInfo($"Executing sql:{Environment.NewLine}{Sql}", LogMessages.ExecutingQuery);
+
+            var timer = new Timer();
+
             // execute and get all rows
             var reader = executor.ExecuteDebug(Sql, Parameters, SelectColumns);
             var results = reader.GetRows();
+
+            if (logger.CanLogInfo(LogMessages.ExecutedQuery))
+                logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
 
             return results.Parse<TResult>(PropertyGraph, logger);
         }

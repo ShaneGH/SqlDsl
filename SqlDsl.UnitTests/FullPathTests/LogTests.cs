@@ -47,22 +47,127 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task WarningWhenCollectionTypeIsWrong()
         {
             // arrange
+            PrintStatusOnFailure = false;
+
             // act
             await FullyJoinedQuery()
                 .Map(p => p.PersonsData.Data.ToList())
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .ToListAsync(Executor, logger: Logger);
 
             // assert
-            var valsType = "";
-            var collectionType = "";
-            var propertyName = "";
-            CollectionAssert.Contains(Logger.WarningMessages, $"Converting {valsType} to type {collectionType} for property " + 
-                    $"\"{propertyName}\". This conversion is inefficient. Consider changing the " + 
-                    $"data type of \"{propertyName}\" to {valsType}");    
+            CollectionAssert.Contains(Logger.WarningMessages, @"[SqlDsl, 30000] Converting Byte[] to type System.Collections.Generic.List`1[System.Byte]. This conversion is inefficient. Consider changing the result data type to Byte[]");    
+        }
+
+        [Test]
+        public async Task LogsObjectAllocations()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            await FullyJoinedQuery()
+                .Map(p => new { data = p.PersonsData.Data.ToList() })
+                .ToListAsync(Executor, logger: Logger);
+
+            PrintAllLogs();
+
+            // assert
+            CollectionAssert.Contains(Logger.DebugMessages, "[SqlDsl, 10000] Object graph created");    
+        }
+
+        [Test]
+        public async Task LogsSqlQueryAsync()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            await Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.ThePerson)
+                .ToListAsync(Executor, logger: Logger);
+
+            PrintAllLogs();
+
+            // assert
+            var sql = Logger.InfoMessages.Where(m => 
+                m.Contains(@"SELECT [ThePerson].[##rowid] AS [ThePerson.##rowid],[ThePerson].[Id] AS [ThePerson.Id],[ThePerson].[Name] AS [ThePerson.Name],[ThePerson].[Gender] AS [ThePerson.Gender]") &&
+                m.Contains("[SqlDsl, 20000] Executing sql:")).Count();
+            Assert.True(sql > 0);
+        }
+
+        [Test]
+        public void LogsSqlQuery()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.ThePerson)
+                .ToList(Executor, logger: Logger);
+
+            PrintAllLogs();
+
+            // assert
+            var sql = Logger.InfoMessages.Where(m => 
+                m.Contains(@"SELECT [ThePerson].[##rowid] AS [ThePerson.##rowid],[ThePerson].[Id] AS [ThePerson.Id],[ThePerson].[Name] AS [ThePerson.Name],[ThePerson].[Gender] AS [ThePerson.Gender]") &&
+                m.Contains("[SqlDsl, 20000] Executing sql:")).Count();
+            Assert.True(sql > 0);
+        }
+
+        [Test]
+        public async Task LogsSqlTimeAsync()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            await Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.ThePerson)
+                .ToListAsync(Executor, logger: Logger);
+
+            PrintAllLogs();
+
+            // assert
+            var sql = Logger.InfoMessages.Where(m => 
+                m.Contains(@"[SqlDsl, 20001] Executed sql in")).Count();
+            Assert.True(sql > 0);
+        }
+
+        [Test]
+        public void LogsSqlTimeQuery()
+        {
+            // arrange
+            PrintStatusOnFailure = false;
+
+            // act
+            Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.ThePerson)
+                .ToList(Executor, logger: Logger);
+
+            PrintAllLogs();
+
+            // assert
+            var sql = Logger.InfoMessages.Where(m => 
+                m.Contains(@"[SqlDsl, 20001] Executed sql in")).Count();
+            Assert.True(sql > 0);
+        }
+
+        void PrintAllLogs()
+        {
+            Console.WriteLine("DEBUG:");
+            Logger.DebugMessages.ForEach(Console.WriteLine);
+
+            Console.WriteLine();
+            Console.WriteLine("INFO:");
+            Logger.InfoMessages.ForEach(Console.WriteLine);
+
+            Console.WriteLine();
+            Console.WriteLine("WARNING");
+            Logger.WarningMessages.ForEach(Console.WriteLine);
         }
     }
 }
