@@ -8,7 +8,7 @@ namespace SqlDsl.Dsl
     /// <summary>
     /// Interface to help with query building DSL
     /// </summary>
-    public interface IQuery<TResult> : IFilter<TResult>
+    public interface IQuery<TResult> : IFilter<TResult>, IOrderer<TResult>
     {
         /// <summary>
         /// Join another table to the query using INNER JOIN
@@ -95,7 +95,7 @@ namespace SqlDsl.Dsl
     /// <summary>
     /// Interface to help with query building DSL
     /// </summary>
-    public interface IQuery<TArgs, TResult> : IFilter<TArgs, TResult>
+    public interface IQuery<TArgs, TResult> : IFilter<TArgs, TResult>, IOrderer<TArgs, TResult>
     {
         /// <summary>
         /// Join another table to the query using INNER JOIN

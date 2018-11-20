@@ -56,7 +56,27 @@ namespace SqlDsl
         /// <summary>
         /// A log message which is fired when a new ObjectGraph is created
         /// </summary>
-        CreatedObjectGraphAllocation = 10000
+        CreatedObjectGraphAllocation = 10000,
+
+        /// <summary>
+        /// A log message which is records the sql query executed
+        /// </summary>
+        ExecutingQuery = 20000,
+
+        /// <summary>
+        /// A log message which confirms a query was executed and prints the time taken
+        /// </summary>
+        ExecutedQuery = 20001,
+
+        /// <summary>
+        /// A log message which confirms a query was compiled and prints the time taken
+        /// </summary>
+        CompiledQuery = 20002,
+
+        /// <summary>
+        /// A log message which confirms a query was parsed and prints the time taken
+        /// </summary>
+        ParsedQuery = 20003
     }
     
     internal static class ILoggerUtils

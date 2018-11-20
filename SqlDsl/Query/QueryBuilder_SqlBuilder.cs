@@ -44,9 +44,15 @@ namespace SqlDsl.Query
         /// </summary>
         public ICompiledQuery<TArgs, TResult> Compile(ILogger logger = null)
         {
+            var timer = new Timer(true);
             var sqlBuilder = ToSqlStatement(null);
-            return sqlBuilder.builder
+            var compiled = sqlBuilder.builder
                 .Compile<TArgs, TResult>(sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
+
+            if (logger.CanLogInfo(LogMessages.CompiledQuery))
+                logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);
+
+            return compiled;
         }
 
         /// <summary>
@@ -105,6 +111,10 @@ namespace SqlDsl.Query
             // add a where clause if specified
             if (WhereClause != null)
                 builder.SetWhere(WhereClause.Value.queryRoot, WhereClause.Value.args, WhereClause.Value.where, param);
+
+            // add order by if specified
+            foreach (var (orderExpression, direction) in Ordering)
+                builder.AddOrderBy(orderExpression, direction);
 
             return (builder, param);
         }

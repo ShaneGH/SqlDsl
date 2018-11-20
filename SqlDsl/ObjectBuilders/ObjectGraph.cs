@@ -11,6 +11,9 @@ namespace SqlDsl.ObjectBuilders
     /// </summary>
     public class ObjectGraph : IDisposable
     {
+        //TODO: test allocations for simplest of SELECT queries (no maps and no joins)
+        // I have a suspicion that there are a lot of allocations
+
         /// <summary>
         /// Simple properties such as int, string, List&lt;int>, List&lt;string> etc...
         /// </summary>
