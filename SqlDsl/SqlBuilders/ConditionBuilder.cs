@@ -69,6 +69,8 @@ namespace SqlDsl.SqlBuilders
                     return BuildConstantCondition(equality as ConstantExpression, paramaters);
                 case ExpressionType.NewArrayInit:
                     return BuildNewArrayCondition(sqlBuilder, queryRoot, argsParam, otherParams, equality as NewArrayExpression, paramaters);
+                case ExpressionType.NewArrayBounds:
+                    return BuildNewArrayBoundsCondition(sqlBuilder, queryRoot, argsParam, otherParams, equality as NewArrayExpression, paramaters);
                 case ExpressionType.Parameter:
                     return BuildParameterExpression(equality as ParameterExpression, argsParam, paramaters);
                 default:
@@ -170,13 +172,13 @@ namespace SqlDsl.SqlBuilders
             var r = BuildCondition(sqlBuilder, queryRoot, argsParam, otherParams, rhs, paramaters);
 
             // TODO: can I relax this condition
-            if (!MultiParamRegex.IsMatch(r.sql))
+            if (!string.IsNullOrWhiteSpace(r.sql) && !MultiParamRegex.IsMatch(r.sql))
                 throw new InvalidOperationException($"The values in an \"IN (...)\" clause must be a real parameter value. " + 
                 $"They cannot come from another table:\n{sqlBuilder.BuildInCondition(l.sql, r.sql).sql}");
 
             // TODO: this method will require find and replace in strings (inefficient)
             // TODO: only array init supported
-            r = rhs.NodeType != ExpressionType.NewArrayInit ?
+            r = rhs.NodeType != ExpressionType.NewArrayInit && rhs.NodeType != ExpressionType.NewArrayBounds ?
                 (
                     r.setupSql, 
                     // if there is only one parameter, it is an array and will need to be
@@ -415,7 +417,41 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <summary>
+        /// Build a condition from an expression
+        /// </summary>
+        static ConditionResult BuildNewArrayBoundsCondition(this ISqlFragmentBuilder sqlBuilder, 
+            ParameterExpression queryRoot, 
+            ParameterExpression argsParam, 
+            OtherParams otherParams, 
+            NewArrayExpression array, 
+            IList<object> paramaters)
+        {
+            if (array.Expressions.Count != 1)
+                throw new NotImplementedException($"Cannot compile expression \"{array}\" to SQL");
+
+            var lengthExpr = array.Expressions[0] as ConstantExpression;                
+            if (lengthExpr == null)
+                throw new NotImplementedException($"Cannot compile expression \"{array}\" to SQL");
+
+            var type = ReflectionUtils.GetIEnumerableType(array.Type);
+            if (type == null)
+                throw new NotImplementedException($"Cannot compile expression \"{array}\" to SQL");
+
+            var length = Convert.ToInt32(lengthExpr.Value);
+            var defaultV = type.IsValueType ? 
+                Expression.Constant(Activator.CreateInstance(type)) : 
+                Expression.Constant(type, null);
+
+            array = Expression.NewArrayInit(
+                type, 
+                new int[length].Select(x => defaultV));
+
+            return BuildCondition(sqlBuilder, queryRoot, argsParam, otherParams, array, paramaters);
+        }
+
+        /// <summary>
         /// Build a condition from a parameter expression
+        /// </summary>
         static ConditionResult BuildParameterExpression(ParameterExpression expression, ParameterExpression argsParam, IList<object> paramaters)
         {
             if (expression != argsParam)

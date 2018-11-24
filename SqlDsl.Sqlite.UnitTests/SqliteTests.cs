@@ -7,12 +7,16 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using Microsoft.Data.Sqlite;
 using System.IO;
+using SqlDsl.Dsl;
+using SqlDsl.Query;
 
 namespace SqlDsl.Sqlite.UnitTests
 {
     [TestFixture]
     public class SqliteTests : SqlFragmentBuilderTestBase<SqliteBuilder>
     {
+        protected override Type GetTypeOfExceptionForEmptyIn() => null;
+
         readonly string DbFileName = $"SqliteTests, {DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")}.db";
 
         public string GetDbLocation()

@@ -18,7 +18,7 @@ namespace SqlDsl.UnitTests.SqlFlavours
     {
         const string TestDataTableName = "TestDataTable";
         protected bool PrintStatusOnFailure;        
-        internal TestExecutor Executor;
+        protected TestExecutor Executor;
 
         [OneTimeSetUp]
         public virtual void FixtureSetup()
@@ -276,13 +276,56 @@ namespace SqlDsl.UnitTests.SqlFlavours
             var values = ((ITable<TestDataTable>)new QueryBuilder<TSqlBuilder, TestDataTable>())
                 .From()
                 .Where(x => x.PrimaryKey >= TestDataTables.DataTypeTestNulled.PrimaryKey)
-                .ToIEnumerable(Executor)
-                .ToList();
+                .ToList(Executor);
 
             // assert
             Assert.AreEqual(1, values.Count);
             Compare(TestDataTables.DataTypeTestNulled, values[0]);
         }
+
+        [Test]
+        public void TestIn()
+        {
+            // arrange
+            // act
+            var values = ((ITable<TestDataTable>)new QueryBuilder<TSqlBuilder, TestDataTable>())
+                .From()
+                .Where(x => x.PrimaryKey.In(new int[1] { TestDataTables.DataTypeTestNulled.PrimaryKey }))
+                .ToArray(Executor);
+
+            // assert
+            Assert.AreEqual(1, values.Length);
+            Compare(TestDataTables.DataTypeTestNulled, values[0]);
+        }
+
+        [Test]
+        public void TestEmptyIn()
+        {
+            TestDelegate action = () =>
+            {
+                // arrange
+                // act
+                var values = ((ITable<TestDataTable>)new QueryBuilder<TSqlBuilder, TestDataTable>())
+                    .From()
+                    .Where(x => x.PrimaryKey.In(new int [0]))
+                    .ToArray(Executor);
+
+                // assert
+                Assert.AreEqual(0, values.Length);
+            };
+            
+            var exception = GetTypeOfExceptionForEmptyIn();
+            if (exception == null)
+                action();
+            else
+                Assert.Throws(exception, action);
+        }
+
+        /// <summary>
+        /// Get the type of exception the sql engine should throw if the query has an empty IN part: [WHERE value IN ()].
+        /// Return null if the query engine is able to handle an empty IN.
+        /// </summary>
+        protected abstract Type GetTypeOfExceptionForEmptyIn();
 
         static IEnumerable<IEnumerable<KeyValuePair<string, object>>> GetRows<T>(params T[] dataRows)
         {
