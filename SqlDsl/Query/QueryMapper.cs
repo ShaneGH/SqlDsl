@@ -185,7 +185,7 @@ namespace SqlDsl.Query
         public TMapped[] ToArray(IExecutor executor, TArgs args, ILogger logger = null) =>
             Compile(logger: logger).ToArray(executor, args, logger: logger);
 
-        static readonly IEnumerable<MappedProperty> EmptyMapped = Enumerable.Empty<MappedProperty>();
+        static readonly IEnumerable<MappedTable> EmptyMappedTables = Enumerable.Empty<MappedTable>();
 
         static (BuildMapResult resultType, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expr)
         {
@@ -228,7 +228,7 @@ namespace SqlDsl.Query
                         return (
                             resultType,
                             new[]{ new MappedProperty(root, pChain, null, expr.Type) },
-                            EmptyMapped
+                            EmptyMappedTables
                         );
                     }
 
@@ -240,7 +240,7 @@ namespace SqlDsl.Query
                         return (
                             BuildMapResult.SimpleProp,
                             new[]{ new MappedProperty(root, pChain, null, GetSimplePropertyCellType(expr, state.QueryObject)) },
-                            EmptyMapped
+                            EmptyMappedTables
                         );
                     }
                 }
@@ -323,7 +323,7 @@ namespace SqlDsl.Query
 
                 return (
                     new MappedProperty(null, "@p" + (state.Parameters.Count - 1), toPrefix, expr.Type).ToEnumerable(),
-                    EmptyMapped
+                    EmptyMappedTables
                 );
             }
 
@@ -335,7 +335,7 @@ namespace SqlDsl.Query
                 case ExpressionType.Parameter:
                     return (
                         new [] { new MappedProperty(expr as ParameterExpression, null, toPrefix, expr.Type) },
-                        EmptyMapped
+                        EmptyMappedTables
                     );
                     
                 case ExpressionType.MemberAccess:
@@ -501,7 +501,7 @@ namespace SqlDsl.Query
             var (isSuccess, name) = CompileMemberName(enumerable);
             var newTableMap = isSuccess ?
                 new MappedTable(name, null).ToEnumerable()
-                : EmptyMapped;
+                : EmptyMappedTables;
 
             return (
                 outerMapProperties
@@ -676,17 +676,20 @@ namespace SqlDsl.Query
         }
     }
 
-    class MappedProperty : MappedTable
+    class MappedProperty
     {
         static readonly ConstructorInfo[] EmptyConstructorArgs = new ConstructorInfo[0];
 
         public readonly Type MappedPropertyType;
         public readonly ConstructorInfo[] PropertySegmentConstructors;
         public readonly ParameterExpression FromParamRoot;
+        public readonly string From;
+        public readonly string To;
 
         public MappedProperty(ParameterExpression fromParamRoot, string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
-            : base(from, to)
         {
+            From = from;
+            To = to;
             FromParamRoot = fromParamRoot;
             MappedPropertyType = mappedPropertyType;
             PropertySegmentConstructors = constructorArgs ?? EmptyConstructorArgs;
