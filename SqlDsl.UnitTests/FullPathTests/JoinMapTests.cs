@@ -83,22 +83,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("BLABLA")]
-        public void Join1Level_2_Invalid()
-        {
-            // arrange
-            // act
-            // assert
-            Assert.ThrowsAsync(typeof(InvalidOperationException), () =>
-                FullyJoinedQuery()
-                    .Map(q => new
-                    {
-                        personClasses = q.Classes
-                    })
-                    .ToIEnumerableAsync(Executor, logger: Logger));
-        }
-
-        [Test]
         public async Task Join1Level_3()
         {
             // arrange
@@ -118,22 +102,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("BLABLA")]
-        public void Join1Level_3_Invalid()
-        {
-            // arrange
-            // act
-            // assert
-            Assert.ThrowsAsync(typeof(InvalidOperationException), () =>
-                FullyJoinedQuery()
-                    .Map(q => new
-                    {
-                        personClasses = q.Classes
-                    })
-                    .ToIEnumerableAsync(Executor, logger: Logger));
-        }
-
-        [Test]
         public async Task Join2Levels_1()
         {
             // arrange
@@ -150,22 +118,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(1, data.Count());
             var john = data.First();
             CollectionAssert.AreEqual(new[] { Data.Classes.Tennis, Data.Classes.Archery }, john.classes);
-        }
-
-        [Test]
-        [Ignore("BLABLA")]
-        public void Join2Levels_1_Invalid()
-        {
-            // arrange
-            // act
-            // assert
-            Assert.ThrowsAsync(typeof(InvalidOperationException), () =>
-                FullyJoinedQuery()
-                    .Map(q => new
-                    {
-                        classes = q.Tags
-                    })
-                    .ToIEnumerableAsync(Executor, logger: Logger));
         }
 
         [Test]
@@ -207,7 +159,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task Join2Levels_WithSelect_1()
         {
             // arrange
@@ -231,27 +182,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, john.classes.Length);
             CollectionAssert.AreEqual(new[] { Data.Classes.Tennis }, john.classes[0].classes);
             CollectionAssert.AreEqual(new[] { Data.Classes.Archery }, john.classes[1].classes);
-        }
-
-        [Test]
-        [Ignore("TODO")]
-        public void Join2Levels_WithSelect_1_Invalid()
-        {
-            // arrange
-            // act
-            // assert
-            Assert.ThrowsAsync(typeof(InvalidOperationException), () =>
-                FullyJoinedQuery()
-                    .Map(q => new
-                    {
-                        classes = q.PersonClasses
-                            .Select(pc => new 
-                            {
-                                classes = q.ClassTags
-                            })
-                            .ToArray()
-                    })
-                    .ToIEnumerableAsync(Executor, logger: Logger));
         }
 
         [Test]
@@ -283,7 +213,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task Join2Levels_WithSkippedLevel_1()
         {
             // arrange
@@ -305,9 +234,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(1, data.Count());
             var john = data.First();
             Assert.AreEqual(3, john.tags.Length);
-            Assert.AreEqual(Data.Tags.BallSport, john.tags[0].tag);
-            Assert.AreEqual(Data.Tags.Sport, john.tags[1].tag);
-            Assert.AreEqual(Data.Tags.Sport, john.tags[2].tag);
+            Assert.AreEqual(Data.ClassTags.TennisSport, john.tags[0].tag);
+            Assert.AreEqual(Data.ClassTags.TennisBallSport, john.tags[1].tag);
+            Assert.AreEqual(Data.ClassTags.ArcherySport, john.tags[2].tag);
         }
 
         class Cls1

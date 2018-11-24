@@ -29,11 +29,9 @@ namespace SqlDsl.Query
         }
 
         /// <inheritdoc />
-        public async Task<IEnumerable<TMapped>> ToIEnumerableAsync(IExecutor executor, ILogger logger = null)
+        public Task<IEnumerable<TMapped>> ToIEnumerableAsync(IExecutor executor, ILogger logger = null)
         {
-            var ttt = Worker.ToIEnumerableAsync(executor, null, logger: logger);
-            var uuu = (await ttt).ToArray();
-            return await ttt;
+            return Worker.ToIEnumerableAsync(executor, null, logger: logger);
         }
 
         /// <inheritdoc />
