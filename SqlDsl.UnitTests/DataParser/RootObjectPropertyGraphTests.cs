@@ -361,9 +361,7 @@ namespace SqlDsl.UnitTests.DataParser
                         .Select(c => new MappedClass
                         {
                             ClassName = c.Name,
-                            TagNames = c
-                                .Joined(x.ClassTags)
-                                .Joined(x.Tags)
+                            TagNames = x.Tags
                                 .Select(t => t.Name)
 
                         })
@@ -424,9 +422,7 @@ namespace SqlDsl.UnitTests.DataParser
                         .Select(c => new MappedClass2
                         {
                             ClassName = c.Name,
-                            Tags = c
-                                .Joined(x.ClassTags)
-                                .Joined(x.Tags)
+                            Tags = x.Tags
                                 .Select(t => new Tag2 { TagName = t.Name })
 
                         })
@@ -487,8 +483,7 @@ namespace SqlDsl.UnitTests.DataParser
                     FavouriteClasses = query.Classes
                         .Select(c => new DifficultScenarioInner
                         {
-                            TagIds = c
-                                .Joined(query.ClassTags)
+                            TagIds = query.ClassTags
                                 .Select(t => t.TagId)
                                 .ToArray()
                         })
@@ -575,8 +570,7 @@ namespace SqlDsl.UnitTests.DataParser
                             FavouriteClasses = query.Classes
                                 .Select(c => new DeepJoinedClassData
                                 {
-                                    TagIds = c
-                                        .Joined(query.ClassTags)
+                                    TagIds = query.ClassTags
                                         .Select(t => t.TagId)
                                         .ToArray()
                                 })
@@ -862,7 +856,7 @@ namespace SqlDsl.UnitTests.DataParser
                     classes1 = q.PersonClasses
                         .Select(pc => new Inner
                         {
-                            classes2 = pc.Joined(q.Classes).ToArray()
+                            classes2 = q.Classes.ToArray()
                         })
                         .ToArray()
                 })
@@ -905,7 +899,7 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = FullyJoinedQuery()
                 .Map(q => new Outer(q.PersonClasses
-                    .Select(pc => new Inner(pc.Joined(q.Classes).ToArray()))
+                    .Select(pc => new Inner(q.Classes.ToArray()))
                     .ToArray()))
                 .BuildObjetPropertyGraph<Outer, JoinedQueryClass>();
 

@@ -357,19 +357,6 @@ namespace SqlDsl.Query
                     if (isSelect)
                         return BuildMapForSelect(state, enumerableS, mapper, toPrefix, isExprTip);
 
-                    var (isJoined, joinedFrom, joinedTo) = ReflectionUtils.IsJoined(expr as MethodCallExpression);
-                    if (isJoined)
-                    {
-                        // the join statement needs to end in a Select(...) call
-                        if (nextMap != MapType.Select && nextMap != MapType.MemberAccess)
-                        {
-                            expr = ReflectionUtils.ConvertToFullMemberInit(expr);
-                            return BuildMap(state, expr, nextMap, toPrefix, isExprTip);
-                        }
-
-                        return BuildMapForJoined(state, joinedFrom, joinedTo, toPrefix);
-                    }
-
                     break;
 
                 default:
@@ -481,15 +468,6 @@ namespace SqlDsl.Query
 
                 return;
             }
-
-            if (enumerable is MethodCallExpression)
-            {
-                var (isJoined, joinedFrom, joinedTo) = ReflectionUtils.IsJoined(enumerable as MethodCallExpression);
-                if (isJoined)
-                    TryAddSelectStatementParameterToProperty(state, joinedTo, parameter);
-
-                return;
-            }
         }
 
         static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, LambdaExpression mapper, string toPrefix, bool isExprTip)
@@ -530,17 +508,6 @@ namespace SqlDsl.Query
         {
             switch (from.NodeType)
             {
-                case ExpressionType.Call:
-                    var (isJoined, joinedFrom, joinedTo) = ReflectionUtils.IsJoined(from as MethodCallExpression);
-                    if (!isJoined)
-                        throw new InvalidOperationException($"Property joined from is invalid\nfrom: {originalFrom ?? from}, to: {to}");
-
-                    var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(joinedTo);
-                    if (!isPropertyChain)
-                        throw new InvalidOperationException($"Property joined to is invalid\nfrom: {originalFrom ?? from}, to: {to}");
-
-                    VerifyJoin(state, joinedFrom, chain.JoinString("."));
-                    break;
                 case ExpressionType.Parameter:
                     // if from is the query object, convert it to the primary table
                     if (from == state.QueryObject)
@@ -640,7 +607,7 @@ namespace SqlDsl.Query
 
         static (bool isSuccess, string name) CompileMemberName(Expression expr)
         {
-            var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(expr, allow1Join: true);
+            var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(expr);
             if (!isPropertyChain) return (false, null);
 
             return (true, chain.JoinString("."));

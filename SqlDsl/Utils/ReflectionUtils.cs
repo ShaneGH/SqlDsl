@@ -288,23 +288,6 @@ namespace SqlDsl.Utils
             return (true, e.Arguments[0], mapper);
         }
 
-        static readonly MethodInfo _Joined = GetMethod(() => new object[0].Joined(1)).GetGenericMethodDefinition();
-
-        /// <summary>
-        /// Determine whether an expression is a Joined(...).
-        /// </summary>
-        /// <returns>isJoined: success or failure,
-        /// joinedFrom: the joined from table
-        /// joinedTo: the table joined to
-        /// </returns>
-        public static (bool isJoined, Expression joinedFrom, Expression joinedTo) IsJoined(MethodCallExpression e)
-        {
-            if (!e.Method.IsGenericMethod || e.Method.GetGenericMethodDefinition() != _Joined)
-                return (false, null, null);
-
-            return (true, e.Arguments[0], e.Arguments[1]);
-        }
-
         /// <summary>
         /// Convert an "a => a.b" to "a => new b { b1 = a.b.b1, b2 = a.b.b2 ... }". Also works for enumerables
         /// </summary>
@@ -370,8 +353,7 @@ namespace SqlDsl.Utils
         public static (bool isPropertyChain, ParameterExpression root, IEnumerable<string> chain) GetPropertyChain(
             Expression e, 
             bool allowOne = false,
-            bool allowSelect = false,
-            bool allow1Join = false)
+            bool allowSelect = false)
         {
             switch (e.NodeType)
             {
@@ -380,7 +362,7 @@ namespace SqlDsl.Utils
                     
                 case ExpressionType.MemberAccess:
                     var acc = e as MemberExpression;
-                    var (isPropertyChain1, root1, chain1) = GetPropertyChain(acc.Expression, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
+                    var (isPropertyChain1, root1, chain1) = GetPropertyChain(acc.Expression, allowOne: allowOne, allowSelect: allowSelect);
                     
                     return isPropertyChain1 ?
                         (isPropertyChain1, root1, chain1.Append(acc.Member.Name)) :
@@ -393,18 +375,18 @@ namespace SqlDsl.Utils
                     var methodCallE = e as MethodCallExpression;
                     var (isToArray, enumerableA) = ReflectionUtils.IsToArray(methodCallE);
                     if (isToArray)
-                        return GetPropertyChain(enumerableA, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
+                        return GetPropertyChain(enumerableA, allowOne: allowOne, allowSelect: allowSelect);
                         
                     var (isToList, enumerableL) = ReflectionUtils.IsToList(methodCallE);
                     if (isToList)
-                        return GetPropertyChain(enumerableL, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
+                        return GetPropertyChain(enumerableL, allowOne: allowOne, allowSelect: allowSelect);
 
                     if (allowOne)
                     {
                         var oneExpr = ReflectionUtils.IsOne(e);
                         if (oneExpr != null)
                         {
-                            return GetPropertyChain(oneExpr, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
+                            return GetPropertyChain(oneExpr, allowOne: allowOne, allowSelect: allowSelect);
                         } 
                     }
 
@@ -413,26 +395,13 @@ namespace SqlDsl.Utils
                         var (isSelect, enumerable, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(methodCallE);
                         if (isSelect)
                         {
-                            var (isPropertyChain2, root2, chain2) = GetPropertyChain(enumerable, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
-                            var (isPropertyChain3, _, chain3) = GetPropertyChain(mapper.Body, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
+                            var (isPropertyChain2, root2, chain2) = GetPropertyChain(enumerable, allowOne: allowOne, allowSelect: allowSelect);
+                            var (isPropertyChain3, _, chain3) = GetPropertyChain(mapper.Body, allowOne: allowOne, allowSelect: allowSelect);
                             if (isPropertyChain2 && isPropertyChain3)
                             {
                                 return (true, root2, chain2.Concat(chain3));
                             }
                         } 
-                    }
-
-                    if (allow1Join)
-                    {
-                        var (isJoined, joinedFrom, joinedTo) = ReflectionUtils.IsJoined(methodCallE);
-                        if (isJoined)
-                        {
-                            var joinedToMember = joinedTo as MemberExpression;
-                            if (joinedToMember != null && joinedToMember.Expression is ParameterExpression)
-                            {
-                                return (true, joinedToMember.Expression as ParameterExpression, joinedToMember.Member.Name.ToEnumerable());
-                            }
-                        }
                     }
                     
                     return (false, null, null);

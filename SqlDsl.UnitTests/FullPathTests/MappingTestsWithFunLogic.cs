@@ -71,19 +71,14 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(x => new Cls1
                 {
                     name = x.ThePerson.Name,
-                    classes = x.PersonClasses
-                        .Joined(x.Classes)
+                    classes = x.Classes
                         .Select(cl => new Cls2
                         {
                             name = cl.Name,
-                            tags1 = cl
-                                .Joined(x.ClassTags)
-                                .Joined(x.Tags)
+                            tags1 = x.Tags
                                 .Select(z => new Cls3 { tagName = z.Name })
                                 .ToArray(),
-                            tags2 = cl
-                                .Joined(x.ClassTags)
-                                .Joined(x.Tags)
+                            tags2 = x.Tags
                                 .Select(z => new Cls3 { tagName = z.Name })
                                 .ToArray()
                         })
@@ -108,19 +103,14 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(x => new
                 {
                     name = x.ThePerson.Name,
-                    classes = x.PersonClasses
-                        .Joined(x.Classes)
+                    classes = x.Classes
                         .Select(cl => new
                         {
                             name = cl.Name,
-                            tags1 = cl
-                                .Joined(x.ClassTags)
-                                .Joined(x.Tags)
+                            tags1 = x.Tags
                                 .Select(z => new { tagName = z.Name })
                                 .ToArray(),
-                            tags2 = cl
-                                .Joined(x.ClassTags)
-                                .Joined(x.Tags)
+                            tags2 = x.Tags
                                 .Select(z => new { tagName = z.Name })
                                 .ToArray()
                         })

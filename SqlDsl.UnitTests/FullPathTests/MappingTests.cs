@@ -197,9 +197,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         .Select(c => new MapComplexObjectType2.Cls1
                         {
                             Name = c.Name,
-                            Tags = c
-                                .Joined(p.ClassTags)
-                                .Joined(p.Tags)
+                            Tags = p.Tags
                                 .ToArray()
                         })
                         .ToArray()
@@ -249,9 +247,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         .Select(c => new MapComplexObjectType2.Cls1
                         {
                             Name = c.Name,
-                            Tags = c
-                                .Joined(p.Query.ClassTags)
-                                .Joined(p.Query.Tags)
+                            Tags = p.Query.Tags
                                 .ToArray()
                         })
                         .ToArray()
@@ -497,8 +493,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     FavouriteClasses = query.Classes
                         .Select(c => new SmartJoinedClass4
                         {
-                            TagIds = c
-                                .Joined(query.ClassTags)
+                            TagIds = query.ClassTags
                                 .Select(t => t.TagId)
                                 .ToArray()
                         })
@@ -543,8 +538,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     FavouriteClasses = query.Classes
                         .Select(c => new
                         {
-                            TagIds = c
-                                .Joined(query.ClassTags)
+                            TagIds = query.ClassTags
                                 .Select(t => t.TagId)
                                 .ToArray()
                         })
@@ -597,8 +591,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     FavouriteClasses = query.Classes
                         .Select(c => new SmartJoinedClass4_1
                         {
-                            TagId = c
-                                .Joined(query.ClassTags)
+                            TagId = query.ClassTags
                                 .Select(t => t.TagId)
                                 .One()
                         })
@@ -636,8 +629,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                             FavouriteClasses = query.Classes
                                 .Select(c => new SmartJoinedClass4_2
                                 {
-                                    TagIds = c
-                                        .Joined(query.ClassTags)
+                                    TagIds = query.ClassTags
                                         .Select(t => t.TagId)
                                         .ToArray()
                                 })
@@ -691,6 +683,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        [Ignore("BLABLA")]
         public void JoinInMap_WithInvalidJoin_ThrowsException()
         {
             // arrange
@@ -705,8 +698,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                             .Select(c => new SmartJoinedClass2
                             {
                                 ClassName = c.Name,
-                                TagNames = c
-                                    .Joined(query.Tags)
+                                TagNames = query.Tags
                                     .Select(t => t.Name)
                                     .ToArray()
                             })
@@ -728,9 +720,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         .Select(c => new SmartJoinedClass2
                         {
                             ClassName = c.Name,
-                            TagNames = c
-                                .Joined(query.ClassTags)
-                                .Joined(query.Tags)
+                            TagNames = query.Tags
                                 .Select(t => t.Name)
                                 .ToArray()
                         })
@@ -780,9 +770,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     FavouriteClasses = query.Classes
                         .Select(c => new SmartJoinedClass2(c.Name)
                         {
-                            TagNames = c
-                                .Joined(query.ClassTags)
-                                .Joined(query.Tags)
+                            TagNames = query.Tags
                                 .Select(t => t.Name)
                                 .ToArray()
                         })
@@ -820,30 +808,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.Tags.BallSport.Name, mary.FavouriteClasses[0].TagNames[1]);
         }
 
-        [Test]
-        public void JoinInMap_With2LevelJoin_JoinIsNotComplete_ThrowsException()
-        {
-            // TODO: test where 1 table joins to multiple others
-
-            // arrange
-            // act
-            // assert
-            Assert.Throws(typeof(InvalidOperationException), () => FullyJoinedQuery()
-                .Map(query => new SmartJoinedClass1
-                { 
-                    FavouriteClasses = query.Classes
-                        .Select(c => new SmartJoinedClass2
-                        {
-                            TagNames = c
-                                .Joined(query.Tags)
-                                .Select(t => t.Name)
-                                .ToArray()
-                        })
-                        .ToArray()
-                })
-                .Compile());
-        }
-
         class SmartJoinedClass5
         {
             public string PersonName;
@@ -870,9 +834,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         .Select(c => new SmartJoinedClass6
                         {
                             ClassName = c.Name,
-                            TagName = c
-                                .Joined(query.ClassTags)
-                                .Joined(query.Tags)
+                            TagName = query.Tags
                                 .One()
                                 .Name
                         })

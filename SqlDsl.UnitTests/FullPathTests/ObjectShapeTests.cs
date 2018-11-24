@@ -282,15 +282,11 @@ namespace SqlDsl.UnitTests.FullPathTests
                 {
                     name = q.ThePerson.Name,
                     person = q.ThePerson,
-                    classes = q.ThePerson
-                        .Joined(q.PersonClasses)
-                        .Joined(q.Classes)
+                    classes = q.Classes
                         .Select(c => new
                         {
                             className = c.Name,
-                            tags = c
-                                .Joined(q.ClassTags)
-                                .Joined(q.Tags)
+                            tags = q.Tags
                                 .Select(t => t.Name)
                                 .ToArray()
                         })
@@ -329,9 +325,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 {
                     name = q.person.Name,
                     person = q.person,
-                    classes = q.person
-                        .Joined(q.personClasses)
-                        .Joined(q.classes)
+                    classes = q.classes
                         .Select(c => new
                         {
                             className = c.Name
@@ -524,8 +518,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(x => new
                 {
                     personName = x.ThePerson.Name,
-                    classes = new ObjectWithConstructorArgs_OuterSelectTest(
-                        x.ThePerson.Joined(x.PersonClasses).Joined(x.Classes))
+                    classes = new ObjectWithConstructorArgs_OuterSelectTest(x.Classes)
                 })
                 .ToIEnumerableAsync(Executor);
 
@@ -566,9 +559,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(x => new
                 {
                     personName = x.ThePerson.Name,
-                    classes = x.ThePerson
-                        .Joined(x.PersonClasses)
-                        .Joined(x.Classes)
+                    classes = x.Classes
                         .Select(c => new ObjectWithConstructorArgs_InnerSelectTest(c))
                 })
                 .ToIEnumerableAsync(Executor);

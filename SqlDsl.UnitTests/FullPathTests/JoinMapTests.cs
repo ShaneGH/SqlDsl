@@ -72,7 +72,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    personClasses = q.Joined(q.PersonClasses)
+                    personClasses = q.PersonClasses
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -83,6 +83,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        [Ignore("BLABLA")]
         public void Join1Level_2_Invalid()
         {
             // arrange
@@ -92,7 +93,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 FullyJoinedQuery()
                     .Map(q => new
                     {
-                        personClasses = q.Joined(q.Classes)
+                        personClasses = q.Classes
                     })
                     .ToIEnumerableAsync(Executor, logger: Logger));
         }
@@ -106,7 +107,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    personClasses = q.ThePerson.Joined(q.PersonClasses)
+                    personClasses = q.PersonClasses
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -117,6 +118,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        [Ignore("BLABLA")]
         public void Join1Level_3_Invalid()
         {
             // arrange
@@ -126,7 +128,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 FullyJoinedQuery()
                     .Map(q => new
                     {
-                        personClasses = q.ThePerson.Joined(q.Classes)
+                        personClasses = q.Classes
                     })
                     .ToIEnumerableAsync(Executor, logger: Logger));
         }
@@ -140,7 +142,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    classes = q.PersonClasses.Joined(q.Classes)
+                    classes = q.Classes
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -151,6 +153,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        [Ignore("BLABLA")]
         public void Join2Levels_1_Invalid()
         {
             // arrange
@@ -160,7 +163,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 FullyJoinedQuery()
                     .Map(q => new
                     {
-                        classes = q.PersonClasses.Joined(q.Tags)
+                        classes = q.Tags
                     })
                     .ToIEnumerableAsync(Executor, logger: Logger));
         }
@@ -174,7 +177,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    classes = q.Joined(q.PersonClasses).Joined(q.Classes)
+                    classes = q.Classes
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -193,7 +196,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    classes = q.ThePerson.Joined(q.PersonClasses).Joined(q.Classes)
+                    classes = q.Classes
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -265,7 +268,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     classes = q.PersonClasses
                         .Select(pc => new 
                         {
-                            classes = pc.Joined(q.Classes).ToArray()
+                            classes = q.Classes.ToArray()
                         })
                         .ToArray()
                 })
@@ -289,9 +292,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    tags = q.PersonClasses
-                        .Joined(q.Classes)
-                        .Joined(q.ClassTags)
+                    tags = q.ClassTags
                         .Select(tag => new 
                         {
                             tag = tag
@@ -328,10 +329,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new Cls1
                 {
-                    tags = q.PersonClasses
-                        .Joined(q.Classes)
-                        .Joined(q.ClassTags)
-                        .Joined(q.Tags)
+                    tags = q.Tags
                         .Select(tag => new Cls2
                         {
                             cls = q.Classes.One()
@@ -357,10 +355,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    tags = q.PersonClasses
-                        .Joined(q.Classes)
-                        .Joined(q.ClassTags)
-                        .Joined(q.Tags)
+                    tags = q.Tags
                         .Select(tag => new
                         {
                             cls = q.Classes.One()
@@ -386,9 +381,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    tags = q.PersonClasses
-                        .Joined(q.Classes)
-                        .Joined(q.ClassTags)
+                    tags = q.ClassTags
                         .Select(tag => new 
                         {
                             cls = q.Classes.One().Name
@@ -414,13 +407,10 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    classes = q.PersonClasses
-                        .Joined(q.Classes)
+                    classes = q.Classes
                         .Select(c => new 
                         {
-                            data = c
-                                .Joined(q.ClassTags)
-                                .Joined(q.Tags)
+                            data = q.Tags
                                 .Select(t => new 
                                 {
                                     tagName = t.Name,

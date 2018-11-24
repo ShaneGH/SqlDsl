@@ -83,9 +83,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(q => new 
                 {
                     name = q.ThePerson.Name,
-                    classes = q.ThePerson
-                        .Joined(q.PersonClasses)
-                        .Joined(q.Classes)
+                    classes = q.Classes
                         .Select(c => c.Name)
                 })
                 .ToArrayAsync(Executor, logger: Logger);
@@ -106,9 +104,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(q => new 
                 {
                     name = q.ThePerson.Name,
-                    classes = q.ThePerson
-                        .Joined(q.PersonClasses)
-                        .Joined(q.Classes)
+                    classes = q.Classes
                         .Select(c => c.Name)
                 })
                 .ToArrayAsync(Executor, logger: Logger);
@@ -129,9 +125,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(q => new 
                 {
                     name = q.ThePerson.Name,
-                    classes = q.ThePerson
-                        .Joined(q.PersonClasses)
-                        .Joined(q.Classes)
+                    classes = q.Classes
                         .Select(c => c.Name)
                 })
                 .ToArrayAsync(Executor, logger: Logger);
@@ -152,9 +146,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(q => new 
                 {
                     name = q.ThePerson.Name,
-                    classes = q.ThePerson
-                        .Joined(q.PersonClasses)
-                        .Joined(q.Classes)
+                    classes = q.Classes
                         .Select(c => c.Name)
                 })
                 .ToArrayAsync(Executor, logger: Logger);
