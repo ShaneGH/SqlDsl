@@ -258,22 +258,6 @@ namespace SqlDsl.Query
             return type;
         }
 
-        static bool IsConstant(Expression expr)
-        {
-            switch (expr.NodeType)
-            {
-                case ExpressionType.Constant:
-                    return true;
-                case ExpressionType.MemberAccess:
-                    return IsConstant((expr as MemberExpression).Expression);
-                case ExpressionType.Call:
-                    var call = expr as MethodCallExpression;
-                    return (call.Object == null || IsConstant(call.Object)) && call.Arguments.All(IsConstant);
-                default:
-                    return false;
-            }
-        }
-
         static bool ExprRepresentsTable(BuildMapState state, Expression expr)
         {
             var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(expr);
@@ -305,7 +289,7 @@ namespace SqlDsl.Query
             string toPrefix = null, 
             bool isExprTip = false)
         {
-            if (IsConstant(expr))
+            if (ReflectionUtils.IsConstant(expr))
             {
                 var result = Expression
                     .Lambda<Func<object>>(

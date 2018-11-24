@@ -19,22 +19,22 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             Executor = executor;
         }
 
-        public async Task<IReader> ExecuteAsync(string sql, IEnumerable<object> paramaters, string[] colNames)
+        public async Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters, string[] colNames)
         {
             AddSqlStatement(sql, paramaters, colNames);
             return new TestReader(this, await Executor.ExecuteAsync(sql, paramaters), SqlStatements.Count - 1);
         }
 
-        public Task<IReader> ExecuteAsync(string sql, IEnumerable<object> paramaters)
+        public Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters)
         {
             throw new NotImplementedException("Code should use overload with colNames");
         }
 
-        void AddSqlStatement(string sql, IEnumerable<object> paramaters, string[] colNames)
+        void AddSqlStatement(string sql, IEnumerable<(string name, object value)> paramaters, string[] colNames)
         {
             SqlStatements.Add((paramaters
                 .OrEmpty()
-                .Select((p, i) => $"@p{i} = {p}")
+                .Select((p, i) => $"{p.name} = {p.value}")
                 .JoinString("\n") + "\n\n" +
                 sql, colNames, new List<object[]>()));
         }
@@ -60,13 +60,13 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             SqlStatements[index].results.Add(row);
         }
 
-        public IReader Execute(string sql, IEnumerable<object> paramaters, string[] columnNames)
+        public IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters, string[] columnNames)
         {
             AddSqlStatement(sql, paramaters, columnNames);
             return new TestReader(this, Executor.Execute(sql, paramaters), SqlStatements.Count - 1);
         }
 
-        public IReader Execute(string sql, IEnumerable<object> paramaters)
+        public IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters)
         {
             throw new NotImplementedException("Use async method with columnNames");
         }

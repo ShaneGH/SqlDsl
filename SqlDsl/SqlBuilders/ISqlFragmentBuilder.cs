@@ -69,5 +69,15 @@ namespace SqlDsl.SqlBuilders
         /// Combine 2 statements with a >= condition
         /// </summary>
         (string setupSql, string sql) BuildGreaterThanEqualToCondition(string lhs, string rhs);
+
+        /// <summary>
+        /// Combine 2 statements with an IN condition
+        /// </summary>
+        (string setupSql, string sql) BuildInCondition(string lhs, string rhs);
+
+        /// <summary>
+        /// Combine 2 params with comma
+        /// </summary>
+        (string setupSql, string sql) BuildCommaCondition(string lhs, string rhs);
     }
 }

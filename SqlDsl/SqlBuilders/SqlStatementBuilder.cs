@@ -285,7 +285,7 @@ namespace SqlDsl.SqlBuilders
         (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlStringWithoutInnerQuery(IEnumerable<string> selectColumns)
         {
             // build WHERE part
-            var where = Where == null ? "" : $"WHERE {Where.Value.sql}";
+            var where = Where == null ? "" : $" WHERE {Where.Value.sql}";
 
             // build FROM part
             var primaryTable = SqlBuilder.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName);
@@ -312,7 +312,7 @@ namespace SqlDsl.SqlBuilders
 
             var query = new[]
             {
-                $"SELECT {selectColumns.JoinString(",")}",
+                $"\nSELECT {selectColumns.JoinString(",")}",
                 $"FROM ({primaryTable.sql}) " + SqlBuilder.WrapAlias(PrimaryTableAlias),
                 $"{_Joins.Select(j => j.sql).JoinString("\n")}",
                 orderBy

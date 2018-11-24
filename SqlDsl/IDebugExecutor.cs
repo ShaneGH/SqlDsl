@@ -11,11 +11,11 @@ namespace SqlDsl
         /// <summary>
         /// Execute a sql query and return a reader to read results
         /// </summary>
-        Task<IReader> ExecuteAsync(string sql, IEnumerable<object> paramaters, string[] columnNames);
+        Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters, string[] columnNames);
         
         /// <summary>
         /// Execute a sql query and return a reader to read results
         /// </summary>
-        IReader Execute(string sql, IEnumerable<object> paramaters, string[] columnNames);
+        IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters, string[] columnNames);
     }
 }

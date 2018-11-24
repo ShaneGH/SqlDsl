@@ -236,6 +236,27 @@ namespace SqlDsl.Utils
         }
 
         /// <summary>
+        /// Returns true if the input expression does not require any parameters to execute
+        /// </summary>
+        public static bool IsConstant(Expression expr)
+        {
+            switch (expr.NodeType)
+            {
+                case ExpressionType.NewArrayInit:
+                    return (expr as NewArrayExpression).Expressions.All(IsConstant);
+                case ExpressionType.Constant:
+                    return true;
+                case ExpressionType.MemberAccess:
+                    return IsConstant((expr as MemberExpression).Expression);
+                case ExpressionType.Call:
+                    var call = expr as MethodCallExpression;
+                    return (call.Object == null || IsConstant(call.Object)) && call.Arguments.All(IsConstant);
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
         /// If the input expression is an explicit or implicit cast, strip the cast expression off
         /// </summary>
         public static Expression RemoveConvert(Expression e)

@@ -26,7 +26,7 @@ namespace SqlDsl.Query
             var selectColumns = statement.SelectColumns.Select(Alias).ToArray();
             var propertyGraph = statement.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
 
-            return new CompiledQuery<TArgs, TResult>(sql, parameters, selectColumns, propertyGraph);
+            return new CompiledQuery<TArgs, TResult>(sql, parameters.ToArray(), selectColumns, propertyGraph);
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace SqlDsl.Query
 
             var col = statement.SelectColumns[i];
             var graph = new RootObjectPropertyGraph(typeof(TResult), i, col.RowNumberColumnIndex, col.DataType, ReflectionUtils.GetIEnumerableType(col.DataType) != null);
-            return new CompiledQuery<TArgs, TResult>(sqlBuilder.ToSql(), parameters, statement.SelectColumns.Select(Alias).ToArray(), graph);
+            return new CompiledQuery<TArgs, TResult>(sqlBuilder.ToSql(), parameters.ToArray(), statement.SelectColumns.Select(Alias).ToArray(), graph);
         }
 
         static string Alias(ISelectColumn c) => c.Alias;

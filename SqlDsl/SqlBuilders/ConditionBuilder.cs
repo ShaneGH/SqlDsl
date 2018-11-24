@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace SqlDsl.SqlBuilders
 {   
@@ -32,7 +33,8 @@ namespace SqlDsl.SqlBuilders
         /// <param name="otherParams">Any other parameters in the expression</param>
         /// <param name="equality">The body of the condition</param>
         /// <param name="paramaters">A list of parameters which may be added to</param>
-        public static (string setupSql, string sql, IEnumerable<string> queryObjectReferences) BuildCondition(this ISqlFragmentBuilder sqlBuilder, 
+        public static (string setupSql, string sql, IEnumerable<string> queryObjectReferences) BuildCondition(
+            this ISqlFragmentBuilder sqlBuilder, 
             ParameterExpression queryRoot, 
             ParameterExpression argsParam, 
             OtherParams otherParams, 
@@ -43,6 +45,8 @@ namespace SqlDsl.SqlBuilders
             {
                 case ExpressionType.Convert:
                     return sqlBuilder.BuildCondition(queryRoot, argsParam, otherParams, (equality as UnaryExpression).Operand, paramaters);
+                case ExpressionType.Call:
+                    return sqlBuilder.BuildCallCondition(queryRoot, argsParam, otherParams, equality as MethodCallExpression, paramaters);
                 case ExpressionType.AndAlso:
                     return sqlBuilder.BuildAndCondition(queryRoot, argsParam, otherParams, equality as BinaryExpression, paramaters);
                 case ExpressionType.OrElse:
@@ -63,6 +67,10 @@ namespace SqlDsl.SqlBuilders
                     return sqlBuilder.BuildMemberAccessCondition(queryRoot, argsParam, otherParams, equality as MemberExpression, paramaters);
                 case ExpressionType.Constant:
                     return BuildConstantCondition(equality as ConstantExpression, paramaters);
+                case ExpressionType.NewArrayInit:
+                    return BuildNewArrayCondition(sqlBuilder, queryRoot, argsParam, otherParams, equality as NewArrayExpression, paramaters);
+                case ExpressionType.Parameter:
+                    return BuildParameterExpression(equality as ParameterExpression, argsParam, paramaters);
                 default:
                     throw new NotImplementedException($"Cannot compile expression \"{equality}\" to SQL");
             }
@@ -75,18 +83,48 @@ namespace SqlDsl.SqlBuilders
         /// <param name="queryRoot">The parameter in the expression which represents the query object</param>
         /// <param name="argsParam">The parameter in the expression which represents the args of the query</param>
         /// <param name="otherParams">Any other parameters in the expression</param>
-        /// <param name="equality">The body of the condition</param>
         /// <param name="paramaters">A list of parameters which may be added to</param>
         /// <param name="combinator">The function to actully build the condition</param>
-        static ConditionResult BuildBinaryCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, BinaryExpression and, IList<object> paramaters, Func<string, string, (string setupSql, string sql)> combinator)
-        {
-            var l = sqlBuilder.BuildCondition(queryRoot, argsParam, otherParams, and.Left, paramaters);
-            var r = sqlBuilder.BuildCondition(queryRoot, argsParam, otherParams, and.Right, paramaters);
-            var combo = combinator(l.Item2, r.Item2);
-            var references = l.Item3.Concat(r.Item3).Enumerate();
+        static ConditionResult BuildBinaryCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, BinaryExpression and, IList<object> paramaters, Func<string, string, (string setupSql, string sql)> combinator) =>
+            BuildBinaryCondition(
+                sqlBuilder, 
+                queryRoot, 
+                argsParam, 
+                otherParams, 
+                sqlBuilder.BuildCondition(queryRoot, argsParam, otherParams, and.Left, paramaters), 
+                sqlBuilder.BuildCondition(queryRoot, argsParam, otherParams, and.Right, paramaters), 
+                paramaters, 
+                combinator);
 
+        /// <summary>
+        /// Build a condition from an expression
+        /// </summary>
+        /// <param name="sqlBuilder">The sql builder to use to generate scripts</param>
+        /// <param name="queryRoot">The parameter in the expression which represents the query object</param>
+        /// <param name="argsParam">The parameter in the expression which represents the args of the query</param>
+        /// <param name="otherParams">Any other parameters in the expression</param>
+        /// <param name="paramaters">A list of parameters which may be added to</param>
+        /// <param name="combinator">The function to actully build the condition</param>
+        static ConditionResult BuildBinaryCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, ConditionResult lhs, ConditionResult rhs, IList<object> paramaters, Func<string, string, (string setupSql, string sql)> combinator, bool checkForEmpty = false)
+        {
+            (string setupSql, string sql) combo;
+            if (checkForEmpty)
+            {
+                if (string.IsNullOrWhiteSpace(lhs.Item2))
+                    combo = (null, rhs.Item2);
+                else if (string.IsNullOrWhiteSpace(rhs.Item2))
+                    combo = (null, lhs.Item2);
+                else
+                    combo = combinator(lhs.Item2, rhs.Item2);
+            }
+            else
+            {
+                combo = combinator(lhs.Item2, rhs.Item2);
+            }
+
+            var references = lhs.Item3.Concat(rhs.Item3).Enumerate();
             return (
-                new[]{r.Item1, r.Item1, combo.setupSql}.RemoveNulls().JoinString("\n"),
+                new[]{rhs.Item1, rhs.Item1, combo.setupSql}.RemoveNulls().JoinString("\n"),
                 combo.sql,
                 references);
         }
@@ -102,6 +140,53 @@ namespace SqlDsl.SqlBuilders
         /// <param name="paramaters">A list of parameters which may be added to</param>
         static ConditionResult BuildAndCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, BinaryExpression and, IList<object> paramaters) =>
             sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, and, paramaters, sqlBuilder.BuildAndCondition);
+
+        /// <summary>
+        /// Build a condition from a method call expression
+        /// </summary>
+        /// <param name="sqlBuilder">The sql builder to use to generate scripts</param>
+        /// <param name="queryRoot">The parameter in the expression which represents the query object</param>
+        /// <param name="argsParam">The parameter in the expression which represents the args of the query</param>
+        /// <param name="otherParams">Any other parameters in the expression</param>
+        /// <param name="equality">The body of the condition</param>
+        /// <param name="paramaters">A list of parameters which may be added to</param>
+        static ConditionResult BuildCallCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, MethodCallExpression call, IList<object> paramaters)
+        {
+            var (isIn, lhs, rhs) = ReflectionUtils.IsIn(call);
+            if (isIn)
+                return BuildInCondition(sqlBuilder, queryRoot, argsParam, otherParams, lhs, rhs, paramaters);
+                
+            throw new NotImplementedException($"Cannot compile expression \"{argsParam}\" to SQL");
+        }
+
+        const string Param = @"\s*@p\d+\s*";
+
+        // @p0, @p1, ...
+        static readonly Regex MultiParamRegex = new Regex($"^{Param}(,{Param})*$", RegexOptions.Compiled);
+
+        static ConditionResult BuildInCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, Expression lhs, Expression rhs, IList<object> paramaters)
+        {
+            var l = BuildCondition(sqlBuilder, queryRoot, argsParam, otherParams, lhs, paramaters);
+            var r = BuildCondition(sqlBuilder, queryRoot, argsParam, otherParams, rhs, paramaters);
+
+            // TODO: can I relax this condition
+            if (!MultiParamRegex.IsMatch(r.sql))
+                throw new InvalidOperationException($"The values in an \"IN (...)\" clause must be a real parameter value. " + 
+                $"They cannot come from another table:\n{sqlBuilder.BuildInCondition(l.sql, r.sql).sql}");
+
+            // TODO: this method will require find and replace in strings (inefficient)
+            // TODO: only array init supported
+            r = rhs.NodeType != ExpressionType.NewArrayInit ?
+                (
+                    r.setupSql, 
+                    // if there is only one parameter, it is an array and will need to be
+                    // split into parts when rendering
+                    $"{r.sql}{SqlStatementConstants.ParamInFlag}", 
+                    r.queryObjectReferences) :
+                r;
+
+            return sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, l, r, paramaters, sqlBuilder.BuildInCondition);
+        }
 
         /// <summary>
         /// Build an or condition from an expression
@@ -285,7 +370,7 @@ namespace SqlDsl.SqlBuilders
                 referencedTableAlias.ToEnumerable()
             );
         }
-
+        
         /// <summary>
         /// Build a condition from an expression
         /// </summary>
@@ -293,6 +378,51 @@ namespace SqlDsl.SqlBuilders
         /// <param name="paramaters">A list of parameters which may be added to</param>
         static ConditionResult BuildConstantCondition(ConstantExpression constant, IList<object> paramaters) => 
             AddToParamaters(constant.Value, paramaters);
+
+        /// <summary>
+        /// Build a condition from an expression
+        /// </summary>
+        /// <param name="paramaters">A list of parameters which may be added to</param>
+        static ConditionResult BuildNewArrayCondition(this ISqlFragmentBuilder sqlBuilder, 
+            ParameterExpression queryRoot, 
+            ParameterExpression argsParam, 
+            OtherParams otherParams, 
+            NewArrayExpression array, 
+            IList<object> paramaters)
+        {
+            return array.Expressions
+                .Select(e => BuildCondition(
+                    sqlBuilder,
+                    queryRoot,
+                    argsParam,
+                    otherParams,
+                    e,
+                    paramaters))
+                .Aggregate(("", "", Enumerable.Empty<string>()), Combine);
+
+            ConditionResult Combine(ConditionResult x, ConditionResult y)
+            {
+
+                return BuildBinaryCondition(sqlBuilder, 
+                    queryRoot, 
+                    argsParam, 
+                    otherParams, 
+                    x, y, 
+                    paramaters,
+                    sqlBuilder.BuildCommaCondition,
+                    checkForEmpty: true);
+            }
+        }
+
+        /// <summary>
+        /// Build a condition from a parameter expression
+        static ConditionResult BuildParameterExpression(ParameterExpression expression, ParameterExpression argsParam, IList<object> paramaters)
+        {
+            if (expression != argsParam)
+                throw new NotImplementedException($"Cannot compile expression \"{expression}\" to SQL");
+
+            return AddToParamaters(QueryArgAccessor.Create(expression), paramaters);
+        }
 
         /// <summary>
         /// Build a condition from an expression

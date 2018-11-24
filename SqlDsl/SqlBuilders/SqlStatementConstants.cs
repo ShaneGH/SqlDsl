@@ -25,8 +25,13 @@ namespace SqlDsl.SqlBuilders
         public const string RootObjectAlias = "##root";
         
         /// <summary>
-        /// A strnig tp prefix columns names, whose data will be used as a constructor arg
+        /// A string to prefix columns names, whose data will be used as a constructor arg
         /// </summary>
         public const string ConstructorArgPrefixAlias = "##ca";
+        
+        /// <summary>
+        /// A string to prefix parameters which will be split into multiple values for an IN statement
+        /// </summary>
+        public const string ParamInFlag = "##in";
     }
 }

@@ -72,5 +72,9 @@ namespace SqlDsl.SqlBuilders
         /// Combine 2 statements with a >= condition
         /// </summary>
         public virtual (string setupSql, string sql) BuildGreaterThanEqualToCondition(string lhs, string rhs) => (null, $"({lhs} >= {rhs})");
+
+        public (string setupSql, string sql) BuildInCondition(string lhs, string rhs) => (null, $"({lhs} IN ({rhs}))");
+
+        public (string setupSql, string sql) BuildCommaCondition(string lhs, string rhs) => (null, $"{lhs}, {rhs}");
     }
 }
