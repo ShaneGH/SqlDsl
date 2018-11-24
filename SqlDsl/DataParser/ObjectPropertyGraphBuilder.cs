@@ -292,6 +292,8 @@ namespace SqlDsl.DataParser
             }
         }
 
+        static readonly int[] EmptyInt = new int[0];
+
         /// <summary>
         /// Remove all elements from an array which occur before or in a pattern. Throws exception if pattern not found
         /// </summary>
@@ -317,10 +319,22 @@ namespace SqlDsl.DataParser
                 }
             }
 
-            if (throwErrorIfPatternNotFound && pI != pattern.Length)
+            if (pI != pattern.Length)
             {
-                throw new InvalidOperationException($"Could not find pattern in array" + 
-                    $"\npattern: [{pattern.JoinString(",")}]\narray: [{array.JoinString(",")}]");
+                // The pattern is longer than the array, and 
+                // the array is fully contained in the pattern.
+                // this will happen when referenceing a parnt object in a
+                // child map
+                if (aI == array.Length)
+                {
+                    return EmptyInt;
+                }
+
+                if (throwErrorIfPatternNotFound)
+                {
+                    throw new InvalidOperationException($"Could not find pattern in array" + 
+                        $"\npattern: [{pattern.JoinString(",")}]\narray: [{array.JoinString(",")}]");
+                }
             }
 
             return array

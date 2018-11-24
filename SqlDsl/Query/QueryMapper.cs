@@ -382,17 +382,26 @@ namespace SqlDsl.Query
         static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForConstructor(BuildMapState state, NewExpression expr, string toPrefix = null)
         { 
             return expr.Arguments
-                .Select(ex => BuildMap(state, ex, MapType.Other, toPrefix: null, isExprTip: true))
+                .Select(ex => (type: ex.Type, map: BuildMap(state, ex, MapType.Other, toPrefix: null, isExprTip: true)))
                 .Select((map, i) => (
-                    map.properties.Select(p => new MappedProperty(
-                        p.FromParamRoot,
-                        p.From, 
-                        CombineStrings(toPrefix, CombineStrings($"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}", p.To)), 
-                        p.MappedPropertyType,
-                        constructorArgs: p.PropertySegmentConstructors.Prepend(expr.Constructor).ToArray())), 
-                        // TODO: $"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}" is repeated in code a lot
-                    map.tables.Select(x => new MappedTable(x.From, CombineStrings($"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}", x.To)))))
+                    map.Item2.properties.SelectMany(p => CreateContructorArg(p, map.type, i)), 
+                    // TODO: $"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}" is repeated in code a lot
+                    map.map.tables.Select(x => new MappedTable(x.From, CombineStrings($"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}", x.To)))))
                 .AggregateTuple2();
+
+            IEnumerable<MappedProperty> CreateContructorArg(MappedProperty arg, Type argType, int argIndex)
+            {
+                var many = PropertyRepresentsTable(state, arg) ?
+                    SplitMapOfComplexProperty(arg, argType) :
+                    arg.ToEnumerable();
+
+                return many.Select(q => new MappedProperty(
+                    q.FromParamRoot,
+                    q.From, 
+                    CombineStrings(toPrefix, CombineStrings($"{SqlStatementConstants.ConstructorArgPrefixAlias}{argIndex}", q.To)), 
+                    q.MappedPropertyType,
+                    constructorArgs: q.PropertySegmentConstructors.Prepend(expr.Constructor).ToArray()));
+            }
         }
 
         static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMemberAccess(BuildMapState state, MemberExpression expr, string toPrefix = null)
@@ -423,13 +432,7 @@ namespace SqlDsl.Query
                         {
                             if (PropertyRepresentsTable(state, x))
                             {
-                                var t = m.binding.Member
-                                    .GetPropertyOrFieldType();
-
-                                t = ReflectionUtils.GetIEnumerableType(t) ?? t;
-                                return t
-                                    .GetFieldsAndProperties()
-                                    .Select(mem => new MappedProperty(x.FromParamRoot, CombineStrings(x.From, mem.name), CombineStrings(x.To, mem.name), mem.type));
+                                return SplitMapOfComplexProperty(x, m.binding.Member.GetPropertyOrFieldType());
                             }
 
                             return new MappedProperty(
@@ -441,6 +444,14 @@ namespace SqlDsl.Query
                         }),
                         m.map.tables.Select(x => new MappedTable(x.From, CombineStrings(m.memberName, x.To))))))
                 .AggregateTuple2();
+        }
+
+        static IEnumerable<MappedProperty> SplitMapOfComplexProperty(MappedProperty property, Type propertyType)
+        {
+            propertyType = ReflectionUtils.GetIEnumerableType(propertyType) ?? propertyType;
+            return propertyType
+                .GetFieldsAndProperties()
+                .Select(mem => new MappedProperty(property.FromParamRoot, CombineStrings(property.From, mem.name), CombineStrings(property.To, mem.name), mem.type));
         }
 
         static bool PropertyRepresentsTable(BuildMapState state, MappedProperty property)

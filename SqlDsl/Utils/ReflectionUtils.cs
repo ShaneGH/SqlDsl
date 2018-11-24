@@ -381,7 +381,10 @@ namespace SqlDsl.Utils
                 case ExpressionType.MemberAccess:
                     var acc = e as MemberExpression;
                     var (isPropertyChain1, root1, chain1) = GetPropertyChain(acc.Expression, allowOne: allowOne, allowSelect: allowSelect, allow1Join: allow1Join);
-                    return (isPropertyChain1, root1, chain1.Append(acc.Member.Name));
+                    
+                    return isPropertyChain1 ?
+                        (isPropertyChain1, root1, chain1.Append(acc.Member.Name)) :
+                        (false, null, null);
                     
                 case ExpressionType.Parameter:
                     return (true, e as ParameterExpression, Enumerable.Empty<string>());

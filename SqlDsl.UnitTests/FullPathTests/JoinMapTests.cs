@@ -309,56 +309,103 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.Tags.Sport, john.tags[2].tag);
         }
 
+        class Cls1
+        {
+            public Cls2[] tags;
+        }
+
+        class Cls2
+        {
+            public Class cls;
+        }
+
         [Test]
-        [Ignore("TODO")]
-        public void Join2Levels_UsesDataFromAbove_1()
+        public void Join2Levels_UsesDataFromAbove_1_1()
         {
             // arrange
             // act
-            // var data = await FullyJoinedQuery()
-            //     .Map(q => new
-            //     {
-            //         tags = q.PersonClasses
-            //             .Joined(q.Classes)
-            //             .Joined(q.ClassTags)
-            //             .Select(tag => new 
-            //             {
-            //                 classes = tag.JoinedBack(q.Classes)
-            //             })
-            //             .ToArray()
-            //     })
-            //     .ToListAsync(Executor, logger: Logger);
+            var data = FullyJoinedQuery()
+                .Where(q => q.ThePerson.Id == Data.People.John.Id)
+                .Map(q => new Cls1
+                {
+                    tags = q.PersonClasses
+                        .Joined(q.Classes)
+                        .Joined(q.ClassTags)
+                        .Joined(q.Tags)
+                        .Select(tag => new Cls2
+                        {
+                            cls = q.Classes.One()
+                        })
+                        .ToArray()
+                })
+                .ToList(Executor, logger: Logger);
 
             // assert
+            Assert.AreEqual(1, data.Count);
+            Assert.AreEqual(3, data[0].tags.Length);
+            Assert.AreEqual(Data.Classes.Tennis, data[0].tags[0].cls);
+            Assert.AreEqual(Data.Classes.Tennis, data[0].tags[1].cls);
+            Assert.AreEqual(Data.Classes.Archery, data[0].tags[2].cls);
         }
 
         [Test]
-        [Ignore("TODO")]
+        public void Join2Levels_UsesDataFromAbove_1_3()
+        {
+            // arrange
+            // act
+            var data = FullyJoinedQuery()
+                .Where(q => q.ThePerson.Id == Data.People.John.Id)
+                .Map(q => new
+                {
+                    tags = q.PersonClasses
+                        .Joined(q.Classes)
+                        .Joined(q.ClassTags)
+                        .Joined(q.Tags)
+                        .Select(tag => new
+                        {
+                            cls = q.Classes.One()
+                        })
+                        .ToArray()
+                })
+                .ToList(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count);
+            Assert.AreEqual(3, data[0].tags.Length);
+            Assert.AreEqual(Data.Classes.Tennis, data[0].tags[0].cls);
+            Assert.AreEqual(Data.Classes.Tennis, data[0].tags[1].cls);
+            Assert.AreEqual(Data.Classes.Archery, data[0].tags[2].cls);
+        }
+
+        [Test]
         public void Join2Levels_UsesDataFromAbove_2()
         {
-            // // arrange
-            // // act
-            // var data = await FullyJoinedQuery()
-            //     .Map(q => new
-            //     {
-            //         tags = q.PersonClasses
-            //             .Joined(q.Classes)
-            //             .Joined(q.ClassTags)
-            //             .Select(tag => new 
-            //             {
-            //                 classes = tag
-            //                     .JoinedBack(q.Classes)
-            //                     .Select(c => c.Name)
-            //             })
-            //             .ToArray()
-            //     })
-            //     .ToListAsync(Executor, logger: Logger);
+            // arrange
+            // act
+            var data = FullyJoinedQuery()
+                .Where(q => q.ThePerson.Id == Data.People.John.Id)
+                .Map(q => new
+                {
+                    tags = q.PersonClasses
+                        .Joined(q.Classes)
+                        .Joined(q.ClassTags)
+                        .Select(tag => new 
+                        {
+                            cls = q.Classes.One().Name
+                        })
+                        .ToArray()
+                })
+                .ToList(Executor, logger: Logger);
 
-            // // assert
+            // assert
+            Assert.AreEqual(1, data.Count);
+            Assert.AreEqual(3, data[0].tags.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, data[0].tags[0].cls);
+            Assert.AreEqual(Data.Classes.Tennis.Name, data[0].tags[1].cls);
+            Assert.AreEqual(Data.Classes.Archery.Name, data[0].tags[2].cls);
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task Join2Levels_UsesDataFromAbove_3()
         {
             // arrange
@@ -393,18 +440,15 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, john.classes.Length);
             Assert.AreEqual(2, john.classes[0].data.Length);
             Assert.AreEqual(1, john.classes[1].data.Length);
-            
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.classes[0].data[0].className);
-            Assert.AreEqual(Data.People.John.Name, john.classes[0].data[0].personName);
-            Assert.AreEqual(Data.Tags.BallSport.Name, john.classes[0].data[0].tagName);
-            
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.classes[0].data[1].className);
-            Assert.AreEqual(Data.People.John.Name, john.classes[0].data[1].personName);
-            Assert.AreEqual(Data.Tags.BallSport.Name, john.classes[0].data[1].tagName);
-            
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.classes[1].data[0].className);
-            Assert.AreEqual(Data.People.John.Name, john.classes[1].data[0].personName);
-            Assert.AreEqual(Data.Tags.BallSport.Name, john.classes[1].data[0].tagName);
+
+            var tag1 = new { tagName = Data.Tags.Sport.Name, className = Data.Classes.Tennis.Name, personName = Data.People.John.Name };
+            Assert.AreEqual(tag1, john.classes[0].data[0]);
+
+            var tag2 = new { tagName = Data.Tags.BallSport.Name, className = Data.Classes.Tennis.Name, personName = Data.People.John.Name };
+            Assert.AreEqual(tag2, john.classes[0].data[1]);
+
+            var tag3 = new { tagName = Data.Tags.Sport.Name, className = Data.Classes.Archery.Name, personName = Data.People.John.Name };
+            Assert.AreEqual(tag3, john.classes[1].data[0]);
         }
     }
 }
