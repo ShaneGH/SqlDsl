@@ -96,14 +96,11 @@ namespace SqlDsl
                     .Map(x => new 
                     {
                         name = x.person.Name,
-                        classes = x.personClass
-                            .Joined(x.cls)
+                        classes = x.cls
                             .Select(cl => new 
                             {
                                 name = cl.Name,
-                                tags = cl
-                                    .Joined(x.classTags)
-                                    .Joined(x.tags)
+                                tags = x.tags
                                     .Select(z => z.Name)
                                     .ToArray()
                             })

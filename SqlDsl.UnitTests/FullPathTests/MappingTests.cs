@@ -683,31 +683,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("BLABLA")]
-        public void JoinInMap_WithInvalidJoin_ThrowsException()
-        {
-            // arrange
-            // act
-            // assert
-            Assert.Throws(typeof(InvalidOperationException), () => 
-                FullyJoinedQuery()
-                    .Map(query => new SmartJoinedClass1
-                    { 
-                        PersonName = query.ThePerson.Name,
-                        FavouriteClasses = query.Classes
-                            .Select(c => new SmartJoinedClass2
-                            {
-                                ClassName = c.Name,
-                                TagNames = query.Tags
-                                    .Select(t => t.Name)
-                                    .ToArray()
-                            })
-                            .ToArray()
-                    })
-                    .Compile());
-        }
-
-        [Test]
         public async Task JoinInMap_With2LevelJoin()
         {
             // arrange
