@@ -525,7 +525,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task JoinInMap_WithAnonynouseObjects()
         {
             // arrange
@@ -734,7 +733,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task JoinInMap_WithConstructorArgs()
         {
             // arrange

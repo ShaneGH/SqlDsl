@@ -304,6 +304,22 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(77, data.First().IntValue);
+            Assert.AreEqual(77, data.ElementAt(1).IntValue);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task MapAndReturnArg3()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<AnInt>()
+                .Map((p, a) => a.IntValue)
+                .ToIEnumerableAsync(Executor, new AnInt { IntValue = 77 }, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
             Assert.AreEqual(77, data.First());
             Assert.AreEqual(77, data.ElementAt(1));
         }

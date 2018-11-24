@@ -91,7 +91,8 @@ namespace SqlDsl.Query
                 throw new InvalidOperationException("The query must have at least one select table.");
             }
 
-            var state = new BuildMapState(query.PrimaryTableMember.Value.name, mutableParameters, mapper.Parameters[0], wrappedStatement);
+            var argsParam = mapper.Parameters.Count > 1 ? mapper.Parameters[1] : null;
+            var state = new BuildMapState(query.PrimaryTableMember.Value.name, mutableParameters, mapper.Parameters[0], argsParam, wrappedStatement);
             var (resultType, properties, tables) = BuildMapFromRoot(state, mapper.Body);
 
             switch (resultType)
@@ -193,14 +194,28 @@ namespace SqlDsl.Query
             var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(_expr, allowOne: true, allowSelect: true);
             if (isPropertyChain)
             {
+                if (root == state.ArgsObject)
+                {
+                    throw new NotSupportedException();
+                    // var result = QueryArgAccessor.Create(root, _expr);
+                    // state.Parameters.Add(result);
+                    // var resultType = BuildMapResult.SimpleProp;//ReflectionUtils.GetIEnumerableType(_expr.Type) == null ?
+                    //     // BuildMapResult.SingleComplexProp :
+                    //     // BuildMapResult.MultiComplexProp;
+
+                    // return (
+                    //     resultType,
+                    //     new MappedProperty(null, "@p" + (state.Parameters.Count - 1), null, expr.Type).ToEnumerable(),
+                    //     EmptyMapped
+                    // );
+                }
+
                 if (root != state.QueryObject)
                     throw new InvalidOperationException("Unable to understand mapping statement: " + expr);
 
                 var pChain = chain.JoinString(".");
                 if (pChain == "")
-                {
                     throw new InvalidOperationException("You must provide a valid mapping with the Map(...) method.");
-                }
 
                 foreach (var property in state.WrappedSqlStatement.Tables)
                 {
@@ -617,14 +632,16 @@ namespace SqlDsl.Query
         {
             public readonly List<object> Parameters;
             public readonly ParameterExpression QueryObject;
+            public readonly ParameterExpression ArgsObject;
             public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
             public readonly ISqlStatement WrappedSqlStatement;
             public readonly string PrimarySelectTable;
 
-            public BuildMapState(string primarySelectTable, List<object> parameters, ParameterExpression queryObject, ISqlStatement wrappedSqlStatement)
+            public BuildMapState(string primarySelectTable, List<object> parameters, ParameterExpression queryObject, ParameterExpression argsObject, ISqlStatement wrappedSqlStatement)
             {
                 Parameters = parameters;
                 QueryObject = queryObject;
+                ArgsObject = argsObject;
                 WrappedSqlStatement = wrappedSqlStatement;
                 PrimarySelectTable = primarySelectTable;
             }

@@ -50,28 +50,28 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
+        [Ignore("Fails because of join to PurchasesByMeForMyClasses")]
         public async Task SimpleMapOn1Table()
         {
             // arrange
             // act
             var data = await FullyJoinedQuery()
-                // .Map(p => new SimpleMapClass
-                // { 
-                //     TheName = p.Name,
-                //     Inner = new SimpleMapClass
-                //     {
-                //         TheName = p.Name
-                //     }
-                // })
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .Map(p => new
+                { 
+                    TheName = p.ThePerson.Name,
+                    Inner = new
+                    {
+                        TheName = p.ThePerson.Name
+                    }
+                })
+                .ToListAsync(Executor, logger: Logger);
 
             // assert
-            // Assert.AreEqual(2, data.Count());
-            // Assert.AreEqual(Data.People.John.Name, data.First().TheName);
-            // Assert.AreEqual(Data.People.John.Name, data.First().Inner.TheName);
-            // Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).TheName);
-            // Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).Inner.TheName);
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John.Name, data[0].TheName);
+            Assert.AreEqual(Data.People.John.Name, data[0].Inner.TheName);
+            Assert.AreEqual(Data.People.Mary.Name, data[1].TheName);
+            Assert.AreEqual(Data.People.Mary.Name, data[1].Inner.TheName);
         }
     }
 }
