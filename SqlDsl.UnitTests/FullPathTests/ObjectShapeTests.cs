@@ -80,6 +80,22 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.People.Mary, data.ElementAt(1));
         }
 
+        [Test]  
+        public async Task SelectWith0LevelsAndMap()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<Person>()
+                .From(result => result)
+                .Map(x => x.Id)
+                .ToListAsync(Executor, logger: Logger);
+                
+            // assert
+            Assert.AreEqual(2, data.Count);
+            Assert.AreEqual(Data.People.John.Id, data[0]);
+            Assert.AreEqual(Data.People.Mary.Id, data[1]);
+        }
+
         [Test]
         public async Task SelectWith1Levels()
         {

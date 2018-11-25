@@ -219,6 +219,16 @@ namespace SqlDsl.Query
 
                 foreach (var property in state.WrappedSqlStatement.Tables)
                 {
+                    if (property.Alias == SqlStatementConstants.RootObjectAlias && 
+                        !pChain.Contains("."))
+                    {
+                        return (
+                            BuildMapResult.SimpleProp,
+                            new[]{ new MappedProperty(root, pChain, null, GetSimplePropertyCellType(expr, state.QueryObject, 1)) },
+                            EmptyMappedTables
+                        );
+                    }
+
                     if (pChain == property.Alias)
                     {
                         var resultType = ReflectionUtils.GetIEnumerableType(_expr.Type) == null ?
@@ -239,7 +249,7 @@ namespace SqlDsl.Query
                     {
                         return (
                             BuildMapResult.SimpleProp,
-                            new[]{ new MappedProperty(root, pChain, null, GetSimplePropertyCellType(expr, state.QueryObject)) },
+                            new[]{ new MappedProperty(root, pChain, null, GetSimplePropertyCellType(expr, state.QueryObject, 2)) },
                             EmptyMappedTables
                         );
                     }
@@ -256,7 +266,7 @@ namespace SqlDsl.Query
             return (BuildMapResult.Map, properties, tables);
         }
 
-        static Type GetSimplePropertyCellType(Expression simpleProperty, ParameterExpression queryRoot)
+        static Type GetSimplePropertyCellType(Expression simpleProperty, ParameterExpression queryRoot, int expectedChainLength)
         {
             var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(simpleProperty, allowOne: true, allowSelect: true);
             if (!isPropertyChain)
@@ -265,7 +275,7 @@ namespace SqlDsl.Query
             }
 
             chain = chain.Enumerate();
-            if (chain.Count() != 2)
+            if (chain.Count() != expectedChainLength)
             {
                 throw new InvalidOperationException($"Cannot find data cell type for expression {simpleProperty}");
             }
