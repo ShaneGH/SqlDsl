@@ -31,7 +31,7 @@ namespace SqlDsl.Sqlite
         public async Task<(bool hasRow, object[] row)> GetRowAsync()
         {
             // read the next row
-            if (!(await DataReader.ReadAsync()))
+            if (!(await DataReader.ReadAsync().ConfigureAwait(false)))
                 return (false, null);
 
             // load row into array

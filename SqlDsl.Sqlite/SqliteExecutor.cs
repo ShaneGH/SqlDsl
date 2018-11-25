@@ -25,7 +25,7 @@ namespace SqlDsl.Sqlite
         /// Execute a sqlite query and return a reader to read results
         /// </summary>
         public async Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>
-            new SqliteReader(await CreateCommand(sql, paramaters).ExecuteReaderAsync());
+            new SqliteReader(await CreateCommand(sql, paramaters).ExecuteReaderAsync().ConfigureAwait(false));
 
         /// <summary>
         /// Execute a sqlite query and return a reader to read results

@@ -38,7 +38,7 @@ namespace SqlDsl
             var rows = new List<object[]>();
 
             (bool, object[]) row;
-            while ((row = await reader.GetRowAsync()).Item1)
+            while ((row = await reader.GetRowAsync().ConfigureAwait(false)).Item1)
                 rows.Add(row.Item2);
 
             return rows;

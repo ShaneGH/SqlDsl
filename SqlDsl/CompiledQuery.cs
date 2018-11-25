@@ -67,8 +67,12 @@ namespace SqlDsl
             var timer = new Timer(true);
 
             // execute and get all rows
-            var reader = await executor.ExecuteDebugAsync(sql, BuildParameters(args), SelectColumns);
-            var results = await reader.GetRowsAsync();
+            var reader = await executor
+                .ExecuteDebugAsync(sql, BuildParameters(args), SelectColumns)
+                .ConfigureAwait(false);
+            var results = await reader
+                .GetRowsAsync()
+                .ConfigureAwait(false);
 
             if (logger.CanLogInfo(LogMessages.ExecutedQuery))
                 logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
@@ -167,7 +171,7 @@ namespace SqlDsl
         public async Task<List<TResult>> ToListAsync(IExecutor executor, TArgs args, ILogger logger = null)
         {
             var timer = new Timer(true);
-            var enumerable = await ToIEnumerableAsync(executor, args, logger);
+            var enumerable = await ToIEnumerableAsync(executor, args, logger).ConfigureAwait(false);
             var result = enumerable.ToList();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
@@ -193,7 +197,7 @@ namespace SqlDsl
         public async Task<TResult[]> ToArrayAsync(IExecutor executor, TArgs args, ILogger logger = null)
         {
             var timer = new Timer(true);
-            var enumerable = await ToIEnumerableAsync(executor, args, logger);
+            var enumerable = await ToIEnumerableAsync(executor, args, logger).ConfigureAwait(false);
             var result = enumerable.ToArray();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
@@ -268,13 +272,13 @@ namespace SqlDsl
         public IEnumerable<TResult> ToIEnumerable(IExecutor executor, ILogger logger = null) => Worker.ToIEnumerable(executor, null, logger: logger);
 
         // <inheritdoc />
-        public async Task<List<TResult>> ToListAsync(IExecutor executor, ILogger logger = null) => (await ToIEnumerableAsync(executor, logger)).ToList();
+        public async Task<List<TResult>> ToListAsync(IExecutor executor, ILogger logger = null) => (await ToIEnumerableAsync(executor, logger).ConfigureAwait(false)).ToList();
 
         // <inheritdoc />
         public List<TResult> ToList(IExecutor executor, ILogger logger = null) => ToIEnumerable(executor, logger).ToList();
 
         // <inheritdoc />
-        public async Task<TResult[]> ToArrayAsync(IExecutor executor, ILogger logger = null) => (await ToIEnumerableAsync(executor, logger)).ToArray();
+        public async Task<TResult[]> ToArrayAsync(IExecutor executor, ILogger logger = null) => (await ToIEnumerableAsync(executor, logger).ConfigureAwait(false)).ToArray();
 
         // <inheritdoc />
         public TResult[] ToArray(IExecutor executor, ILogger logger = null) => ToIEnumerable(executor, logger).ToArray();
