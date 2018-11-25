@@ -19,10 +19,21 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public override int RowNumberColumnIndex { get; }
 
-        public InnerQuerySelectColumn(string name, string alias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors, SqlStatementBuilder qb)
+        public InnerQuerySelectColumn(IEnumerable<(string table, string column)> representsColumns, string alias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors, SqlStatementBuilder qb)
             : base(alias, isRowNumber, dataType, argConstructors)
         {
-            RowNumberColumnIndex = qb.InnerStatement.SelectColumns[name].RowNumberColumnIndex;
+            int col = 0;
+            foreach (var ta in representsColumns)
+            {
+                if (ta.column != null && !ta.column.StartsWith("@"))
+                {
+                    // TODO: Math.Max should work for now, but will not
+                    // work when tables are joined multiple times
+                    col = Math.Max(col, qb.InnerStatement.SelectColumns[ta.column].RowNumberColumnIndex);
+                }
+            }
+
+            RowNumberColumnIndex = col;
         }
     }
 }

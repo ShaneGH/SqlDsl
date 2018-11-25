@@ -32,6 +32,8 @@ namespace SqlDsl.Query
         /// The joins applied to the query
         /// </summary>
         readonly List<Join> Joins = new List<Join>();
+
+        public readonly ISqlFragmentBuilder SqlFragmentBuilder = new TSqlBuilder();
         
         /// <summary>
         /// The WHERE part of the query

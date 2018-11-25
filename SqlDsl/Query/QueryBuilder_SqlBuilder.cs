@@ -66,7 +66,7 @@ namespace SqlDsl.Query
 
             // create output objects
             var param = new List<object>();
-            var builder = new SqlStatementBuilder<TSqlBuilder>();
+            var builder = new SqlStatementBuilder(SqlFragmentBuilder);
 
             // Set the SELECT table
             builder.SetPrimaryTable(PrimaryTableName, PrimaryTableMember.Value.name);
@@ -90,8 +90,8 @@ namespace SqlDsl.Query
             // Add select columns to builder
             foreach (var col in selectColumns)
             {
-                var alias = col.table == SqlStatementConstants.RootObjectAlias ? null : $"{col.table}.{col.column.name}";
-                builder.AddSelectColumn(col.column.dataType, col.column.name, col.table, alias);
+                var alias = col.table == SqlStatementConstants.RootObjectAlias ? col.column.name : $"{col.table}.{col.column.name}";
+                builder.AddSelectColumn(col.column.dataType, SqlFragmentBuilder.BuildSelectColumn(col.table, col.column.name), alias, new [] {(col.table, col.column.name)});
             }
 
             // add each join

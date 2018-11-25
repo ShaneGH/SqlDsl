@@ -17,14 +17,16 @@ namespace SqlDsl.Query
     {
         readonly QueryBuilder<TSqlBuilder, TArgs, TResult> Query;
         readonly Expression<Func<TResult, TArgs, TMapped>> Mapper;
+        readonly ISqlFragmentBuilder SqlFragmentBuilder = new TSqlBuilder();
         
         public QueryMapper(QueryBuilder<TSqlBuilder, TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
         {
             Query = query ?? throw new ArgumentNullException(nameof(query));
             Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            SqlFragmentBuilder = query.SqlFragmentBuilder;
         }
 
-        static SqlStatementBuilder ToSqlBuilder(IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
+        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var rowIdPropertyMap = tables
                 .Select(t => (rowIdColumnName: $"{t.From}.{SqlStatementConstants.RowIdName}", resultClassProperty: t.To))
@@ -38,16 +40,19 @@ namespace SqlDsl.Query
                     propertySegmentConstructors: x.PropertySegmentConstructors))
                 .Enumerate();
 
-            var builder = new SqlStatementBuilder<TSqlBuilder>();
+            var builder = new SqlStatementBuilder(sqlFragmentBuilder);
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
 
             foreach (var col in mappedValues)
             {
+                var table = (col.from ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias;
                 builder.AddSelectColumn(
                     col.type,
-                    col.from, 
-                    tableName: (col.from ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias, 
-                    alias: col.to,
+                    sqlFragmentBuilder.BuildSelectColumn(
+                        table, 
+                        col.from),
+                    col.to,
+                    new [] { (table, col.from) },
                     argConstructors: col.propertySegmentConstructors);
             }
 
@@ -63,7 +68,7 @@ namespace SqlDsl.Query
         public ICompiledQuery<TArgs, TMapped> Compile(ILogger logger = null)
         {
             var timer = new Timer(true);
-            var result = Compile(Query, Mapper, logger: logger);
+            var result = Compile(SqlFragmentBuilder, Query, Mapper, logger: logger);
 
             if (logger.CanLogInfo(LogMessages.CompiledQuery))
                 logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);
@@ -75,6 +80,7 @@ namespace SqlDsl.Query
         /// Compile the query into something which can be executed multiple times
         /// </summary>
         static ICompiledQuery<TArgs, TMapped> Compile(
+            ISqlFragmentBuilder sqlFragmentBuilder, 
             QueryBuilder<TSqlBuilder, TArgs, TResult> query, 
             LambdaExpression mapper, 
             ILogger logger = null)
@@ -98,7 +104,7 @@ namespace SqlDsl.Query
             switch (resultType)
             {
                 case BuildMapResult.Map:
-                    return ToSqlBuilder(properties, tables, wrappedBuilder, wrappedStatement, state)
+                    return ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state)
                         .Compile<TArgs, TMapped>(mutableParameters.Skip(0), QueryParseType.ORM);
 
                 case BuildMapResult.SimpleProp:
@@ -109,7 +115,7 @@ namespace SqlDsl.Query
                     }
 
                     var p = properties.First();
-                    return ToSqlBuilder(p.From, p.MappedPropertyType, wrappedBuilder, wrappedStatement)
+                    return ToSqlBuilder(sqlFragmentBuilder, p.From, p.MappedPropertyType, wrappedBuilder, wrappedStatement)
                         .CompileSimple<TArgs, TMapped>(mutableParameters.Skip(0), properties.First().From);
 
                 case BuildMapResult.SingleComplexProp:
@@ -117,7 +123,7 @@ namespace SqlDsl.Query
                         ReflectionUtils.ConvertToFullMemberInit(mapper.Body), 
                         mapper.Parameters);
 
-                    return Compile(query, init, logger: logger);
+                    return Compile(sqlFragmentBuilder, query, init, logger: logger);
 
                 case BuildMapResult.MultiComplexProp:
 
@@ -128,7 +134,7 @@ namespace SqlDsl.Query
                         AddMemberInitSelector(typeof(TMapped), mapper.Body), 
                         mapper.Parameters);
 
-                    return Compile(query, identityMap, logger: logger);
+                    return Compile(sqlFragmentBuilder, query, identityMap, logger: logger);
 
                 default:
                     throw new NotSupportedException(resultType.ToString());
@@ -155,14 +161,17 @@ namespace SqlDsl.Query
                 mapper);
         }
 
-        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(string propertyName, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
+        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, string propertyName, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
         {
             var builder = new SqlStatementBuilder<TSqlBuilder>();
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
             builder.AddSelectColumn(
                 cellDataType,
-                propertyName, 
-                tableName: wrappedStatement.UniqueAlias);
+                sqlFragmentBuilder.BuildSelectColumn(
+                    wrappedStatement.UniqueAlias,
+                    propertyName),
+                propertyName,
+                new [] { (wrappedStatement.UniqueAlias, propertyName) });
                 
             return builder;
         }

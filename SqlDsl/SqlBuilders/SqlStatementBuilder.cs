@@ -23,7 +23,7 @@ namespace SqlDsl.SqlBuilders
     /// </summary>
     public class SqlStatementBuilder : ISqlBuilder
     {
-        readonly ISqlFragmentBuilder SqlBuilder;
+        public readonly ISqlFragmentBuilder SqlBuilder;
 
         public SqlStatementBuilder(ISqlFragmentBuilder sqlFragmentBuilder)
         {
@@ -191,20 +191,20 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// A list of columns in the SELECT statement
         /// </summary>
-        readonly List<(Type cellDataType, string columnName, string tableName, string alias, ConstructorInfo[] argConstructors)> _Select = new List<(Type, string, string, string, ConstructorInfo[])>();
+        readonly List<(Type cellDataType, string selectCode, string alias, (string table, string column)[] representsColumns, ConstructorInfo[] argConstructors)> _Select = new List<(Type, string, string, (string, string)[], ConstructorInfo[])>();
 
         /// <summary>
         /// A list of columns in the SELECT statement
         /// </summary>
-        public IEnumerable<(Type cellDataType, string columnName, string tableName, string alias, ConstructorInfo[] argConstructors)> Select => _Select.Skip(0);
+        public IEnumerable<(Type cellDataType, string selectCode, string alias, (string table, string column)[] representsColumns, ConstructorInfo[] argConstructors)> Select => _Select.Skip(0);
         
         private static readonly ConstructorInfo[] EmptyConstructorInfo = new ConstructorInfo[0];
 
         /// <summary>
         /// Add a column to the SELECT statement
         /// </summary>
-        public void AddSelectColumn(Type cellDataType, string columnName, string tableName = null, string alias = null, ConstructorInfo[] argConstructors = null) =>
-            _Select.Add((cellDataType, columnName, tableName, alias, argConstructors ?? EmptyConstructorInfo));
+        public void AddSelectColumn(Type cellDataType, string selectCode, string alias, (string table, string column)[] representsColumns, ConstructorInfo[] argConstructors = null) =>
+            _Select.Add((cellDataType, selectCode, alias ?? throw new ArgumentNullException(nameof(alias)), representsColumns, argConstructors ?? EmptyConstructorInfo));
 
         /// <summary>
         /// The WHERE statement, if necessary
@@ -243,7 +243,7 @@ namespace SqlDsl.SqlBuilders
 
             // build SELECT columns (cols and row ids)
             var select = GetAllSelectColumns()
-                .Select(s => BuildSelectColumn(s.columnName, s.tableName, s.alias))
+                .Select(s => SqlBuilder.AddAliasColumn(s.selectCode, s.alias))
                 .Enumerate();
 
             // add placeholder in case no SELECT columns were specified
@@ -324,19 +324,6 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <summary>
-        /// Build the string for a SELECT column
-        /// </summary>
-        string BuildSelectColumn(string columnName, string tableName = null, string alias = null)
-        {
-            alias = alias == null || alias.StartsWith($"{SqlStatementConstants.RootObjectAlias}.") ? "" : $" AS {SqlBuilder.WrapAlias(alias)}";
-            columnName = (columnName ?? "").StartsWith("@") ? columnName : SqlBuilder.WrapColumn(columnName);
-
-            return tableName == null ? 
-                $"{columnName}{alias}" : 
-                $"{SqlBuilder.WrapTable(tableName)}.{columnName}{alias}";
-        }
-
-        /// <summary>
         /// Get a list of row id colums, the alias of the table they are identifying, and the alias for the row id column (if any)
         /// </summary>
         IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns()
@@ -374,7 +361,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Concat DB table columns with row id columns
         /// </summary>
-        IEnumerable<(Type dataType, string columnName, string tableName, string alias, ConstructorInfo[] constructors)> GetAllSelectColumns() =>
-            GetRowIdSelectColumns().Select(x => ((Type)null, x.rowIdColumnName, x.tableAlias, x.rowIdColumnNameAlias, EmptyConstructorInfo)).Concat(_Select);
+        IEnumerable<(Type dataType, string selectCode, string alias, (string table, string column)[] representsColumns, ConstructorInfo[] constructors)> GetAllSelectColumns() =>
+            GetRowIdSelectColumns().Select(x => ((Type)null, SqlBuilder.BuildSelectColumn(x.tableAlias, x.rowIdColumnName), x.rowIdColumnNameAlias, new [] { (x.tableAlias, x.rowIdColumnName) }, EmptyConstructorInfo)).Concat(_Select);
     }
 }

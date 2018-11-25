@@ -19,10 +19,21 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public override int RowNumberColumnIndex { get; }
 
-        public SelectColumn(string alias, string tableAlias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors, IQueryTables tables)
+        public SelectColumn(string alias, IEnumerable<string> tableAliases, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors, IQueryTables tables)
             : base(alias, isRowNumber, dataType, argConstructors)
         {
-            RowNumberColumnIndex = tables[tableAlias].RowNumberColumnIndex;
+            int col = 0;
+            foreach (var ta in tableAliases)
+            {
+                if (ta != null && !ta.StartsWith("@"))
+                {
+                    // TODO: Math.Max should work for now, but will not
+                    // work when tables are joined multiple times
+                    col = Math.Max(col, tables[ta].RowNumberColumnIndex);
+                }
+            }
+
+            RowNumberColumnIndex = col;
         }
     }
 }
