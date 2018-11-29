@@ -32,6 +32,6 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// A string to prefix parameters which will be split into multiple values for an IN statement
         /// </summary>
-        public const string ParamInFlag = "##in";
+        public const string ParamArrayFlag = "##array";
     }
 }

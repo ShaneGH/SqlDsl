@@ -65,7 +65,7 @@ namespace SqlDsl.Query
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
 
             // create output objects
-            var param = new List<object>();
+            var param = new ParamBuilder();
             var builder = new SqlStatementBuilder(SqlFragmentBuilder);
 
             // Set the SELECT table
@@ -116,7 +116,7 @@ namespace SqlDsl.Query
             foreach (var (orderExpression, direction) in Ordering)
                 builder.AddOrderBy(orderExpression, direction);
 
-            return (builder, param);
+            return (builder, param.Parameters);
         }
     }
 }

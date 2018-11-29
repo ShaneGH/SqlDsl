@@ -130,7 +130,7 @@ namespace SqlDsl.SqlBuilders
             ParameterExpression queryArgsParam,
             ParameterExpression joinTableParam,
             Expression equalityStatement, 
-            IList<object> parameters, 
+            ParamBuilder parameters, 
             string joinTableAlias)
         {
             var condition = SqlBuilder.BuildCondition(
@@ -218,7 +218,7 @@ namespace SqlDsl.SqlBuilders
         /// <param name="args">The parameter which represents the query args in the expression</param>
         /// <param name="equality">The condition in the WHERE statement</param>
         /// <param name="parameters">A list of parameters which will be added to if a constant is found in the equalityStatement</param>
-        public void SetWhere(ParameterExpression queryRoot, ParameterExpression args, Expression equality, IList<object> parameters)
+        public void SetWhere(ParameterExpression queryRoot, ParameterExpression args, Expression equality, ParamBuilder parameters)
         {
             Where = SqlBuilder.BuildCondition(queryRoot, args, Enumerable.Empty<(ParameterExpression, string)>(), equality, parameters);
         }

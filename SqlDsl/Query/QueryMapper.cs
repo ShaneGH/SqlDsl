@@ -89,7 +89,7 @@ namespace SqlDsl.Query
             // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
 
             var (wrappedBuilder, parameters) = query.ToSqlStatement(null);
-            var mutableParameters = parameters.ToList();
+            var mutableParameters = new ParamBuilder(parameters.ToList());
             var wrappedStatement = new SqlStatement(wrappedBuilder);
 
             if (query.PrimaryTableMember == null)
@@ -105,7 +105,7 @@ namespace SqlDsl.Query
             {
                 case BuildMapResult.Map:
                     return ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state)
-                        .Compile<TArgs, TMapped>(mutableParameters.Skip(0), QueryParseType.ORM);
+                        .Compile<TArgs, TMapped>(mutableParameters.Parameters, QueryParseType.ORM);
 
                 case BuildMapResult.SimpleProp:
                     properties = properties.Enumerate();
@@ -116,7 +116,7 @@ namespace SqlDsl.Query
 
                     var p = properties.First();
                     return ToSqlBuilder(sqlFragmentBuilder, p.From, p.MappedPropertyType, wrappedBuilder, wrappedStatement)
-                        .CompileSimple<TArgs, TMapped>(mutableParameters.Skip(0), properties.First().From);
+                        .CompileSimple<TArgs, TMapped>(mutableParameters.Parameters, properties.First().From);
 
                 case BuildMapResult.SingleComplexProp:
                     var init = Expression.Lambda<Func<TResult, TArgs, TMapped>>(
@@ -338,10 +338,10 @@ namespace SqlDsl.Query
                             typeof(object)))
                     .Compile()();
 
-                state.Parameters.Add(result);
+                var paramName = state.Parameters.AddParam(result);
 
                 return (
-                    new MappedProperty(null, "@p" + (state.Parameters.Count - 1), toPrefix, expr.Type).ToEnumerable(),
+                    new MappedProperty(null, paramName, toPrefix, expr.Type).ToEnumerable(),
                     EmptyMappedTables
                 );
             }
@@ -649,14 +649,14 @@ namespace SqlDsl.Query
 
         class BuildMapState
         {
-            public readonly List<object> Parameters;
+            public readonly ParamBuilder Parameters;
             public readonly ParameterExpression QueryObject;
             public readonly ParameterExpression ArgsObject;
             public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
             public readonly ISqlStatement WrappedSqlStatement;
             public readonly string PrimarySelectTable;
 
-            public BuildMapState(string primarySelectTable, List<object> parameters, ParameterExpression queryObject, ParameterExpression argsObject, ISqlStatement wrappedSqlStatement)
+            public BuildMapState(string primarySelectTable, ParamBuilder parameters, ParameterExpression queryObject, ParameterExpression argsObject, ISqlStatement wrappedSqlStatement)
             {
                 Parameters = parameters;
                 QueryObject = queryObject;

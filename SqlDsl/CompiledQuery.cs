@@ -82,7 +82,7 @@ namespace SqlDsl
 
         static readonly Regex InParamRegex = new Regex(
             @"@p(\d+)" +
-            $"{Regex.Escape(SqlStatementConstants.ParamInFlag)}", 
+            $"{Regex.Escape(SqlStatementConstants.ParamArrayFlag)}", 
             RegexOptions.Compiled);
 
         static IEnumerable<int> GetInParameters(string whereSql, object[] parameters)
