@@ -239,22 +239,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
-        public async Task Select1SimpleObject_WithWhereInList()
-        {
-            // arrange
-            // act
-            var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.Person)
-                .Where(result => result.Person.Id.In(new List<long> { Data.People.John.Id, 1000 }))
-                .ToArrayAsync(Executor, logger: Logger);
-
-            // assert
-            Assert.AreEqual(1, data.Count());
-            Assert.AreEqual(Data.People.John, data.First().Person);
-        }
-
-        [Test]
         public async Task Select1SimpleObject_WithWhereIn5()
         {
             // arrange
@@ -303,19 +287,61 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
+        public async Task Select1SimpleObject_WithWhereInList()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<QueryClass>()
+                .From(nameof(Person), result => result.Person)
+                .Where(result => result.Person.Id.In(new List<long> { Data.People.John.Id }))
+                .ToArrayAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            Assert.AreEqual(Data.People.John, data.First().Person);
+        }
+
+        [Test]
+        public async Task Select1SimpleObject_WithWhereInList_2()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<QueryClass>()
+                .From(nameof(Person), result => result.Person)
+                .Where(result => result.Person.Id.In(new List<long> { Data.People.John.Id, 1000 }))
+                .ToArrayAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            Assert.AreEqual(Data.People.John, data.First().Person);
+        }
+
+        [Test]
         public void Select1SimpleObject_WithJoinOnIn4()
         {
-            // // arrange
-            // // act
-            // var data = await Sql.Query.Sqlite<QueryClass>()
-            //     .From(nameof(Person), result => result.Person)
-            //     .Where(result => new [] { Data.People.John.Id }.Contains(result.Person.Id))
-            //     .ExecuteAsync(Executor, logger: Logger);
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<QueryClass>()
+                .From(nameof(Person), result => result.Person)
+                .InnerJoin(x => x.PersonClasses).On((q, pc) => pc.PersonId.In(new [] { Data.People.John.Id }))
+                .ToArray(Executor, logger: Logger);
 
-            // // assert
-            // Assert.AreEqual(1, data.Count());
-            // Assert.AreEqual(Data.People.John, data.First().Person);
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John, data[0].Person);
+            Assert.AreEqual(Data.People.Mary, data[1].Person);
+            
+            CollectionAssert.AreEqual(new [] 
+            { 
+                Data.PersonClasses.JohnTennis,
+                Data.PersonClasses.JohnArchery
+            }, data[0].PersonClasses);
+
+            CollectionAssert.AreEqual(new [] 
+            { 
+                Data.PersonClasses.JohnTennis,
+                Data.PersonClasses.JohnArchery
+            }, data[1].PersonClasses);
         }
 
         [Test]

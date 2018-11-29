@@ -11,30 +11,30 @@ namespace SqlDsl.SqlBuilders
 {
     static class QueryArgAccessor
     {
+        /// <summary>
+        /// Accessors which just return the input object.
+        /// </summary>
+        static readonly ConcurrentDictionary<Type, object> ImmutablePassthroughAccessors = 
+            new ConcurrentDictionary<Type, object>();
+
         static readonly ConcurrentDictionary<Type, Func<ParameterExpression, Expression, object>> Builders = 
             new ConcurrentDictionary<Type, Func<ParameterExpression, Expression, object>>();
-        static readonly ConcurrentDictionary<Type, Func<object>> IdentityBuilders = 
-            new ConcurrentDictionary<Type, Func<object>>();
+
+        static readonly Type[] EmptyTypes = new Type[0];
 
         public static object Create(ParameterExpression parameter)
         {
-            if (!IdentityBuilders.TryGetValue(parameter.Type, out Func<object> builder))
+            if (!ImmutablePassthroughAccessors.TryGetValue(parameter.Type, out object value))
             {
-                var constructor = typeof(QueryArgAccessor<>)
-                    .MakeGenericType(parameter.Type)
-                    .GetConstructor(new Type[0]);
-
-                builder = IdentityBuilders.GetOrAdd(
-                    parameter.Type,
-                    Expression
-                        .Lambda<Func<object>>(
-                            ReflectionUtils.Convert(
-                                Expression.New(constructor),
-                                typeof(object)))
-                        .Compile());
+                value = ImmutablePassthroughAccessors
+                    .GetOrAdd(
+                        parameter.Type, 
+                        Activator
+                            .CreateInstance(typeof(QueryArgAccessor<>)
+                            .MakeGenericType(parameter.Type)));   
             }
             
-            return builder();
+            return value;
         }
 
         public static object Create(ParameterExpression parameter, Expression accessor)
