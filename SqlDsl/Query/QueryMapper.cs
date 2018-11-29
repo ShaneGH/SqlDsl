@@ -45,6 +45,9 @@ namespace SqlDsl.Query
 
             foreach (var col in mappedValues)
             {
+                // note: if AddSelectColumn is throwing an argument null exception
+                // on alias, it probably means that a different ToSqlBuilder should be called
+
                 var table = (col.from ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias;
                 builder.AddSelectColumn(
                     col.type,
@@ -165,11 +168,16 @@ namespace SqlDsl.Query
         {
             var builder = new SqlStatementBuilder<TSqlBuilder>();
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
-            builder.AddSelectColumn(
-                cellDataType,
+
+            var col = propertyName.StartsWith("@") ? 
+                propertyName :
                 sqlFragmentBuilder.BuildSelectColumn(
                     wrappedStatement.UniqueAlias,
-                    propertyName),
+                    propertyName);
+
+            builder.AddSelectColumn(
+                cellDataType,
+                col,
                 propertyName,
                 new [] { (wrappedStatement.UniqueAlias, propertyName) });
                 
@@ -200,23 +208,34 @@ namespace SqlDsl.Query
         {
             var _expr = ReflectionUtils.RemoveConvert(expr);
 
+            if (ReflectionUtils.IsConstant(_expr))
+            {
+                var value = Expression
+                    .Lambda<Func<object>>(
+                        Expression.Convert(_expr, typeof(object)))
+                    .Compile()();
+
+                var paramName = state.Parameters.AddParam(value);
+                return (
+                    BuildMapResult.SimpleProp,
+                    new MappedProperty(null, paramName, null, expr.Type).ToEnumerable(),
+                    EmptyMappedTables
+                );
+            }
+
             var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(_expr, allowOne: true, allowSelect: true);
             if (isPropertyChain)
             {
                 if (root == state.ArgsObject)
                 {
-                    throw new NotSupportedException();
-                    // var result = QueryArgAccessor.Create(root, _expr);
-                    // state.Parameters.Add(result);
-                    // var resultType = BuildMapResult.SimpleProp;//ReflectionUtils.GetIEnumerableType(_expr.Type) == null ?
-                    //     // BuildMapResult.SingleComplexProp :
-                    //     // BuildMapResult.MultiComplexProp;
+                    var result = QueryArgAccessor.Create(root, _expr);
+                    var paramName = state.Parameters.AddParam(result);
 
-                    // return (
-                    //     resultType,
-                    //     new MappedProperty(null, "@p" + (state.Parameters.Count - 1), null, expr.Type).ToEnumerable(),
-                    //     EmptyMapped
-                    // );
+                    return (
+                        BuildMapResult.SimpleProp,
+                        new MappedProperty(null, paramName, null, expr.Type).ToEnumerable(),
+                        EmptyMappedTables
+                    );
                 }
 
                 if (root != state.QueryObject)

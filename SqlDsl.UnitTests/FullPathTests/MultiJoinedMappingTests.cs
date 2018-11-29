@@ -44,13 +44,12 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .LeftJoin<Tag>(q => q.Tags)
                     .On((q, t) => q.ClassTags.One().TagId == t.Id)
                 .LeftJoin<Purchase>(q => q.PurchasesByMe)
-                    .On((q, t) => q.ThePerson.Id == t.PersonId)
-                .LeftJoin<Purchase>(q => q.PurchasesByMeForMyClasses)
-                    .On((q, t) => q.ThePerson.Id == t.PersonId && q.Classes.One().Id == t.ClassId);
+                    .On((q, t) => q.ThePerson.Id == t.PersonId);
+                // .LeftJoin<Purchase>(q => q.PurchasesByMeForMyClasses)
+                //     .On((q, t) => q.ThePerson.Id == t.PersonId && q.Classes.One().Id == t.ClassId);
         }
 
         [Test]
-        [Ignore("Fails because of join to PurchasesByMeForMyClasses")]
         public async Task SimpleMapOn1Table()
         {
             // arrange

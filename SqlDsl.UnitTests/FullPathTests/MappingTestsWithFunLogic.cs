@@ -256,7 +256,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task MapAndReturnConstant()
         {
             // arrange
@@ -272,7 +271,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task MapAndReturnArg1()
         {
             // arrange
@@ -293,24 +291,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task MapAndReturnArg2()
-        {
-            // arrange
-            // act
-            var data = await FullyJoinedQuery<AnInt>()
-                .Map((p, a) => a)
-                .ToIEnumerableAsync(Executor, new AnInt { IntValue = 77 }, logger: Logger);
-
-            // assert
-            Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(77, data.First().IntValue);
-            Assert.AreEqual(77, data.ElementAt(1).IntValue);
-        }
-
-        [Test]
-        [Ignore("TODO")]
-        public async Task MapAndReturnArg3()
         {
             // arrange
             // act
