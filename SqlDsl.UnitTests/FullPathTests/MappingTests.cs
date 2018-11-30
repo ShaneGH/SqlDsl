@@ -836,34 +836,5 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.Classes.Tennis.Name, mary.FavouriteClasses[0].ClassName);
             Assert.AreEqual(Data.Tags.Sport.Name, mary.FavouriteClasses[0].TagName);
         }
-
-        [Test]
-        [Ignore("TODO: the two scenarios in comments fail")]
-        public void Exploratory()
-        {
-            // .Map(x => new MappedVersion
-            //     {
-            //         PersonName = x.ThePerson.Name,
-            //         MappedClasses = x
-            //             .Joined(x.PersonClasses)
-            //             .Joined(x.Classes)
-            //             .Select(c => new MappedClass
-            //             {
-            //                 ClassName = c.Name
-            //             })
-            //     }) 
-            
-            // .Map(x => new MappedVersion
-            //     {
-            //         PersonName = x.ThePerson.Name,
-            //         MappedClasses = x.ThePerson
-            //             .Joined(x.PersonClasses)
-            //             .Joined(x.Classes)
-            //             .Select(c => new MappedClass
-            //             {
-            //                 ClassName = c.Name
-            //             })
-            //     }) 
-        }
     }
 }

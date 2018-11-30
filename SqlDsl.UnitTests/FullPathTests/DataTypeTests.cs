@@ -73,36 +73,29 @@ namespace SqlDsl.UnitTests.FullPathTests
             public byte[][] Data;
         }
 
-        // class ExploratoryResult
-        // {
-        //     public byte[] Data;
-        //     public PersonClass[] Classes;
-        // }
-
         [Test]
-        [Ignore("TODO: not sure what test class this should go in")]
         public void Exploratory()
         {
-            // // arrange
-            // // act
-            // var data = await Sql.Query.Sqlite<ArrayDataTypeQuery>()
-            //     .From(x => x.Person)
-            //     .InnerJoin(x => x.PersonsData)
-            //         .On((q, pd) => q.Person.Id == pd.PersonId)
-            //     .InnerJoin(x => x.Classes)
-            //         .On((q, pc) => q.Person.Id == pc.PersonId)
-            //     .Where(p => p.Person.Id == Data.People.John.Id)
-            //     .Map(x => new ExploratoryResult
-            //     {
-            //         Data = x.PersonsData.Data,
-
-            //         // this part is the exploratory part
-            //         Classes = x.Classes.ToArray()
-            //     })
-            //     .ExecuteAsync(Executor, logger: Logger);
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                .From(x => x.Person)
+                .InnerJoin(x => x.PersonsData)
+                    .On((q, pd) => q.Person.Id == pd.PersonId)
+                .InnerJoin(x => x.Classes)
+                    .On((q, pc) => q.Person.Id == pc.PersonId)
+                .Where(p => p.Person.Id == Data.People.John.Id)
+                .Map(x => new
+                {
+                    Data = x.PersonsData.One().Data,
+                    Classes = x.Classes.ToArray()
+                })
+                .ToList(Executor, logger: Logger);
 
             // assert
-            Assert.Fail("Do asserts");
+            Assert.AreEqual(1, data.Count);
+            Assert.AreEqual(Data.PeoplesData.JohnsData.Data, data[0].Data);
+            Assert.AreEqual(new [] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery }, data[0].Classes);
         }
 
         Task<List<ArrayDataType1Result>> ADT1()
