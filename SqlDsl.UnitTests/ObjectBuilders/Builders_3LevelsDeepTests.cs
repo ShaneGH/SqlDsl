@@ -28,19 +28,19 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = Builders.GetBuilder<Level3>().Build(new ObjectGraph()
+            var result = Builders.GetBuilder<Level3>().Build(new TestObjectGraph()
             {
-                BuildComplexProps = () => new []
+                ComplexProps = new []
                 {
                     (nameof(Level3.Level2Properties), new []
                     {
-                        new ObjectGraph()
+                        (ReusableObjectGraph)new TestObjectGraph()
                         {
-                            BuildComplexProps = () => new []
+                            ComplexProps = new []
                             {
                                 (nameof(Level2.Level1Properties), new []
                                 {
-                                    new ObjectGraph()
+                                    (ReusableObjectGraph)new TestObjectGraph()
                                     {
                                         SimpleProps = new [] 
                                         {

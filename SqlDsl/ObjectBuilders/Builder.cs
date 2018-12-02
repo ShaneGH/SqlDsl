@@ -15,7 +15,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        object Build(ObjectGraph values, ILogger logger);
+        object Build(ReusableObjectGraph values, ILogger logger);
     }
     
     /// <summary>
@@ -26,7 +26,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        T Build(ObjectGraph values, ILogger logger);
+        T Build(ReusableObjectGraph values, ILogger logger);
     }
 
     /// <summary>
@@ -37,7 +37,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compiled function to build an object
         /// </summary>
-        readonly Func<ObjectGraph, ILogger, T> BuildObject;
+        readonly Func<ReusableObjectGraph, ILogger, T> BuildObject;
         
         /// <summary>
         /// Compiled function to set all null enumerable properties of an object to empty
@@ -53,10 +53,10 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        public T Build(ObjectGraph values, ILogger logger) 
+        public T Build(ReusableObjectGraph values, ILogger logger) 
         {
             var obj = BuildObject(values, logger);
-            var enumProps = (values?.SimpleProps)
+            var enumProps = (values?.GetSimpleProps())
                 .OrEmpty()
                 .Where(isEnumerableDataCell)
                 .Select(name);
@@ -72,6 +72,6 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        object IBuilder.Build(ObjectGraph values, ILogger logger) => Build(values, logger);
+        object IBuilder.Build(ReusableObjectGraph values, ILogger logger) => Build(values, logger);
     }
 }

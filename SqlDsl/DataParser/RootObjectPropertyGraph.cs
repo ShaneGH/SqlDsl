@@ -10,6 +10,8 @@ namespace SqlDsl.DataParser
     /// </summary>
     public class RootObjectPropertyGraph : ObjectPropertyGraph
     {
+        private static readonly (int, string, IEnumerable<int>, Type, Type)[] DefaultSimpleProps = new (int, string, IEnumerable<int>, Type, Type)[0];
+
         /// <summary>
         /// The column names that this graph is based on
         /// </summary>

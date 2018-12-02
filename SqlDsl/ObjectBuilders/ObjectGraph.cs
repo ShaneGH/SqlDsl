@@ -1,4 +1,6 @@
+using SqlDsl.DataParser;
 using SqlDsl.Utils;
+using SqlDsl.Utils.EqualityComparers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,78 +11,95 @@ namespace SqlDsl.ObjectBuilders
     /// <summary>
     /// A generic object graph which can be converted into a concrete class
     /// </summary>
-    public class ObjectGraph : IDisposable
+    public abstract class ObjectGraph<TChildGraph>
     {
-        //TODO: test allocations for simplest of SELECT queries (no maps and no joins)
-        // I have a suspicion that there are a lot of allocations
+        /// <summary>
+        /// The type of the constructor args to be used with this object
+        /// </summary>
+        public virtual Type[] ConstructorArgTypes => PropertyGraph.ConstructorArgTypes;
+
+        public abstract ObjectPropertyGraph PropertyGraph { get; }
+
+        public abstract IEnumerable<object[]> Objects { get; }
 
         /// <summary>
         /// Simple properties such as int, string, List&lt;int>, List&lt;string> etc...
         /// </summary>
-        public IEnumerable<(string name, IEnumerable<object> value, bool isEnumerableDataCell)> SimpleProps;
-        
+        public virtual IEnumerable<(string name, IEnumerable<object> value, bool isEnumerableDataCell)> GetSimpleProps() =>
+            PropertyGraph.SimpleProps.Select(GetSimpleProp);
+
         /// <summary>
         /// Complex properties will have properties of their own
         /// </summary>
-        public Func<IEnumerable<(string name, IEnumerable<ObjectGraph> value)>> BuildComplexProps;
-        
+        public virtual IEnumerable<(string name, IEnumerable<TChildGraph> value)> GetComplexProps() =>
+            PropertyGraph.ComplexProps
+                .Select(p => (p.name,  CreateObject(p.value, Objects)));
+
         /// <summary>
         /// Simple constructor args such as int, string, List&lt;int>, List&lt;string> etc...
         /// </summary>
-        public IEnumerable<(int argIndex, IEnumerable<object> value, bool isEnumerableDataCell)> SimpleConstructorArgs;
-        
+        public virtual IEnumerable<(int argIndex, IEnumerable<object> value, bool isEnumerableDataCell)> GetSimpleConstructorArgs() =>
+            PropertyGraph.SimpleConstructorArgs.Select(GetSimpleCArg);
+
         /// <summary>
         /// Complex constructor args will have properties of their own
         /// </summary>
-        public Func<IEnumerable<(int argIndex, IEnumerable<ObjectGraph> value)>> BuildComplexConstructorArgs;
+        public virtual IEnumerable<(int argIndex, IEnumerable<TChildGraph> value)> GetComplexConstructorArgs() =>
+            PropertyGraph.ComplexConstructorArgs
+                .Select(p => (p.argIndex, CreateObject(p.value, Objects)));
 
-        /// <summary>
-        /// The type of the constructor args to be used with this object
-        /// </summary>
-        public Type[] ConstructorArgTypes;
-
-        /// <summary>
-        /// The cache that this object belongs to. Calling dispose will return this object to it's cache
-        /// </summary>
-        internal readonly IObjectGraphCache Cache;
-
-        public ObjectGraph()
-            : this(PassthroughCache.Instance, null)
+        (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleCArg(
+                    (int index, int argIndex, int[] rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
         {
+            var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
+            return (p.argIndex, data, cellEnumType != null);
         }
 
-        internal ObjectGraph(IObjectGraphCache cache, ILogger logger)
+        (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp((int index, string name, int[] rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
         {
-            Cache = cache;
-            SetDefaults();
-            
-            if (logger.CanLogDebug(LogMessages.CreatedObjectGraphAllocation))
-                logger.LogDebug("Object graph created", LogMessages.CreatedObjectGraphAllocation);
+            var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
+            return (p.name, data, cellEnumType != null);
         }
 
-        private static readonly IEnumerable<(string, IEnumerable<object>, bool)> DefaultSimpleProps = Enumerable.Empty<(string, IEnumerable<object>, bool)>();
-        private static readonly Func<IEnumerable<(string, IEnumerable<ObjectGraph>)>> DefaultBuildComplexProps = () => Enumerable.Empty<(string, IEnumerable<ObjectGraph>)>();
-        private static readonly IEnumerable<(int, IEnumerable<object>, bool)> DefaultSimpleConstructorArgs = Enumerable.Empty<(int, IEnumerable<object>, bool)>();
-        private static readonly Func<IEnumerable<(int, IEnumerable<ObjectGraph>)>> DefaultBuildComplexConstructorArgs = () => Enumerable.Empty<(int, IEnumerable<ObjectGraph>)>();
-        private static readonly Type[] DefaultConstructorArgTypes = new Type[0];
-
-        protected void SetDefaults()
+        (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, IEnumerable<int> rowNumberColumnIds, Type dataCellType)
         {
-            SimpleProps = DefaultSimpleProps;
-            BuildComplexProps = DefaultBuildComplexProps;
-            SimpleConstructorArgs = DefaultSimpleConstructorArgs;
-            BuildComplexConstructorArgs = DefaultBuildComplexConstructorArgs;
-            ConstructorArgTypes = DefaultConstructorArgTypes;
+            // run a "Distinct" on the rowNumbers
+            var dataRowsForProp = Objects
+                .GroupBy(d => PropertyGraph.GetUniqueIdForSimpleProp(d, rowNumberColumnIds))
+                .Select(Enumerable.First);
+
+            var data = dataRowsForProp
+                .Select(o => o[index])
+                .ToArray();
+
+            var cellEnumType = dataCellType == null ?
+                null :
+                ReflectionUtils.GetIEnumerableType(dataCellType);
+
+            return (data, cellEnumType);
         }
+
+        IEnumerable<TChildGraph> CreateObject(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> rows)
+        {
+            // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
+            var objectsData = rows.GroupBy(r => 
+                propertyGraph.RowIdColumnNumbers.Select(i => r[i]).ToArray(), 
+                ArrayComparer<object>.Instance);
+
+            foreach (var obj in objectsData)
+                yield return BuildChildGraph(propertyGraph, obj);
+        }
+
+        protected abstract TChildGraph BuildChildGraph(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> rows);
 
         public override string ToString()
         {
-            var simple = SimpleProps
+            var simple = GetSimpleProps()
                 .OrEmpty()
                 .Select(ps => $"S_{ps.name}:\n  [{ps.value.Select(p => $"\n    {p}").JoinString("")}\n  ]")
                 .JoinString("\n");
 
-            var complex = BuildComplexProps()
+            var complex = GetComplexProps()
                 .OrEmpty()
                 .Select(ps => 
                 {
@@ -93,34 +112,6 @@ namespace SqlDsl.ObjectBuilders
                 .JoinString("\n");
 
             return $"{simple}\n{complex}";
-        }
-
-        public void Dispose()
-        {
-            SetDefaults();
-            if (Cache != null)
-                Cache.ReleaseGraph(this);
-        }
-
-        /// <summary>
-        /// A cache which does nothing. Is used for objects with no cache
-        /// </summary>
-        private class PassthroughCache : IObjectGraphCache
-        {
-            public static PassthroughCache Instance = new PassthroughCache();
-
-            private PassthroughCache() 
-            {
-            }
-
-            public ObjectGraph GetGraph(ILogger logger)
-            {
-                return new ObjectGraph(this, logger);
-            }
-
-            public void ReleaseGraph(ObjectGraph graph)
-            {
-            }
         }
     }
 }

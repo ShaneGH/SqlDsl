@@ -36,13 +36,13 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = Builders.GetBuilder<Level2>().Build(new ObjectGraph()
+            var result = Builders.GetBuilder<Level2>().Build(new TestObjectGraph()
             {
-                BuildComplexProps = () => new []
+                ComplexProps = new []
                 {
                     (nameof(Level2.Level1Properties), new []
                     {
-                        new ObjectGraph()
+                        (ReusableObjectGraph)new TestObjectGraph()
                         {
                             SimpleProps = new [] 
                             {
@@ -67,13 +67,13 @@ namespace SqlDsl.UnitTests.ObjectBuilders
             // arrange
             // act
             // assert
-            Assert.Throws(typeof(InvalidOperationException), () => Builders.GetBuilder<Level2>().Build(new ObjectGraph()
+            Assert.Throws(typeof(InvalidOperationException), () => Builders.GetBuilder<Level2>().Build(new TestObjectGraph()
             {
-                BuildComplexProps = () => new []
+                ComplexProps = new []
                 {
                     (nameof(Level2.Level1Properties), new []
                     {
-                        new ObjectGraph()
+                        (ReusableObjectGraph)new TestObjectGraph()
                         {
                             SimpleProps = new [] 
                             {
@@ -81,7 +81,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                                 ("Property2", new object[] { 7 }.Skip(0), false)
                             }.Skip(0)
                         },
-                        new ObjectGraph()
+                        new TestObjectGraph()
                         {
                             SimpleProps = new [] 
                             {
@@ -104,13 +104,13 @@ namespace SqlDsl.UnitTests.ObjectBuilders
         {
             // arrange
             // act
-            var result = Builders.GetBuilder<Level1Multiple>().Build(new ObjectGraph()
+            var result = Builders.GetBuilder<Level1Multiple>().Build(new TestObjectGraph()
             {
-                BuildComplexProps = () => new []
+                ComplexProps = new []
                 {
                     (nameof(Level1Multiple.SimpleProperties), new []
                     {
-                        new ObjectGraph()
+                        (ReusableObjectGraph)new TestObjectGraph()
                         {
                             SimpleProps = new [] 
                             {
@@ -118,7 +118,7 @@ namespace SqlDsl.UnitTests.ObjectBuilders
                                 ("Property2", new object[] { 7 }.Skip(0), false)
                             }.Skip(0)
                         },
-                        new ObjectGraph()
+                        new TestObjectGraph()
                         {
                             SimpleProps = new [] 
                             {

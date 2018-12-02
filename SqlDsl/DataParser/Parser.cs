@@ -72,7 +72,7 @@ namespace SqlDsl.DataParser
         /// Map a group of rows to an object property graph to an object graph with properties
         /// </summary>
         /// <param name="objects">A raw block of data, which has not been grouped into objects</param>
-        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<object[]> rows, ILogger logger)
+        static IEnumerable<ReusableObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<object[]> rows, ILogger logger)
         {
             // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
             var objectsData = rows.GroupBy(r => 
@@ -86,64 +86,13 @@ namespace SqlDsl.DataParser
         /// Map a group of rows to an object property graph to an object graph with properties
         /// </summary>
         /// <param name="objects">An enumerable of objects. Each object can span multiple rows (corresponding to sub properties which are enumerable)</param>
-        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<IEnumerable<object[]>> objects, ILogger logger)
+        static IEnumerable<ReusableObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<IEnumerable<object[]>> objects, ILogger logger)
         {
             foreach (var objectData in objects)
             {
                 var graph = objectGraphCache.GetGraph(logger);
-
-                graph.SimpleProps = BuildSimpleProps();
-                graph.BuildComplexProps = BuildComplexProps;
-                graph.ConstructorArgTypes = propertyGraph.ConstructorArgTypes;
-                graph.SimpleConstructorArgs = BuildSimpleConstructorArgs();
-                graph.BuildComplexConstructorArgs = BuildComplexConstructorArgs;
-
+                graph.Init(propertyGraph, objectData);
                 yield return graph;
-
-                IEnumerable<(string, IEnumerable<object>, bool)> BuildSimpleProps() => propertyGraph.SimpleProps
-                    .Select(GetSimpleProp)
-                    .Enumerate();
-
-                IEnumerable<(string, IEnumerable<ObjectGraph>)> BuildComplexProps() => propertyGraph.ComplexProps
-                    .Select(p => (p.name, CreateObject(p.value, objectGraphCache, objectData, logger)));
-
-                IEnumerable<(int, IEnumerable<object>, bool)> BuildSimpleConstructorArgs() => propertyGraph.SimpleConstructorArgs
-                    .Select(GetSimpleCArg)
-                    .Enumerate();
-
-                IEnumerable<(int, IEnumerable<ObjectGraph>)> BuildComplexConstructorArgs() => propertyGraph.ComplexConstructorArgs
-                    .Select(p => (p.argIndex, CreateObject(p.value, objectGraphCache, objectData, logger)));
-
-                (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp((int index, string name, int[] rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
-                {
-                    var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
-                    return (p.name, data, cellEnumType != null);
-                }
-
-                (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleCArg(
-                    (int index, int argIndex, int[] rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
-                {
-                    var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
-                    return (p.argIndex, data, cellEnumType != null);
-                }
-
-                (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, IEnumerable<int> rowNumberColumnIds, Type dataCellType)
-                {
-                    // run a "Distinct" on the rowNumbers
-                    var dataRowsForProp = objectData
-                        .GroupBy(d => propertyGraph.GetUniqueIdForSimpleProp(d, rowNumberColumnIds))
-                        .Select(Enumerable.First);
-
-                    var data = dataRowsForProp
-                        .Select(o => o[index])
-                        .ToArray();
-
-                    var cellEnumType = dataCellType == null ?
-                        null :
-                        ReflectionUtils.GetIEnumerableType(dataCellType);
-
-                    return (data, cellEnumType);
-                }
             }
         }
     }

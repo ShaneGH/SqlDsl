@@ -38,12 +38,12 @@ namespace SqlDsl.ObjectBuilders
                 .Compile();
         }
 
-        public TCollection Build(ObjectGraph values, ILogger logger)
+        public TCollection Build(ReusableObjectGraph values, ILogger logger)
         {
             var objects = SplitObjectGraph(values, logger).Select(BuildSingleObject);
             return CollectionBuilder(objects);
 
-            T BuildSingleObject(ObjectGraph obj)
+            T BuildSingleObject(ReusableObjectGraph obj)
             {
                 var result = SingleObjBuilder.Build(obj, logger);
                 obj.Dispose();
@@ -51,88 +51,27 @@ namespace SqlDsl.ObjectBuilders
             }
         }
 
-        object IBuilder.Build(ObjectGraph values, ILogger logger) => Build(values, logger);
+        object IBuilder.Build(ReusableObjectGraph values, ILogger logger) => Build(values, logger);
 
         /// <summary>
         /// Split an object graph in the form of {P1: [1, 2], P2: [3, 4]} into [{P1: [1], P2: [3]}, {P1: [2], P2: [4]}]
         /// </summary>
-        static IEnumerable<ObjectGraph> SplitObjectGraph(ObjectGraph values, ILogger logger)
+        static IEnumerable<ReusableObjectGraph> SplitObjectGraph(ReusableObjectGraph values, ILogger logger)
         {
-            // this is a bit of a hack.
-            // when this is used as the root builder, the parser
-            // will amalgamate props of different objects into one
+            if (values.PropertyGraph.SimpleProps.Length == 0)
+                yield break;
 
-            // TODO: need to do some significant preformace testing on this method
+            // run a "Distinct" on the rowNumbers
+            var dataRowsForProp = values.Objects
+                .GroupBy(d => values.PropertyGraph.GetUniqueIdForSimpleProp(d, values.PropertyGraph.SimpleProps[0].rowNumberColumnIds))
+                .Select(Enumerable.First);
 
-            var enumerators = values.SimpleProps
-                .Select(p => (prop: p, en: p.value.GetEnumerator()))
-                .ToArray();
-
-            if (enumerators.Length == 0)
-                return Enumerable.Empty<ObjectGraph>();
-
-            var vals = new List<ObjectGraph>();
-            var exceptions = new List<Exception>();
-            try
+            foreach (var row in dataRowsForProp)
             {
-                while (enumerators[0].en.MoveNext())
-                {
-                    var newProps = new List<(string name, IEnumerable<object> value, bool isEnumerableDataCell)>
-                    {
-                        (
-                            enumerators[0].prop.name, 
-                            new [] { enumerators[0].en.Current }, 
-                            enumerators[0].prop.isEnumerableDataCell)
-                    };
-
-                    foreach (var en in enumerators.Skip(1))
-                    {
-                        if (!en.en.MoveNext())
-                        {
-                            throw new InvalidOperationException($"Expected to have value for property {en.prop.name}");
-                        }
-
-                        newProps.Add((en.prop.name, new [] { en.en.Current }, en.prop.isEnumerableDataCell)); 
-                    }
-
-                    var graph = values.Cache.GetGraph(logger);
-                    graph.SimpleProps = newProps;
-                    vals.Add(graph);
-                }
-                
-                foreach (var en in enumerators.Skip(1))
-                {
-                    if (en.en.MoveNext())
-                    {
-                        throw new InvalidOperationException($"Expected not to have value for property {en.prop.name}");
-                    }
-                }
+                var obj = values.Cache.GetGraph(logger);
+                obj.Init(values.PropertyGraph, new[] { row });
+                yield return obj;
             }
-            catch (Exception e)
-            {
-                exceptions.Add(e);
-            }
-            finally
-            {
-                foreach (var en in enumerators)
-                {
-                    try
-                    {
-                        en.en.Dispose();
-                    }
-                    catch (Exception e)
-                    {
-                        exceptions.Add(e);
-                    }
-                }
-            }
-
-            if (exceptions.Count == 1)
-                throw exceptions[0];
-            if (exceptions.Count > 1)
-                throw new AggregateException("Exceptions occurred when building enumerable object and then when disposing of enumerators", exceptions);
-
-            return vals;
         }
     }
 }

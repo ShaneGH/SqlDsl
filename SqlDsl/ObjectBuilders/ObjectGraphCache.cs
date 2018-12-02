@@ -8,21 +8,21 @@ namespace SqlDsl.ObjectBuilders
 {
     interface IObjectGraphCache
     {
-        ObjectGraph GetGraph(ILogger logger);
-        void ReleaseGraph(ObjectGraph graph);
+        ReusableObjectGraph GetGraph(ILogger logger);
+        void ReleaseGraph(ReusableObjectGraph graph);
     }
 
     class ObjectGraphCache : IObjectGraphCache
     {
-        private readonly List<ObjectGraph> Objects = new List<ObjectGraph>(16);
+        private readonly List<ReusableObjectGraph> Objects = new List<ReusableObjectGraph>(16);
         
-        public ObjectGraph GetGraph(ILogger logger)
+        public ReusableObjectGraph GetGraph(ILogger logger)
         {
-            ObjectGraph graph;
+            ReusableObjectGraph graph;
             lock (Objects)
             {
                 if (Objects.Count == 0)
-                    return new ObjectGraph(this, logger);
+                    return new ReusableObjectGraph(this, logger);
 
                 // prevent list reshuffle by taking last item
                 graph = Objects[Objects.Count - 1];
@@ -32,7 +32,7 @@ namespace SqlDsl.ObjectBuilders
             return graph;
         }
 
-        public void ReleaseGraph(ObjectGraph graph)
+        public void ReleaseGraph(ReusableObjectGraph graph)
         {
             lock (Objects)
             {
