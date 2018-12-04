@@ -13,68 +13,49 @@ namespace SqlDsl.SqlBuilders
     /// </summary>
     public abstract class SqlFragmentBuilderBase : ISqlFragmentBuilder
     {
-        /// <summary>
-        /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
-        /// </summary>
+        /// <inheritdoc />
+        public virtual string BuildAlias(string lhs, string alias) => $"{lhs} AS {alias}";
+
+        /// <inheritdoc />
         public abstract (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias);
 
-        /// <summary>
-        /// Wrap a table name in parenthesis which protects against illegal characters: []
-        /// </summary>
+        /// <inheritdoc />
         public abstract string WrapTable(string table);
 
-        /// <summary>
-        /// Wrap a column name in parenthesis which protects against illegal characters: []
-        /// </summary>
+        /// <inheritdoc />
         public abstract string WrapColumn(string column);
 
-        /// <summary>
-        /// Wrap a table or column alias in parenthesis which protects against illegal characters: []
-        /// </summary>
+        /// <inheritdoc />
         public abstract string WrapAlias(string alias);
 
-        /// <summary>
-        /// Combine 2 statements with an AND condition
-        /// </summary>
+        /// <inheritdoc />
         public virtual (string setupSql, string sql) BuildAndCondition(string lhs, string rhs) => (null, $"({lhs} AND {rhs})");
 
-        /// <summary>
-        /// Combine 2 statements with an OR condition
-        /// </summary>
+        /// <inheritdoc />
         public virtual (string setupSql, string sql) BuildOrCondition(string lhs, string rhs) => (null, $"({lhs} OR {rhs})");
 
-        /// <summary>
-        /// Combine 2 statements with an = condition
-        /// </summary>
+        /// <inheritdoc />
         public virtual (string setupSql, string sql) BuildEqualityCondition(string lhs, string rhs) => (null, $"({lhs} = {rhs})");
 
-        /// <summary>
-        /// Combine 2 statements with an <> condition
-        /// </summary>
+        /// <inheritdoc />
         public virtual (string setupSql, string sql) BuildNonEqualityCondition(string lhs, string rhs) => (null, $"({lhs} <> {rhs})");
 
-        /// <summary>
-        /// Combine 2 statements with < condition
-        /// </summary>
+        /// <inheritdoc />
         public virtual (string setupSql, string sql) BuildLessThanCondition(string lhs, string rhs) => (null, $"({lhs} < {rhs})");
 
-        /// <summary>
-        /// Combine 2 statements with a <= condition
-        /// </summary>
+        /// <inheritdoc />
         public virtual (string setupSql, string sql) BuildLessThanEqualToCondition(string lhs, string rhs) => (null, $"({lhs} <= {rhs})");
 
-        /// <summary>
-        /// Combine 2 statements with a > condition
-        /// </summary>
+        /// <inheritdoc />
         public virtual (string setupSql, string sql) BuildGreaterThanCondition(string lhs, string rhs) => (null, $"({lhs} > {rhs})");
 
-        /// <summary>
-        /// Combine 2 statements with a >= condition
-        /// </summary>
+        /// <inheritdoc />
         public virtual (string setupSql, string sql) BuildGreaterThanEqualToCondition(string lhs, string rhs) => (null, $"({lhs} >= {rhs})");
 
+        /// <inheritdoc />
         public (string setupSql, string sql) BuildInCondition(string lhs, string rhs) => (null, $"({lhs} IN ({rhs}))");
 
+        /// <inheritdoc />
         public (string setupSql, string sql) BuildCommaCondition(string lhs, string rhs) => (null, $"{lhs}, {rhs}");
     }
 }

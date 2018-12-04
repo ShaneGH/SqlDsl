@@ -32,8 +32,7 @@ namespace SqlDsl.SqlBuilders
                 alias.StartsWith($"{SqlStatementConstants.RootObjectAlias}."))
                 return sqlCode;
 
-            // TODO: AS should go in SqlBuilder
-            return $"{sqlCode} AS {builder.WrapAlias(alias)}";
+            return builder.BuildAlias(sqlCode, builder.WrapAlias(alias));
         }
     }
 }

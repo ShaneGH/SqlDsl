@@ -27,6 +27,21 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public async Task Select1Entity()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<Person>()
+                .From()
+                .Where(x => x.Id == Data.People.Mary.Id)
+                .ToListAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            Assert.AreEqual(Data.People.Mary, data[0]);
+        }
+
+        [Test]
         public async Task Select1SimpleObject()
         {
             // arrange

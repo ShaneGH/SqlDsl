@@ -368,8 +368,7 @@ namespace SqlDsl.SqlBuilders
                 referencedTableAlias = memberName.Count > 1 ? 
                     memberName
                         .Take(memberName.Count - 1)
-                        .JoinString("."):
-                    // TODO: test this case
+                        .JoinString(".") :
                     SqlStatementConstants.RootObjectAlias;
             }
 

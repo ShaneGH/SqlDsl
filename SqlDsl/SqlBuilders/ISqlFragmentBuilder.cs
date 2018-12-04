@@ -79,5 +79,10 @@ namespace SqlDsl.SqlBuilders
         /// Combine 2 params with comma
         /// </summary>
         (string setupSql, string sql) BuildCommaCondition(string lhs, string rhs);
+
+        /// <summary>
+        /// Alias an item
+        /// </summary>
+        string BuildAlias(string lhs, string alias);
     }
 }
