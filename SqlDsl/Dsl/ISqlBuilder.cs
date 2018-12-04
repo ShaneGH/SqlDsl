@@ -18,8 +18,6 @@ namespace SqlDsl.Dsl
         /// </param>
         /// <param name="logger">A logger to capture info and warning messages</param>
         Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, ILogger logger = null);
-
-        // TODO: add a ToListAsync, ToArrayAsync, ToLazyAsync
         
         /// <summary>
         /// Execute the sql query and get a list of results
@@ -38,8 +36,6 @@ namespace SqlDsl.Dsl
         /// </param>
         /// <param name="logger">A logger to capture info and warning messages</param>
         Task<List<TResult>> ToListAsync(IExecutor executor, ILogger logger = null);
-
-        // TODO: add a ToListAsync, ToArrayAsync, ToLazyAsync
         
         /// <summary>
         /// Execute the sql query and get a list of results
@@ -58,8 +54,6 @@ namespace SqlDsl.Dsl
         /// </param>
         /// <param name="logger">A logger to capture info and warning messages</param>
         Task<TResult[]> ToArrayAsync(IExecutor executor, ILogger logger = null);
-
-        // TODO: add a ToListAsync, ToArrayAsync, ToLazyAsync
         
         /// <summary>
         /// Execute the sql query and get an array of results

@@ -63,11 +63,11 @@ namespace SqlDsl.DataParser
         public RootObjectPropertyGraph(
             Type objectType,
             IEnumerable<string> colNames,
-            IEnumerable<(int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType)> simpleProps, 
-            IEnumerable<(string name, ObjectPropertyGraph value)> complexProps, 
-            IEnumerable<int> rowIdColumnNumbers,
-            IEnumerable<(int index, int argIndex, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType)> simpleConstructorArgs = null,
-            IEnumerable<(int argIndex, Type constructorArgType, ObjectPropertyGraph value)> complexConstructorArgs = null)
+            (int index, string name, int[] rowNumberColumnIds, Type resultPropertyType, Type dataCellType)[] simpleProps, 
+            (string name, ObjectPropertyGraph value)[] complexProps, 
+            int[] rowIdColumnNumbers,
+            (int index, int argIndex, int[] rowNumberColumnIds, Type resultPropertyType, Type dataCellType)[] simpleConstructorArgs = null,
+            (int argIndex, Type constructorArgType, ObjectPropertyGraph value)[] complexConstructorArgs = null)
             : base(objectType, simpleProps, complexProps, rowIdColumnNumbers, simpleConstructorArgs, complexConstructorArgs)
         {
             ColumnNames = colNames.ToArray();
@@ -78,11 +78,7 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="objectType">The type of the object.</param>
         public RootObjectPropertyGraph(Type objectType, int columnIndex, int rowNumberColumnIndex, Type cellType, bool cellTypeIsEnumerable)
-            : this(objectType,
-                Enumerable.Empty<string>(),
-                Enumerable.Empty<(int, string, IEnumerable<int>, Type, Type)>(), 
-                Enumerable.Empty<(string, ObjectPropertyGraph)>(), 
-                Enumerable.Empty<int>())
+            : this(objectType, Enumerable.Empty<string>(), null,  null,  null)
         {
             SimpleProperty = (columnIndex, rowNumberColumnIndex, cellType, cellTypeIsEnumerable);
         }

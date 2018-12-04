@@ -114,14 +114,14 @@ namespace SqlDsl.DataParser
                 IEnumerable<(int, IEnumerable<ObjectGraph>)> BuildComplexConstructorArgs() => propertyGraph.ComplexConstructorArgs
                     .Select(p => (p.argIndex, CreateObject(p.value, objectGraphCache, objectData, logger)));
 
-                (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp((int index, string name, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp((int index, string name, int[] rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
                 {
                     var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
                     return (p.name, data, cellEnumType != null);
                 }
 
                 (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleCArg(
-                    (int index, int argIndex, IEnumerable<int> rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                    (int index, int argIndex, int[] rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
                 {
                     var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
                     return (p.argIndex, data, cellEnumType != null);

@@ -61,9 +61,9 @@ namespace SqlDsl.DataParser
             QueryParseType queryParseType)
         {
             // TODO: rowIdColumnNumbers should be int[]
-            var simpleProps = new List<(int index, string propertyName, IEnumerable<int> rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();
+            var simpleProps = new List<(int index, string propertyName, int[] rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();
             var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)>();
-            var simpleCArgs = new List<(int index, int argIndex, IEnumerable<int> rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();
+            var simpleCArgs = new List<(int index, int argIndex, int[] rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();
             var complexCArgs = new List<(int index, int argIndex, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)>();
 
             // if mappedTableProperties are invalid
@@ -99,7 +99,7 @@ namespace SqlDsl.DataParser
                             col.index, 
                             index, 
                             FilterRowIdColumnNumbers(
-                                RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap)),
+                                RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap)).ToArray(),
                             typedConstructorArgs[index],
                             col.cellType
                         ));
@@ -114,7 +114,7 @@ namespace SqlDsl.DataParser
                             col.index, 
                             col.name[0], 
                             FilterRowIdColumnNumbers(
-                                RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap)),
+                                RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap)).ToArray(),
                             colType,
                             col.cellType
                         ));
@@ -175,7 +175,13 @@ namespace SqlDsl.DataParser
                 .Select(BuildComplexCArg)
                 .Enumerate();
 
-            return new ObjectPropertyGraph(objectType, simpleProps, cplxProps, rowIdColumnNumbers, simpleCArgs, cplxCArgs);
+            return new ObjectPropertyGraph(
+                objectType, 
+                simpleProps.ToArray(), 
+                cplxProps.ToArray(), 
+                rowIdColumnNumbers, 
+                simpleCArgs.ToArray(), 
+                cplxCArgs.ToArray());
 
             string PropertyName((int, string propertyName, string[], int[], Type, Type, ConstructorInfo[]) value) => value.propertyName;
             int ArgIndex((int, int argIndex, string[], int[], Type, Type, ConstructorInfo[]) value) => value.argIndex;
