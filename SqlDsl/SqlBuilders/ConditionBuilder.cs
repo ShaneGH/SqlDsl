@@ -185,7 +185,7 @@ namespace SqlDsl.SqlBuilders
             ReflectionUtils.RemoveConvert(rhs);
 
             // TODO: can I relax this condition
-            if (!MultiParamRegex.IsMatch(r.sql))
+            if (!string.IsNullOrWhiteSpace(r.sql) && !MultiParamRegex.IsMatch(r.sql))
                 throw new InvalidOperationException($"The values in an \"IN (...)\" clause must be a real parameter value. " + 
                 $"They cannot come from another table:\n{sqlBuilder.BuildInCondition(l.sql, r.sql).sql}");
 
