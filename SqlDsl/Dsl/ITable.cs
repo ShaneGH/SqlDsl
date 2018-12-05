@@ -27,6 +27,8 @@ namespace SqlDsl.Dsl
         /// Set the [Table] in SELECT FROM [Table] to be TResult.
         /// </summary>
         IQuery<TResult> From(string tableName);
+
+        // TODO: remove From() method. Replace with Where(), Map() etc..
         
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table] to be TResult. Uses the class name of TResult as the sql table name

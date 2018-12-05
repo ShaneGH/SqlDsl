@@ -52,10 +52,10 @@ namespace SqlDsl.SqlBuilders
         /// <inheritdoc />
         public virtual (string setupSql, string sql) BuildGreaterThanEqualToCondition(string lhs, string rhs) => (null, $"({lhs} >= {rhs})");
 
-        /// <inheritdoc />
-        public (string setupSql, string sql) BuildInCondition(string lhs, string rhs) => (null, $"({lhs} IN ({rhs}))");
+        public virtual (string setupSql, string sql) BuildInCondition(string lhs, string rhs) => (null, $"({lhs} IN ({rhs}))");
 
-        /// <inheritdoc />
-        public (string setupSql, string sql) BuildCommaCondition(string lhs, string rhs) => (null, $"{lhs}, {rhs}");
+        public virtual (string setupSql, string sql) BuildCommaCondition(string lhs, string rhs) => (null, $"{lhs}, {rhs}");
+
+        public virtual string BuildAddCondition(string lhs, string rhs) => $"({lhs} + {rhs})";
     }
 }

@@ -29,6 +29,14 @@ namespace SqlDsl.Utils
             where T : class => xs.Where(x => x != null);
         
         /// <summary>
+        /// Alias for .Where(x => x != null or whitespace)
+        /// </summary>
+        public static IEnumerable<string> RemoveNullsAndWhitespaces(this IEnumerable<string> xs) =>
+            xs.Where(IsNotNullOrWhiteSpace);
+
+        private static bool IsNotNullOrWhiteSpace(string x) => !string.IsNullOrWhiteSpace(x);
+        
+        /// <summary>
         /// Alias for .Where(x => x != null)
         /// </summary>
         public static IEnumerable<string> RemoveNullOrEmpty(this IEnumerable<string> xs) =>

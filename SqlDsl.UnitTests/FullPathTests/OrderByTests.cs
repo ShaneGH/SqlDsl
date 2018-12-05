@@ -129,7 +129,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         .Select(c => c.Name)
                 })
                 .ToArrayAsync(Executor, logger: Logger);
-
+                
             // assert
             CollectionAssert.AreEqual(new[] { Data.People.Mary.Name, Data.People.John.Name }, data.Select(x => x.name));
             CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Name, Data.Classes.Archery.Name, Data.Classes.Tennis.Name }, data.SelectMany(x => x.classes));

@@ -12,6 +12,20 @@ namespace SqlDsl.SqlBuilders
     public static class ISqlFragmentBuilderUtils
     {
         /// <summary>
+        /// Concat 2 query parts in a defined way (e.g. l + r)
+        /// </summary>
+        public static string Concat(this ISqlFragmentBuilder builder, string l, string r, ExpressionType concatType)
+        {
+            switch (concatType)
+            {
+                case ExpressionType.Add:
+                    return builder.BuildAddCondition(l, r);
+                default:
+                    throw new NotSupportedException($"Cannot combine query parts using concatType: {concatType}.");
+            }
+        }
+
+        /// <summary>
         /// Build the string for a SELECT column
         /// </summary>
         public static string BuildSelectColumn(this ISqlFragmentBuilder builder, string tableName, string columnName)

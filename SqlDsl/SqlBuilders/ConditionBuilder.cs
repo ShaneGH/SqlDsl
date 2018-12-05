@@ -43,6 +43,8 @@ namespace SqlDsl.SqlBuilders
         {
             switch (equality.NodeType)
             {
+                case ExpressionType.Add:
+                    return sqlBuilder.BuildAddCondition(queryRoot, argsParam, otherParams, equality as BinaryExpression, parameters);
                 case ExpressionType.Convert:
                     return sqlBuilder.BuildCondition(queryRoot, argsParam, otherParams, (equality as UnaryExpression).Operand, parameters);
                 case ExpressionType.Call:
@@ -78,6 +80,20 @@ namespace SqlDsl.SqlBuilders
                 default:
                     throw BuildInvalidExpressionException(equality);
             }
+        }
+
+        static (string setupSql, string sql, IEnumerable<string> queryObjectReferences) BuildAddCondition(
+            this ISqlFragmentBuilder sqlBuilder, 
+            ParameterExpression queryRoot, 
+            ParameterExpression argsParam, 
+            OtherParams otherParams, 
+            BinaryExpression equality, 
+            ParamBuilder parameters) =>
+            BuildBinaryCondition(sqlBuilder, queryRoot, argsParam, otherParams, equality, parameters, sqlBuilder.BuildAddConditionForCombinator);
+
+        static (string setupSql, string sql) BuildAddConditionForCombinator(this ISqlFragmentBuilder sqlBuilder, string left, string right)
+        {
+            return (null, sqlBuilder.BuildAddCondition(left, right));
         }
 
         static Exception BuildInvalidExpressionException(Expression expr) => new NotImplementedException($"Cannot compile expression \"{expr}\" to SQL");
@@ -130,7 +146,7 @@ namespace SqlDsl.SqlBuilders
 
             var references = lhs.Item3.Concat(rhs.Item3).Enumerate();
             return (
-                new[]{rhs.Item1, rhs.Item1, combo.setupSql}.RemoveNulls().JoinString("\n"),
+                new[]{rhs.Item1, rhs.Item1, combo.setupSql}.RemoveNullsAndWhitespaces().JoinString(";\n"),
                 combo.sql,
                 references);
         }
@@ -481,15 +497,15 @@ namespace SqlDsl.SqlBuilders
             ParamBuilder parameters)
         {
             if (array.Expressions.Count != 1)
-                throw new NotImplementedException($"Cannot compile expression \"{array}\" to SQL");
+                throw BuildInvalidExpressionException(array);
 
             var lengthExpr = array.Expressions[0] as ConstantExpression;                
             if (lengthExpr == null)
-                throw new NotImplementedException($"Cannot compile expression \"{array}\" to SQL");
+                throw BuildInvalidExpressionException(array);
 
             var type = ReflectionUtils.GetIEnumerableType(array.Type);
             if (type == null)
-                throw new NotImplementedException($"Cannot compile expression \"{array}\" to SQL");
+                throw BuildInvalidExpressionException(array);
 
             var length = Convert.ToInt32(lengthExpr.Value);
             var defaultV = type.IsValueType ? 
@@ -509,7 +525,7 @@ namespace SqlDsl.SqlBuilders
         static ConditionResult BuildParameterExpression(ParameterExpression expression, ParameterExpression argsParam, ParamBuilder parameters)
         {
             if (expression != argsParam)
-                throw new NotImplementedException($"Cannot compile expression \"{expression}\" to SQL");
+                throw BuildInvalidExpressionException(expression);
 
             return AddToParamaters(QueryArgAccessor.Create(expression), parameters);
         }

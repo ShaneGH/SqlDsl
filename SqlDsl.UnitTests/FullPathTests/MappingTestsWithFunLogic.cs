@@ -321,7 +321,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task MapWithAddition()
         {
             // arrange
@@ -337,21 +336,66 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
-        public async Task MapWithAddition2()
+        public async Task MapWithAddition_SwappedAround()
         {
             // arrange
-            var one = 1;
-
             // act
             var data = await FullyJoinedQuery<object>()
-                .Map(p => p.ThePerson.Id + one)
+                .Map(p => 1 + p.ThePerson.Id)
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
             Assert.AreEqual(Data.People.John.Id + 1, data.First());
             Assert.AreEqual(Data.People.Mary.Id + 1, data.ElementAt(1));
+        }
+
+        [Test]
+        public async Task MapWithAddition2()
+        {
+            // arrange
+            var one = 1;
+
+            // act
+            var data = await FullyJoinedQuery<int>()
+                .Map((p, a) => p.ThePerson.Id + one + a)
+                .ToIEnumerableAsync(Executor, 10, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John.Id + 11, data.First());
+            Assert.AreEqual(Data.People.Mary.Id + 11, data.ElementAt(1));
+        }
+
+        [Test]
+        public async Task AdditionInWhere()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<Person>()
+                .From()
+                .Where(p => p.Id + 1 == Data.People.John.Id + 1)
+                .ToListAsync(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new [] {Data.People.John}, data);
+        }
+
+        [Test]
+        public async Task AdditionInJoin()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.ThePerson)
+                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                    .On((q, pc) => q.ThePerson.Id + 1 == pc.PersonId + 1)
+                .Where(p => p.ThePerson.Id == Data.People.John.Id)
+                .ToListAsync(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new [] {Data.People.John}, data.Select(d => d.ThePerson));
+            CollectionAssert.AreEqual(new [] {Data.PersonClasses.JohnArchery, Data.PersonClasses.JohnTennis}, data.SelectMany(d => d.PersonClasses));
         }
     }
 }

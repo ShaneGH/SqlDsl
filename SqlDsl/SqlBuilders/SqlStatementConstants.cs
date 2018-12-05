@@ -33,5 +33,10 @@ namespace SqlDsl.SqlBuilders
         /// A string to prefix parameters which will be split into multiple values for an IN statement
         /// </summary>
         public const string ParamArrayFlag = "##array";
+        
+        /// <summary>
+        /// The alias of a column in a select statement which only returns one column
+        /// </summary>
+        public const string SingleColumnAlias = "#c";
     }
 }

@@ -4,10 +4,12 @@ using SqlDsl.SqlBuilders;
 using SqlDsl.SqlBuilders.SqlStatementParts;
 using SqlDsl.Utils;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SqlDsl.Query
@@ -35,10 +37,10 @@ namespace SqlDsl.Query
             var mappedValues = properties
                 .Select(x => (
                     type: x.MappedPropertyType, 
-                    from: AddRoot(x.FromParamRoot, x.From, state), 
+                    from: x.FromParams.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias),//  AddRoot(x.FromParamRoot, x.From, state), 
+                    fromParams: x.FromParams.GetEnumerable1().Select(Accumulator.AddRoot(state)),
                     to: x.To, 
-                    propertySegmentConstructors: x.PropertySegmentConstructors))
-                .Enumerate();
+                    propertySegmentConstructors: x.PropertySegmentConstructors));
 
             var builder = new SqlStatementBuilder(sqlFragmentBuilder);
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
@@ -47,15 +49,19 @@ namespace SqlDsl.Query
             {
                 // note: if AddSelectColumn is throwing an argument null exception
                 // on alias, it probably means that a different ToSqlBuilder should be called
-
+                
                 var table = (col.from ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias;
                 builder.AddSelectColumn(
                     col.type,
-                    sqlFragmentBuilder.BuildSelectColumn(
-                        table, 
-                        col.from),
+                    col.from,
                     col.to,
-                    new [] { (table, col.from) },
+                    col.fromParams.Select(p =>
+                    {
+                        return (
+                            (p ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias, 
+                            p);
+                    })
+                    .ToArray(),
                     argConstructors: col.propertySegmentConstructors);
             }
 
@@ -118,8 +124,8 @@ namespace SqlDsl.Query
                     }
 
                     var p = properties.First();
-                    return ToSqlBuilder(sqlFragmentBuilder, p.From, p.MappedPropertyType, wrappedBuilder, wrappedStatement)
-                        .CompileSimple<TArgs, TMapped>(mutableParameters.Parameters, properties.First().From);
+                    return ToSqlBuilder(sqlFragmentBuilder, p.FromParams, p.MappedPropertyType, wrappedBuilder, wrappedStatement)
+                        .CompileSimple<TArgs, TMapped>(mutableParameters.Parameters, SqlStatementConstants.SingleColumnAlias);
 
                 case BuildMapResult.SingleComplexProp:
                     var init = Expression.Lambda<Func<TResult, TArgs, TMapped>>(
@@ -164,10 +170,50 @@ namespace SqlDsl.Query
                 mapper);
         }
 
-        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, string propertyName, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
+        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, Accumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
         {
             var builder = new SqlStatementBuilder<TSqlBuilder>();
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
+
+            var referencedColumns = new List<(string, string)>();
+            string sql = null;
+            string Add(string sqlPart, ExpressionType combiner)
+            {
+                if (!sqlPart.StartsWith("@"))
+                {
+                    referencedColumns.Add((wrappedStatement.UniqueAlias, sqlPart));
+                    sqlPart = sqlFragmentBuilder.BuildSelectColumn(
+                        wrappedStatement.UniqueAlias,
+                        sqlPart);
+                }
+
+                return sql == null ?
+                    sqlPart :
+                    sqlFragmentBuilder.Concat(sql, sqlPart, combiner);
+            }
+
+            // second arg does not matter, as sql is null
+            sql = Add(property.First.param, ExpressionType.ModuloAssign);
+            foreach (var part in property.Next)
+            {
+                sql = Add(part.element.param, part.combiner);
+            }
+
+            builder.AddSelectColumn(
+                cellDataType,
+                sql,
+                SqlStatementConstants.SingleColumnAlias,
+                referencedColumns.ToArray());
+                
+            return builder;
+        }
+
+        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilderXX(ISqlFragmentBuilder sqlFragmentBuilder, Accumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
+        {
+            var builder = new SqlStatementBuilder<TSqlBuilder>();
+            builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
+
+            var propertyName = property.First.param;
 
             var col = propertyName.StartsWith("@") ? 
                 propertyName :
@@ -204,90 +250,142 @@ namespace SqlDsl.Query
 
         static readonly IEnumerable<MappedTable> EmptyMappedTables = Enumerable.Empty<MappedTable>();
 
-        static (BuildMapResult resultType, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expr)
+        static (BuildMapResult resultType, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expression)
         {
-            var _expr = ReflectionUtils.RemoveConvert(expr);
-
-            if (ReflectionUtils.IsConstant(_expr))
+            var (isPropertyChain, chains) = ReflectionUtils.GetPropertyChains(expression, allowOne: true, allowSelect: true, allowConstants: true);
+            if (isPropertyChain)
             {
-                var value = Expression
-                    .Lambda<Func<object>>(
-                        Expression.Convert(_expr, typeof(object)))
-                    .Compile()();
+                var mappedChains = chains
+                    .GetEnumerable2()
+                    .Select(c => 
+                    {
+                        var ((root, chain, expr), combiner) = c;
 
-                var paramName = state.Parameters.AddParam(value);
+                        if (root is ConstantExpression)
+                        {                            
+                            var chainExpr = chain
+                                .Aggregate(root, Expression.PropertyOrField);
+
+                            var value = Expression
+                                .Lambda<Func<object>>(
+                                    Expression.Convert(
+                                        chainExpr,
+                                        typeof(object)))
+                                .Compile()();
+
+                            var paramName = state.Parameters.AddParam(value);
+                            return (
+                                combiner: combiner,
+                                type: BuildMapResult.SimpleProp,
+                                result: new MappedProperty(null, paramName, null, chainExpr.Type)
+                            );
+                        }
+
+                        var rootParam = root as ParameterExpression;
+                        if (rootParam == null)
+                            throw new InvalidOperationException($"Invalid root param type: {root}.");
+
+                        if (rootParam == state.ArgsObject)
+                        {
+                            var result = QueryArgAccessor.Create(state.ArgsObject, expr);
+                            var paramName = state.Parameters.AddParam(result);
+
+                            return (
+                                combiner: combiner,
+                                type: BuildMapResult.SimpleProp,
+                                result: new MappedProperty(null, paramName, null, expr.Type)
+                            );
+                        }
+
+                        if (rootParam != state.QueryObject)
+                            throw new InvalidOperationException("Unable to understand mapping statement: " + expr);
+
+                        var pChain = chain.JoinString(".");
+                        if (pChain == "")
+                            throw new InvalidOperationException("You must provide a valid mapping with the Map(...) method.");
+
+                        foreach (var property in state.WrappedSqlStatement.Tables)
+                        {
+                            // get property from one table (no query object)
+                            if (property.Alias == SqlStatementConstants.RootObjectAlias && !pChain.Contains("."))
+                            {
+                                return (
+                                    combiner: combiner,
+                                    type: BuildMapResult.SimpleProp,
+                                    result: new MappedProperty(rootParam, pChain, null, GetSimplePropertyCellType(expr, state.QueryObject, 1))
+                                );
+                            }
+
+                            if (pChain == property.Alias)
+                            {
+                                // cannot support (1 + new { ... })
+                                if (chains.Next.Any())
+                                    throw new InvalidOperationException("Unable to understand mapping statement: " + expr);
+
+                                var resultType = ReflectionUtils.GetIEnumerableType(expr.Type) == null ?
+                                    BuildMapResult.SingleComplexProp :
+                                    BuildMapResult.MultiComplexProp;
+                                    
+                                return (
+                                    combiner: combiner,
+                                    type: resultType,
+                                    result: new MappedProperty(rootParam, pChain, null, expr.Type)
+                                );
+                            }
+
+                            if (pChain.StartsWith(property.Alias) && 
+                                pChain.Length >= (property.Alias.Length + 2) &&
+                                pChain[property.Alias.Length] == '.' &&
+                                !pChain.Substring(property.Alias.Length + 1).Contains('.'))
+                            {
+                                return (
+                                    combiner: combiner,
+                                    type: BuildMapResult.SimpleProp,
+                                    result: new MappedProperty(rootParam, pChain, null, GetSimplePropertyCellType(expr, state.QueryObject, 2))
+                                );
+                            }
+                        }
+
+                        // TODO: there is a third case where mapping expr is x => x.Outer (and Outer is {Inner: {Val: string}}
+                        throw new InvalidOperationException("Unable to understand mapping statement: " + expr);
+                    })
+                    .ToArray();
+
+                if (mappedChains.Length == 0)
+                    throw new InvalidOperationException("Unable to understand mapping statement: " + expression);
+
+                if (mappedChains.Length == 1)
+                {
+                    return (
+                        mappedChains[0].type,
+                        mappedChains[0].result.ToEnumerable(),
+                        EmptyMappedTables);
+                }
+
+                if (mappedChains.Any(x => x.type != BuildMapResult.SimpleProp))
+                    throw new InvalidOperationException("Unable to understand mapping statement: " + expression);
+
+                var combinedChains = mappedChains
+                    .Skip(1)
+                    .Select(c => (result: c.result.FromParams, combiner: c.combiner))
+                    .Aggregate(
+                        mappedChains[0].result.FromParams,
+                        (x, y) => x.Combine(y.result, y.combiner ?? throw new InvalidOperationException("Expecting combination logic.")));
+
                 return (
                     BuildMapResult.SimpleProp,
-                    new MappedProperty(null, paramName, null, expr.Type).ToEnumerable(),
+                    new [] 
+                    { 
+                        new MappedProperty(
+                            new Accumulator(combinedChains),
+                            null,
+                            expression.Type) 
+                    },
                     EmptyMappedTables
                 );
             }
 
-            var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(_expr, allowOne: true, allowSelect: true);
-            if (isPropertyChain)
-            {
-                if (root == state.ArgsObject)
-                {
-                    var result = QueryArgAccessor.Create(root, _expr);
-                    var paramName = state.Parameters.AddParam(result);
-
-                    return (
-                        BuildMapResult.SimpleProp,
-                        new MappedProperty(null, paramName, null, expr.Type).ToEnumerable(),
-                        EmptyMappedTables
-                    );
-                }
-
-                if (root != state.QueryObject)
-                    throw new InvalidOperationException("Unable to understand mapping statement: " + expr);
-
-                var pChain = chain.JoinString(".");
-                if (pChain == "")
-                    throw new InvalidOperationException("You must provide a valid mapping with the Map(...) method.");
-
-                foreach (var property in state.WrappedSqlStatement.Tables)
-                {
-                    if (property.Alias == SqlStatementConstants.RootObjectAlias && 
-                        !pChain.Contains("."))
-                    {
-                        return (
-                            BuildMapResult.SimpleProp,
-                            new[]{ new MappedProperty(root, pChain, null, GetSimplePropertyCellType(expr, state.QueryObject, 1)) },
-                            EmptyMappedTables
-                        );
-                    }
-
-                    if (pChain == property.Alias)
-                    {
-                        var resultType = ReflectionUtils.GetIEnumerableType(_expr.Type) == null ?
-                            BuildMapResult.SingleComplexProp :
-                            BuildMapResult.MultiComplexProp;
-                            
-                        return (
-                            resultType,
-                            new[]{ new MappedProperty(root, pChain, null, expr.Type) },
-                            EmptyMappedTables
-                        );
-                    }
-
-                    if (pChain.StartsWith(property.Alias) && 
-                        pChain.Length >= (property.Alias.Length + 2) &&
-                        pChain[property.Alias.Length] == '.' &&
-                        !pChain.Substring(property.Alias.Length + 1).Contains('.'))
-                    {
-                        return (
-                            BuildMapResult.SimpleProp,
-                            new[]{ new MappedProperty(root, pChain, null, GetSimplePropertyCellType(expr, state.QueryObject, 2)) },
-                            EmptyMappedTables
-                        );
-                    }
-                }
-
-                // TODO: there is a third case where mapping expr is x => x.Outer (and Outer is {Inner: {Val: string}}
-                throw new InvalidOperationException("Unable to understand mapping statement: " + expr);
-            }
-
-            var (properties, tables) = BuildMap(state, expr, MapType.Root, isExprTip: true);
+            var (properties, tables) = BuildMap(state, expression, MapType.Root, isExprTip: true);
 
             // if expression returns an object (e.g. a => a) the To param might be null
             tables = tables.Where(t => t.To != null);
@@ -376,6 +474,9 @@ namespace SqlDsl.Query
                         EmptyMappedTables
                     );
                     
+                case ExpressionType.Add:
+                    return BuildMapForAdd(state, expr as BinaryExpression, toPrefix);
+                    
                 case ExpressionType.MemberAccess:
                     return BuildMapForMemberAccess(state, expr as MemberExpression, toPrefix);
 
@@ -436,23 +537,46 @@ namespace SqlDsl.Query
                     arg.ToEnumerable();
 
                 return many.Select(q => new MappedProperty(
-                    q.FromParamRoot,
-                    q.From, 
+                    q.FromParams,
                     CombineStrings(toPrefix, CombineStrings($"{SqlStatementConstants.ConstructorArgPrefixAlias}{argIndex}", q.To)), 
                     q.MappedPropertyType,
                     constructorArgs: q.PropertySegmentConstructors.Prepend(expr.Constructor).ToArray()));
             }
         }
 
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForAdd(BuildMapState state, BinaryExpression expr, string toPrefix = null)
+        {
+            var l = BuildMap(state, expr.Left, MapType.Other, toPrefix);
+            var r = BuildMap(state, expr.Right, MapType.Other, toPrefix);
+
+            var lProp = l.properties.ToArray();
+            var rProp = r.properties.ToArray();
+
+            if (lProp.Length != 1 && rProp.Length != 1)
+                throw new InvalidOperationException($"Unsupported mapping expression \"{expr}\".");
+
+            return (
+                new MappedProperty(
+                    lProp[0].FromParams.Combine(rProp[0].FromParams, ExpressionType.Add),
+                    null, 
+                    expr.Type).ToEnumerable(),
+                l.tables.Concat(r.tables)
+            );
+        }
+
         static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMemberAccess(BuildMapState state, MemberExpression expr, string toPrefix = null)
         {
             var result = BuildMap(state, expr.Expression, MapType.MemberAccess, toPrefix);
+            var properties = result.properties.Enumerate();
+
+            // cannot support (x + y).Value
+            if (properties.Any(p => p.FromParams.Next.Any()))
+                throw new InvalidOperationException("Unable to understand mapping statement: " + expr);
 
             return (
                 result.properties
                     .Select(p => new MappedProperty(
-                        p.FromParamRoot,
-                        CombineStrings(p.From, expr.Member.Name), 
+                        p.FromParams.MapParamName(x => CombineStrings(x, expr.Member.Name)),
                         p.To,
                         expr.Type))
                     .Enumerate(),
@@ -476,8 +600,7 @@ namespace SqlDsl.Query
                             }
 
                             return new MappedProperty(
-                                x.FromParamRoot, 
-                                x.From, 
+                                x.FromParams, 
                                 CombineStrings(toPrefix, x.To),
                                 x.MappedPropertyType, 
                                 x.PropertySegmentConstructors).ToEnumerable();
@@ -491,21 +614,28 @@ namespace SqlDsl.Query
             propertyType = ReflectionUtils.GetIEnumerableType(propertyType) ?? propertyType;
             return propertyType
                 .GetFieldsAndProperties()
-                .Select(mem => new MappedProperty(property.FromParamRoot, CombineStrings(property.From, mem.name), CombineStrings(property.To, mem.name), mem.type));
+                .Select(mem => new MappedProperty(
+                    property.FromParams.MapParamName(x => CombineStrings(x, mem.name)), 
+                    CombineStrings(property.To, mem.name), 
+                    mem.type));
         }
 
         static bool PropertyRepresentsTable(BuildMapState state, MappedProperty property)
         {
+            // a 2 part property (e.g. x + 1) cannot represent a table
+            if (property.FromParams.Next.Any())
+                return false;
+
             // mapped property points to the root query object
-            if (property.From == null && property.FromParamRoot == state.QueryObject)
+            if (property.FromParams.First.param == null && property.FromParams.First.paramRoot == state.QueryObject)
                 return true;
 
             // mapped property points to a table on the query object
-            if (property.FromParamRoot == state.QueryObject && state.WrappedSqlStatement.ContainsTable(property.From))
+            if (property.FromParams.First.paramRoot == state.QueryObject && state.WrappedSqlStatement.ContainsTable(property.FromParams.First.param))
                 return true;
 
             // mapped property points to a table on the query object
-            if (property.From == null && state.ParameterRepresentsProperty.Any(p => p.parameter == property.FromParamRoot))
+            if (property.FromParams.First.param == null && state.ParameterRepresentsProperty.Any(p => p.parameter == property.FromParams.First.paramRoot))
                 return true;
 
             return false;
@@ -534,19 +664,25 @@ namespace SqlDsl.Query
 
             var outerMap = BuildMap(state, enumerable, MapType.Select, toPrefix);
             var innerMap = BuildMap(state, mapper.Body, MapType.Other, isExprTip: isExprTip);
-            var outerMapProperties  = outerMap.properties.Enumerate();
+            var outerMapProperties  = outerMap.properties.ToArray();
             
             var (isSuccess, name) = CompileMemberName(enumerable);
             var newTableMap = isSuccess ?
                 new MappedTable(name, null).ToEnumerable()
                 : EmptyMappedTables;
 
+            if (outerMapProperties.Length != 1 || outerMapProperties[0].FromParams.Next.Any())
+                throw new InvalidOperationException($"Mapping from \"{enumerable}\" is not supported.");
+
             return (
-                outerMapProperties
-                    .SelectMany(r => innerMap.properties
-                        .Select(m => m.FromParamRoot != null ?
-                            new MappedProperty(m.FromParamRoot, m.From, CombineStrings(r.To, m.To), m.MappedPropertyType, m.PropertySegmentConstructors) :
-                            new MappedProperty(r.FromParamRoot, CombineStrings(r.From, m.From), CombineStrings(r.To, m.To), m.MappedPropertyType, m.PropertySegmentConstructors))),
+                innerMap.properties
+                    .Select(m => new MappedProperty(
+                        m.FromParams.MapParam(x => (
+                            x.paramRoot ?? outerMapProperties[0].FromParams.First.paramRoot, 
+                            x.paramRoot == null ? CombineStrings(outerMapProperties[0].FromParams.First.param, x.param) : x.param)),
+                        CombineStrings(outerMapProperties[0].To, m.To), 
+                        m.MappedPropertyType, 
+                        m.PropertySegmentConstructors)),
                 outerMap.tables
                     .Concat(innerMap.tables)
                     .Concat(newTableMap)
@@ -605,31 +741,6 @@ namespace SqlDsl.Query
                 throw new InvalidOperationException($"Error in mapping: property \"{from}\" does not join to property \"{to}\".");
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForJoined(BuildMapState state, Expression joinedFrom, Expression joinedTo, string toPrefix)
-        {
-            var op = BuildMap(state, joinedTo, MapType.Other, toPrefix);
-
-            var propsEnumerated = op.properties.ToList();
-            if (propsEnumerated.Count != 1)
-                throw new InvalidOperationException("A join must contain a reference to 1 table on the query object");
-                
-            VerifyJoin(state, joinedFrom, propsEnumerated[0].From);
-
-            return (
-                propsEnumerated.Select(BuildProp),
-                op.tables);
-
-            MappedProperty BuildProp(MappedProperty x) => new MappedProperty(
-                state.QueryObject,
-                x.From, 
-                //$"{SqlStatementConstants.RootObjectAlias}.{x.From}", 
-                x.To, 
-                x.MappedPropertyType, 
-                x.PropertySegmentConstructors);
-        }
-
-        //static string RootObjectAsPrefix => $"{SqlStatementConstants.RootObjectAlias}.";
-
         static string CombineStrings(string s1, string s2)
         {
             return s1 == null && s2 == null ?
@@ -639,50 +750,12 @@ namespace SqlDsl.Query
                     $"{s1}{s2}";
         }
 
-        static string AddRoot(ParameterExpression root, string property, BuildMapState state)
-        {
-            // I am not 100% sure about the "root == state.QueryObject" part
-            if (root == null || root == state.QueryObject) return property;
-
-            var propertyRoot = state.ParameterRepresentsProperty
-                .Where(p => p.parameter == root)
-                .Select(p => p.property.JoinString("."))
-                .FirstOrDefault();
-
-            if (propertyRoot == null)
-                throw new InvalidOperationException($"Could not find alias for mapping parameter \"{root}\".");
-
-            if (!string.IsNullOrEmpty(property))
-                propertyRoot += ".";
-
-            return $"{propertyRoot}{property}";
-        }
-
         static (bool isSuccess, string name) CompileMemberName(Expression expr)
         {
             var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(expr);
             if (!isPropertyChain) return (false, null);
 
             return (true, chain.JoinString("."));
-        }
-
-        class BuildMapState
-        {
-            public readonly ParamBuilder Parameters;
-            public readonly ParameterExpression QueryObject;
-            public readonly ParameterExpression ArgsObject;
-            public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
-            public readonly ISqlStatement WrappedSqlStatement;
-            public readonly string PrimarySelectTable;
-
-            public BuildMapState(string primarySelectTable, ParamBuilder parameters, ParameterExpression queryObject, ParameterExpression argsObject, ISqlStatement wrappedSqlStatement)
-            {
-                Parameters = parameters;
-                QueryObject = queryObject;
-                ArgsObject = argsObject;
-                WrappedSqlStatement = wrappedSqlStatement;
-                PrimarySelectTable = primarySelectTable;
-            }
         }
         
         enum BuildMapResult
@@ -714,23 +787,137 @@ namespace SqlDsl.Query
         }
     }
 
+    class BuildMapState
+    {
+        public readonly ParamBuilder Parameters;
+        public readonly ParameterExpression QueryObject;
+        public readonly ParameterExpression ArgsObject;
+        public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
+        public readonly ISqlStatement WrappedSqlStatement;
+        public readonly string PrimarySelectTable;
+
+        public BuildMapState(string primarySelectTable, ParamBuilder parameters, ParameterExpression queryObject, ParameterExpression argsObject, ISqlStatement wrappedSqlStatement)
+        {
+            Parameters = parameters;
+            QueryObject = queryObject;
+            ArgsObject = argsObject;
+            WrappedSqlStatement = wrappedSqlStatement;
+            PrimarySelectTable = primarySelectTable;
+        }
+    }
+
+    //TODO: is paramRoot needed?
+    class Accumulator : Accumulator<(ParameterExpression paramRoot, string param), ExpressionType>
+    {   
+        public Accumulator(
+            ParameterExpression firstParamRoot, string firstParam, 
+            IEnumerable<((ParameterExpression paramRoot, string param), ExpressionType)> next = null)
+            : base((firstParamRoot, firstParam), next)
+        {
+        }
+        
+        public Accumulator(Accumulator<(ParameterExpression paramRoot, string param), ExpressionType> acc)
+            : this(acc.First.paramRoot, acc.First.param, acc.Next)
+        {
+        }
+
+        public Accumulator MapParam(Func<(ParameterExpression paramRoot, string param), (ParameterExpression, string)> map)
+        {
+            return new Accumulator(base.Map(map));
+        }
+
+        public Accumulator MapParamName(Func<string, string> map)
+        {
+            return MapParam(_Map);
+            (ParameterExpression, string) _Map((ParameterExpression x, string y) z) => (z.x, map(z.y));
+        }
+
+        public Accumulator Combine(Accumulator x, ExpressionType combiner)
+        {
+            return new Accumulator(base.Combine(x, combiner));
+        }
+
+        public string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
+        {
+            var table1 = (First.param ?? "").StartsWith("@") ? null : wrappedQueryAlias;
+
+            return Next.Aggregate(
+                BuildColumn(table1, First.paramRoot, First.param),
+                Aggregate);
+
+            string Aggregate(string x, ((ParameterExpression paramRoot, string param) param, ExpressionType type) y)
+            {
+                var table = (y.param.param ?? "").StartsWith("@") ? null : sqlFragmentBuilder.WrapTable(wrappedQueryAlias);
+                var yValue = BuildColumn(table, y.param.paramRoot, y.param.param);
+
+                switch (y.type)
+                {
+                    case ExpressionType.Add:
+                        return sqlFragmentBuilder.BuildAddCondition(x, yValue);
+
+                    default:
+                        throw new InvalidOperationException($"Cannot build accumulator for expression type {y.type}.");
+                }
+            }
+
+            string BuildColumn(string tab, ParameterExpression paramRoot, string parameter)
+            {
+                return sqlFragmentBuilder.BuildSelectColumn(tab, AddRoot(paramRoot, parameter, state));
+            }
+        }
+
+        public static Func<(ParameterExpression, string), string> AddRoot(BuildMapState state)
+        {
+            return Execute;
+
+            string Execute((ParameterExpression root, string property) x)
+            {
+                var (root, property) = x;
+
+                // I am not 100% sure about the "root == state.QueryObject" part
+                if (root == null || root == state.QueryObject) return property;
+
+                var propertyRoot = state.ParameterRepresentsProperty
+                    .Where(p => p.parameter == root)
+                    .Select(p => p.property.JoinString("."))
+                    .FirstOrDefault();
+
+                if (propertyRoot == null)
+                    throw new InvalidOperationException($"Could not find alias for mapping parameter \"{root}\".");
+
+                if (!string.IsNullOrEmpty(property))
+                    propertyRoot += ".";
+
+                return $"{propertyRoot}{property}";
+            }
+        }
+
+        public static string AddRoot(ParameterExpression root, string property, BuildMapState state)
+        {
+            return AddRoot(state)((root, property));
+        }
+    }
+
     class MappedProperty
     {
         static readonly ConstructorInfo[] EmptyConstructorArgs = new ConstructorInfo[0];
 
         public readonly Type MappedPropertyType;
         public readonly ConstructorInfo[] PropertySegmentConstructors;
-        public readonly ParameterExpression FromParamRoot;
-        public readonly string From;
         public readonly string To;
+        public readonly Accumulator FromParams;
 
-        public MappedProperty(ParameterExpression fromParamRoot, string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+        public MappedProperty(Accumulator fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
         {
-            From = from;
             To = to;
-            FromParamRoot = fromParamRoot;
+            FromParams = fromParams;
             MappedPropertyType = mappedPropertyType;
             PropertySegmentConstructors = constructorArgs ?? EmptyConstructorArgs;
+        }
+        
+        public MappedProperty(ParameterExpression fromParamRoot, string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+            : this (new Accumulator(fromParamRoot, from), to, mappedPropertyType, constructorArgs)
+        {
         }
     }
 }

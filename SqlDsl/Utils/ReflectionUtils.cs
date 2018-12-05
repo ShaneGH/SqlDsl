@@ -350,43 +350,102 @@ namespace SqlDsl.Utils
         /// </summary>
         /// <param name="allowOne">If true, calls to .One() will be ignored in the chain</param>
         /// <param name="allowSelect">If true, calls to .Select(...) will be considered part of the the chain if the mapping is also a property chain</param>
-        public static (bool isPropertyChain, ParameterExpression root, IEnumerable<string> chain) GetPropertyChain(
+        public static (bool isPropertyChain, Expression root, IEnumerable<string> chain) GetPropertyChain(
             Expression e, 
             bool allowOne = false,
-            bool allowSelect = false)
+            bool allowSelect = false,
+            bool allowConstants = false)
+        {
+            var (isPropertyChain, chains) = GetPropertyChains(e, allowOne, allowSelect, allowConstants, false);
+            return isPropertyChain ?
+                (true, chains?.First.root, chains?.First.chain) :
+                (false, null, null);
+        }
+
+        /// <summary>
+        /// If an expression is a property chain, return it's root and the property names, otherwise, return false for isPropertyChain
+        /// </summary>
+        /// <param name="allowOne">If true, calls to .One() will be ignored in the chain</param>
+        /// <param name="allowSelect">If true, calls to .Select(...) will be considered part of the the chain if the mapping is also a property chain</param>
+        public static (bool isPropertyChain, StructAccumulator<(Expression root, IEnumerable<string> chain, Expression fullExpression), ExpressionType>) GetPropertyChains(
+            Expression e, 
+            bool allowOne = false,
+            bool allowSelect = false,
+            bool allowConstants = false)
+        {
+            var (success, result) = GetPropertyChains(e, allowOne, allowSelect, allowConstants, true);
+            return success ?
+                (true, new StructAccumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>(result)) :
+                (false, null);
+        }
+
+        /// <summary>
+        /// If an expression is a property chain, return it's root and the property names, otherwise, return false for isPropertyChain
+        /// </summary>
+        /// <param name="allowOne">If true, calls to .One() will be ignored in the chain</param>
+        /// <param name="allowSelect">If true, calls to .Select(...) will be considered part of the the chain if the mapping is also a property chain</param>
+        static (bool isPropertyChain, Accumulator<(Expression root, IEnumerable<string> chain, Expression fullExpression), ExpressionType>) GetPropertyChains(
+            Expression e, 
+            bool allowOne,
+            bool allowSelect,
+            bool allowConstants,
+            bool allowBinaryOperators)
         {
             switch (e.NodeType)
             {
+                case ExpressionType.Constant:
+                    if (!allowConstants)
+                        return (false, null);
+
+                    return (true, new Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>((e, Enumerable.Empty<string>(), e)));
+
+                case ExpressionType.Add:
+                    if (!allowBinaryOperators)
+                        return (false, null);
+
+                    var asBinary = e as BinaryExpression;
+                    var pchain1 = GetPropertyChains(asBinary.Left, allowOne, allowSelect, allowConstants, allowBinaryOperators);
+                    var pchain2 = GetPropertyChains(asBinary.Right, allowOne, allowSelect, allowConstants, allowBinaryOperators);
+
+                    if (!pchain1.isPropertyChain || !pchain2.isPropertyChain)
+                        return (false, null);
+
+                    return (true, pchain1.Item2.Combine(pchain2.Item2, e.NodeType));
+                    
                 case ExpressionType.Convert:
-                    return GetPropertyChain((e as UnaryExpression).Operand, allowOne: allowOne, allowSelect: allowSelect);
+                    return GetPropertyChains((e as UnaryExpression).Operand, allowOne, allowSelect, allowConstants, allowBinaryOperators)
+                        .ReplaceFullExpressions(e);
                     
                 case ExpressionType.MemberAccess:
                     var acc = e as MemberExpression;
-                    var (isPropertyChain1, root1, chain1) = GetPropertyChain(acc.Expression, allowOne: allowOne, allowSelect: allowSelect);
+                    var (isPropertyChain1, chains1) = GetPropertyChains(acc.Expression, allowOne, allowSelect, allowConstants, allowBinaryOperators);
                     
                     return isPropertyChain1 ?
-                        (isPropertyChain1, root1, chain1.Append(acc.Member.Name)) :
-                        (false, null, null);
+                        (isPropertyChain1, chains1.Map(c => (c.root, c.chain.Append(acc.Member.Name), e))) :
+                        (false, null);
                     
                 case ExpressionType.Parameter:
-                    return (true, e as ParameterExpression, Enumerable.Empty<string>());
+                    return (true, new Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>((e, Enumerable.Empty<string>(), e)));
                     
                 case ExpressionType.Call:
                     var methodCallE = e as MethodCallExpression;
                     var (isToArray, enumerableA) = ReflectionUtils.IsToArray(methodCallE);
                     if (isToArray)
-                        return GetPropertyChain(enumerableA, allowOne: allowOne, allowSelect: allowSelect);
+                        return GetPropertyChains(enumerableA, allowOne, allowSelect, allowConstants, allowBinaryOperators)
+                            .ReplaceFullExpressions(e);
                         
                     var (isToList, enumerableL) = ReflectionUtils.IsToList(methodCallE);
                     if (isToList)
-                        return GetPropertyChain(enumerableL, allowOne: allowOne, allowSelect: allowSelect);
+                        return GetPropertyChains(enumerableL, allowOne, allowSelect, allowConstants, allowBinaryOperators)
+                            .ReplaceFullExpressions(e);
 
                     if (allowOne)
                     {
                         var oneExpr = ReflectionUtils.IsOne(e);
                         if (oneExpr != null)
                         {
-                            return GetPropertyChain(oneExpr, allowOne: allowOne, allowSelect: allowSelect);
+                            return GetPropertyChains(oneExpr, allowOne, allowSelect, allowConstants, allowBinaryOperators)
+                                .ReplaceFullExpressions(e);
                         } 
                     }
 
@@ -395,19 +454,28 @@ namespace SqlDsl.Utils
                         var (isSelect, enumerable, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(methodCallE);
                         if (isSelect)
                         {
-                            var (isPropertyChain2, root2, chain2) = GetPropertyChain(enumerable, allowOne: allowOne, allowSelect: allowSelect);
-                            var (isPropertyChain3, _, chain3) = GetPropertyChain(mapper.Body, allowOne: allowOne, allowSelect: allowSelect);
-                            if (isPropertyChain2 && isPropertyChain3)
-                            {
-                                return (true, root2, chain2.Concat(chain3));
-                            }
+                            var (isPropertyChain2, chains2) = GetPropertyChains(enumerable, allowOne, allowSelect, allowConstants, allowBinaryOperators);
+                            var (isPropertyChain3, chains3) = GetPropertyChains(mapper.Body, allowOne, allowSelect, allowConstants, allowBinaryOperators);
+                            if (!isPropertyChain2 || !isPropertyChain3)
+                                return (false, null);
+
+                            if (chains2.Next.Any())
+                                return (false, null);
+
+                            return (true, chains3.Map(ch => (chains2.First.root, chains2.First.chain.Concat(ch.chain), e)));
                         } 
                     }
                     
-                    return (false, null, null);
+                    return (false, null);
                 default:
-                    return (false, null, null);
+                    return (false, null);
             }
+        }
+
+        static (bool, Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>) ReplaceFullExpressions(this (bool, Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>) input, Expression expr)
+        {
+            if (!input.Item1) return (false, null);
+            return (true, input.Item2.Map(x => (x.Item1, x.Item2, expr)));
         }
 
         static readonly MethodInfo IEnumerableToArray = GetMethod(() => new object[0].ToArray()).GetGenericMethodDefinition();

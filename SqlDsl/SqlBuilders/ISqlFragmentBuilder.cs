@@ -84,5 +84,10 @@ namespace SqlDsl.SqlBuilders
         /// Alias an item
         /// </summary>
         string BuildAlias(string lhs, string alias);
+        
+        /// <summary>
+        /// Combine 2 params with +
+        /// </summary>
+        string BuildAddCondition(string lhs, string rhs);
     }
 }
