@@ -20,6 +20,12 @@ namespace SqlDsl.SqlBuilders
             {
                 case ExpressionType.Add:
                     return builder.BuildAddCondition(l, r);
+                case ExpressionType.Subtract:
+                    return builder.BuildSubtractCondition(l, r);
+                case ExpressionType.Multiply:
+                    return builder.BuildMultiplyCondition(l, r);
+                case ExpressionType.Divide:
+                    return builder.BuildDivideCondition(l, r);
                 default:
                     throw new NotSupportedException($"Cannot combine query parts using concatType: {concatType}.");
             }

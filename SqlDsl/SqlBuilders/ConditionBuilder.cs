@@ -45,6 +45,12 @@ namespace SqlDsl.SqlBuilders
             {
                 case ExpressionType.Add:
                     return sqlBuilder.BuildAddCondition(queryRoot, argsParam, otherParams, equality as BinaryExpression, parameters);
+                case ExpressionType.Subtract:
+                    return sqlBuilder.BuildSubtractCondition(queryRoot, argsParam, otherParams, equality as BinaryExpression, parameters);
+                case ExpressionType.Multiply:
+                    return sqlBuilder.BuildMultiplyCondition(queryRoot, argsParam, otherParams, equality as BinaryExpression, parameters);
+                case ExpressionType.Divide:
+                    return sqlBuilder.BuildDivideCondition(queryRoot, argsParam, otherParams, equality as BinaryExpression, parameters);
                 case ExpressionType.Convert:
                     return sqlBuilder.BuildCondition(queryRoot, argsParam, otherParams, (equality as UnaryExpression).Operand, parameters);
                 case ExpressionType.Call:
@@ -89,12 +95,34 @@ namespace SqlDsl.SqlBuilders
             OtherParams otherParams, 
             BinaryExpression equality, 
             ParamBuilder parameters) =>
-            BuildBinaryCondition(sqlBuilder, queryRoot, argsParam, otherParams, equality, parameters, sqlBuilder.BuildAddConditionForCombinator);
+            BuildBinaryConditionX(sqlBuilder, queryRoot, argsParam, otherParams, equality, parameters, sqlBuilder.BuildAddCondition);
 
-        static (string setupSql, string sql) BuildAddConditionForCombinator(this ISqlFragmentBuilder sqlBuilder, string left, string right)
-        {
-            return (null, sqlBuilder.BuildAddCondition(left, right));
-        }
+        static (string setupSql, string sql, IEnumerable<string> queryObjectReferences) BuildSubtractCondition(
+            this ISqlFragmentBuilder sqlBuilder, 
+            ParameterExpression queryRoot, 
+            ParameterExpression argsParam, 
+            OtherParams otherParams, 
+            BinaryExpression equality, 
+            ParamBuilder parameters) =>
+            BuildBinaryConditionX(sqlBuilder, queryRoot, argsParam, otherParams, equality, parameters, sqlBuilder.BuildSubtractCondition);
+
+        static (string setupSql, string sql, IEnumerable<string> queryObjectReferences) BuildMultiplyCondition(
+            this ISqlFragmentBuilder sqlBuilder, 
+            ParameterExpression queryRoot, 
+            ParameterExpression argsParam, 
+            OtherParams otherParams, 
+            BinaryExpression equality, 
+            ParamBuilder parameters) =>
+            BuildBinaryConditionX(sqlBuilder, queryRoot, argsParam, otherParams, equality, parameters, sqlBuilder.BuildMultiplyCondition);
+
+        static (string setupSql, string sql, IEnumerable<string> queryObjectReferences) BuildDivideCondition(
+            this ISqlFragmentBuilder sqlBuilder, 
+            ParameterExpression queryRoot, 
+            ParameterExpression argsParam, 
+            OtherParams otherParams, 
+            BinaryExpression equality, 
+            ParamBuilder parameters) =>
+            BuildBinaryConditionX(sqlBuilder, queryRoot, argsParam, otherParams, equality, parameters, sqlBuilder.BuildDivideCondition);
 
         static Exception BuildInvalidExpressionException(Expression expr) => new NotImplementedException($"Cannot compile expression \"{expr}\" to SQL");
 
@@ -117,6 +145,26 @@ namespace SqlDsl.SqlBuilders
                 sqlBuilder.BuildCondition(queryRoot, argsParam, otherParams, and.Right, parameters), 
                 parameters,
                 combinator);
+
+        /// <summary>
+        /// Build a condition from an expression
+        /// </summary>
+        /// <param name="sqlBuilder">The sql builder to use to generate scripts</param>
+        /// <param name="queryRoot">The parameter in the expression which represents the query object</param>
+        /// <param name="argsParam">The parameter in the expression which represents the args of the query</param>
+        /// <param name="otherParams">Any other parameters in the expression</param>
+        /// <param name="parameters">A list of parameters which may be added to</param>
+        /// <param name="combinator">The function to actully build the condition</param>
+        static ConditionResult BuildBinaryConditionX(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, BinaryExpression and, ParamBuilder parameters, Func<string, string, string> combinator) =>
+            BuildBinaryCondition(
+                sqlBuilder, 
+                queryRoot, 
+                argsParam, 
+                otherParams, 
+                sqlBuilder.BuildCondition(queryRoot, argsParam, otherParams, and.Left, parameters), 
+                sqlBuilder.BuildCondition(queryRoot, argsParam, otherParams, and.Right, parameters), 
+                parameters,
+                (x, y) => (null, combinator(x, y)));
 
         /// <summary>
         /// Build a condition from an expression

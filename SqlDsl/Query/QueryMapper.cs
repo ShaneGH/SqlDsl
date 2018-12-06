@@ -475,7 +475,11 @@ namespace SqlDsl.Query
                     );
                     
                 case ExpressionType.Add:
-                    return BuildMapForAdd(state, expr as BinaryExpression, toPrefix);
+                case ExpressionType.Subtract:
+                case ExpressionType.Multiply:
+                case ExpressionType.Divide:
+                    var asB = expr as BinaryExpression;
+                    return BuildMapForBinaryCondition(state, asB.Left, asB.Right, asB.Type, asB.NodeType, toPrefix);
                     
                 case ExpressionType.MemberAccess:
                     return BuildMapForMemberAccess(state, expr as MemberExpression, toPrefix);
@@ -544,22 +548,25 @@ namespace SqlDsl.Query
             }
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForAdd(BuildMapState state, BinaryExpression expr, string toPrefix = null)
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForBinaryCondition(BuildMapState state, Expression left, Expression right, Type combinedType, ExpressionType combiner, string toPrefix = null)
         {
-            var l = BuildMap(state, expr.Left, MapType.Other, toPrefix);
-            var r = BuildMap(state, expr.Right, MapType.Other, toPrefix);
+            var l = BuildMap(state, left, MapType.Other, toPrefix);
+            var r = BuildMap(state, right, MapType.Other, toPrefix);
 
             var lProp = l.properties.ToArray();
             var rProp = r.properties.ToArray();
 
-            if (lProp.Length != 1 && rProp.Length != 1)
-                throw new InvalidOperationException($"Unsupported mapping expression \"{expr}\".");
+            if (lProp.Length != 1)
+                throw new InvalidOperationException($"Unsupported mapping expression \"{left}\".");
+
+            if (rProp.Length != 1)
+                throw new InvalidOperationException($"Unsupported mapping expression \"{right}\".");
 
             return (
                 new MappedProperty(
-                    lProp[0].FromParams.Combine(rProp[0].FromParams, ExpressionType.Add),
+                    lProp[0].FromParams.Combine(rProp[0].FromParams, combiner),
                     null, 
-                    expr.Type).ToEnumerable(),
+                    combinedType).ToEnumerable(),
                 l.tables.Concat(r.tables)
             );
         }
@@ -854,6 +861,15 @@ namespace SqlDsl.Query
                 {
                     case ExpressionType.Add:
                         return sqlFragmentBuilder.BuildAddCondition(x, yValue);
+
+                    case ExpressionType.Subtract:
+                        return sqlFragmentBuilder.BuildSubtractCondition(x, yValue);
+                        
+                    case ExpressionType.Multiply:
+                        return sqlFragmentBuilder.BuildMultiplyCondition(x, yValue);
+                        
+                    case ExpressionType.Divide:
+                        return sqlFragmentBuilder.BuildDivideCondition(x, yValue);
 
                     default:
                         throw new InvalidOperationException($"Cannot build accumulator for expression type {y.type}.");

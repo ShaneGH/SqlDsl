@@ -400,6 +400,9 @@ namespace SqlDsl.Utils
                     return (true, new Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>((e, Enumerable.Empty<string>(), e)));
 
                 case ExpressionType.Add:
+                case ExpressionType.Subtract:
+                case ExpressionType.Multiply:
+                case ExpressionType.Divide:
                     if (!allowBinaryOperators)
                         return (false, null);
 

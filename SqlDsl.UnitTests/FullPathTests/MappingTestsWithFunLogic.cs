@@ -15,6 +15,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 using SqlDsl.Sqlite;
 using NUnit.Framework.Interfaces;
 using SqlDsl.ObjectBuilders;
+using System.Linq.Expressions;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
@@ -420,6 +421,116 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             Assert.AreEqual(Data.People.Mary.Id + 1, data[1].pid);
             CollectionAssert.AreEqual(new [] {Data.Classes.Tennis.Id * 2}, data[1].classes);
+        }
+
+        [Test]
+        [TestCase(ExpressionType.Add, 3)]
+        [TestCase(ExpressionType.Subtract, -1)]
+        [TestCase(ExpressionType.Multiply, 2)]
+        [TestCase(ExpressionType.Divide, 0)]
+        public async Task Map_SimpleBinaryCondition(ExpressionType type, long result)
+        {
+            // arrange
+            var exprInput = Expression.Parameter(typeof(JoinedQueryClass));
+
+            // p => p.ThePerson.Id + result
+            var mapper = Expression.Lambda<Func<JoinedQueryClass, long>>(
+                Expression.MakeBinary(
+                    type, 
+                    Expression.Property(
+                        Expression.Property(
+                            exprInput,
+                            "ThePerson"), 
+                        "Id"),
+                    Expression.Constant(2L)),
+                    exprInput);
+
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Where(x => x.ThePerson.Id == Data.People.John.Id)
+                .Map(mapper)
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            Assert.AreEqual(result, data.First());
+        }
+
+        static long Add(long x) => x + x;
+
+        [Test]
+        [TestCase(ExpressionType.Add, 3)]
+        [TestCase(ExpressionType.Subtract, -1)]
+        [TestCase(ExpressionType.Multiply, 2)]
+        [TestCase(ExpressionType.Divide, 0)]
+        public async Task Where_BinaryCondition(ExpressionType type, long result)
+        {
+            // arrange
+            var exprInput = Expression.Parameter(typeof(Person));
+
+            // p => p.Id + 2 == result
+            var where = Expression.Lambda<Func<Person, bool>>(
+                Expression.Equal(
+                    Expression.MakeBinary(
+                        type, 
+                        Expression.Property(
+                            exprInput,
+                            "Id"),
+                        Expression.Constant(2L)),
+                    Expression.Constant(result)),
+                exprInput);
+
+            // act
+            var data = await Sql.Query.Sqlite<Person>()
+                .From()
+                .Where(where)
+                .ToListAsync(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new [] {Data.People.John}, data);
+        }
+
+        [Test]
+        [TestCase(ExpressionType.Add, 3)]
+        [TestCase(ExpressionType.Subtract, -1)]
+        [TestCase(ExpressionType.Multiply, 2)]
+        [TestCase(ExpressionType.Divide, 0)]
+        public async Task Join_BinaryCondition(ExpressionType type, long result)
+        {
+            // arrange
+            var exprInput1 = Expression.Parameter(typeof(JoinedQueryClass));
+            var exprInput2 = Expression.Parameter(typeof(PersonClass));
+
+            // (q, pc) => q.ThePerson.Id + 2 == result
+            var join = Expression.Lambda<Func<JoinedQueryClass, PersonClass, bool>>(
+                Expression.Equal(
+                    Expression.MakeBinary(
+                        type,
+                        Expression.PropertyOrField(
+                            Expression.PropertyOrField(
+                                exprInput1,
+                                "ThePerson"),
+                            "Id"),
+                        Expression.Constant(2L)),
+                    Expression.Constant(result)),
+                exprInput1,
+                exprInput2);
+                
+            // act
+            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.ThePerson)
+                .InnerJoin<PersonClass>(q => q.PersonClasses).On(join)
+                .Where(p => p.ThePerson.Id == Data.People.John.Id)
+                .ToListAsync(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new [] {Data.People.John}, data.Select(d => d.ThePerson));
+            CollectionAssert.AreEqual(new [] 
+            { 
+                Data.PersonClasses.JohnArchery, 
+                Data.PersonClasses.JohnTennis, 
+                Data.PersonClasses.MaryTennis
+            }, data.SelectMany(d => d.PersonClasses));
         }
     }
 }

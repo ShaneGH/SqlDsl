@@ -89,5 +89,20 @@ namespace SqlDsl.SqlBuilders
         /// Combine 2 params with +
         /// </summary>
         string BuildAddCondition(string lhs, string rhs);
+
+        /// <summary>
+        /// Combine 2 params with -
+        /// </summary>
+        string BuildSubtractCondition(string lhs, string rhs);
+
+        /// <summary>
+        /// Combine 2 params with *
+        /// </summary>
+        string BuildMultiplyCondition(string lhs, string rhs);
+
+        /// <summary>
+        /// Combine 2 params with /
+        /// </summary>
+        string BuildDivideCondition(string lhs, string rhs);
     }
 }

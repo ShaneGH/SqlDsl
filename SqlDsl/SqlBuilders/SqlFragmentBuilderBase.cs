@@ -57,5 +57,13 @@ namespace SqlDsl.SqlBuilders
         public virtual (string setupSql, string sql) BuildCommaCondition(string lhs, string rhs) => (null, $"{lhs}, {rhs}");
 
         public virtual string BuildAddCondition(string lhs, string rhs) => $"({lhs} + {rhs})";
+
+        public virtual string BuildSubtractCondition(string lhs, string rhs) => $"({lhs} - {rhs})";
+
+        public virtual string BuildMultiplyCondition(string lhs, string rhs) => $"({lhs} * {rhs})";
+
+        public virtual string BuildDivideCondition(string lhs, string rhs) => $"({lhs} / {rhs})";
+
+        // TODO: other operators (e.g. OR)
     }
 }
