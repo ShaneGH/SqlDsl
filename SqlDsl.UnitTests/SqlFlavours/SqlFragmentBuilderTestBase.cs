@@ -321,6 +321,66 @@ namespace SqlDsl.UnitTests.SqlFlavours
                 Assert.Throws(exception, action);
         }
 
+        [Test]
+        public void TestAdd()
+        {
+            // arrange
+            // act
+            var values = ((ITable<TestDataTable>)new QueryBuilder<TSqlBuilder, TestDataTable>())
+                .From()
+                .Where(x => x.PrimaryKey + 123 == TestDataTables.DataTypeTestNulled.PrimaryKey + 123)
+                .ToList(Executor);
+
+            // assert
+            Assert.AreEqual(1, values.Count);
+            Compare(TestDataTables.DataTypeTestNulled, values[0]);
+        }
+
+        [Test]
+        public void TestSubtract()
+        {
+            // arrange
+            // act
+            var values = ((ITable<TestDataTable>)new QueryBuilder<TSqlBuilder, TestDataTable>())
+                .From()
+                .Where(x => x.PrimaryKey - 123 == TestDataTables.DataTypeTestNulled.PrimaryKey - 123)
+                .ToList(Executor);
+
+            // assert
+            Assert.AreEqual(1, values.Count);
+            Compare(TestDataTables.DataTypeTestNulled, values[0]);
+        }
+
+        [Test]
+        public void TestMultiply()
+        {
+            // arrange
+            // act
+            var values = ((ITable<TestDataTable>)new QueryBuilder<TSqlBuilder, TestDataTable>())
+                .From()
+                .Where(x => x.PrimaryKey * 123 == TestDataTables.DataTypeTestNulled.PrimaryKey * 123)
+                .ToList(Executor);
+
+            // assert
+            Assert.AreEqual(1, values.Count);
+            Compare(TestDataTables.DataTypeTestNulled, values[0]);
+        }
+
+        [Test]
+        public void TestDivide()
+        {
+            // arrange
+            // act
+            var values = ((ITable<TestDataTable>)new QueryBuilder<TSqlBuilder, TestDataTable>())
+                .From()
+                .Where(x => x.PrimaryKey / 2 == TestDataTables.DataTypeTestNulled.PrimaryKey / 2)
+                .ToList(Executor);
+
+            // assert
+            Assert.AreEqual(1, values.Count);
+            Compare(TestDataTables.DataTypeTestNulled, values[0]);
+        }
+
         /// <summary>
         /// Get the type of exception the sql engine should throw if the query has an empty IN part: [WHERE value IN ()].
         /// Return null if the query engine is able to handle an empty IN.
