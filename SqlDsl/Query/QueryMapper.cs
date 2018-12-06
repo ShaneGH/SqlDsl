@@ -847,7 +847,7 @@ namespace SqlDsl.Query
 
             string Aggregate(string x, ((ParameterExpression paramRoot, string param) param, ExpressionType type) y)
             {
-                var table = (y.param.param ?? "").StartsWith("@") ? null : sqlFragmentBuilder.WrapTable(wrappedQueryAlias);
+                var table = (y.param.param ?? "").StartsWith("@") ? null : wrappedQueryAlias;
                 var yValue = BuildColumn(table, y.param.paramRoot, y.param.param);
 
                 switch (y.type)

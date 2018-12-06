@@ -397,5 +397,29 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(new [] {Data.People.John}, data.Select(d => d.ThePerson));
             CollectionAssert.AreEqual(new [] {Data.PersonClasses.JohnArchery, Data.PersonClasses.JohnTennis}, data.SelectMany(d => d.PersonClasses));
         }
+
+        [Test]
+        public async Task MapWithAddition_InComplexObject()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Map(p => new
+                {
+                    pid = p.ThePerson.Id + 1,
+                    classes = p.PersonClasses
+                        .Select(pc => pc.ClassId + p.Classes.One().Id)
+                        .ToList()
+                })
+                .ToArrayAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John.Id + 1, data[0].pid);
+            CollectionAssert.AreEqual(new [] {Data.Classes.Tennis.Id * 2, Data.Classes.Archery.Id * 2}, data[0].classes);
+
+            Assert.AreEqual(Data.People.Mary.Id + 1, data[1].pid);
+            CollectionAssert.AreEqual(new [] {Data.Classes.Tennis.Id * 2}, data[1].classes);
+        }
     }
 }
