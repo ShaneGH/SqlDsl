@@ -104,7 +104,8 @@ namespace SqlDsl.Utils
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
             
-            if (CountEnumerablesCache.TryGetValue(type, out int value))
+            var key = type;
+            if (CountEnumerablesCache.TryGetValue(key, out int value))
                 return value;
 
             value = -1;
@@ -114,7 +115,7 @@ namespace SqlDsl.Utils
                 type = ReflectionUtils.GetIEnumerableType(type);
             }
 
-            return CountEnumerablesCache.GetOrAdd(type, value);
+            return CountEnumerablesCache.GetOrAdd(key, value);
         }
 
         /// <summary>

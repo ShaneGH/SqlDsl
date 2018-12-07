@@ -34,11 +34,8 @@ namespace SqlDsl.SqlBuilders
         /// The alias of a column in a select statement which only returns one column
         /// </summary>
         public const string SingleColumnAlias = "#c";
-
         
-            public const string ConstructorArgPrefixAlias = "##ca";
-        
-        private static class ConstructorArgs
+        public static class ConstructorArgs
         {
             /// <summary>
             /// A string to prefix columns names, whose data will be used as a constructor arg

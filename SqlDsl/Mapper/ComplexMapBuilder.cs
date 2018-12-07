@@ -185,7 +185,6 @@ namespace SqlDsl.Mapper
                 .Select(ex => (type: ex.Type, map: BuildMap(state, ex, MapType.Other, toPrefix: null, isExprTip: true)))
                 .Select((map, i) => (
                     map.Item2.properties.SelectMany(p => CreateContructorArg(p, map.type, i)), 
-                    // TODO: $"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}" is repeated in code a lot
                     map.map.tables.Select(x => new MappedTable(x.From, CombineStrings(SqlStatementConstants.ConstructorArgs.BuildConstructorArg(i), x.To)))))
                 .AggregateTuple2();
 
