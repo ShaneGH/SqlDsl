@@ -49,11 +49,6 @@ namespace SqlDsl
     public enum LogMessages
     {
         /// <summary>
-        /// A log message which is fired when value types need to be casted and boxed
-        /// </summary>
-        InefficientCastWarning = 30000,
-
-        /// <summary>
         /// A log message which is fired when a new ObjectGraph is created
         /// </summary>
         CreatedObjectGraphAllocation = 10000,
@@ -76,7 +71,12 @@ namespace SqlDsl
         /// <summary>
         /// A log message which confirms a query was parsed and prints the time taken
         /// </summary>
-        ParsedQuery = 20003
+        ParsedQuery = 20003,
+        
+        /// <summary>
+        /// A log message which is fired when value types need to be casted and boxed
+        /// </summary>
+        InefficientCastWarning = 30000
     }
     
     internal static class ILoggerUtils
