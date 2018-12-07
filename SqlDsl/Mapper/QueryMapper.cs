@@ -1,60 +1,187 @@
-using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
+using SqlDsl.DataParser;
 using SqlDsl.Dsl;
 using SqlDsl.Query;
 using SqlDsl.SqlBuilders;
+using SqlDsl.SqlBuilders.SqlStatementParts;
 using SqlDsl.Utils;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace SqlDsl.Mapper
 {
-    public class QueryMapper<TSqlBuilder, TArgs, TResult, TMapped> : ISqlBuilder<TArgs, TMapped>
-        where TSqlBuilder: ISqlFragmentBuilder, new()
+    public static class QueryMapper
     {
-        readonly QueryBuilder<TSqlBuilder, TArgs, TResult> Query;
-        readonly Expression<Func<TResult, TArgs, TMapped>> Mapper;
-        
-        public QueryMapper(QueryBuilder<TSqlBuilder, TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
+        /// <summary>
+        /// Compile the query into something which can be executed multiple times
+        /// </summary>
+        public static ICompiledQuery<TArgs, TMapped> Compile<TArgs, TResult, TMapped, TSqlBuilder>(
+            ISqlFragmentBuilder sqlFragmentBuilder, 
+            QueryBuilder<TSqlBuilder, TArgs, TResult> query, 
+            LambdaExpression mapper, 
+            ILogger logger = null)
+            where TSqlBuilder: ISqlFragmentBuilder, new()
         {
-            Query = query ?? throw new ArgumentNullException(nameof(query));
-            Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            // TODO: filter columns
+            // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
+
+            var (wrappedBuilder, parameters) = query.ToSqlStatement(null);
+            var mutableParameters = new ParamBuilder(parameters.ToList());
+            var wrappedStatement = new SqlStatement(wrappedBuilder);
+
+            if (query.PrimaryTableMember == null)
+            {
+                throw new InvalidOperationException("The query must have at least one select table.");
+            }
+
+            var argsParam = mapper.Parameters.Count > 1 ? mapper.Parameters[1] : null;
+            var state = new BuildMapState(query.PrimaryTableMember.Value.name, mutableParameters, mapper.Parameters[0], argsParam, wrappedStatement);
+            var (resultType, properties, tables) = MapBuilder.BuildMapFromRoot(state, mapper.Body);
+
+            switch (resultType)
+            {
+                case MapBuilder.BuildMapResult.Map:
+                    return ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state)
+                        .Compile<TArgs, TMapped>(mutableParameters.Parameters, QueryParseType.ORM);
+
+                case MapBuilder.BuildMapResult.SimpleProp:
+                    properties = properties.Enumerate();
+                    if (properties.Count() != 1)
+                    {
+                        throw new InvalidOperationException($"Expected one property, but got {properties.Count()}.");
+                    }
+
+                    var p = properties.First();
+                    return ToSqlBuilder(sqlFragmentBuilder, p.FromParams, p.MappedPropertyType, wrappedBuilder, wrappedStatement)
+                        .CompileSimple<TArgs, TMapped>(mutableParameters.Parameters, SqlStatementConstants.SingleColumnAlias);
+
+                case MapBuilder.BuildMapResult.SingleComplexProp:
+                    var init = Expression.Lambda<Func<TResult, TArgs, TMapped>>(
+                        ReflectionUtils.ConvertToFullMemberInit(mapper.Body), 
+                        mapper.Parameters);
+
+                    return Compile<TArgs, TResult, TMapped, TSqlBuilder>(sqlFragmentBuilder, query, init, logger: logger);
+
+                case MapBuilder.BuildMapResult.MultiComplexProp:
+
+                    // convert xs => xs to xs => xs.Select(x => new X { x1 = x.x1, x2 = x.x2 })
+                    // this is easier for mapper to understand
+
+                    var identityMap = Expression.Lambda(
+                        AddMemberInitSelector(typeof(TMapped), mapper.Body), 
+                        mapper.Parameters);
+
+                    return Compile<TArgs, TResult, TMapped, TSqlBuilder>(sqlFragmentBuilder, query, identityMap, logger: logger);
+
+                default:
+                    throw new NotSupportedException(resultType.ToString());
+            }
         }
 
-        /// <inheritdoc />
-        public ICompiledQuery<TArgs, TMapped> Compile(ILogger logger = null)
+        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
-            var timer = new Timer(true);
-            var result = QueryMapper_TheSequel<TArgs, TResult, TMapped>.Compile(Query.SqlFragmentBuilder, Query, Mapper, logger: logger);
+            var rowIdPropertyMap = tables
+                .Select(t => (rowIdColumnName: $"{t.From}.{SqlStatementConstants.RowIdName}", resultClassProperty: t.To))
+                .Enumerate();
 
-            if (logger.CanLogInfo(LogMessages.CompiledQuery))
-                logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);
+            var mappedValues = properties
+                .Select(x => (
+                    type: x.MappedPropertyType, 
+                    from: x.FromParams.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias),//  AddRoot(x.FromParamRoot, x.From, state), 
+                    fromParams: x.FromParams.GetEnumerable1().Select(Accumulator.AddRoot(state)),
+                    to: x.To, 
+                    propertySegmentConstructors: x.PropertySegmentConstructors));
 
-            return result;
+            var builder = new SqlStatementBuilder(sqlFragmentBuilder);
+            builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
+
+            foreach (var col in mappedValues)
+            {
+                // note: if AddSelectColumn is throwing an argument null exception
+                // on alias, it probably means that a different ToSqlBuilder should be called
+                
+                var table = (col.from ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias;
+                builder.AddSelectColumn(
+                    col.type,
+                    col.from,
+                    col.to,
+                    col.fromParams.Select(p =>
+                    {
+                        return (
+                            (p ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias, 
+                            p);
+                    })
+                    .ToArray(),
+                    argConstructors: col.propertySegmentConstructors);
+            }
+
+            foreach (var col in rowIdPropertyMap)
+                builder.RowIdsForMappedProperties.Add((col.rowIdColumnName, col.resultClassProperty));
+                
+            return builder;
         }
 
-        /// <inheritdoc />
-        public TMapped[] ToArray(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ToArray(executor, args, logger: logger);
+        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, Accumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
+        {
+            var builder = new SqlStatementBuilder(sqlFragmentBuilder);
+            builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
 
-        /// <inheritdoc />
-        public Task<TMapped[]> ToArrayAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ToArrayAsync(executor, args, logger: logger);
+            var referencedColumns = new List<(string, string)>();
+            string sql = null;
+            string Add(string sqlPart, ExpressionType combiner)
+            {
+                if (!sqlPart.StartsWith("@"))
+                {
+                    referencedColumns.Add((wrappedStatement.UniqueAlias, sqlPart));
+                    sqlPart = sqlFragmentBuilder.BuildSelectColumn(
+                        wrappedStatement.UniqueAlias,
+                        sqlPart);
+                }
 
-        /// <inheritdoc />
-        public IEnumerable<TMapped> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ToIEnumerable(executor, args, logger: logger);
+                return sql == null ?
+                    sqlPart :
+                    sqlFragmentBuilder.Concat(sql, sqlPart, combiner);
+            }
 
-        /// <inheritdoc />
-        public Task<IEnumerable<TMapped>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ToIEnumerableAsync(executor, args, logger: logger);
+            // second arg does not matter, as sql is null
+            sql = Add(property.First.param, ExpressionType.ModuloAssign);
+            foreach (var part in property.Next)
+            {
+                sql = Add(part.element.param, part.combiner);
+            }
 
-        /// <inheritdoc />
-        public List<TMapped> ToList(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ToList(executor, args, logger: logger);
+            builder.AddSelectColumn(
+                cellDataType,
+                sql,
+                SqlStatementConstants.SingleColumnAlias,
+                referencedColumns.ToArray());
+                
+            return builder;
+        }
 
-        /// <inheritdoc />
-        public Task<List<TMapped>> ToListAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ToListAsync(executor, args, logger: logger);
+        /// <summary>
+        /// convert xs => xs to xs => xs.Select(x => new X { x1 = x.x1, x2 = x.x2 })
+        /// </summary>
+        static Expression AddMemberInitSelector(Type tMapped, Expression collection)
+        {
+            var enumeratedType = ReflectionUtils.GetIEnumerableType(tMapped);
+            if (enumeratedType == null)
+                throw new InvalidOperationException($"Expected type {tMapped} to implement IEnumerable<>");
+
+            var innerParam = Expression.Parameter(enumeratedType);
+            var mapperBody = ReflectionUtils.ConvertToFullMemberInit(innerParam);
+            var mapper = Expression.Lambda(mapperBody, innerParam);
+
+            return Expression.Call(
+                ReflectionUtils
+                    .GetMethod<IEnumerable<object>>(xs => xs.Select(x => x), enumeratedType, enumeratedType),
+                collection,
+                mapper);
+        }
     }
 }
