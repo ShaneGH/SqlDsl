@@ -58,7 +58,6 @@ namespace SqlDsl.DataParser
             IEnumerable<(int index, string[] name, int[] rowIdColumnMap, Type cellType, ConstructorInfo[] constructorArgInfo)> columns, 
             QueryParseType queryParseType)
         {
-            // TODO: rowIdColumnNumbers should be int[]
             var simpleProps = new List<(int index, string propertyName, int[] rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();
             var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)>();
             var simpleCArgs = new List<(int index, int argIndex, int[] rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();

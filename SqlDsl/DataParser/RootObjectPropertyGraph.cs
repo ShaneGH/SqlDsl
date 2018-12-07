@@ -40,19 +40,11 @@ namespace SqlDsl.DataParser
         /// </summary>
         public int SimpleValueRowNumberColumnIndex => SimpleProperty?.rowNumberColumnIndex ?? 0;
 
-        // TODO: Is this prop used
         /// <summary>
         /// If IsSimpleValue == true, will specify the type of the cell
         /// Otherwise the value of this property should be ignored
         /// </summary>
         public Type SimplePropertyCellType => SimpleProperty?.cellType;
-
-        // TODO: Is this prop used
-        /// <summary>
-        /// If IsSimpleValue == true, will specify whether the values in SimpleValueColumnIndex are enumerable, e.g. byte[]
-        /// Otherwise the value of this property should be ignored
-        /// </summary>
-        public bool SimplePropertyCellTypeIsEnumerable => SimpleProperty?.simplePropertyCellIsTypeEnumerable ?? false;
 
         /// <summary>
         /// Build an object graph

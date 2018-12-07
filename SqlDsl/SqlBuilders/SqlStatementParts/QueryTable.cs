@@ -54,7 +54,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
             var table = QueryBuilder.Joins
                 .Where(j => j.alias == Alias)
-                // TODO: Not sure if Single on this property is correct
+                // TODO: Will fail when a table is joined to multiple other tables
                 .Select(x => x.queryObjectReferences.Single()).FirstOrDefault();
 
             if (table == null)

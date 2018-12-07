@@ -18,8 +18,6 @@ namespace SqlDsl.Query
     public class QueryBuilder<TSqlBuilder, TResult> : QueryBuilder<TSqlBuilder, object, TResult>, ITable<TResult>, IQuery<TResult>, IOrdererAgain<TResult>
         where TSqlBuilder : ISqlFragmentBuilder, new()
     {
-        // TODO: try to remove all casts from this class
-
         Task<IEnumerable<TResult>> ISqlBuilder<TResult>.ToIEnumerableAsync(IExecutor executor, ILogger logger) => ToIEnumerableAsync(executor, null, logger: logger);
 
         IEnumerable<TResult> ISqlBuilder<TResult>.ToIEnumerable(IExecutor executor, ILogger logger) => ToIEnumerable(executor, null, logger: logger);

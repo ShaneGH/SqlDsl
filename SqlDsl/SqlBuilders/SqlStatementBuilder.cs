@@ -94,8 +94,16 @@ namespace SqlDsl.SqlBuilders
 
         public void AddOrderBy(ParameterExpression queryRootParam, ParameterExpression argsParam, Expression orderBy, OrderDirection direction, ParamBuilder parameters)
         {
+<<<<<<< HEAD
             var (sql, _) = BuildCondition(queryRootParam, argsParam, orderBy, parameters, "ORDER BY");
             Ordering.Add((sql, direction));
+=======
+            var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(orderBy, allowOne: true, allowSelect: true);
+            if (!isPropertyChain)
+                throw new InvalidOperationException($"Invalid order by statement: {orderBy}");
+
+            Ordering.Add((chain.JoinString("."), direction));
+>>>>>>> todos
         }
 
         /// <summary>
