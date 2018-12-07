@@ -17,17 +17,16 @@ namespace SqlDsl.Sqlite.UnitTests
     {
         protected override Type GetTypeOfExceptionForEmptyIn() => null;
 
-        readonly string DbFileName = $"SqliteTests, {DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")}.db";
+        readonly string DbFileName = GetDbFileName();
 
-        public string GetDbLocation()
+        static string GetDbFileName()
         {
-            var locationParts = new Regex(@"\\|/").Split(typeof(SqliteTests).Assembly.Location).ToArray();
-            return locationParts.Take(locationParts.Length - 1).JoinString(@"\") + @"\" + DbFileName;
+            return Path.GetTempFileName();
         }
         
         public SqliteConnection CreateConnection()
         {
-            var conn = new SqliteConnection($@"Data Source={GetDbLocation()}");
+            var conn = new SqliteConnection($@"Data Source={DbFileName}");
             conn.Open();
 
             return conn;
@@ -44,8 +43,7 @@ namespace SqlDsl.Sqlite.UnitTests
 
         public override void CreateDb(TableDescriptor table)
         {
-            var location = GetDbLocation();
-            if (File.Exists(location)) File.Delete(location);
+            DropDb();
             
             var columns = table.Columns
                 .Select(col => $"[{col.Name}] {GetColType(col.DataType)} {GetNullable(col.Nullable)}");
@@ -111,8 +109,7 @@ namespace SqlDsl.Sqlite.UnitTests
 
         public override void DropDb()
         {
-            var location = GetDbLocation();
-            if (File.Exists(location)) File.Delete(location);
+            if (File.Exists(DbFileName)) File.Delete(DbFileName);
         }
 
         public override IExecutor CreateExecutor() => new SqliteExecutor(CreateConnection());

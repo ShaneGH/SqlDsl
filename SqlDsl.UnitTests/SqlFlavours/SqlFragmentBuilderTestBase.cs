@@ -27,17 +27,24 @@ namespace SqlDsl.UnitTests.SqlFlavours
             SeedDb(TestDataTableName, GetRows(TestDataTables.DataTypeTestNotNulled, TestDataTables.DataTypeTestNulled));
         }
 
-        [OneTimeTearDown]
-        public virtual void FixtureTeardown()
-        {
-            DropDb();
-        }
-
         [SetUp]
         public void SetUp()
         {
             PrintStatusOnFailure = true;
             Executor = new TestExecutor(CreateExecutor());
+        }
+
+        readonly object Lock = new object();
+        void DisposeAndRemoveExecutor()
+        {
+            TestExecutor ex;
+            lock (Lock)
+            {
+                ex = Executor;
+                Executor = null;
+            }
+            
+            if (ex != null) DisposeOfExecutor(ex.Executor);
         }
 
         [TearDown]
@@ -48,15 +55,21 @@ namespace SqlDsl.UnitTests.SqlFlavours
                 Executor.PrintSqlStatements();
             }
 
-            DisposeOfExecutor(Executor.Executor);
+            DisposeAndRemoveExecutor();
         }
 
-        public abstract void DisposeOfExecutor(IExecutor executor);
+        [OneTimeTearDown]
+        public virtual void FixtureTeardown()
+        {
+            DisposeAndRemoveExecutor();
+            DropDb();
+        }
 
         public abstract void CreateDb(TableDescriptor table);
         public abstract void SeedDb(string tableName, IEnumerable<IEnumerable<KeyValuePair<string, object>>> rows);
-        public abstract void DropDb();
         public abstract IExecutor CreateExecutor();
+        public abstract void DisposeOfExecutor(IExecutor executor);
+        public abstract void DropDb();
 
         class One2One
         {
