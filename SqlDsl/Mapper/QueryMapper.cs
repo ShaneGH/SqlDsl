@@ -29,6 +29,7 @@ namespace SqlDsl.Mapper
         {
             // TODO: filter columns
             // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
+            // also, find a way to filter joins
 
             var (wrappedBuilder, parameters) = query.ToSqlStatement(null);
             var mutableParameters = new ParamBuilder(parameters.ToList());
@@ -120,7 +121,7 @@ namespace SqlDsl.Mapper
             foreach (var col in mappedValues)
             {
                 // note: if AddSelectColumn is throwing an argument null exception
-                // on alias, it probably means that a different ToSqlBuilder should be called
+                // on alias, it probably means that a different ToSqlBuilder overload should be called
                 
                 var table = (col.from ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias;
                 builder.AddSelectColumn(
@@ -128,9 +129,7 @@ namespace SqlDsl.Mapper
                     col.from,
                     col.to,
                     col.fromParams
-                        .Select(p => (
-                            (p ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias, 
-                            p))
+                        .Select(p => ((p ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias, p))
                     .ToArray(),
                     argConstructors: col.propertySegmentConstructors);
             }
