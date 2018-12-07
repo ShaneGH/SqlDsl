@@ -61,6 +61,9 @@ namespace SqlDsl.Mapper
                         .CompileSimple<TArgs, TMapped>(mutableParameters.Parameters, SqlStatementConstants.SingleColumnAlias);
 
                 case MapBuilder.BuildMapResult.SingleComplexProp:
+                
+                    // convert x => x to x => new X { x1 = x.x1, x2 = x.x2 }
+                    // this is easier for mapper to understand
                     var init = Expression.Lambda<Func<TResult, TArgs, TMapped>>(
                         ReflectionUtils.ConvertToFullMemberInit(mapper.Body), 
                         mapper.Parameters);
@@ -71,7 +74,6 @@ namespace SqlDsl.Mapper
 
                     // convert xs => xs to xs => xs.Select(x => new X { x1 = x.x1, x2 = x.x2 })
                     // this is easier for mapper to understand
-
                     var identityMap = Expression.Lambda(
                         AddMemberInitSelector(typeof(TMapped), mapper.Body), 
                         mapper.Parameters);
