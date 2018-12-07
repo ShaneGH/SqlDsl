@@ -417,7 +417,7 @@ namespace SqlDsl.Utils
                     
                 case ExpressionType.Convert:
                     return GetPropertyChains((e as UnaryExpression).Operand, allowOne, allowSelect, allowConstants, allowBinaryOperators)
-                        .ReplaceFullExpressions(e);
+                        .ReplaceFullExpressionIfOnlyOneItem(e);
                     
                 case ExpressionType.MemberAccess:
                     var acc = e as MemberExpression;
@@ -435,12 +435,12 @@ namespace SqlDsl.Utils
                     var (isToArray, enumerableA) = ReflectionUtils.IsToArray(methodCallE);
                     if (isToArray)
                         return GetPropertyChains(enumerableA, allowOne, allowSelect, allowConstants, allowBinaryOperators)
-                            .ReplaceFullExpressions(e);
+                            .ReplaceFullExpressionIfOnlyOneItem(e);
                         
                     var (isToList, enumerableL) = ReflectionUtils.IsToList(methodCallE);
                     if (isToList)
                         return GetPropertyChains(enumerableL, allowOne, allowSelect, allowConstants, allowBinaryOperators)
-                            .ReplaceFullExpressions(e);
+                            .ReplaceFullExpressionIfOnlyOneItem(e);
 
                     if (allowOne)
                     {
@@ -448,7 +448,7 @@ namespace SqlDsl.Utils
                         if (oneExpr != null)
                         {
                             return GetPropertyChains(oneExpr, allowOne, allowSelect, allowConstants, allowBinaryOperators)
-                                .ReplaceFullExpressions(e);
+                                .ReplaceFullExpressionIfOnlyOneItem(e);
                         } 
                     }
 
@@ -475,9 +475,9 @@ namespace SqlDsl.Utils
             }
         }
 
-        static (bool, Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>) ReplaceFullExpressions(this (bool, Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>) input, Expression expr)
+        static (bool, Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>) ReplaceFullExpressionIfOnlyOneItem(this (bool, Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>) input, Expression expr)
         {
-            if (!input.Item1) return (false, null);
+            if (!input.Item1 || input.Item2.Next.Any()) return (false, null);
             return (true, input.Item2.Map(x => (x.Item1, x.Item2, expr)));
         }
 
