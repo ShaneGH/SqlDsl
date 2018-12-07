@@ -16,6 +16,7 @@ using SqlDsl.Sqlite;
 using NUnit.Framework.Interfaces;
 using SqlDsl.DataParser;
 using SqlDsl.Query;
+using SqlDsl.Mapper;
 
 namespace SqlDsl.UnitTests.DataParser
 {
@@ -932,7 +933,6 @@ namespace SqlDsl.UnitTests.DataParser
                     ))
                 });
 
-//Assert.Fail();
             Compare(expected, actual);
         }
     }

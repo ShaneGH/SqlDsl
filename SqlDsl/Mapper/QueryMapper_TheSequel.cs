@@ -1,5 +1,6 @@
 using SqlDsl.DataParser;
 using SqlDsl.Dsl;
+using SqlDsl.Query;
 using SqlDsl.SqlBuilders;
 using SqlDsl.SqlBuilders.SqlStatementParts;
 using SqlDsl.Utils;
@@ -12,22 +13,10 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SqlDsl.Query
+namespace SqlDsl.Mapper
 {
-    public class QueryMapper<TSqlBuilder, TArgs, TResult, TMapped> : ISqlBuilder<TArgs, TMapped>
-        where TSqlBuilder: ISqlFragmentBuilder, new()
+    public static class QueryMapper_TheSequel<TArgs, TResult, TMapped>
     {
-        readonly QueryBuilder<TSqlBuilder, TArgs, TResult> Query;
-        readonly Expression<Func<TResult, TArgs, TMapped>> Mapper;
-        readonly ISqlFragmentBuilder SqlFragmentBuilder = new TSqlBuilder();
-        
-        public QueryMapper(QueryBuilder<TSqlBuilder, TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
-        {
-            Query = query ?? throw new ArgumentNullException(nameof(query));
-            Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-            SqlFragmentBuilder = query.SqlFragmentBuilder;
-        }
-
         static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var rowIdPropertyMap = tables
@@ -74,25 +63,12 @@ namespace SqlDsl.Query
         /// <summary>
         /// Compile the query into something which can be executed multiple times
         /// </summary>
-        public ICompiledQuery<TArgs, TMapped> Compile(ILogger logger = null)
-        {
-            var timer = new Timer(true);
-            var result = Compile(SqlFragmentBuilder, Query, Mapper, logger: logger);
-
-            if (logger.CanLogInfo(LogMessages.CompiledQuery))
-                logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);
-
-            return result;
-        }
-
-        /// <summary>
-        /// Compile the query into something which can be executed multiple times
-        /// </summary>
-        static ICompiledQuery<TArgs, TMapped> Compile(
+        public static ICompiledQuery<TArgs, TMapped> Compile<TSqlBuilder>(
             ISqlFragmentBuilder sqlFragmentBuilder, 
             QueryBuilder<TSqlBuilder, TArgs, TResult> query, 
             LambdaExpression mapper, 
             ILogger logger = null)
+            where TSqlBuilder: ISqlFragmentBuilder, new()
         {
             // TODO: filter columns
             // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
@@ -170,9 +146,9 @@ namespace SqlDsl.Query
                 mapper);
         }
 
-        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, Accumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
+        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, Accumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
         {
-            var builder = new SqlStatementBuilder<TSqlBuilder>();
+            var builder = new SqlStatementBuilder(sqlFragmentBuilder);
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
 
             var referencedColumns = new List<(string, string)>();
@@ -207,46 +183,6 @@ namespace SqlDsl.Query
                 
             return builder;
         }
-
-        static SqlStatementBuilder<TSqlBuilder> ToSqlBuilderXX(ISqlFragmentBuilder sqlFragmentBuilder, Accumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
-        {
-            var builder = new SqlStatementBuilder<TSqlBuilder>();
-            builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
-
-            var propertyName = property.First.param;
-
-            var col = propertyName.StartsWith("@") ? 
-                propertyName :
-                sqlFragmentBuilder.BuildSelectColumn(
-                    wrappedStatement.UniqueAlias,
-                    propertyName);
-
-            builder.AddSelectColumn(
-                cellDataType,
-                col,
-                propertyName,
-                new [] { (wrappedStatement.UniqueAlias, propertyName) });
-                
-            return builder;
-        }
-       
-        public Task<IEnumerable<TMapped>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ToIEnumerableAsync(executor, args, logger: logger);
-        
-        public IEnumerable<TMapped> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ToIEnumerable(executor, args, logger: logger);
-
-        public Task<List<TMapped>> ToListAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ToListAsync(executor, args, logger: logger);
-
-        public List<TMapped> ToList(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ToList(executor, args, logger: logger);
-
-        public Task<TMapped[]> ToArrayAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ToArrayAsync(executor, args, logger: logger);
-
-        public TMapped[] ToArray(IExecutor executor, TArgs args, ILogger logger = null) =>
-            Compile(logger: logger).ToArray(executor, args, logger: logger);
 
         static readonly IEnumerable<MappedTable> EmptyMappedTables = Enumerable.Empty<MappedTable>();
 
