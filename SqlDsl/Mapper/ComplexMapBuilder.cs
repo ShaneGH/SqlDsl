@@ -186,7 +186,7 @@ namespace SqlDsl.Mapper
                 .Select((map, i) => (
                     map.Item2.properties.SelectMany(p => CreateContructorArg(p, map.type, i)), 
                     // TODO: $"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}" is repeated in code a lot
-                    map.map.tables.Select(x => new MappedTable(x.From, CombineStrings($"{SqlStatementConstants.ConstructorArgPrefixAlias}{i}", x.To)))))
+                    map.map.tables.Select(x => new MappedTable(x.From, CombineStrings(SqlStatementConstants.ConstructorArgs.BuildConstructorArg(i), x.To)))))
                 .AggregateTuple2();
 
             IEnumerable<MappedProperty> CreateContructorArg(MappedProperty arg, Type argType, int argIndex)
@@ -197,7 +197,7 @@ namespace SqlDsl.Mapper
 
                 return many.Select(q => new MappedProperty(
                     q.FromParams,
-                    CombineStrings(toPrefix, CombineStrings($"{SqlStatementConstants.ConstructorArgPrefixAlias}{argIndex}", q.To)), 
+                    CombineStrings(toPrefix, CombineStrings(SqlStatementConstants.ConstructorArgs.BuildConstructorArg(argIndex), q.To)), 
                     q.MappedPropertyType,
                     constructorArgs: q.PropertySegmentConstructors.Prepend(expr.Constructor).ToArray()));
             }

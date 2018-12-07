@@ -24,7 +24,7 @@ namespace SqlDsl.Mapper
             ISqlFragmentBuilder sqlFragmentBuilder, 
             QueryBuilder<TSqlBuilder, TArgs, TResult> query, 
             LambdaExpression mapper, 
-            ILogger logger = null)
+            ILogger logger)
             where TSqlBuilder: ISqlFragmentBuilder, new()
         {
             // TODO: filter columns

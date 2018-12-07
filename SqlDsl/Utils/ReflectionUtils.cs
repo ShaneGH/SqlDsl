@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -93,6 +94,8 @@ namespace SqlDsl.Utils
                 result;
         }
 
+        static readonly ConcurrentDictionary<Type, int> CountEnumerablesCache = new ConcurrentDictionary<Type, int>();
+
         /// <summary>
         /// Given a type count how many wrapped IEnumerables it has.
         /// e.g. the type is IEnumerable&lt;IEnumerable&lt;int>> the result will be 2
@@ -100,15 +103,18 @@ namespace SqlDsl.Utils
         public static int CountEnumerables(Type type)
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
+            
+            if (CountEnumerablesCache.TryGetValue(type, out int value))
+                return value;
 
-            var result = -1;
+            value = -1;
             while (type != null)
             {
-                result++;
+                value++;
                 type = ReflectionUtils.GetIEnumerableType(type);
             }
 
-            return result;
+            return CountEnumerablesCache.GetOrAdd(type, value);
         }
 
         /// <summary>

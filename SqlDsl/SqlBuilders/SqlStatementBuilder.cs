@@ -377,11 +377,15 @@ namespace SqlDsl.SqlBuilders
             // build FROM part
             var primaryTable = SqlBuilder.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName);
                 
-            // build the order by part
-            var orderBy = Ordering
+            var orderByText = Ordering
                 // TODO: test in indivisual sql languages
-                .Select(o => o.sql + (o.direction == OrderDirection.Ascending ? "" : " DESC"))
-                .JoinString(", ");
+                .Select(o => o.sql + (o.direction == OrderDirection.Ascending ? "" : $" {SqlBuilder.Descending}"))
+                .ToArray();
+
+            // build the order by part
+            var orderBy = orderByText.Length == 0 ?
+                "" :
+                orderByText.Aggregate(SqlBuilder.BuildCommaCondition);
 
             if (orderBy.Length > 0)
                 orderBy = "ORDER BY " + orderBy;

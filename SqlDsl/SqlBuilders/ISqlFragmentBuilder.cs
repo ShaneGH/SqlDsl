@@ -11,6 +11,11 @@ namespace SqlDsl.SqlBuilders
     public interface ISqlFragmentBuilder
     {
         /// <summary>
+        /// The text for DESCENDING in the sql flavour
+        /// </summary>
+        string Descending { get; }
+
+        /// <summary>
         /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
         /// </summary>
         (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias);

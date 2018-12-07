@@ -5,8 +5,6 @@ using System.Linq;
 
 namespace SqlDsl.DataParser
 {
-    //TODO: this class needs a cleanup
-
     /// <summary>
     /// Represents an object with it's property names
     /// </summary>

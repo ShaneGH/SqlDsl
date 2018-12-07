@@ -16,18 +16,21 @@ namespace SqlDsl
         internal readonly QueryParts SqlParts;
         readonly object[] Parameters;
         readonly string[] SelectColumns;
+        readonly ISqlFragmentBuilder SqlFragmentBuilder;
         public readonly RootObjectPropertyGraph PropertyGraph;
 
         public CompiledQuery(
             QueryParts sql, 
             object[] parameters, 
             string[] selectColumns,
-            RootObjectPropertyGraph propertyGraph)
+            RootObjectPropertyGraph propertyGraph,
+            ISqlFragmentBuilder sqlFragmentBuilder)
         {
             SqlParts = sql;
             Parameters = RewriteParameters(sql.Assemble(), parameters);
             SelectColumns = selectColumns;
             PropertyGraph = propertyGraph;
+            SqlFragmentBuilder = sqlFragmentBuilder;
         }
 
         static IEnumerable<(string name, object value)> GetParamValue(object param, TArgs args, int i)
@@ -123,7 +126,7 @@ namespace SqlDsl
             return SqlParts.Assemble(x => RewriteSql(args, x));
         }
 
-        public string RewriteSql(TArgs args, string sql)
+        string RewriteSql(TArgs args, string sql)
         {
             Match inParam;
             while ((inParam = InParamRegex.Match(sql)).Success)
@@ -134,9 +137,13 @@ namespace SqlDsl
                 if (Parameters.Length <= paramIndex)
                     throw new InvalidOperationException($"Param @p{paramIndex} must be enumerable");
 
-                var newParams = GetParamValue(Parameters[paramIndex], args, paramIndex)
+                var newParamNames = GetParamValue(Parameters[paramIndex], args, paramIndex)
                     .Select(x => x.name)
-                    .JoinString(", ");   // TODO: need to use sqlfragment builder for this.
+                    .ToArray();
+
+                var newParams = newParamNames.Length == 0 ?
+                    "" : 
+                    newParamNames.Aggregate(SqlFragmentBuilder.BuildCommaCondition);
 
                 sql = sql.Substring(0, inParam.Index) + 
                     newParams + 

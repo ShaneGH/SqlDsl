@@ -39,13 +39,11 @@ namespace SqlDsl.DataParser
                 opg.ComplexConstructorArgs);
         }
 
-        static readonly Regex ConstructorArgRegex = new Regex($"{SqlStatementConstants.ConstructorArgPrefixAlias}\\d+", RegexOptions.Compiled);
-
         static void ValidateColumns(IEnumerable<(string name, int[] rowIdColumnMap, Type cellType, ConstructorInfo[] constructorArgInfo)> columns)
         {
             foreach(var col in columns)
             {
-                var constructorCount = ConstructorArgRegex.Matches(col.name).Count;
+                var constructorCount = SqlStatementConstants.ConstructorArgs.CountConstructorArgs(col.name);
                 if (col.constructorArgInfo.Length != constructorCount)
                     throw new InvalidOperationException($"Expecting {col.constructorArgInfo.Length} constructors, but got {constructorCount}.");
             }
@@ -77,7 +75,7 @@ namespace SqlDsl.DataParser
 
             var typedColNames = GetProperties(objectType);
             var typedConstructorArgs = columns
-                .Where(c => c.name[0].StartsWith(SqlStatementConstants.ConstructorArgPrefixAlias))
+                .Where(c => SqlStatementConstants.ConstructorArgs.IsConstructorArg(c.name[0]))
                 .Select(c => c.constructorArgInfo[0].GetParameters().Select(p => p.ParameterType).ToArray())
                 .FirstOrDefault() ?? EmptyType;
 
@@ -85,13 +83,9 @@ namespace SqlDsl.DataParser
             {
                 // if there is only one name, the property belongs to this object
                 if (col.name.Length == 1)
-                {
-                    if (col.name[0].StartsWith(SqlStatementConstants.ConstructorArgPrefixAlias))
+                {                
+                    if (SqlStatementConstants.ConstructorArgs.TryGetConstructorArgIndex(col.name[0], out int index))
                     {
-                        var indexString = col.name[0].Substring(SqlStatementConstants.ConstructorArgPrefixAlias.Length);
-                        if (!int.TryParse(indexString, out int index))
-                            throw new InvalidOperationException($"Expected constructor arg index: \"{indexString}\".");
-                            
                         if (typedConstructorArgs.Length <= index)
                             throw new InvalidOperationException($"Expected constructor with at least {index} arguments.");
 
@@ -122,13 +116,9 @@ namespace SqlDsl.DataParser
                 }
                 // if there are more than one, the property belongs to a child of this object
                 else if (col.name.Length > 1)
-                {                        
-                    if (col.name[0].StartsWith(SqlStatementConstants.ConstructorArgPrefixAlias))
-                    {
-                        var indexString = col.name[0].Substring(SqlStatementConstants.ConstructorArgPrefixAlias.Length);
-                        if (!int.TryParse(indexString, out int index))
-                            throw new InvalidOperationException($"Expected constructor arg index: \"{indexString}\"");
-                            
+                {
+                    if (SqlStatementConstants.ConstructorArgs.TryGetConstructorArgIndex(col.name[0], out int index))
+                    {                            
                         var colType = 
                             ReflectionUtils.GetIEnumerableType(typedConstructorArgs[index]) ??
                             typedConstructorArgs[index];
@@ -230,7 +220,7 @@ namespace SqlDsl.DataParser
 
                 // try to get row ids from property table map
                 var propertyTableMap = mappedTableProperties
-                    .Where(p => p.name.Length == 1 && $"{SqlStatementConstants.ConstructorArgPrefixAlias}{argIndex}" == p.name[0])
+                    .Where(p => p.name.Length == 1 && SqlStatementConstants.ConstructorArgs.BuildConstructorArg(argIndex) == p.name[0])
                     .Select(x => x.rowIdColumnMap)
                     .FirstOrDefault();
 

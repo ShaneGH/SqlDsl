@@ -42,7 +42,6 @@ namespace SqlDsl.DataParser
                     .Select(Enumerable.First))
                 .Select(rs => rs.Select(r => r[propertyGraph.SimpleValueColumnIndex]));
 
-            // TODO: this is done on each query. can it be cached?
             var resultEnumCount = ReflectionUtils.CountEnumerables(typeof(TResult));
             var cellEnumType = ReflectionUtils.CountEnumerables(propertyGraph.SimplePropertyCellType);
 

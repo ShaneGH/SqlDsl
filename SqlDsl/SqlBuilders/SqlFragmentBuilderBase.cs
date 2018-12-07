@@ -14,6 +14,9 @@ namespace SqlDsl.SqlBuilders
     public abstract class SqlFragmentBuilderBase : ISqlFragmentBuilder
     {
         /// <inheritdoc />
+        public string Descending => "DESC";
+
+        /// <inheritdoc />
         public virtual string BuildAlias(string lhs, string alias) => $"{lhs} AS {alias}";
 
         /// <inheritdoc />
