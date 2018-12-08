@@ -461,8 +461,6 @@ namespace SqlDsl.Utils
                 case ExpressionType.Subtract:
                 case ExpressionType.Multiply:
                 case ExpressionType.Divide:
-                case ExpressionType.OnesComplement:
-                case ExpressionType.Modulo:
                 case ExpressionType.Equal:
                 case ExpressionType.NotEqual:
                 case ExpressionType.GreaterThan:
