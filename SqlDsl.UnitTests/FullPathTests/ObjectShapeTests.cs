@@ -356,7 +356,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<Person>()
                 .From()
-                .Map(x => new Person(x.Id, x.Name, x.Gender))
+                .Map(x => new Person(x.Id, x.Name, x.Gender, x.IsMember))
                 .ToIEnumerableAsync(Executor);
 
             // assert
@@ -476,12 +476,12 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From()
                 .Map(x => new ObjectWithConstructorArgs6Test
                 {
-                    PersonWithName = new Person(0, x.Name, 0),
-                    PersonWithGender = new Person(0, null, x.Gender),
+                    PersonWithName = new Person(0, x.Name, 0, false),
+                    PersonWithGender = new Person(0, null, x.Gender, false),
                     Inner = new ObjectWithConstructorArgs6Test
                     {
-                        PersonWithName = new Person(0, x.Name, 0),
-                        PersonWithGender = new Person(0, null, x.Gender),
+                        PersonWithName = new Person(0, x.Name, 0, false),
+                        PersonWithGender = new Person(0, null, x.Gender, false),
                     }
                 })
                 .ToIEnumerableAsync(Executor);
@@ -489,15 +489,15 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.AreEqual(2, data.Count());
             
-            Assert.AreEqual(new Person(0, "John", 0), data.First().PersonWithName);
-            Assert.AreEqual(new Person(0, null, Gender.Male), data.First().PersonWithGender);
-            Assert.AreEqual(new Person(0, "John", 0), data.First().Inner.PersonWithName);
-            Assert.AreEqual(new Person(0, null, Gender.Male), data.First().Inner.PersonWithGender);
+            Assert.AreEqual(new Person(0, "John", 0, false), data.First().PersonWithName);
+            Assert.AreEqual(new Person(0, null, Gender.Male, false), data.First().PersonWithGender);
+            Assert.AreEqual(new Person(0, "John", 0, false), data.First().Inner.PersonWithName);
+            Assert.AreEqual(new Person(0, null, Gender.Male, false), data.First().Inner.PersonWithGender);
             
-            Assert.AreEqual(new Person(0, "Mary", 0), data.ElementAt(1).PersonWithName);
-            Assert.AreEqual(new Person(0, null, Gender.Female), data.ElementAt(1).PersonWithGender);
-            Assert.AreEqual(new Person(0, "Mary", 0), data.ElementAt(1).Inner.PersonWithName);
-            Assert.AreEqual(new Person(0, null, Gender.Female), data.ElementAt(1).Inner.PersonWithGender);
+            Assert.AreEqual(new Person(0, "Mary", 0, false), data.ElementAt(1).PersonWithName);
+            Assert.AreEqual(new Person(0, null, Gender.Female, false), data.ElementAt(1).PersonWithGender);
+            Assert.AreEqual(new Person(0, "Mary", 0, false), data.ElementAt(1).Inner.PersonWithName);
+            Assert.AreEqual(new Person(0, null, Gender.Female, false), data.ElementAt(1).Inner.PersonWithGender);
         }
 
         class ObjectWithConstructorArgs_OuterSelectTest

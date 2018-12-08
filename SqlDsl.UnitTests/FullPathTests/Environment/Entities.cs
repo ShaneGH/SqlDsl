@@ -30,21 +30,27 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         public long Id { get; set; }
         public string Name { get; set; }
         public Gender Gender { get; set; }
+        public bool IsMember { get; set; }
 
         public Person() { }
 
-        public Person(long id, string name, Gender gender)
+        public Person(long id, string name, Gender gender, bool isMember)
         {
             Id = id;
             Name = name;
             Gender = gender;
+            IsMember = isMember;
         }
 
         public override int GetHashCode() => $"{Id}.{Name}.{Gender}".GetHashCode();
         public override bool Equals(object p)
         {
             var person = p as Person;
-            return person != null && person.Id == Id && person.Name == Name && person.Gender == Gender;
+            return person != null && 
+                person.Id == Id && 
+                person.Name == Name && 
+                person.Gender == Gender && 
+                person.IsMember == IsMember;
         }
         
         public override string ToString()

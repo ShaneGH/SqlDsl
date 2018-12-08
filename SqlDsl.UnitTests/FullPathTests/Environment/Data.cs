@@ -137,6 +137,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         static string GetColType(Type t)
         {
             if (t == typeof(string)) return "TEXT";
+            if (t == typeof(bool)) return "INTEGER";
+            if (t == typeof(bool?)) return "INTEGER";
             if (t == typeof(int)) return "INTEGER";
             if (t == typeof(int?)) return "INTEGER";
             if (t == typeof(long)) return "INTEGER";
@@ -154,6 +156,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         {
             if (t == typeof(int)) return val.ToString();
             if (t == typeof(int?)) return val == null ? "NULL" : val.ToString();
+            if (t == typeof(bool)) return ((bool)val ? 1 : 0).ToString();
+            if (t == typeof(bool?)) return val == null ? "NULL" : ((bool)val ? 1 : 0).ToString();
             if (t == typeof(long)) return val.ToString();
             if (t == typeof(long?)) return val == null ? "NULL" : val.ToString();
             if (t == typeof(float)) return val.ToString();
@@ -178,14 +182,16 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         {
             Id = 1,
             Name = "John",
-            Gender = Gender.Male
+            Gender = Gender.Male,
+            IsMember = true
         };
         
         public readonly Person Mary = new Person
         {
             Id = 2,
             Name = "Mary",
-            Gender = Gender.Female
+            Gender = Gender.Female,
+            IsMember = false
         };
 
         public IEnumerator<Person> GetEnumerator() => (new [] { John, Mary } as IEnumerable<Person>).GetEnumerator();

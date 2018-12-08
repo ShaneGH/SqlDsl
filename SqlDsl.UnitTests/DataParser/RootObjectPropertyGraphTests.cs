@@ -178,7 +178,8 @@ namespace SqlDsl.UnitTests.DataParser
                             (0, "##rowid", new int[0], null, null),
                             (4, "Id", new int[0], typeof(long), typeof(long)),
                             (5, "Name", new int[0], typeof(string), typeof(string)),
-                            (6, "Gender", new int[0], typeof(Gender), typeof(Gender))
+                            (6, "Gender", new int[0], typeof(Gender), typeof(Gender)),
+                            (7, "IsMember", new int[0], typeof(bool), typeof(bool))
                         }, 
                         null, 
                         null)),
@@ -220,7 +221,8 @@ namespace SqlDsl.UnitTests.DataParser
                             (0, "##rowid", new int[0], null, null),
                             (13, "Id", new int[0], typeof(long), typeof(long)),
                             (14, "Name", new int[0], typeof(string), typeof(string)),
-                            (15, "Gender", new int[0], typeof(Gender), typeof(Gender))
+                            (15, "Gender", new int[0], typeof(Gender), typeof(Gender)),
+                            (16, "IsMember", new int[0], typeof(bool), typeof(bool))
                         }, 
                         null, 
                         null)),
@@ -642,7 +644,8 @@ namespace SqlDsl.UnitTests.DataParser
                             (0, "##rowid", new int[0], null, null),
                             (4, "Id", new int[0], typeof(long), typeof(long)),
                             (5, "Name", new int[0], typeof(string), typeof(string)),
-                            (6, "Gender", new int[0], typeof(Gender), typeof(Gender))
+                            (6, "Gender", new int[0], typeof(Gender), typeof(Gender)),
+                            (7, "IsMember", new int[0], typeof(bool), typeof(bool))
                         }, 
                         null, 
                         null)),
@@ -797,7 +800,7 @@ namespace SqlDsl.UnitTests.DataParser
                 new[] { 0 },
                 simpleConstructorArgs: new[]
                 {
-                    (4, 1, new int[0], typeof(Gender), typeof(Gender))
+                    (5, 1, new int[0], typeof(Gender), typeof(Gender))
                 },
                 complexConstructorArgs: new [] 
                 {
@@ -807,7 +810,8 @@ namespace SqlDsl.UnitTests.DataParser
                         {
                             (1, "Id", new int[0], typeof(long), typeof(long)),
                             (2, "Name", new int[0], typeof(string), typeof(string)),
-                            (3, "Gender", new int[0], typeof(Gender), typeof(Gender))
+                            (3, "Gender", new int[0], typeof(Gender), typeof(Gender)),
+                            (4, "IsMember", new int[0], typeof(bool), typeof(bool))
                         }, 
                         null, 
                         null))
