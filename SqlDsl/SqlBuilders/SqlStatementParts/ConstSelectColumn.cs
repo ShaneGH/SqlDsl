@@ -14,13 +14,15 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     /// </summary>
     class ConstSelectColumn : SelectColumnBase
     {
+        static readonly (string, string)[] EmptyReferences = new (string, string)[0];
+
         /// <summary>
         /// The index of the row number column for the table which exposes this column
         /// </summary>
         public override int RowNumberColumnIndex => 0;
 
         public ConstSelectColumn(string alias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors)
-            : base(alias, isRowNumber, dataType, argConstructors)
+            : base(EmptyReferences, alias, isRowNumber, dataType, argConstructors)
         {
         }
     }

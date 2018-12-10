@@ -109,6 +109,11 @@ namespace SqlDsl.SqlBuilders
     public interface ISelectColumn
     {
         /// <summary>
+        /// The actual columns and tables that this SELECT column represents
+        /// </summary>
+        (string table, string column)[] ReferencesColumns { get; }
+        
+        /// <summary>
         /// The alias of the column
         /// </summary>
         string Alias { get; }

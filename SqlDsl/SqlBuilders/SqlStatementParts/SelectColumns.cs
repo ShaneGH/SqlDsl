@@ -49,7 +49,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             ISelectColumn _BuildColumn((Type cellDataType, string selectCode, string alias, (string table, string column)[] representsColumns, ConstructorInfo[] argConstructors) col, bool isRowId) =>
                 hasInnerQuery ?
                     new InnerQuerySelectColumn(col.representsColumns, col.alias, isRowId, col.cellDataType, col.argConstructors, queryBuilder) :
-                    (ISelectColumn)new SelectColumn(col.alias, col.representsColumns.Select(x => x.table), isRowId, col.cellDataType, col.argConstructors, tables);
+                    (ISelectColumn)new SelectColumn(col.representsColumns, col.alias, col.representsColumns.Select(x => x.table), isRowId, col.cellDataType, col.argConstructors, tables);
 
             ISelectColumn BuildColumn((Type cellDataType, string selectCode, string alias, (string table, string column)[] representsColumns, ConstructorInfo[] argConstructors) col) => _BuildColumn(col, false);
 

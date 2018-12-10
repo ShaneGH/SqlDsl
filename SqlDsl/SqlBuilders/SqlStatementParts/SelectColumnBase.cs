@@ -26,13 +26,15 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
          /// <inheritdoc />
         public ConstructorInfo[] ArgConstructors { get; }
         
-        /// <summary>
-        /// The index of the row number column for the table which exposes this column
-        /// </summary>
+         /// <inheritdoc />
         public abstract int RowNumberColumnIndex { get; }
 
-        public SelectColumnBase(string alias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors)
+         /// <inheritdoc />
+        public (string table, string column)[] ReferencesColumns { get; }
+
+        public SelectColumnBase((string table, string column)[] referencesColumns, string alias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors)
         {
+            ReferencesColumns = referencesColumns;
             Alias = alias;
             IsRowNumber = isRowNumber;
             DataType = dataType;

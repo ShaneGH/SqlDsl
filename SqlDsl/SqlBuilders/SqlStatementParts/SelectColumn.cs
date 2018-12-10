@@ -19,8 +19,8 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public override int RowNumberColumnIndex { get; }
 
-        public SelectColumn(string alias, IEnumerable<string> tableAliases, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors, IQueryTables tables)
-            : base(alias, isRowNumber, dataType, argConstructors)
+        public SelectColumn((string table, string column)[] referencesColumns, string alias, IEnumerable<string> tableAliases, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors, IQueryTables tables)
+            : base(referencesColumns, alias, isRowNumber, dataType, argConstructors)
         {
             int col = 0;
             foreach (var ta in tableAliases)
