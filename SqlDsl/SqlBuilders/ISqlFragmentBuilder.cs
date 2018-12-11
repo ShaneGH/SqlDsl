@@ -16,6 +16,11 @@ namespace SqlDsl.SqlBuilders
         string Descending { get; }
 
         /// <summary>
+        /// The text for COUNT in the sql flavour
+        /// </summary>
+        string CountFunctionName { get; }
+
+        /// <summary>
         /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
         /// </summary>
         (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias);

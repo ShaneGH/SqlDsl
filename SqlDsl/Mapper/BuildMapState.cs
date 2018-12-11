@@ -13,14 +13,16 @@ namespace SqlDsl.Mapper
         public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
         public readonly ISqlStatement WrappedSqlStatement;
         public readonly string PrimarySelectTable;
+        public readonly ISqlFragmentBuilder SqlBuilder;
 
-        public BuildMapState(string primarySelectTable, ParamBuilder parameters, ParameterExpression queryObject, ParameterExpression argsObject, ISqlStatement wrappedSqlStatement)
+        public BuildMapState(string primarySelectTable, ParamBuilder parameters, ParameterExpression queryObject, ParameterExpression argsObject, ISqlStatement wrappedSqlStatement, ISqlFragmentBuilder sqlBuilder)
         {
             Parameters = parameters;
             QueryObject = queryObject;
             ArgsObject = argsObject;
             WrappedSqlStatement = wrappedSqlStatement;
             PrimarySelectTable = primarySelectTable;
+            SqlBuilder = sqlBuilder;
         }
     }
 }

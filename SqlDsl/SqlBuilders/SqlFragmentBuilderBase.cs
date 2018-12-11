@@ -15,6 +15,9 @@ namespace SqlDsl.SqlBuilders
     {
         /// <inheritdoc />
         public string Descending => "DESC";
+        
+        /// <inheritdoc />
+        public string CountFunctionName => "COUNT";
 
         /// <inheritdoc />
         public virtual string BuildAlias(string lhs, string alias) => $"{lhs} AS {alias}";

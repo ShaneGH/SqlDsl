@@ -11,6 +11,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SqlDsl.Mapper
@@ -41,7 +42,7 @@ namespace SqlDsl.Mapper
             }
 
             var argsParam = mapper.Parameters.Count > 1 ? mapper.Parameters[1] : null;
-            var state = new BuildMapState(query.PrimaryTableMember.Value.name, mutableParameters, mapper.Parameters[0], argsParam, wrappedStatement);
+            var state = new BuildMapState(query.PrimaryTableMember.Value.name, mutableParameters, mapper.Parameters[0], argsParam, wrappedStatement, query.SqlFragmentBuilder);
             var (resultType, properties, tables) = MapBuilder.BuildMapFromRoot(state, mapper.Body);
 
             switch (resultType)
@@ -52,8 +53,10 @@ namespace SqlDsl.Mapper
                         .SelectMany(pms => pms.FromParams.GetEnumerable1())
                         .Where(x => x.paramRoot == state.QueryObject || state.ParameterRepresentsProperty.Any(y => y.parameter == x.paramRoot))
                         // TODO: using Accumulator.AddRoot here seems wrong
-                        .Select(x => Accumulator.AddRoot(x.paramRoot, x.param, state))
-                        .SelectMany(x => wrappedStatement.SelectColumns[x].ReferencesColumns.Select(y => y.table))
+                        .Select(x => Accumulator.AddRoot(x.paramRoot, x.param, x.isAggregate, state))
+                        .Select(x => wrappedStatement.SelectColumns.TryGetColumn(x.param))
+                        .RemoveNulls()
+                        .SelectMany(x => x.ReferencesColumns.Select(y => y.table))
                         .Concat(tables.Select(t => t.From));
 
                     wrappedBuilder.FilterUnusedTables(requiredPropAliases);
@@ -111,9 +114,15 @@ namespace SqlDsl.Mapper
                 .Select(x => (
                     type: x.MappedPropertyType, 
                     from: x.FromParams.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias),
-                    fromParams: x.FromParams.GetEnumerable1().Select(Accumulator.AddRoot(state)),
+                    fromParams: x.FromParams
+                        .GetEnumerable1()
+                        .Select(Accumulator.AddRoot(state))
+                        .Select(p => (sc: FilterSelectColumn(wrappedStatement.UniqueAlias, p.param), ia: p.isAggregate))
+                        .ToArray(),
                     to: x.To, 
                     propertySegmentConstructors: x.PropertySegmentConstructors));
+
+            var allProperties = mappedValues.SelectMany(x => x.fromParams);
 
             var builder = new SqlStatementBuilder(sqlFragmentBuilder);
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
@@ -128,9 +137,7 @@ namespace SqlDsl.Mapper
                     col.type,
                     col.from,
                     col.to,
-                    col.fromParams
-                        .Select(p => ((p ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias, p))
-                    .ToArray(),
+                    col.fromParams.Select(p => (p.sc.table, p.sc.column, p.ia)).ToArray(),
                     argConstructors: col.propertySegmentConstructors);
             }
 
@@ -140,16 +147,52 @@ namespace SqlDsl.Mapper
             return builder;
         }
 
-        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IAccumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
+        static (string table, string column) FilterSelectColumn(string innerQueryAlias, string column)
+        {
+            // TODO: string manipulation
+            var colParts = new List<string>(4);
+            foreach (var col in column.Split('.'))
+            {
+                if (col.StartsWith(SqlStatementConstants.OpenFunctionAlias))
+                    break;
+
+                colParts.Add(col);
+            }
+
+            if (colParts.Count > 0 && colParts[0].StartsWith("@"))
+                innerQueryAlias = null;
+
+            return (innerQueryAlias, colParts.JoinString("."));
+        }
+
+        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, Accumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var builder = new SqlStatementBuilder(sqlFragmentBuilder);
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
 
-            var referencedColumns = property
-                .GetEnumerable1()
-                .Where(x => !x.param.StartsWith("@"))
-                .Select(x => (wrappedStatement.UniqueAlias, Accumulator.AddRoot(x.paramRoot, x.param, state)))
-                .ToArray();
+            var referencedColumns = new List<(string, string, bool)>();
+            string sql = null;
+            string Add(string sqlPart, ExpressionType combiner, bool isAggregate)
+            {
+                if (!sqlPart.StartsWith("@"))
+                {
+                    referencedColumns.Add((wrappedStatement.UniqueAlias, sqlPart, isAggregate));
+                    sqlPart = sqlFragmentBuilder.BuildSelectColumn(
+                        wrappedStatement.UniqueAlias,
+                        sqlPart);
+                }
+
+                return sql == null ?
+                    sqlPart :
+                    sqlFragmentBuilder.Concat(sql, sqlPart, combiner);
+            }
+
+            // second arg does not matter, as sql is null
+            sql = Add(property.First.param, ExpressionType.ModuloAssign, property.First.isAggregate);
+            foreach (var part in property.Next)
+            {
+                sql = Add(part.element.param, part.combiner, part.element.isAggregate);
+            }
 
             var sql = property.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias);
             builder.AddSelectColumn(

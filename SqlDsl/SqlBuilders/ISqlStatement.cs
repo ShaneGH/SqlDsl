@@ -63,6 +63,11 @@ namespace SqlDsl.SqlBuilders
         /// Get a column based on it's alias
         /// </summary>
         ISelectColumn this[string alias] { get; }
+
+        /// <summary>
+        /// Get a column based on it's alias, or null if it doesn't exist
+        /// </summary>
+        ISelectColumn TryGetColumn(string alias);
     }
 
     /// <summary>
@@ -111,7 +116,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The actual columns and tables that this SELECT column represents
         /// </summary>
-        (string table, string column)[] ReferencesColumns { get; }
+        (string table, string column, bool isAggregate)[] ReferencesColumns { get; }
         
         /// <summary>
         /// The alias of the column

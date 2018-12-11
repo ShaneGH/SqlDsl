@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace SqlDsl.Utils
     /// Extension methods for Reflection
     /// </summary>
     public static class ReflectionUtils
-    {   
+    {
         /// <summary>
         /// Get the MethodInfo object from a method call. If call is Do&lt;T>(...) and replaceGenerics == [U], will replace T with U
         /// </summary>
@@ -581,6 +582,67 @@ namespace SqlDsl.Utils
                 return (true, e.Object);
 
             return (false, null);
+        }
+
+        /// <summary>
+        /// Determine whether an expression is a Count().
+        /// </summary>
+        /// <returns>isCount: success or failure,
+        /// enumerable: the enumerable it counts
+        /// </returns>
+        public static (bool isCount, Expression enumerable) IsCount(Expression e)
+        {
+            
+            if (e is MethodCallExpression)
+                return IsCount(e as MethodCallExpression);
+            if (e is MemberExpression)
+                return IsCount(e as MemberExpression);
+
+            return (false, null);
+        }
+        
+        static readonly HashSet<MethodInfo> CountMethods = new HashSet<MethodInfo>
+        {
+            GetMethod(() => new object[0].Count()).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].LongCount()).GetGenericMethodDefinition()
+        };
+        
+        static (bool isCount, Expression enumerable) IsCount(MethodCallExpression e)
+        {
+            if (e.Method.IsGenericMethod && CountMethods.Contains(e.Method.GetGenericMethodDefinition()))
+                return (true, e.Arguments[0]);
+
+            if (e.Object != null && e.Object.Type.IsArray &&
+                (e.Method.Name == "GetLength" || e.Method.Name == "GetLongLength"))
+                return (true, e.Object);
+
+            return (false, null);
+        }
+        
+        static readonly HashSet<Type> CountPropertyTypes = new HashSet<Type>
+        {
+            typeof(ICollection),
+            typeof(ICollection<>),
+            typeof(CollectionBase),
+            typeof(IList),
+            typeof(IList<>),
+            typeof(List<>),
+            typeof(ISet<>),
+            typeof(HashSet<>)
+        };
+        
+        static (bool isCount, Expression enumerable) IsCount(MemberExpression e)
+        {
+            if (e.Expression == null)
+                return (false, null);
+
+            if (e.Expression.Type.IsArray && e.Member.Name == "Length")
+                return (true, e.Expression);
+
+            var t = e.Expression.Type.IsGenericType ? e.Expression.Type.GetGenericTypeDefinition() : e.Expression.Type;
+            return CountPropertyTypes.Contains(t) && e.Member.Name == "Count" ? 
+                (true, e.Expression) :
+                (false, null);
         }
 
         static readonly MethodInfo _ToList = GetMethod(() => new object[0].ToList()).GetGenericMethodDefinition();

@@ -816,5 +816,94 @@ namespace SqlDsl.UnitTests.FullPathTests
         public void RightJoinReturnsNull()
         {
         }
+
+        [Test]
+        public async Task CountAndGroup()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Map(p => new 
+                {
+                    person = p.ThePerson.Name,
+                    classes = p.Classes.Select(x => x.Id).Count()
+                })
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new [] 
+            {
+                new 
+                {
+                    person = Data.People.John.Name,
+                    classes = 2
+                },
+                new 
+                {
+                    person = Data.People.Mary.Name,
+                    classes = 1
+                }
+            }, data);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task CountAndGroup_2()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Map(p => new 
+                {
+                    person = p.ThePerson.Name,
+                    classes = p.Classes.Count()
+                })
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new [] 
+            {
+                new 
+                {
+                    person = Data.People.John.Name,
+                    classes = 2
+                },
+                new 
+                {
+                    person = Data.People.Mary.Name,
+                    classes = 1
+                }
+            }, data);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task SumAndGroup_WithAdd()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Map(p => new 
+                {
+                    person = p.ThePerson.Name,
+                    classes = p.Classes.Select(c => c.Id + p.PersonClasses.One().ClassId).Sum()
+                })
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new [] 
+            {
+                new 
+                {
+                    person = Data.People.John.Name,
+                    classes = 14
+                },
+                new 
+                {
+                    person = Data.People.Mary.Name,
+                    classes = 6
+                }
+            }, data);
+        }
     }
 }

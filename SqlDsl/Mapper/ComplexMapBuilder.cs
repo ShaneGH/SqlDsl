@@ -104,6 +104,11 @@ namespace SqlDsl.Mapper
                     if (isIn)
                         return BuildMapForIn(state, inLhs, inRhs, toPrefix, isExprTip).AddT(false);
 
+                    var (isCount, countExpr) = ReflectionUtils.IsCount(expr);
+                    if (isCount)
+                        // .One(...) is invisible as far as nextMap is concerned
+                        return BuildMapForCount(state, countExpr, nextMap, toPrefix);
+                        
                     var oneExpr = ReflectionUtils.IsOne(exprMethod);
                     if (oneExpr != null)
                         // .One(...) is invisible as far as nextMap is concerned
@@ -129,7 +134,7 @@ namespace SqlDsl.Mapper
                     break;
             }
 
-            throw new InvalidOperationException($"Unsupported mapping expression \"{expr}\".");
+            throw BuildMappingError(expr);
         }
 
         static readonly HashSet<ExpressionType> InPlaceArrayCreation = new HashSet<ExpressionType>
@@ -214,10 +219,10 @@ namespace SqlDsl.Mapper
             var rProp = r.properties.ToArray();
 
             if (lProp.Length != 1)
-                throw new InvalidOperationException($"Unsupported mapping expression \"{left}\".");
+                throw BuildMappingError(left);
 
             if (rProp.Length != 1)
-                throw new InvalidOperationException($"Unsupported mapping expression \"{right}\".");
+                throw BuildMappingError(right);
 
             return (
                 new MappedProperty(
@@ -328,6 +333,46 @@ namespace SqlDsl.Mapper
                 inPart.ToEnumerable(),
                 lTab.Concat(rTab));
         }
+        
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForCount(
+            BuildMapState state, 
+            Expression enumerable, 
+            MapType nextMap,
+            string toPrefix = null, 
+            bool isExprTip = false)
+        {
+            var (properties, tables) = BuildMap(state, enumerable, nextMap, toPrefix, isExprTip);
+            tables = tables.Enumerate();
+
+            return (
+                properties.Select(WrapWithFunc),
+                tables);
+
+            MappedProperty WrapWithFunc(MappedProperty property)
+            {
+                if (property.FromParams.Next.Any())
+                    throw BuildMappingError(enumerable);
+
+                return new MappedProperty(
+                    new Accumulator(property.FromParams.Map(Map)),
+                    property.To,
+                    property.MappedPropertyType,
+                    property.PropertySegmentConstructors);
+            }
+
+            (ParameterExpression paramRoot, string param, bool isAggregate) Map((ParameterExpression paramRoot, string param, bool isAggregate) x)
+            {
+                var param = x.param;
+                if (tables.Any(t => t.From == param))
+                    param = $"{param}{SqlStatementConstants.RowIdName}";
+
+                param = string.IsNullOrEmpty(param) ?
+                    $"{SqlStatementConstants.OpenFunctionAlias}{state.SqlBuilder.CountFunctionName}" :
+                    $"{x.param}.{SqlStatementConstants.OpenFunctionAlias}{state.SqlBuilder.CountFunctionName}";
+                
+                return (x.paramRoot, param, true);
+            }
+        }
 
         static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, LambdaExpression mapper, string toPrefix, bool isExprTip)
         {
@@ -355,7 +400,8 @@ namespace SqlDsl.Mapper
                     .Select(m => new MappedProperty(
                         m.FromParams.MapParam(x => (
                             x.paramRoot ?? outerMapProperties[0].FromParams.First.paramRoot, 
-                            x.paramRoot == null ? CombineStrings(outerMapProperties[0].FromParams.First.param, x.param) : x.param)),
+                            x.paramRoot == null ? CombineStrings(outerMapProperties[0].FromParams.First.param, x.param) : x.param,
+                            x.isAggregate)),
                         CombineStrings(outerMapProperties[0].To, m.To), 
                         m.MappedPropertyType, 
                         m.PropertySegmentConstructors)),
@@ -476,6 +522,8 @@ namespace SqlDsl.Mapper
                 return;
             }
         }
+
+        static InvalidOperationException BuildMappingError(Expression mapping) => new InvalidOperationException($"Unsupported mapping expression \"{mapping}\".");
 
         static (bool isSuccess, string name) CompileMemberName(Expression expr)
         {

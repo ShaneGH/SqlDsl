@@ -17,6 +17,13 @@ namespace SqlDsl.Mapper
             var ps = properties.ToArray();
             
             return (ExpressionMappingTypeFinder.GetMappingType(ps, expression, state), ps, tables);
+
+            /*
+            if (mappedChains.Any(c => c.result.FromParams.GetEnumerable1().Any(x => x.isAggregate)))
+                throw new NotImplementedException("Cannot handle simple aggregate result"); // TODO
+
+            if (mappedChains.Length == 0)
+                throw new InvalidOperationException("Unable to understand mapping statement: " + expression); */
         }
 
         class ExpressionMappingTypeFinder : ExpressionVisitor, IDisposable

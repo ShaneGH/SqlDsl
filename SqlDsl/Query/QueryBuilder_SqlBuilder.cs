@@ -105,7 +105,7 @@ namespace SqlDsl.Query
             foreach (var col in selectColumns)
             {
                 var alias = col.table == SqlStatementConstants.RootObjectAlias ? col.column.name : $"{col.table}.{col.column.name}";
-                builder.AddSelectColumn(col.column.dataType, SqlFragmentBuilder.BuildSelectColumn(col.table, col.column.name), alias, new [] {(col.table, col.column.name)});
+                builder.AddSelectColumn(col.column.dataType, SqlFragmentBuilder.BuildSelectColumn(col.table, col.column.name), alias, new [] {(col.table, col.column.name, false)});
             }
 
             // add a where clause if specified

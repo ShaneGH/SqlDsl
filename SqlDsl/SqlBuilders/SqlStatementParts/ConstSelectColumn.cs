@@ -14,7 +14,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     /// </summary>
     class ConstSelectColumn : SelectColumnBase
     {
-        static readonly (string, string)[] EmptyReferences = new (string, string)[0];
+        static readonly (string, string, bool)[] EmptyReferences = new (string, string, bool)[0];
 
         /// <summary>
         /// The index of the row number column for the table which exposes this column

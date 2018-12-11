@@ -19,7 +19,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public override int RowNumberColumnIndex { get; }
 
-        public InnerQuerySelectColumn((string table, string column)[] representsColumns, string alias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors, SqlStatementBuilder qb)
+        public InnerQuerySelectColumn((string table, string column, bool isAggregate)[] representsColumns, string alias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors, SqlStatementBuilder qb)
             : base(representsColumns, alias, isRowNumber, dataType, argConstructors)
         {
             int col = 0;

@@ -128,7 +128,7 @@ namespace SqlDsl.Mapper
         public IAccumulator MapParamName(Func<string, string> map)
         {
             return MapParam(_Map);
-            (ParameterExpression, string) _Map((ParameterExpression x, string y) z) => (z.x, map(z.y));
+            (ParameterExpression, string, bool) _Map((ParameterExpression x, string y, bool z) w) => (w.x, map(w.y), w.z);
         }
 
         public IAccumulator Combine(IAccumulator x, CombinationType combiner)
@@ -211,12 +211,12 @@ namespace SqlDsl.Mapper
             string Aggregate(string x, ((ParameterExpression paramRoot, string param) param, CombinationType type) y)
             {
                 var table = (y.param.param ?? "").StartsWith("@") ? null : wrappedQueryAlias;
-                var yValue = BuildColumn(table, y.param.paramRoot, y.param.param);
+                var yValue = BuildColumn(table, y.param.paramRoot, y.param.param, y.param.isAggregate);
 
                 return Combine(sqlFragmentBuilder, x, yValue, y.type);
             }
 
-            string BuildColumn(string tab, ParameterExpression paramRoot, string parameter)
+            string BuildColumn(string tab, ParameterExpression paramRoot, string parameter, bool isAggregate)
             {
                 if (tableIsFirstParamPart)
                 {
@@ -232,16 +232,16 @@ namespace SqlDsl.Mapper
             }
         }
 
-        public static Func<(ParameterExpression, string), string> AddRoot(BuildMapState state)
+        public static Func<(ParameterExpression, string, bool), (string param, bool isAggregate)> AddRoot(BuildMapState state)
         {
             return Execute;
 
-            string Execute((ParameterExpression root, string property) x)
+            (string , bool) Execute((ParameterExpression root, string property, bool isAggregate) x)
             {
-                var (root, property) = x;
+                var (root, property, _) = x;
 
                 // I am not 100% sure about the "root == state.QueryObject" part
-                if (root == null || root == state.QueryObject) return property;
+                if (root == null || root == state.QueryObject) return (property, x.isAggregate);
 
                 var propertyRoot = state.ParameterRepresentsProperty
                     .Where(p => p.parameter == root)
@@ -254,13 +254,13 @@ namespace SqlDsl.Mapper
                 if (!string.IsNullOrEmpty(property))
                     propertyRoot += ".";
 
-                return $"{propertyRoot}{property}";
+                return ($"{propertyRoot}{property}", x.isAggregate);
             }
         }
 
-        public static string AddRoot(ParameterExpression root, string property, BuildMapState state)
+        public static (string param, bool isAggregate) AddRoot(ParameterExpression root, string property, bool isAggregate, BuildMapState state)
         {
-            return AddRoot(state)((root, property));
+            return AddRoot(state)((root, property, isAggregate));
         }
     }
 

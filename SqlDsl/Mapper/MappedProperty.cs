@@ -25,7 +25,7 @@ namespace SqlDsl.Mapper
         }
         
         public MappedProperty(ParameterExpression fromParamRoot, string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
-            : this (new Accumulator(fromParamRoot, from), to, mappedPropertyType, constructorArgs)
+            : this (new Accumulator(fromParamRoot, from, false), to, mappedPropertyType, constructorArgs)
         {
         }
 

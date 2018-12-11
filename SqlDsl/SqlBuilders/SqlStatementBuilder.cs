@@ -252,19 +252,19 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// A list of columns in the SELECT statement
         /// </summary>
-        readonly List<(Type cellDataType, string selectCode, string alias, (string table, string column)[] representsColumns, ConstructorInfo[] argConstructors)> _Select = new List<(Type, string, string, (string, string)[], ConstructorInfo[])>();
+        readonly List<(Type cellDataType, string selectCode, string alias, (string table, string column, bool isAggregate)[] representsColumns, ConstructorInfo[] argConstructors)> _Select = new List<(Type, string, string, (string, string, bool)[], ConstructorInfo[])>();
 
         /// <summary>
         /// A list of columns in the SELECT statement
         /// </summary>
-        public IEnumerable<(Type cellDataType, string selectCode, string alias, (string table, string column)[] representsColumns, ConstructorInfo[] argConstructors)> Select => _Select.Skip(0);
+        public IEnumerable<(Type cellDataType, string selectCode, string alias, (string table, string column, bool isAggregate)[] representsColumns, ConstructorInfo[] argConstructors)> Select => _Select.Skip(0);
         
         private static readonly ConstructorInfo[] EmptyConstructorInfo = new ConstructorInfo[0];
 
         /// <summary>
         /// Add a column to the SELECT statement
         /// </summary>
-        public void AddSelectColumn(Type cellDataType, string selectCode, string alias, (string table, string column)[] representsColumns, ConstructorInfo[] argConstructors = null) =>
+        public void AddSelectColumn(Type cellDataType, string selectCode, string alias, (string table, string column, bool isAggregate)[] representsColumns, ConstructorInfo[] argConstructors = null) =>
             _Select.Add((cellDataType, selectCode, alias ?? throw new ArgumentNullException(nameof(alias)), representsColumns, argConstructors ?? EmptyConstructorInfo));
 
         /// <summary>
@@ -368,9 +368,28 @@ namespace SqlDsl.SqlBuilders
             var (querySetupSql, beforeWhereSql, whereSql, afterWhereSql) = InnerQuery.Value.builder.ToSqlString();
 
             beforeWhereSql = $"SELECT {selectColumns.JoinString(",")}\nFROM ({beforeWhereSql}";
-            afterWhereSql = $"{afterWhereSql}) {SqlBuilder.WrapAlias(PrimaryTableAlias)}";
+            afterWhereSql = $"{afterWhereSql}) {SqlBuilder.WrapAlias(PrimaryTableAlias)}{BuildGroupByStatement("\n")}";
 
             return (querySetupSql, beforeWhereSql, whereSql, afterWhereSql);
+        }
+
+        string BuildGroupByStatement(string prefix)
+        {
+            if (GetAllSelectColumns().All(cs => cs.representsColumns.All(c => !c.isAggregate)))
+                return "";
+
+            var output = new List<string>(16);
+            foreach (var col in GetAllSelectColumns()
+                .SelectMany(cs => cs.representsColumns)
+                .Where(c => !c.isAggregate))
+            {
+                output.Add(SqlBuilder.BuildSelectColumn(col.table, col.column));
+            }
+
+            if (output.Count > 0)
+                prefix += "GROUP BY ";
+
+            return $"{prefix}{output.JoinString(",")}";
         }
 
         /// <summary>
@@ -460,8 +479,8 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Concat DB table columns with row id columns
         /// </summary>
-        IEnumerable<(Type dataType, string selectCode, string alias, (string table, string column)[] representsColumns, ConstructorInfo[] constructors)> GetAllSelectColumns() =>
-            GetRowIdSelectColumns().Select(x => ((Type)null, SqlBuilder.BuildSelectColumn(x.tableAlias, x.rowIdColumnName), x.rowIdColumnNameAlias, new [] { (x.tableAlias, x.rowIdColumnName) }, EmptyConstructorInfo)).Concat(_Select);
+        IEnumerable<(Type dataType, string selectCode, string alias, (string table, string column, bool isAggregate)[] representsColumns, ConstructorInfo[] constructors)> GetAllSelectColumns() =>
+            GetRowIdSelectColumns().Select(x => ((Type)null, SqlBuilder.BuildSelectColumn(x.tableAlias, x.rowIdColumnName), x.rowIdColumnNameAlias, new [] { (x.tableAlias, x.rowIdColumnName, false) }, EmptyConstructorInfo)).Concat(_Select);
 
         /// <summary>
         /// Remove any tables from the query which are not in the requiredTableAliases list
