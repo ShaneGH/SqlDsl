@@ -46,10 +46,22 @@ namespace SqlDsl.Mapper
             switch (resultType)
             {
                 case MapBuilder.BuildMapResult.Map:
-                    return ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state)
-                        .Compile<TArgs, TMapped>(mutableParameters.Parameters, QueryParseType.ORM);
-
                 case MapBuilder.BuildMapResult.SimpleProp:
+                    var requiredPropAliases = properties
+                        .SelectMany(pms => pms.FromParams.GetEnumerable1())
+                        .Where(x => x.paramRoot == state.QueryObject || state.ParameterRepresentsProperty.Any(y => y.parameter == x.paramRoot))
+                        // TODO: using Accumulator.AddRoot here seems wrong
+                        .Select(x => Accumulator.AddRoot(x.paramRoot, x.param, state))
+                        .SelectMany(x => wrappedStatement.SelectColumns[x].ReferencesColumns.Select(y => y.table))
+                        .Concat(tables.Select(t => t.From));
+
+                    wrappedBuilder.FilterUnusedTables(requiredPropAliases);
+                    wrappedStatement = new SqlStatement(wrappedBuilder);
+
+                    if (resultType == MapBuilder.BuildMapResult.Map)
+                        return ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state)
+                            .Compile<TArgs, TMapped>(mutableParameters.Parameters, QueryParseType.ORM);
+                            
                     properties = properties.Enumerate();
                     if (properties.Count() != 1)
                     {
@@ -88,6 +100,9 @@ namespace SqlDsl.Mapper
         static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var rowIdPropertyMap = tables
+                // if mapping does not map to a specific property (e.g. q => q.Args.Select(a => new object()))
+                // To will be null
+                .Where(t => t.To != null)
                 .Select(t => (rowIdColumnName: $"{t.From}.{SqlStatementConstants.RowIdName}", resultClassProperty: t.To))
                 .Enumerate();
 

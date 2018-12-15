@@ -23,27 +23,27 @@ namespace SqlDsl.UnitTests.FullPathTests
         class JoinedQueryClass
         {
             public Person ThePerson { get; set; }
-            public List<PersonClass> PersonClasses { get; set; }
-            public List<Class> Classes { get; set; }
-            public List<ClassTag> ClassTags { get; set; }
-            public List<Tag> Tags { get; set; }
-            public List<Purchase> PurchasesByMe { get; set; }
-            public List<Purchase> PurchasesByMeForMyClasses { get; set; }
+            public List<PersonClass> ThePersonClasses { get; set; }
+            public List<Class> TheClasses { get; set; }
+            public List<ClassTag> TheClassTags { get; set; }
+            public List<Tag> TheTags { get; set; }
+            public List<Purchase> ThePurchasesByMe { get; set; }
+            public List<Purchase> ThePurchasesByMeForMyClasses { get; set; }
         }
 
         static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
         {
             return Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .LeftJoin<PersonClass>(q => q.PersonClasses)
+                .LeftJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .LeftJoin<Class>(q => q.Classes)
-                    .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
-                .LeftJoin<ClassTag>(q => q.ClassTags)
-                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
-                .LeftJoin<Tag>(q => q.Tags)
-                    .On((q, t) => q.ClassTags.One().TagId == t.Id)
-                .LeftJoin<Purchase>(q => q.PurchasesByMe)
+                .LeftJoin<Class>(q => q.TheClasses)
+                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
+                .LeftJoin<ClassTag>(q => q.TheClassTags)
+                    .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
+                .LeftJoin<Tag>(q => q.TheTags)
+                    .On((q, t) => q.TheClassTags.One().TagId == t.Id)
+                .LeftJoin<Purchase>(q => q.ThePurchasesByMe)
                     .On((q, t) => q.ThePerson.Id == t.PersonId);
                 // .LeftJoin<Purchase>(q => q.PurchasesByMeForMyClasses)
                 //     .On((q, t) => q.ThePerson.Id == t.PersonId && q.Classes.One().Id == t.ClassId);
@@ -285,24 +285,24 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<JoinedQueryClass>()
                 .From(result => result.ThePerson)
-                .LeftJoin<PersonClass>(result => result.PersonClasses)
+                .LeftJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((r, pc) => r.ThePerson.Id == pc.PersonId)
-                .LeftJoin<Class>(result => result.Classes)
-                    .On((r, pc) => r.PersonClasses.One().ClassId == pc.Id)
-                .LeftJoin<ClassTag>(result => result.ClassTags)
-                    .On((r, pc) => r.Classes.One().Id == pc.ClassId)
-                .LeftJoin<Tag>(result => result.Tags)
-                    .On((r, pc) => r.ClassTags.One().TagId == pc.Id)
+                .LeftJoin<Class>(result => result.TheClasses)
+                    .On((r, pc) => r.ThePersonClasses.One().ClassId == pc.Id)
+                .LeftJoin<ClassTag>(result => result.TheClassTags)
+                    .On((r, pc) => r.TheClasses.One().Id == pc.ClassId)
+                .LeftJoin<Tag>(result => result.TheTags)
+                    .On((r, pc) => r.TheClassTags.One().TagId == pc.Id)
                 .Where(result => result.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
                     name = q.ThePerson.Name,
                     person = q.ThePerson,
-                    classes = q.Classes
+                    classes = q.TheClasses
                         .Select(c => new
                         {
                             className = c.Name,
-                            tags = q.Tags
+                            tags = q.TheTags
                                 .Select(t => t.Name)
                                 .ToArray()
                         })
@@ -533,7 +533,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(x => new
                 {
                     personName = x.ThePerson.Name,
-                    classes = new ObjectWithConstructorArgs_OuterSelectTest(x.Classes)
+                    classes = new ObjectWithConstructorArgs_OuterSelectTest(x.TheClasses)
                 })
                 .ToIEnumerableAsync(Executor);
 
@@ -573,7 +573,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(x => new
                 {
                     personName = x.ThePerson.Name,
-                    classes = x.Classes
+                    classes = x.TheClasses
                         .Select(c => new ObjectWithConstructorArgs_InnerSelectTest(c))
                 })
                 .ToIEnumerableAsync(Executor);
@@ -593,6 +593,33 @@ namespace SqlDsl.UnitTests.FullPathTests
             { 
                 new ObjectWithConstructorArgs_InnerSelectTest(Data.Classes.Tennis)
             }, data.ElementAt(1).classes);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task SelectWithoutColumns_MapsCorrectly()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(x => new
+                {
+                    personName = x.ThePerson.Name,
+                    classes = x.TheClasses.Select(c => 1),
+                    tags = x.TheTags.Select(t => 2)
+                })
+                .ToListAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+
+            Assert.AreEqual(Data.People.John.Name, data[0].personName);
+            CollectionAssert.AreEqual(new[]{1, 1}, data[0].classes);
+            CollectionAssert.AreEqual(new[]{2, 2, 2}, data[0].tags);
+            
+            Assert.AreEqual(Data.People.Mary.Name, data[1].personName);
+            CollectionAssert.AreEqual(new[]{1}, data[1].classes);
+            CollectionAssert.AreEqual(new[]{2, 2}, data[1].tags);
         }
     }
 }

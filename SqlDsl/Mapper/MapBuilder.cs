@@ -18,9 +18,6 @@ namespace SqlDsl.Mapper
                 return BuildMapForPropertyChain(state, expression, chains);
 
             var (properties, tables) = ComplexMapBuilder.BuildMap(state, expression);
-
-            // if expression returns an object (e.g. a => a) the To param might be null
-            tables = tables.Where(t => t.To != null);
             return (BuildMapResult.Map, properties, tables);
         }
 

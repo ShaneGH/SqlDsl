@@ -49,6 +49,12 @@ namespace SqlDsl.Utils
             xs ?? Enumerable.Empty<T>();
         
         /// <summary>
+        /// Casts a struct to a nullable version
+        /// </summary>
+        public static IEnumerable<T?> AsNullable<T>(this IEnumerable<T> xs) where T: struct =>
+            xs.Cast<T?>();
+        
+        /// <summary>
         /// If x == null, return [], otherwise return [x]
         /// </summary>
         public static IEnumerable<T> ToEnumerable<T>(this T x)

@@ -68,7 +68,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var tt= await FullyJoinedQuery<object>()
+            await FullyJoinedQuery<object>()
                 .Map(x => new Cls1
                 {
                     name = x.ThePerson.Name,
@@ -150,7 +150,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePerson)
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
-
+                
             // assert
             Assert.AreEqual(2, data.Count());
             Assert.AreEqual(Data.People.John, data.First());
@@ -204,6 +204,88 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.PersonClasses.JohnTennis, data.First().First());
             Assert.AreEqual(Data.PersonClasses.JohnArchery, data.First().ElementAt(1));
             Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1).First());
+        }
+
+        class PreMapped 
+        {
+            public long ClassId;
+            public long PersonId;
+
+            public PreMapped(){}
+
+            public PreMapped(long personId) { PersonId = personId; }
+        }
+
+        [Test]
+        public async Task ReturnMultipleFromMap_PreMappedWithProperty()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Map(p => p.PersonClasses.Select(pc => new PreMapped { ClassId = pc.ClassId }).ToList())
+                .ToListAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count, "1");
+            Assert.AreEqual(2, data[0].Count(), "2");
+            Assert.AreEqual(1, data[1].Count(), "3");
+            Assert.AreEqual(Data.PersonClasses.JohnTennis.ClassId, data[0][0].ClassId, "4");
+            Assert.AreEqual(Data.PersonClasses.JohnArchery.ClassId, data[0][1].ClassId, "5");
+            Assert.AreEqual(Data.PersonClasses.MaryTennis.ClassId, data[1][0].ClassId, "6");
+        }
+
+        [Test]
+        public async Task ReturnMultipleFromMap_PreMappedWithConstructorArg()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Map(p => p.PersonClasses.Select(pc => new PreMapped(pc.PersonId)).ToList())
+                .ToListAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count, "1");
+            Assert.AreEqual(2, data[0].Count(), "2");
+            Assert.AreEqual(1, data[1].Count(), "3");
+            Assert.AreEqual(Data.PersonClasses.JohnTennis.PersonId, data[0][0].PersonId, "4");
+            Assert.AreEqual(Data.PersonClasses.JohnArchery.PersonId, data[0][1].PersonId, "5");
+            Assert.AreEqual(Data.PersonClasses.MaryTennis.PersonId, data[1][0].PersonId, "6");
+        }
+
+        [Test]
+        public async Task ReturnMultipleFromMap_PreMappedWithPropertyAndConstructorArg()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Map(p => p.PersonClasses.Select(pc => new PreMapped(pc.PersonId) { ClassId = pc.ClassId }).ToList())
+                .ToListAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count, "1");
+            Assert.AreEqual(2, data[0].Count(), "2");
+            Assert.AreEqual(1, data[1].Count(), "3");
+            Assert.AreEqual(Data.PersonClasses.JohnTennis.ClassId, data[0][0].ClassId, "4 1");
+            Assert.AreEqual(Data.PersonClasses.JohnTennis.PersonId, data[0][0].PersonId, "4 2");
+            Assert.AreEqual(Data.PersonClasses.JohnArchery.ClassId, data[0][1].ClassId, "5 1");
+            Assert.AreEqual(Data.PersonClasses.JohnArchery.PersonId, data[0][1].PersonId, "5 2");
+            Assert.AreEqual(Data.PersonClasses.MaryTennis.ClassId, data[1][0].ClassId, "6 1");
+            Assert.AreEqual(Data.PersonClasses.MaryTennis.PersonId, data[1][0].PersonId, "6 2");
+        }
+
+        [Test]
+        public async Task ReturnMultipleFromMap_PreMappedWithNoPropertiesOrConstructorArgs()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Map(p => p.PersonClasses.Select(pc => new PreMapped()).ToList())
+                .ToListAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count, "1");
+            Assert.AreEqual(2, data[0].Count(), "2");
+            Assert.AreEqual(1, data[1].Count(), "3");
         }
 
         [Test]

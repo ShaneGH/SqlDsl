@@ -299,7 +299,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(MappedVersion),
                 new[]
                 {
-                    (5, "PersonName", new int[0], typeof(string), typeof(string))
+                    (1, "PersonName", new int[0], typeof(string), typeof(string))
                 },
                 null, 
                 new[] { 0 });
@@ -329,7 +329,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(MappedVersion),
                 new[]
                 {
-                    (5, "PersonName", new int[0], typeof(string), typeof(string))
+                    (3, "PersonName", new int[0], typeof(string), typeof(string))
                 },
                 new[]
                 {
@@ -337,7 +337,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(MappedClass),
                         new[]
                         {
-                            (6, "ClassName", new int[0], typeof(string), typeof(string))
+                            (4, "ClassName", new int[0], typeof(string), typeof(string))
                         }, 
                         null, 
                         new[]{1,2}))
@@ -502,7 +502,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(DifficultScenarioInner),
                         new[]
                         {
-                            (5, "TagIds", new int[]{3}, typeof(long[]), typeof(long))
+                            (4, "TagIds", new int[]{3}, typeof(long[]), typeof(long))
                         }, 
                         null, 
                         new[]{1,2}))
@@ -536,7 +536,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(DifficultScenario2),
                 new []
                 {
-                    (5, "TagIds", new int[]{1,2,3}, typeof(long[]), typeof(long))
+                    (4, "TagIds", new int[]{1,2,3}, typeof(long[]), typeof(long))
                 },
                 null,
                 new[] { 0 });
@@ -603,7 +603,7 @@ namespace SqlDsl.UnitTests.DataParser
                                         typeof(DeepJoinedClassData),
                                         new[] 
                                         {
-                                            (5, "TagIds", new int[]{3}, typeof(long[]), typeof(long))
+                                            (4, "TagIds", new int[]{3}, typeof(long[]), typeof(long))
                                         },
                                         null,
                                         new[]{1, 2}
@@ -878,8 +878,8 @@ namespace SqlDsl.UnitTests.DataParser
                                 typeof(Class),
                                 new[] 
                                 {
-                                    (5, "Id", new int[0], typeof(long), typeof(long)),
-                                    (6, "Name", new int[0], typeof(string), typeof(string))
+                                    (3, "Id", new int[0], typeof(long), typeof(long)),
+                                    (4, "Name", new int[0], typeof(string), typeof(string))
                                 },
                                 null,
                                 new[]{2}
@@ -923,8 +923,8 @@ namespace SqlDsl.UnitTests.DataParser
                                 typeof(Class),
                                 new[] 
                                 {
-                                    (5, "Id", new int[0], typeof(long), typeof(long)),
-                                    (6, "Name", new int[0], typeof(string), typeof(string))
+                                    (3, "Id", new int[0], typeof(long), typeof(long)),
+                                    (4, "Name", new int[0], typeof(string), typeof(string))
                                 },
                                 null,
                                 new[]{2}
@@ -932,6 +932,56 @@ namespace SqlDsl.UnitTests.DataParser
                         }
                     ))
                 });
+
+            Compare(expected, actual);
+        }
+
+        class AnotherDifficultCase
+        {
+            public long ClassId;
+        }
+
+        [Test]
+        public void PropertyGraph_ReturnsMultipleComplexArgs_ReturnsCorrectOPG1()
+        {
+            // arrange
+            // act
+            var actual = FullyJoinedQuery()
+                .Map(p => p.PersonClasses.Select(pc => new AnotherDifficultCase { ClassId = pc.ClassId }).ToList())
+                .BuildObjetPropertyGraph<List<AnotherDifficultCase>, JoinedQueryClass>();
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                typeof(List<AnotherDifficultCase>),
+                new []
+                {
+                    (2, "ClassId", new int[]{1}, (Type)null, typeof(long)),   
+                },
+                null, 
+                new[] { 0 });
+
+            Compare(expected, actual);
+        }
+
+        [Test]
+        public void PropertyGraph_ReturnsMultipleComplexArgs_ReturnsCorrectOPG2()
+        {
+            // arrange
+            // act
+            var actual = FullyJoinedQuery()
+                .Map(p => p.PersonClasses.ToList())
+                .BuildObjetPropertyGraph<List<PersonClass>, JoinedQueryClass>();
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                typeof(List<PersonClass>),
+                new []
+                {
+                    (2, "PersonId", new int[]{1}, (Type)null, typeof(long)),   
+                    (3, "ClassId", new int[]{1}, (Type)null, typeof(long))   
+                },
+                null, 
+                new[] { 0 });
 
             Compare(expected, actual);
         }

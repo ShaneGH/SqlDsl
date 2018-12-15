@@ -58,12 +58,21 @@ namespace SqlDsl.ObjectBuilders
         /// </summary>
         static IEnumerable<ReusableObjectGraph> SplitObjectGraph(ReusableObjectGraph values, ILogger logger)
         {
-            if (values.PropertyGraph.SimpleProps.Length == 0)
+            if (values.PropertyGraph.SimpleConstructorArgs.Length == 0 && values.PropertyGraph.SimpleProps.Length == 0)
+            {
+                foreach (var obj in values.Objects)
+                    yield return values.Clone();
+
                 yield break;
+            }
+
+            var key = values.PropertyGraph.SimpleConstructorArgs.Length == 0 ?
+                values.PropertyGraph.SimpleProps[0].rowNumberColumnIds :
+                values.PropertyGraph.SimpleConstructorArgs[0].rowNumberColumnIds;
 
             // run a "Distinct" on the rowNumbers
             var dataRowsForProp = values.Objects
-                .GroupBy(d => values.PropertyGraph.GetUniqueIdForSimpleProp(d, values.PropertyGraph.SimpleProps[0].rowNumberColumnIds))
+                .GroupBy(d => values.PropertyGraph.GetUniqueIdForSimpleProp(d, key))
                 .Select(Enumerable.First);
 
             foreach (var row in dataRowsForProp)
