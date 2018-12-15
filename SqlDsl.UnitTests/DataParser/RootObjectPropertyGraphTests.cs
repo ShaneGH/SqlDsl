@@ -985,6 +985,74 @@ namespace SqlDsl.UnitTests.DataParser
 
             Compare(expected, actual);
         }
+
+        // See todo in ComplexMapBuilder.BuildMapForConstructor
+
+        // class PreMapped 
+        // {
+        //     public PreMapped AnotherPreMapped;
+
+        //     public PreMapped(){}
+
+        //     public PreMapped(PreMapped anotherPreMapped) { AnotherPreMapped = anotherPreMapped; }
+        // }
+
+        // [Test]
+        // public void PropertyGraph_ReturnsMultipleComplexArgsWithNoSimpleProps_ReturnsCorrectOPG1()
+        // {
+        //     // arrange
+        //     // act
+        //     var actual = FullyJoinedQuery()
+        //         .Map(p => p.PersonClasses.Select(pc => new PreMapped { AnotherPreMapped = new PreMapped() }).ToList())
+        //         .BuildObjetPropertyGraph<List<PreMapped>, JoinedQueryClass>();
+
+        //     // assert
+        //     var expected = new ObjectPropertyGraph(
+        //         typeof(List<PreMapped>),
+        //         null,
+        //         new []
+        //         {
+        //             ("AnotherPreMapped", new ObjectPropertyGraph(
+        //                 typeof(List<PreMapped>),
+        //                 null,
+        //                 null, 
+        //                 new[] { 0 })
+        //             )
+        //         },
+        //         new[] { 0 });
+
+        //     Compare(expected, actual);
+        // }
+
+        // [Test]
+        // public void PropertyGraph_ReturnsMultipleComplexArgsWithNoSimpleProps_ReturnsCorrectOPG2()
+        // {
+        //     // arrange
+        //     // act
+        //     var actual = FullyJoinedQuery()
+        //         .Map(p => p.PersonClasses.Select(pc => new PreMapped(new PreMapped())).ToList())
+        //         .BuildObjetPropertyGraph<List<PreMapped>, JoinedQueryClass>();
+
+        //     // The expected needs a bit of work before this test can be used
+
+        //     // assert
+        //     var expected = new ObjectPropertyGraph(
+        //         typeof(List<PreMapped>),
+        //         null,
+        //         null,
+        //         new[] { 0 },
+        //         complexConstructorArgs: new []
+        //         {
+        //             (0, typeof(PreMapped), new ObjectPropertyGraph(
+        //                 typeof(List<PreMapped>),
+        //                 null,
+        //                 null, 
+        //                 new[] { 0 })
+        //             )
+        //         });
+
+        //     Compare(expected, actual);
+        // }
     }
 
     public static class RootObjectPropertyGraphTestUtils

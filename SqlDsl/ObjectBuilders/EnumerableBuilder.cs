@@ -33,9 +33,28 @@ namespace SqlDsl.ObjectBuilders
                 throw new InvalidOperationException($"Type {typeof(TCollection)} must be an IEnumerable<>");
             }
 
-            CollectionBuilder = Expression
-                .Lambda<Func<IEnumerable<T>, TCollection>>(createExpression, values)
+            CollectionBuilder = EnsureCollectionIsNotIEnumerable(Expression
+                .Lambda<Func<IEnumerable<T>, TCollection>>(createExpression, values))
                 .Compile();
+        }
+
+        /// <summary>
+        /// Convert IEnumerable&lt;T> => T[]
+        /// </summary>
+        static Expression<Func<IEnumerable<T>, TCollection>> EnsureCollectionIsNotIEnumerable(Expression<Func<IEnumerable<T>, TCollection>> builder)
+        {
+            var enumerableType = ReflectionUtils.GetIEnumerableType(builder.Body.Type, recurse: false, strict: true);
+            if (enumerableType == null)
+                return builder;
+
+            // xs => (IEnumerable<T>)xs.ToArray()
+            return Expression.Lambda<Func<IEnumerable<T>, TCollection>>(
+                Expression.Convert(
+                    Expression.Call(
+                        ReflectionUtils.GetMethod<IEnumerable<object>>(xs => xs.ToArray(), enumerableType),
+                        builder.Body),
+                    builder.Body.Type),
+                builder.Parameters);
         }
 
         public TCollection Build(ReusableObjectGraph values, ILogger logger)

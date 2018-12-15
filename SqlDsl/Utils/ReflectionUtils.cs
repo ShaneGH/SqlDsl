@@ -70,14 +70,20 @@ namespace SqlDsl.Utils
         /// Get the T from an IEnumerable&lt;T> type, or null if the type is not IEnumerable.
         /// In this case System.String is not considered to be an IEnumerable
         /// </summary>
-        public static Type GetIEnumerableType(Type t, bool recurse = false)
+        /// <param name="recurse">If tru, will return the root T of IEnumerable&lt;IEnumerable&lt;T>></param>
+        /// <param name="strict">If true, type must be == IEnumerable&lt;T></param>
+        public static Type GetIEnumerableType(Type t, bool recurse = false, bool strict = false)
         {
             if (t == typeof(string))
                 return null;
 
-            var result = t
-                .GetInterfaces()
-                .Concat(t.IsInterface ? new[] { t } : new Type[0])
+            var toTest = strict ?
+                t.ToEnumerable() :
+                t
+                    .GetInterfaces()
+                    .Concat(t.IsInterface ? new[] { t } : new Type[0]);
+
+            var result = toTest
                 .Where(i => i.IsConstructedGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                 .Select(i => i.GetGenericArguments()[0])
                 .FirstOrDefault();

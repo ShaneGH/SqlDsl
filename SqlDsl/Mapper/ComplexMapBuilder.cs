@@ -67,7 +67,7 @@ namespace SqlDsl.Mapper
                         .AggregateTuple2();
 
                 case ExpressionType.New:
-                    return BuildMapForConstructor(state, expr as NewExpression, toPrefix: toPrefix);
+                    return BuildMapForConstructor(state, expr as NewExpression, nextMap, toPrefix: toPrefix);
 
                 case ExpressionType.MemberInit:
                     return BuildMapForMemberInit(state, expr as MemberInitExpression, toPrefix);
@@ -125,8 +125,24 @@ namespace SqlDsl.Mapper
             return state.WrappedSqlStatement.ContainsTable(property);
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForConstructor(BuildMapState state, NewExpression expr, string toPrefix = null)
-        { 
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForConstructor(BuildMapState state, NewExpression expr, MapType nextMap, string toPrefix = null)
+        {
+            // TODO: relax this condition
+            // The issue is within ObjectPropertyGraphBuilder, complex properties (or constructor args)
+            // are defined by the inner simple properties. e.g. property name = OuterObj.InnerProp will create
+            // an outer obj and an inner prop. But if inner prop is not set, then there is no reference to outer
+            // obj either.
+            // see also supporting tests:
+            //      PropertyGraph_ReturnsMultipleComplexArgsWithNoSimpleProps_ReturnsCorrectOPG1
+            //      PropertyGraph_ReturnsMultipleComplexArgsWithNoSimpleProps_ReturnsCorrectOPG2
+            //      ReturnMultipleFromMap_PreMappedWithComplexProperty
+            //      ReturnMultipleFromMap_PreMappedWithSimpleConstructorArg
+            //      ReturnMultipleFromMap_PreMappedWithSimplePropertyAndSimpleConstructorArg
+            //      SimpleMapReturningEmptyObject
+
+            if (nextMap != MapType.MemberInit && expr.Arguments.Count == 0)
+                throw new InvalidOperationException($"You cannot map to an object with has no data from table columns: {expr}.");
+
             return expr.Arguments
                 .Select(ex => (type: ex.Type, map: BuildMap(state, ex, MapType.Other, toPrefix: null, isExprTip: true)))
                 .Select((map, i) => (
@@ -194,10 +210,12 @@ namespace SqlDsl.Mapper
 
         static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMemberInit(BuildMapState state, MemberInitExpression expr, string toPrefix = null)
         {
-            return BuildMap(state, expr.NewExpression, MapType.Other, toPrefix)
+            var bindings = expr.Bindings.OfType<MemberAssignment>();
+            var mapType = bindings.Any() ? MapType.MemberInit : MapType.Other;
+
+            return BuildMap(state, expr.NewExpression, mapType, toPrefix)
                 .ToEnumerableStruct()
-                .Concat(expr.Bindings
-                    .OfType<MemberAssignment>()
+                .Concat(bindings
                     .Select(b => (binding: b, memberName: b.Member.Name, map: BuildMap(state, b.Expression, MapType.Other, b.Member.Name)))
                     .Select(m => (
                         m.map.properties.SelectMany(x => 
@@ -319,6 +337,7 @@ namespace SqlDsl.Mapper
             Root = 1,
             Select,
             MemberAccess,
+            MemberInit,
             Other
         }
     }
