@@ -607,5 +607,29 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(new[]{1}, data[1].classes);
             CollectionAssert.AreEqual(new[]{2, 2}, data[1].tags);
         }
+
+        /// <summary>
+        /// This is meant as a smoke test for other things
+        /// </summary>
+        [Test]
+        public async Task The_Gold_Standard()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Map(x => new
+                {
+                    person = x.ThePerson.Name,
+                    classes = x.TheClasses.Select(c => new 
+                    {
+                        className = c.Name,
+                        tags = x.TheTags.Select(t => t.Name)
+                    })
+                })
+                .ToListAsync(Executor);
+
+            // assert
+            Assert.Pass();
+        }
     }
 }
