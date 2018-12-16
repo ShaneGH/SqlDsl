@@ -223,6 +223,9 @@ namespace SqlDsl.SqlBuilders
         /// <param name="parameters">A list of parameters which will be added to if a constant is found in the equalityStatement</param>
         public void SetWhere(ParameterExpression queryRoot, ParameterExpression args, Expression equality, ParamBuilder parameters)
         {
+            // //string primarySelectTable, ParamBuilder parameters, ParameterExpression queryObject, ParameterExpression argsObject, ISqlStatement wrappedSqlStatement
+            // var tt = Mapper.MapBuilder.BuildMapFromRoot(new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRoot, args, null), equality);
+
             Where = SqlBuilder.BuildCondition(queryRoot, args, Enumerable.Empty<(ParameterExpression, string)>(), equality, parameters);
         }
 

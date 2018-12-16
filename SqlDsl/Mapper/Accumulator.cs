@@ -63,6 +63,24 @@ namespace SqlDsl.Mapper
                         
                     case ExpressionType.Divide:
                         return sqlFragmentBuilder.BuildDivideCondition(x, yValue);
+                        
+                    case ExpressionType.Equal:
+                        return sqlFragmentBuilder.BuildEqualityCondition(x, yValue);
+                        
+                    case ExpressionType.NotEqual:
+                        return sqlFragmentBuilder.BuildNonEqualityCondition(x, yValue);
+                        
+                    case ExpressionType.GreaterThan:
+                        return sqlFragmentBuilder.BuildGreaterThanCondition(x, yValue);
+                        
+                    case ExpressionType.GreaterThanOrEqual:
+                        return sqlFragmentBuilder.BuildGreaterThanEqualToCondition(x, yValue);
+                        
+                    case ExpressionType.LessThan:
+                        return sqlFragmentBuilder.BuildLessThanCondition(x, yValue);
+                        
+                    case ExpressionType.LessThanOrEqual:
+                        return sqlFragmentBuilder.BuildLessThanEqualToCondition(x, yValue);
 
                     default:
                         throw new InvalidOperationException($"Cannot build accumulator for expression type {y.type}.");

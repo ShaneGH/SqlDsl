@@ -52,16 +52,22 @@ namespace SqlDsl.SqlBuilders
         /// <inheritdoc />
         public virtual string BuildGreaterThanEqualToCondition(string lhs, string rhs) => $"({lhs} >= {rhs})";
 
+        /// <inheritdoc />
         public virtual string BuildInCondition(string lhs, string rhs) => $"({lhs} IN ({rhs}))";
 
+        /// <inheritdoc />
         public virtual string BuildCommaCondition(string lhs, string rhs) => $"{lhs}, {rhs}";
 
+        /// <inheritdoc />
         public virtual string BuildAddCondition(string lhs, string rhs) => $"({lhs} + {rhs})";
 
+        /// <inheritdoc />
         public virtual string BuildSubtractCondition(string lhs, string rhs) => $"({lhs} - {rhs})";
 
+        /// <inheritdoc />
         public virtual string BuildMultiplyCondition(string lhs, string rhs) => $"({lhs} * {rhs})";
 
+        /// <inheritdoc />
         public virtual string BuildDivideCondition(string lhs, string rhs) => $"({lhs} / {rhs})";
 
         // TODO: other operators (e.g. OR)

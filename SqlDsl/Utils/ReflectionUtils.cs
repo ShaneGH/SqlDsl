@@ -409,6 +409,12 @@ namespace SqlDsl.Utils
                 case ExpressionType.Subtract:
                 case ExpressionType.Multiply:
                 case ExpressionType.Divide:
+                case ExpressionType.Equal:
+                case ExpressionType.NotEqual:
+                case ExpressionType.GreaterThan:
+                case ExpressionType.GreaterThanOrEqual:
+                case ExpressionType.LessThan:
+                case ExpressionType.LessThanOrEqual:
                     if (!allowBinaryOperators)
                         return (false, null);
 

@@ -55,6 +55,12 @@ namespace SqlDsl.Mapper
                 case ExpressionType.Subtract:
                 case ExpressionType.Multiply:
                 case ExpressionType.Divide:
+                case ExpressionType.Equal:
+                case ExpressionType.NotEqual:
+                case ExpressionType.GreaterThan:
+                case ExpressionType.GreaterThanOrEqual:
+                case ExpressionType.LessThan:
+                case ExpressionType.LessThanOrEqual:
                     var asB = expr as BinaryExpression;
                     return BuildMapForBinaryCondition(state, asB.Left, asB.Right, asB.Type, asB.NodeType, toPrefix);
                     

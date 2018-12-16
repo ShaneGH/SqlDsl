@@ -573,18 +573,13 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(new [] {Data.Classes.Tennis.Id * 2}, data[1].classes);
         }
 
-        [Test]
-        [TestCase(ExpressionType.Add, 3)]
-        [TestCase(ExpressionType.Subtract, -1)]
-        [TestCase(ExpressionType.Multiply, 2)]
-        [TestCase(ExpressionType.Divide, 0)]
-        public async Task Map_SimpleBinaryCondition(ExpressionType type, long result)
+        void Map_SimpleBinaryConditionWorker<TOutput>(ExpressionType type, object equality, object result)
         {
             // arrange
             var exprInput = Expression.Parameter(typeof(JoinedQueryClass));
 
             // p => p.ThePerson.Id + result
-            var mapper = Expression.Lambda<Func<JoinedQueryClass, long>>(
+            var mapper = Expression.Lambda<Func<JoinedQueryClass, TOutput>>(
                 Expression.MakeBinary(
                     type, 
                     Expression.Property(
@@ -592,28 +587,52 @@ namespace SqlDsl.UnitTests.FullPathTests
                             exprInput,
                             "ThePerson"), 
                         "Id"),
-                    Expression.Constant(2L)),
+                    Expression.Constant(equality)),
                     exprInput);
 
             // act
-            var data = await FullyJoinedQuery<object>()
+            var data = FullyJoinedQuery<object>()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(mapper)
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
+                .ToIEnumerable(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
             Assert.AreEqual(result, data.First());
         }
 
+        [Test]
+        [TestCase(ExpressionType.Add, 2L, 3L, typeof(long))]
+        [TestCase(ExpressionType.Subtract, 2L, -1L, typeof(long))]
+        [TestCase(ExpressionType.Multiply, 2L, 2L, typeof(long))]
+        [TestCase(ExpressionType.Divide, 2L, 0L, typeof(long))]
+        [TestCase(ExpressionType.Equal, 2L, false, typeof(bool))]
+        [TestCase(ExpressionType.NotEqual, 2L, true, typeof(bool))]
+        [TestCase(ExpressionType.GreaterThan, 2L, false, typeof(bool))]
+        [TestCase(ExpressionType.GreaterThanOrEqual, 2L, false, typeof(bool))]
+        [TestCase(ExpressionType.LessThan, 2L, true, typeof(bool))]
+        [TestCase(ExpressionType.LessThanOrEqual, 2L, true, typeof(bool))]
+        public void Map_SimpleBinaryCondition(ExpressionType type, object equality, object result, Type resultType)
+        {
+            ReflectionUtils
+                .GetMethod(() => Map_SimpleBinaryConditionWorker<int>(ExpressionType.OnesComplement, null, null), resultType)
+                .Invoke(this, new object[]{ type, equality, result });
+        }
+
         static long Add(long x) => x + x;
 
         [Test]
-        [TestCase(ExpressionType.Add, 3)]
-        [TestCase(ExpressionType.Subtract, -1)]
-        [TestCase(ExpressionType.Multiply, 2)]
-        [TestCase(ExpressionType.Divide, 0)]
-        public async Task Where_BinaryCondition(ExpressionType type, long result)
+        [TestCase(ExpressionType.Add, 3L, true, false)]
+        [TestCase(ExpressionType.Subtract, -1L, true, false)]
+        [TestCase(ExpressionType.Multiply, 2L, true, false)]
+        [TestCase(ExpressionType.Divide, 0L, true, false)]
+        [TestCase(ExpressionType.Equal, false, true, false)]
+        [TestCase(ExpressionType.NotEqual, true, true, false)]
+        [TestCase(ExpressionType.GreaterThan, false, true, true)]
+        [TestCase(ExpressionType.GreaterThanOrEqual, false, true, false)]
+        [TestCase(ExpressionType.LessThan, true, true, false)]
+        [TestCase(ExpressionType.LessThanOrEqual, true, true, true)]
+        public async Task Where_BinaryCondition(ExpressionType type, object result, bool john, bool mary)
         {
             // arrange
             var exprInput = Expression.Parameter(typeof(Person));
@@ -631,21 +650,30 @@ namespace SqlDsl.UnitTests.FullPathTests
                 exprInput);
 
             // act
-            var data = await Sql.Query.Sqlite<Person>()
+            var actual = await Sql.Query.Sqlite<Person>()
                 .From()
                 .Where(where)
                 .ToListAsync(Executor, logger: Logger);
 
             // assert
-            CollectionAssert.AreEqual(new [] {Data.People.John}, data);
+            var expected = 
+                (john ? Data.People.John : null).ToEnumerable()
+                .Concat((mary ? Data.People.Mary: null).ToEnumerable());
+            CollectionAssert.AreEqual(expected, actual);
         }
 
         [Test]
-        [TestCase(ExpressionType.Add, 3)]
-        [TestCase(ExpressionType.Subtract, -1)]
-        [TestCase(ExpressionType.Multiply, 2)]
-        [TestCase(ExpressionType.Divide, 0)]
-        public async Task Join_BinaryCondition(ExpressionType type, long result)
+        [TestCase(ExpressionType.Add, 3L)]
+        [TestCase(ExpressionType.Subtract, -1L)]
+        [TestCase(ExpressionType.Multiply, 2L)]
+        [TestCase(ExpressionType.Divide, 0L)]
+        [TestCase(ExpressionType.Equal, false)]
+        [TestCase(ExpressionType.NotEqual, true)]
+        [TestCase(ExpressionType.GreaterThan, false)]
+        [TestCase(ExpressionType.GreaterThanOrEqual, false)]
+        [TestCase(ExpressionType.LessThan, true)]
+        [TestCase(ExpressionType.LessThanOrEqual, true)]
+        public async Task Join_BinaryCondition(ExpressionType type, object result)
         {
             // arrange
             var exprInput1 = Expression.Parameter(typeof(JoinedQueryClass));
@@ -681,6 +709,45 @@ namespace SqlDsl.UnitTests.FullPathTests
                 Data.PersonClasses.JohnTennis, 
                 Data.PersonClasses.MaryTennis
             }, data.SelectMany(d => d.PersonClasses));
+        }
+
+        [Test]
+        [Ignore("Waiting on OrderBy to use mapper instead of condition builder")]
+        [TestCase(ExpressionType.Add, 1L)]
+        [TestCase(ExpressionType.Subtract, 1L)]
+        [TestCase(ExpressionType.Multiply, 1L)]
+        [TestCase(ExpressionType.Divide, 1L)]
+        [TestCase(ExpressionType.Equal, true)]
+        [TestCase(ExpressionType.NotEqual, true)]
+        [TestCase(ExpressionType.GreaterThan, true)]
+        [TestCase(ExpressionType.GreaterThanOrEqual, true)]
+        [TestCase(ExpressionType.LessThan, true)]
+        [TestCase(ExpressionType.LessThanOrEqual, true)]
+        public async Task Join_OrderByCondition_SmokeTests(ExpressionType type, object result)
+        {
+            // arrange
+            var exprInput = Expression.Parameter(typeof(Person));
+
+            // p => p.Id + 2 == result
+            var where = Expression.Lambda<Func<Person, bool>>(
+                Expression.Equal(
+                    Expression.MakeBinary(
+                        type, 
+                        Expression.Property(
+                            exprInput,
+                            "Id"),
+                        Expression.Constant(2L)),
+                    Expression.Constant(result)),
+                exprInput);
+
+            // act
+            var actual = await Sql.Query.Sqlite<Person>()
+                .From()
+                .OrderBy(where)
+                .ToListAsync(Executor, logger: Logger);
+
+            // assert
+            // assert would not provide much value and would be complex
         }
     }
 }

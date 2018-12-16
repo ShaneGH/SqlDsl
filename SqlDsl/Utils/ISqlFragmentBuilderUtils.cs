@@ -26,6 +26,18 @@ namespace SqlDsl.SqlBuilders
                     return builder.BuildMultiplyCondition(l, r);
                 case ExpressionType.Divide:
                     return builder.BuildDivideCondition(l, r);
+                case ExpressionType.Equal:
+                    return builder.BuildEqualityCondition(l, r);
+                case ExpressionType.NotEqual:
+                    return builder.BuildNonEqualityCondition(l, r);
+                case ExpressionType.GreaterThan:
+                    return builder.BuildGreaterThanCondition(l, r);
+                case ExpressionType.GreaterThanOrEqual:
+                    return builder.BuildGreaterThanEqualToCondition(l, r);
+                case ExpressionType.LessThan:
+                    return builder.BuildLessThanCondition(l, r);
+                case ExpressionType.LessThanOrEqual:
+                    return builder.BuildLessThanEqualToCondition(l, r);
                 default:
                     throw new NotSupportedException($"Cannot combine query parts using concatType: {concatType}.");
             }
