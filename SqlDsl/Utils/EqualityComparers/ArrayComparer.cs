@@ -15,7 +15,7 @@ namespace SqlDsl.Utils.EqualityComparers
         /// <summary>
         /// The static instance of this comparer
         /// </summary>
-        public static readonly ArrayComparer<T> Instance = new ArrayComparer<T>();
+        public static readonly IEqualityComparer<T[]> Instance = new ArrayComparer<T>();
 
         private ArrayComparer(){}
         

@@ -26,6 +26,10 @@ namespace SqlDsl.SqlBuilders
                     return builder.BuildMultiplyCondition(l, r);
                 case ExpressionType.Divide:
                     return builder.BuildDivideCondition(l, r);
+                case ExpressionType.OnesComplement:
+                    return builder.BuildInCondition(l, r);
+                case ExpressionType.Modulo:
+                    return builder.BuildCommaCondition(l, r);
                 case ExpressionType.Equal:
                     return builder.BuildEqualityCondition(l, r);
                 case ExpressionType.NotEqual:

@@ -109,7 +109,7 @@ namespace SqlDsl.Mapper
             var mappedValues = properties
                 .Select(x => (
                     type: x.MappedPropertyType, 
-                    from: x.FromParams.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias),//  AddRoot(x.FromParamRoot, x.From, state), 
+                    from: x.FromParams.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias),
                     fromParams: x.FromParams.GetEnumerable1().Select(Accumulator.AddRoot(state)),
                     to: x.To, 
                     propertySegmentConstructors: x.PropertySegmentConstructors));
@@ -127,12 +127,10 @@ namespace SqlDsl.Mapper
                     col.type,
                     col.from,
                     col.to,
-                    col.fromParams.Select(p =>
-                    {
-                        return (
+                    col.fromParams
+                        .Select(p => (
                             (p ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias, 
-                            p);
-                    })
+                            p))
                     .ToArray(),
                     argConstructors: col.propertySegmentConstructors);
             }

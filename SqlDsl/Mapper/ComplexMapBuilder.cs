@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 
@@ -13,10 +14,11 @@ namespace SqlDsl.Mapper
 
         public static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMap(BuildMapState state, Expression expr)
         {
-            return BuildMap(state, expr, MapType.Root, isExprTip: true);
+            var (x, y, _) = BuildMap(state, expr, MapType.Root, isExprTip: true);
+            return (x, y);
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMap(
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, bool isConstant) BuildMap(
             BuildMapState state, 
             Expression expr, 
             MapType nextMap,
@@ -36,7 +38,8 @@ namespace SqlDsl.Mapper
 
                 return (
                     new MappedProperty(null, paramName, toPrefix, expr.Type).ToEnumerable(),
-                    EmptyMappedTables
+                    EmptyMappedTables,
+                    true
                 );
             }
 
@@ -48,13 +51,16 @@ namespace SqlDsl.Mapper
                 case ExpressionType.Parameter:
                     return (
                         new [] { new MappedProperty(expr as ParameterExpression, null, toPrefix, expr.Type) },
-                        EmptyMappedTables
+                        EmptyMappedTables,
+                        false
                     );
                     
                 case ExpressionType.Add:
                 case ExpressionType.Subtract:
                 case ExpressionType.Multiply:
                 case ExpressionType.Divide:
+                case ExpressionType.OnesComplement:
+                case ExpressionType.Modulo:
                 case ExpressionType.Equal:
                 case ExpressionType.NotEqual:
                 case ExpressionType.GreaterThan:
@@ -62,41 +68,54 @@ namespace SqlDsl.Mapper
                 case ExpressionType.LessThan:
                 case ExpressionType.LessThanOrEqual:
                     var asB = expr as BinaryExpression;
-                    return BuildMapForBinaryCondition(state, asB.Left, asB.Right, asB.Type, asB.NodeType, toPrefix);
+                    return BuildMapForBinaryCondition(state, asB.Left, asB.Right, asB.Type, asB.NodeType, toPrefix).AddT(false);
                     
                 case ExpressionType.MemberAccess:
-                    return BuildMapForMemberAccess(state, expr as MemberExpression, toPrefix);
+                    return BuildMapForMemberAccess(state, expr as MemberExpression, toPrefix).AddT(false);
 
                 case ExpressionType.Block:
-                    return (expr as BlockExpression).Expressions
-                        .Select(ex => BuildMap(state, ex, MapType.Other, toPrefix))
-                        .AggregateTuple2();
+                    throw new InvalidProgramException("Unsure how to deal with the last return value");
+                    // return (expr as BlockExpression).Expressions
+                    //     .Select(ex => BuildMap(state, ex, MapType.Other, toPrefix))
+                    //     .AggregateTuple2();
 
                 case ExpressionType.New:
-                    return BuildMapForConstructor(state, expr as NewExpression, nextMap, toPrefix: toPrefix);
+                    return BuildMapForConstructor(state, expr as NewExpression, nextMap, toPrefix: toPrefix).AddT(false);
 
                 case ExpressionType.MemberInit:
-                    return BuildMapForMemberInit(state, expr as MemberInitExpression, toPrefix);
+                    return BuildMapForMemberInit(state, expr as MemberInitExpression, toPrefix).AddT(false);
+
+                case ExpressionType.NewArrayInit:
+                    return BuildMapForNewArray(state, expr as NewArrayExpression, toPrefix).AddT(false);
+
+                case ExpressionType.ListInit:
+                    return BuildMapForNewList(state, expr as ListInitExpression, toPrefix).AddT(false);
 
                 case ExpressionType.Call:
-                    var oneExpr = ReflectionUtils.IsOne(expr as MethodCallExpression);
+                    var exprMethod = expr as MethodCallExpression;
+
+                    var (isIn, inLhs, inRhs) = ReflectionUtils.IsIn(exprMethod);
+                    if (isIn)
+                        return BuildMapForIn(state, inLhs, inRhs, toPrefix, isExprTip).AddT(false);
+
+                    var oneExpr = ReflectionUtils.IsOne(exprMethod);
                     if (oneExpr != null)
                         // .One(...) is invisible as far as nextMap is concerned
                         return BuildMap(state, oneExpr, nextMap, toPrefix);
                         
-                    var (isToList, enumerableL) = ReflectionUtils.IsToList(expr as MethodCallExpression);
+                    var (isToList, enumerableL) = ReflectionUtils.IsToList(exprMethod);
                     if (isToList)
                         // .ToList(...) is invisible as far as nextMap is concerned
                         return BuildMap(state, enumerableL, nextMap, toPrefix);
                         
-                    var (isToArray, enumerableA) = ReflectionUtils.IsToArray(expr as MethodCallExpression);
+                    var (isToArray, enumerableA) = ReflectionUtils.IsToArray(exprMethod);
                     if (isToArray)
                         // .ToArray(...) is invisible as far as nextMap is concerned
                         return BuildMap(state, enumerableA, nextMap, toPrefix);
 
-                    var (isSelect, enumerableS, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(expr as MethodCallExpression);
+                    var (isSelect, enumerableS, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(exprMethod);
                     if (isSelect)
-                        return BuildMapForSelect(state, enumerableS, mapper, toPrefix, isExprTip);
+                        return BuildMapForSelect(state, enumerableS, mapper, toPrefix, isExprTip).AddT(false);
 
                     break;
 
@@ -106,6 +125,13 @@ namespace SqlDsl.Mapper
 
             throw new InvalidOperationException($"Unsupported mapping expression \"{expr}\".");
         }
+
+        static readonly HashSet<ExpressionType> InPlaceArrayCreation = new HashSet<ExpressionType>
+        {
+            ExpressionType.NewArrayBounds,
+            ExpressionType.NewArrayInit,
+            ExpressionType.ListInit
+        };
 
         static bool ExprRepresentsTable(BuildMapState state, Expression expr)
         {
@@ -220,6 +246,7 @@ namespace SqlDsl.Mapper
             var mapType = bindings.Any() ? MapType.MemberInit : MapType.Other;
 
             return BuildMap(state, expr.NewExpression, mapType, toPrefix)
+                .RemoveLastT()
                 .ToEnumerableStruct()
                 .Concat(bindings
                     .Select(b => (binding: b, memberName: b.Member.Name, map: BuildMap(state, b.Expression, MapType.Other, b.Member.Name)))
@@ -239,6 +266,60 @@ namespace SqlDsl.Mapper
                         }),
                         m.map.tables.Select(x => new MappedTable(x.From, CombineStrings(m.memberName, x.To))))))
                 .AggregateTuple2();
+        }
+
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForIn(
+            BuildMapState state, 
+            Expression lhs, 
+            Expression rhs, 
+            string toPrefix = null, 
+            bool isExprTip = false)
+        {
+            var (lP, lTab, _) = BuildMap(state, lhs, MapType.Other, null, false);
+            var (rP, rTab, rConstant) = BuildMap(state, rhs, MapType.Other, null, false);
+
+            rP = rP.Enumerate();
+            lP = lP.Enumerate();
+
+            if (lP.Count() != 1)
+                throw new InvalidOperationException($"Invalid mapping statement: {lhs}");
+            if (rP.Count() != 1)
+                throw new InvalidOperationException($"Invalid mapping statement: {rhs}");
+
+            var rProp = rP.First();
+            var lProp = lP.First();
+
+            // TODO: can I relax this condition?
+            if (rProp.FromParams.GetEnumerable1()
+                .Any(x => !x.param.StartsWith("@")))
+            {
+                throw new InvalidOperationException($"The values in an \"IN (...)\" clause must be a real parameter value. " + 
+                    $"They cannot come from another table:\n{rhs}");
+            }
+
+            var rhsType = ReflectionUtils.RemoveConvert(rhs).NodeType;
+            if (rConstant || !InPlaceArrayCreation.Contains(rhsType))
+            {
+                // TODO: this method will require find and replace in strings (inefficient)
+                rProp = new MappedProperty(
+                    // if there is only one parameter, it is an array and will need to be
+                    // split into parts when rendering
+                    rProp.FromParams.MapParamName(n => $"{n}{SqlStatementConstants.ParamArrayFlag}"),
+                    rProp.To,
+                    rProp.MappedPropertyType,
+                    rProp.PropertySegmentConstructors);
+            }
+
+            var inPart = new MappedProperty(
+                // TODO: BAAAAAAD hack
+                lProp.FromParams.Combine(rProp.FromParams, ExpressionType.OnesComplement),
+                toPrefix,
+                typeof(bool),
+                lProp.PropertySegmentConstructors.Concat(rProp.PropertySegmentConstructors).ToArray());
+
+            return (
+                inPart.ToEnumerable(),
+                lTab.Concat(rTab));
         }
 
         static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, LambdaExpression mapper, string toPrefix, bool isExprTip)
@@ -275,6 +356,66 @@ namespace SqlDsl.Mapper
                     .Concat(innerMap.tables)
                     .Concat(newTableMap)
             );
+        }
+
+        /// <summary>
+        /// Build a condition for a new list expression
+        /// </summary>
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForNewArray(BuildMapState state, NewArrayExpression expr, string toPrefix) => 
+            BuildMapForNewArray(state, expr.Expressions, toPrefix, expr.Type);
+
+        /// <summary>
+        /// Build a condition for a new list expression
+        /// </summary>
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForNewList(BuildMapState state, ListInitExpression expr, string toPrefix) => 
+            BuildMapForNewArray(state, expr.Initializers.Select(GetFirstListAddParam), toPrefix, expr.Type);
+
+        static Expression GetFirstListAddParam(ElementInit i)
+        {
+            if (i.Arguments.Count != 1)
+                throw new InvalidOperationException("Invalid list initializer.");
+            
+            return i.Arguments[0];
+        }
+
+        /// <summary>
+        /// Build a condition from a list of expressions
+        /// </summary>
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForNewArray(
+            BuildMapState state, 
+            IEnumerable<Expression> elements, 
+            string toPrefix,
+            Type outputType)
+        {
+            elements = elements.Enumerate();
+            if (!elements.Any())
+                return (Enumerable.Empty<MappedProperty>(), Enumerable.Empty<MappedTable>());
+
+            return elements
+                .Select(e => BuildMap(state, e, MapType.Other, null, false))
+                .Aggregate(Combine)
+                .RemoveLastT();
+
+            (IEnumerable<MappedProperty>, IEnumerable<MappedTable>, bool) Combine(
+                (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, bool) x, 
+                (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, bool) y)
+            {
+                var xProps = x.properties.ToArray();
+                var yProps = y.properties.ToArray();
+                if (xProps.Length != 1 || yProps.Length != 1)
+                    throw new InvalidOperationException($"Unsupported mapping expression \"{elements.JoinString(", ")}\".");
+
+                // TODO: BAAAAAAAAAAAAAAAD hack
+                var prop = xProps[0].FromParams.Combine(yProps[0].FromParams, ExpressionType.Modulo);
+                return (
+                    new MappedProperty(
+                        prop,
+                        toPrefix,
+                        outputType,
+                        xProps[0].PropertySegmentConstructors.Concat(yProps[0].PropertySegmentConstructors).ToArray()).ToEnumerable(),
+                    x.tables.Concat(y.tables),
+                    false);
+            }
         }
 
         static bool PropertyRepresentsTable(BuildMapState state, MappedProperty property)

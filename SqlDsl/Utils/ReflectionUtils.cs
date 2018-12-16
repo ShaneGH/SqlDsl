@@ -253,7 +253,8 @@ namespace SqlDsl.Utils
                 case ExpressionType.Constant:
                     return true;
                 case ExpressionType.MemberAccess:
-                    return IsConstant((expr as MemberExpression).Expression);
+                    var mem = expr as MemberExpression;
+                    return mem.Expression == null || IsConstant(mem.Expression);
                 case ExpressionType.Call:
                     var call = expr as MethodCallExpression;
                     return (call.Object == null || IsConstant(call.Object)) && call.Arguments.All(IsConstant);
@@ -409,6 +410,8 @@ namespace SqlDsl.Utils
                 case ExpressionType.Subtract:
                 case ExpressionType.Multiply:
                 case ExpressionType.Divide:
+                case ExpressionType.OnesComplement:
+                case ExpressionType.Modulo:
                 case ExpressionType.Equal:
                 case ExpressionType.NotEqual:
                 case ExpressionType.GreaterThan:
@@ -433,6 +436,23 @@ namespace SqlDsl.Utils
                     
                 case ExpressionType.MemberAccess:
                     var acc = e as MemberExpression;
+                    if (acc.Expression == null)
+                    {
+                        if (IsConstant(acc))
+                        {
+                            // TODO: is there a better way of doing this?
+                            var value = Expression.Lambda(acc).Compile().DynamicInvoke();
+                            return GetPropertyChains(
+                                Expression.Constant(value), 
+                                allowOne, 
+                                allowSelect, 
+                                allowConstants, 
+                                allowBinaryOperators);
+                        }
+
+                        return (false, null);
+                    }
+
                     var (isPropertyChain1, chains1) = GetPropertyChains(acc.Expression, allowOne, allowSelect, allowConstants, allowBinaryOperators);
                     
                     return isPropertyChain1 ?

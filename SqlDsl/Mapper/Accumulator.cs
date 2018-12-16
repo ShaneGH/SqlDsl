@@ -39,6 +39,19 @@ namespace SqlDsl.Mapper
 
         public string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
         {
+            return BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias, false);
+        }
+
+        public string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder)
+        {
+            return BuildFromString(state, sqlFragmentBuilder, null, true);
+        }
+
+        private string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias, bool tableIsFirstParamPart)
+        {
+            if (tableIsFirstParamPart && wrappedQueryAlias != null)
+                throw new InvalidOperationException($"You cannot specify {nameof(wrappedQueryAlias)} and {nameof(tableIsFirstParamPart)}");
+
             var table1 = (First.param ?? "").StartsWith("@") ? null : wrappedQueryAlias;
 
             return Next.Aggregate(
@@ -63,6 +76,12 @@ namespace SqlDsl.Mapper
                         
                     case ExpressionType.Divide:
                         return sqlFragmentBuilder.BuildDivideCondition(x, yValue);
+                        
+                    case ExpressionType.OnesComplement:
+                        return sqlFragmentBuilder.BuildInCondition(x, yValue);
+                        
+                    case ExpressionType.Modulo:
+                        return sqlFragmentBuilder.BuildCommaCondition(x, yValue);
                         
                     case ExpressionType.Equal:
                         return sqlFragmentBuilder.BuildEqualityCondition(x, yValue);
@@ -89,6 +108,16 @@ namespace SqlDsl.Mapper
 
             string BuildColumn(string tab, ParameterExpression paramRoot, string parameter)
             {
+                if (tableIsFirstParamPart)
+                {
+                    var p = parameter.Split('.');
+                    if (p.Length > 1)
+                    {
+                        tab = p[0];
+                        parameter = p.Skip(1).JoinString(".");
+                    }
+                }
+
                 return sqlFragmentBuilder.BuildSelectColumn(tab, AddRoot(paramRoot, parameter, state));
             }
         }

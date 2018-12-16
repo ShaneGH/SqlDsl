@@ -54,6 +54,10 @@ namespace SqlDsl.SqlBuilders
                     return sqlBuilder.BuildMultiplyCondition(queryRoot, argsParam, otherParams, equality as BinaryExpression, parameters);
                 case ExpressionType.Divide:
                     return sqlBuilder.BuildDivideCondition(queryRoot, argsParam, otherParams, equality as BinaryExpression, parameters);
+                case ExpressionType.OnesComplement:
+                    return sqlBuilder.BuildInCondition(queryRoot, argsParam, otherParams, equality as BinaryExpression, parameters);
+                case ExpressionType.Modulo:
+                    return sqlBuilder.BuildCommaCondition(queryRoot, argsParam, otherParams, equality as BinaryExpression, parameters);
                 case ExpressionType.Convert:
                     return sqlBuilder.BuildCondition(queryRoot, argsParam, otherParams, (equality as UnaryExpression).Operand, parameters);
                 case ExpressionType.Call:
@@ -126,6 +130,24 @@ namespace SqlDsl.SqlBuilders
             BinaryExpression equality, 
             ParamBuilder parameters) =>
             BuildBinaryConditionX(sqlBuilder, queryRoot, argsParam, otherParams, equality, parameters, sqlBuilder.BuildDivideCondition);
+
+        static (string setupSql, string sql, IEnumerable<string> queryObjectReferences) BuildInCondition(
+            this ISqlFragmentBuilder sqlBuilder, 
+            ParameterExpression queryRoot, 
+            ParameterExpression argsParam, 
+            OtherParams otherParams, 
+            BinaryExpression equality, 
+            ParamBuilder parameters) =>
+            BuildBinaryConditionX(sqlBuilder, queryRoot, argsParam, otherParams, equality, parameters, sqlBuilder.BuildInCondition);
+
+        static (string setupSql, string sql, IEnumerable<string> queryObjectReferences) BuildCommaCondition(
+            this ISqlFragmentBuilder sqlBuilder, 
+            ParameterExpression queryRoot, 
+            ParameterExpression argsParam, 
+            OtherParams otherParams, 
+            BinaryExpression equality, 
+            ParamBuilder parameters) =>
+            BuildBinaryConditionX(sqlBuilder, queryRoot, argsParam, otherParams, equality, parameters, sqlBuilder.BuildCommaCondition);
 
         static Exception BuildInvalidExpressionException(Expression expr) => new NotImplementedException($"Cannot compile expression \"{expr}\" to SQL");
 

@@ -22,5 +22,15 @@ namespace SqlDsl.Utils
         /// Convert the object into a ValueTuple2
         /// </summary>
         public static (T1, T2, T3, T4) AddT<T1, T2, T3, T4>(this (T1, T2, T3) x, T4 y) => (x.Item1, x.Item2, x.Item3, y);
+        
+        /// <summary>
+        /// Convert the object into a ValueTuple2
+        /// </summary>
+        public static (T1, T2) RemoveLastT<T1, T2, T3>(this (T1, T2, T3) x) => (x.Item1, x.Item2);
+        
+        /// <summary>
+        /// Convert the object into a ValueTuple2
+        /// </summary>
+        public static (T1, T2, T3) RemoveLastT<T1, T2, T3, T4>(this (T1, T2, T3, T4) x) => (x.Item1, x.Item2, x.Item3);
     }
 }
