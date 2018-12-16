@@ -51,8 +51,8 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class QueryClass1
         {
-            public Person Person { get; set; }
-            public IEnumerable<PersonClass> PersonClasses { get; set; }
+            public Person ThePerson { get; set; }
+            public IEnumerable<PersonClass> ThePersonClasses { get; set; }
         }
         
         class QueryClass2
@@ -102,13 +102,13 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass1>()
-                .From(result => result.Person)
+                .From(result => result.ThePerson)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(Data.People.John, data.First().Person);
-            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).Person);
+            Assert.AreEqual(Data.People.John, data.First().ThePerson);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).ThePerson);
         }
 
         [Test]
@@ -117,13 +117,13 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass2>()
-                .From(result => result.Inner.Person)
+                .From(result => result.Inner.ThePerson)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(Data.People.John, data.First().Inner.Person);
-            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).Inner.Person);
+            Assert.AreEqual(Data.People.John, data.First().Inner.ThePerson);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).Inner.ThePerson);
         }
 
         [Test]
@@ -132,13 +132,13 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass2>()
-                .From(result => result.Inner.Person)
-                .Where(result => result.Inner.Person.Id == Data.People.Mary.Id)
+                .From(result => result.Inner.ThePerson)
+                .Where(result => result.Inner.ThePerson.Id == Data.People.Mary.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
-            Assert.AreEqual(Data.People.Mary, data.ElementAt(0).Inner.Person);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(0).Inner.ThePerson);
         }
 
         [Test]
@@ -147,17 +147,17 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass2>()
-                .From(result => result.Inner.Person)
-                .LeftJoin<PersonClass>(result => result.Inner.PersonClasses)
-                    .On((r, pc) => r.Inner.Person.Id == pc.PersonId)
-                .Where(result => result.Inner.Person.Id == Data.People.Mary.Id)
+                .From(result => result.Inner.ThePerson)
+                .LeftJoin<PersonClass>(result => result.Inner.ThePersonClasses)
+                    .On((r, pc) => r.Inner.ThePerson.Id == pc.PersonId)
+                .Where(result => result.Inner.ThePerson.Id == Data.People.Mary.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
-            Assert.AreEqual(Data.People.Mary, data.ElementAt(0).Inner.Person);
-            Assert.AreEqual(1, data.First().Inner.PersonClasses.Count());
-            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.First().Inner.PersonClasses.First());
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(0).Inner.ThePerson);
+            Assert.AreEqual(1, data.First().Inner.ThePersonClasses.Count());
+            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.First().Inner.ThePersonClasses.First());
         }
 
         [Test]
@@ -166,24 +166,24 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass3>()
-                .From(result => result.Inner.SingleOrDefault().Person)
-                .LeftJoin<PersonClass>(result => result.Inner.One().PersonClasses)
-                    .On((r, pc) => r.Inner.FirstOrDefault().Person.Id == pc.PersonId)
-                .Where(result => result.Inner.One().Person.Id == Data.People.Mary.Id)
+                .From(result => result.Inner.SingleOrDefault().ThePerson)
+                .LeftJoin<PersonClass>(result => result.Inner.One().ThePersonClasses)
+                    .On((r, pc) => r.Inner.FirstOrDefault().ThePerson.Id == pc.PersonId)
+                .Where(result => result.Inner.One().ThePerson.Id == Data.People.Mary.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
             Assert.AreEqual(1, data.ElementAt(0).Inner.Count());
-            Assert.AreEqual(Data.People.Mary, data.ElementAt(0).Inner.First().Person);
-            Assert.AreEqual(1, data.First().Inner.First().PersonClasses.Count());
-            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.First().Inner.First().PersonClasses.First());
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(0).Inner.First().ThePerson);
+            Assert.AreEqual(1, data.First().Inner.First().ThePersonClasses.Count());
+            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.First().Inner.First().ThePersonClasses.First());
         }
 
         class QueryClass5
         {
-            public Person Person { get; set; }
-            public PersonClass PersonClass { get; set; }
+            public Person ThePerson { get; set; }
+            public PersonClass ThePersonClass { get; set; }
         }
 
         [Test]
@@ -192,16 +192,16 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass5>()
-                .From(result => result.Person)
-                .LeftJoin<PersonClass>(result => result.PersonClass)
-                    .On((r, pc) => r.Person.Id == pc.PersonId)
-                .Where(result => result.Person.Id == Data.People.Mary.Id)
+                .From(result => result.ThePerson)
+                .LeftJoin<PersonClass>(result => result.ThePersonClass)
+                    .On((r, pc) => r.ThePerson.Id == pc.PersonId)
+                .Where(result => result.ThePerson.Id == Data.People.Mary.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
-            Assert.AreEqual(Data.People.Mary, data.First().Person);
-            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.First().PersonClass);
+            Assert.AreEqual(Data.People.Mary, data.First().ThePerson);
+            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.First().ThePersonClass);
         }
 
         [Test]
@@ -211,10 +211,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             Assert.ThrowsAsync(typeof(InvalidOperationException), () => Sql.Query.Sqlite<QueryClass5>()
-                .From(result => result.Person)
-                .LeftJoin<PersonClass>(result => result.PersonClass)
-                    .On((r, pc) => r.Person.Id == pc.PersonId)
-                .Where(result => result.Person.Id == Data.People.John.Id)
+                .From(result => result.ThePerson)
+                .LeftJoin<PersonClass>(result => result.ThePersonClass)
+                    .On((r, pc) => r.ThePerson.Id == pc.PersonId)
+                .Where(result => result.ThePerson.Id == Data.People.John.Id)
                 .ToListAsync(Executor));
         }
 
@@ -411,8 +411,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass1>()
-                .From(x => x.Person)
-                .Map(x => new ObjectWithConstructorArgs2Test(x.Person))
+                .From(x => x.ThePerson)
+                .Map(x => new ObjectWithConstructorArgs2Test(x.ThePerson))
                 .ToIEnumerableAsync(Executor);
 
             // assert
@@ -516,11 +516,11 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class ObjectWithConstructorArgs_OuterSelectTest
         {
-            public readonly IEnumerable<Class> Classes;
+            public readonly IEnumerable<Class> TheClasses;
 
             public ObjectWithConstructorArgs_OuterSelectTest(IEnumerable<Class> classes)
             {
-                Classes = classes;
+                TheClasses = classes;
             }
         }
 
@@ -541,26 +541,26 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, data.Count());
             
             Assert.AreEqual(Data.People.John.Name, data.First().personName);
-            CollectionAssert.AreEqual(new [] { Data.Classes.Tennis, Data.Classes.Archery }, data.First().classes.Classes);
+            CollectionAssert.AreEqual(new [] { Data.Classes.Tennis, Data.Classes.Archery }, data.First().classes.TheClasses);
             
             Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).personName);
-            CollectionAssert.AreEqual(new [] { Data.Classes.Tennis }, data.ElementAt(1).classes.Classes);
+            CollectionAssert.AreEqual(new [] { Data.Classes.Tennis }, data.ElementAt(1).classes.TheClasses);
         }
 
         class ObjectWithConstructorArgs_InnerSelectTest : EqComparer
         {
-            public readonly Class Class;
+            public readonly Class TheClass;
 
             public ObjectWithConstructorArgs_InnerSelectTest(Class theClass)
             {
-                Class = theClass;
+                TheClass = theClass;
             }
 
-            public override int GetHashCode() => Class.GetHashCode();
+            public override int GetHashCode() => TheClass.GetHashCode();
             public override bool Equals(object p)
             {
-                var cls = (p as ObjectWithConstructorArgs_InnerSelectTest)?.Class;
-                return cls == Class;
+                var cls = (p as ObjectWithConstructorArgs_InnerSelectTest)?.TheClass;
+                return cls == TheClass;
             }
         }
 

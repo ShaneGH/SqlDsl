@@ -23,27 +23,27 @@ namespace SqlDsl.UnitTests.FullPathTests
         class JoinedQueryClass
         {
             public Person ThePerson { get; set; }
-            public PersonsData PersonsData { get; set; }
-            public List<PersonClass> PersonClasses { get; set; }
-            public List<Class> Classes { get; set; }
-            public List<ClassTag> ClassTags { get; set; }
-            public List<Tag> Tags { get; set; }
+            public PersonsData ThePersonsData { get; set; }
+            public List<PersonClass> ThePersonClasses { get; set; }
+            public List<Class> TheClasses { get; set; }
+            public List<ClassTag> TheClassTags { get; set; }
+            public List<Tag> TheTags { get; set; }
         }
 
         static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
         {
             return Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<PersonsData>(q => q.PersonsData)
+                .InnerJoin<PersonsData>(q => q.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
-                .InnerJoin<Class>(q => q.Classes)
-                    .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.ClassTags)
-                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.Tags)
-                    .On((q, t) => q.ClassTags.One().TagId == t.Id);
+                .InnerJoin<Class>(q => q.TheClasses)
+                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
+                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                    .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
+                .InnerJoin<Tag>(q => q.TheTags)
+                    .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
 
         [Test]
@@ -54,7 +54,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             await FullyJoinedQuery()
-                .Map(p => p.PersonsData.Data.ToList())
+                .Map(p => p.ThePersonsData.Data.ToList())
                 .ToListAsync(Executor, logger: Logger);
 
             // assert
@@ -69,7 +69,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             await FullyJoinedQuery()
-                .Map(p => new { data = p.PersonsData.Data.ToList() })
+                .Map(p => new { data = p.ThePersonsData.Data.ToList() })
                 .ToListAsync(Executor, logger: Logger);
 
             // assert
@@ -187,7 +187,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             FullyJoinedQuery()
-                .Map(x => new { val = x.Classes })
+                .Map(x => new { val = x.TheClasses })
                 .ToList(Executor, logger: Logger);
 
             // assert
@@ -204,7 +204,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             FullyJoinedQuery()
-                .Map(x => new { val = x.Classes })
+                .Map(x => new { val = x.TheClasses })
                 .ToList(Executor, logger: Logger);
 
             // assert
@@ -221,7 +221,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             await FullyJoinedQuery()
-                .Map(x => new { val = x.Classes })
+                .Map(x => new { val = x.TheClasses })
                 .ToListAsync(Executor, logger: Logger);
 
             // assert
@@ -238,7 +238,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             FullyJoinedQuery()
-                .Map(x => new { val = x.Classes })
+                .Map(x => new { val = x.TheClasses })
                 .ToArray(Executor, logger: Logger);
 
             // assert
@@ -255,7 +255,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             await FullyJoinedQuery()
-                .Map(x => new { val = x.Classes })
+                .Map(x => new { val = x.TheClasses })
                 .ToArrayAsync(Executor, logger: Logger);
 
             // assert

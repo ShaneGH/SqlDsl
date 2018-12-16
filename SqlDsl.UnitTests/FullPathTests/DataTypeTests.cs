@@ -23,11 +23,11 @@ namespace SqlDsl.UnitTests.FullPathTests
         class JoinedQueryClass
         {
             public Person ThePerson { get; set; }
-            public List<PersonClass> PersonClasses { get; set; }
-            public List<Class> Classes { get; set; }
-            public List<ClassTag> ClassTags { get; set; }
-            public List<Tag> Tags { get; set; }
-            public List<Purchase> Purchases { get; set; }
+            public List<PersonClass> ThePersonClasses { get; set; }
+            public List<Class> TheClasses { get; set; }
+            public List<ClassTag> TheClassTags { get; set; }
+            public List<Tag> TheTags { get; set; }
+            public List<Purchase> ThePurchases { get; set; }
         }
 
         [Test]
@@ -49,28 +49,28 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // warning CS0649: Field 'PersonClasses/PersonsData' is never assigned to, and will always have its default value null
             #pragma warning disable 0649
-            public Person Person;
-            public IEnumerable<PersonsData> PersonsData;
-            public IEnumerable<PersonClass> Classes;
+            public Person ThePerson;
+            public IEnumerable<PersonsData> ThePersonsData;
+            public IEnumerable<PersonClass> TheClasses;
             #pragma warning restore 0649
         }
 
         class ArrayDataType1Result
         {
             public long[] ClassIds;
-            public byte[] Data;
+            public byte[] TheData;
         }
 
         class ArrayDataType1_1Result
         {
             public long[] ClassIds;
-            public List<byte> Data;
+            public List<byte> TheData;
         }
 
         class ArrayDataType2Result
         {
             public long[] ClassIds;
-            public byte[][] Data;
+            public byte[][] TheData;
         }
 
         [Test]
@@ -79,16 +79,16 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.Person)
-                .InnerJoin(x => x.PersonsData)
-                    .On((q, pd) => q.Person.Id == pd.PersonId)
-                .InnerJoin(x => x.Classes)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
-                .Where(p => p.Person.Id == Data.People.John.Id)
+                .From(x => x.ThePerson)
+                .InnerJoin(x => x.ThePersonsData)
+                    .On((q, pd) => q.ThePerson.Id == pd.PersonId)
+                .InnerJoin(x => x.TheClasses)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(x => new
                 {
-                    Data = x.PersonsData.One().Data,
-                    Classes = x.Classes.ToArray()
+                    Data = x.ThePersonsData.One().Data,
+                    Classes = x.TheClasses.ToArray()
                 })
                 .ToList(Executor, logger: Logger);
 
@@ -101,16 +101,16 @@ namespace SqlDsl.UnitTests.FullPathTests
         Task<List<ArrayDataType1Result>> ADT1()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.Person)
-                .InnerJoin(x => x.PersonsData)
-                    .On((q, pd) => q.Person.Id == pd.PersonId)
-                .InnerJoin(x => x.Classes)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
-                .Where(p => p.Person.Id == Data.People.John.Id)
+                .From(x => x.ThePerson)
+                .InnerJoin(x => x.ThePersonsData)
+                    .On((q, pd) => q.ThePerson.Id == pd.PersonId)
+                .InnerJoin(x => x.TheClasses)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(x => new ArrayDataType1Result
                 {
-                    Data = x.PersonsData.One().Data,
-                    ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
+                    TheData = x.ThePersonsData.One().Data,
+                    ClassIds = x.TheClasses.Select(c => c.ClassId).ToArray()
                 })
                 .ToListAsync(Executor, logger: Logger);
         }
@@ -125,7 +125,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.AreEqual(1, data.Count());
             var john = data.First();
-            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.Data);
+            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.TheData);
 
             Assert.AreEqual(2, john.ClassIds.Length);
             Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);
@@ -146,16 +146,16 @@ namespace SqlDsl.UnitTests.FullPathTests
         Task<List<ArrayDataType1_1Result>> ADT1_ConvertArrayToList()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.Person)
-                .InnerJoin(x => x.PersonsData)
-                    .On((q, pd) => q.Person.Id == pd.PersonId)
-                .InnerJoin(x => x.Classes)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
-                .Where(p => p.Person.Id == Data.People.John.Id)
+                .From(x => x.ThePerson)
+                .InnerJoin(x => x.ThePersonsData)
+                    .On((q, pd) => q.ThePerson.Id == pd.PersonId)
+                .InnerJoin(x => x.TheClasses)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(x => new ArrayDataType1_1Result
                 {
-                    Data = x.PersonsData.One().Data.ToList(),
-                    ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
+                    TheData = x.ThePersonsData.One().Data.ToList(),
+                    ClassIds = x.TheClasses.Select(c => c.ClassId).ToArray()
                 })
                 .ToListAsync(Executor, logger: Logger);
         }
@@ -170,7 +170,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.AreEqual(1, data.Count());
             var john = data.First();
-            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.Data.ToArray());
+            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.TheData.ToArray());
 
             Assert.AreEqual(2, john.ClassIds.Length);
             Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);
@@ -192,16 +192,16 @@ namespace SqlDsl.UnitTests.FullPathTests
         Task<List<ArrayDataType2Result>> ADT2()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.Person)
-                .InnerJoin(x => x.PersonsData)
-                    .On((q, pd) => q.Person.Id == pd.PersonId)
-                .InnerJoin(x => x.Classes)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
-                .Where(p => p.Person.Id == Data.People.John.Id)
+                .From(x => x.ThePerson)
+                .InnerJoin(x => x.ThePersonsData)
+                    .On((q, pd) => q.ThePerson.Id == pd.PersonId)
+                .InnerJoin(x => x.TheClasses)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(x => new ArrayDataType2Result
                 {
-                    Data = x.PersonsData.Select(d => d.Data).ToArray(),
-                    ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
+                    TheData = x.ThePersonsData.Select(d => d.Data).ToArray(),
+                    ClassIds = x.TheClasses.Select(c => c.ClassId).ToArray()
                 })
                 .ToListAsync(Executor, logger: Logger);
         }
@@ -217,8 +217,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(1, data.Count());
             var john = data.First();
 
-            Assert.AreEqual(1, john.Data.Length);
-            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.Data[0]);
+            Assert.AreEqual(1, john.TheData.Length);
+            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.TheData[0]);
 
             Assert.AreEqual(2, john.ClassIds.Length);
             Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);
@@ -239,11 +239,11 @@ namespace SqlDsl.UnitTests.FullPathTests
         Task<List<List<byte>>> ADT3()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.Person)
-                .InnerJoin(x => x.PersonsData)
-                    .On((q, pd) => q.Person.Id == pd.PersonId)
-                .Where(p => p.Person.Id == Data.People.John.Id)
-                .Map(p => p.PersonsData.One().Data.ToList())
+                .From(x => x.ThePerson)
+                .InnerJoin(x => x.ThePersonsData)
+                    .On((q, pd) => q.ThePerson.Id == pd.PersonId)
+                .Where(p => p.ThePerson.Id == Data.People.John.Id)
+                .Map(p => p.ThePersonsData.One().Data.ToList())
                 .ToListAsync(Executor, logger: Logger);
         }
 
@@ -275,11 +275,11 @@ namespace SqlDsl.UnitTests.FullPathTests
         Task<List<byte[]>> ADT4()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.Person)
-                .InnerJoin(x => x.PersonsData)
-                    .On((q, pd) => q.Person.Id == pd.PersonId)
-                .Where(p => p.Person.Id == Data.People.John.Id)
-                .Map(p => p.PersonsData.One().Data.ToArray())
+                .From(x => x.ThePerson)
+                .InnerJoin(x => x.ThePersonsData)
+                    .On((q, pd) => q.ThePerson.Id == pd.PersonId)
+                .Where(p => p.ThePerson.Id == Data.People.John.Id)
+                .Map(p => p.ThePersonsData.One().Data.ToArray())
                 .ToListAsync(Executor, logger: Logger);
         }
 
@@ -311,7 +311,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         class ArrayDataType3Result
         {
             public long[] ClassIds;
-            public List<List<byte>> Data;
+            public List<List<byte>> TheData;
         }
 
         Task<List<ArrayDataType3Result>> ADT5()
@@ -319,16 +319,16 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.Person)
-                .InnerJoin(x => x.PersonsData)
-                    .On((q, pd) => q.Person.Id == pd.PersonId)
-                .InnerJoin(x => x.Classes)
-                    .On((q, pc) => q.Person.Id == pc.PersonId)
-                .Where(p => p.Person.Id == Data.People.John.Id)
+                .From(x => x.ThePerson)
+                .InnerJoin(x => x.ThePersonsData)
+                    .On((q, pd) => q.ThePerson.Id == pd.PersonId)
+                .InnerJoin(x => x.TheClasses)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(x => new ArrayDataType3Result
                 {
-                    Data = x.PersonsData.Select(d => d.Data.ToList()).ToList(),
-                    ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
+                    TheData = x.ThePersonsData.Select(d => d.Data.ToList()).ToList(),
+                    ClassIds = x.TheClasses.Select(c => c.ClassId).ToArray()
                 })
                 .ToListAsync(Executor, logger: Logger);
         }
@@ -344,8 +344,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(1, data.Count());
             var john = data.First();
 
-            Assert.AreEqual(1, john.Data.Count);
-            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.Data[0]);
+            Assert.AreEqual(1, john.TheData.Count);
+            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.TheData[0]);
 
             Assert.AreEqual(2, john.ClassIds.Length);
             Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);
@@ -366,11 +366,11 @@ namespace SqlDsl.UnitTests.FullPathTests
         Task<List<IEnumerable<byte[]>>> ADT8()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.Person)
-                .InnerJoin(x => x.PersonsData)
+                .From(x => x.ThePerson)
+                .InnerJoin(x => x.ThePersonsData)
                     .On((q, pd) => pd.PersonId > -1)
-                .Where(p => p.Person.Id == Data.People.John.Id)
-                .Map(p => p.PersonsData.Select(pd => pd.Data))
+                .Where(p => p.ThePerson.Id == Data.People.John.Id)
+                .Map(p => p.ThePersonsData.Select(pd => pd.Data))
                 .ToListAsync(Executor, logger: Logger);
         }
 
@@ -407,11 +407,11 @@ namespace SqlDsl.UnitTests.FullPathTests
         Task<List<IEnumerable<byte[]>>> ADT8_1()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.Person)
-                .InnerJoin(x => x.PersonsData)
-                    .On((q, pd) => pd.PersonId == q.Person.Id)
-                .Where(p => p.Person.Id == Data.People.John.Id)
-                .Map(p => p.PersonsData.Select(pd => pd.Data))
+                .From(x => x.ThePerson)
+                .InnerJoin(x => x.ThePersonsData)
+                    .On((q, pd) => pd.PersonId == q.ThePerson.Id)
+                .Where(p => p.ThePerson.Id == Data.People.John.Id)
+                .Map(p => p.ThePersonsData.Select(pd => pd.Data))
                 .ToListAsync(Executor, logger: Logger);
         }
 
@@ -447,11 +447,11 @@ namespace SqlDsl.UnitTests.FullPathTests
         Task<List<IEnumerable<List<byte>>>> ADT9()
         {
             return Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.Person)
-                .InnerJoin(x => x.PersonsData)
-                    .On((q, pd) => q.Person.Id == pd.PersonId)
-                .Where(p => p.Person.Id == Data.People.John.Id)
-                .Map(p => p.PersonsData.Select(pd => pd.Data.ToList()))
+                .From(x => x.ThePerson)
+                .InnerJoin(x => x.ThePersonsData)
+                    .On((q, pd) => q.ThePerson.Id == pd.PersonId)
+                .Where(p => p.ThePerson.Id == Data.People.John.Id)
+                .Map(p => p.ThePersonsData.Select(pd => pd.Data.ToList()))
                 .ToListAsync(Executor, logger: Logger);
         }
 
@@ -492,16 +492,16 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.ThrowsAsync(
                 typeof(InvalidOperationException), 
                 () => Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                    .From(x => x.Person)
-                    .InnerJoin(x => x.PersonsData)
+                    .From(x => x.ThePerson)
+                    .InnerJoin(x => x.ThePersonsData)
                         .On((q, pd) => pd.PersonId < 100)
-                    .InnerJoin(x => x.Classes)
-                        .On((q, pc) => q.Person.Id == pc.PersonId)
-                    .Where(p => p.Person.Id == Data.People.John.Id)
+                    .InnerJoin(x => x.TheClasses)
+                        .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                    .Where(p => p.ThePerson.Id == Data.People.John.Id)
                     .Map(x => new ArrayDataType1Result
                     {
-                        Data = x.PersonsData.One().Data,
-                        ClassIds = x.Classes.Select(c => c.ClassId).ToArray()
+                        TheData = x.ThePersonsData.One().Data,
+                        ClassIds = x.TheClasses.Select(c => c.ClassId).ToArray()
                     })
                     .ToListAsync(Executor));
         }

@@ -23,27 +23,27 @@ namespace SqlDsl.UnitTests.FullPathTests
         class JoinedQueryClass
         {
             public Person ThePerson { get; set; }
-            public List<PersonClass> PersonClasses { get; set; }
-            public List<Class> Classes { get; set; }
-            public List<ClassTag> ClassTags { get; set; }
-            public List<Tag> Tags { get; set; }
-            public List<Purchase> PurchasesByMe { get; set; }
-            public List<Purchase> PurchasesByMeForMyClasses { get; set; }
+            public List<PersonClass> ThePersonClasses { get; set; }
+            public List<Class> TheClasses { get; set; }
+            public List<ClassTag> TheClassTags { get; set; }
+            public List<Tag> TheTags { get; set; }
+            public List<Purchase> ThePurchasesByMe { get; set; }
+            public List<Purchase> ThePurchasesByMeForMyClasses { get; set; }
         }
 
         static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
         {
             return Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .LeftJoin<PersonClass>(q => q.PersonClasses)
+                .LeftJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .LeftJoin<Class>(q => q.Classes)
-                    .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
-                .LeftJoin<ClassTag>(q => q.ClassTags)
-                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
-                .LeftJoin<Tag>(q => q.Tags)
-                    .On((q, t) => q.ClassTags.One().TagId == t.Id)
-                .LeftJoin<Purchase>(q => q.PurchasesByMe)
+                .LeftJoin<Class>(q => q.TheClasses)
+                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
+                .LeftJoin<ClassTag>(q => q.TheClassTags)
+                    .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
+                .LeftJoin<Tag>(q => q.TheTags)
+                    .On((q, t) => q.TheClassTags.One().TagId == t.Id)
+                .LeftJoin<Purchase>(q => q.ThePurchasesByMe)
                     .On((q, t) => q.ThePerson.Id == t.PersonId);
                 // .LeftJoin<Purchase>(q => q.PurchasesByMeForMyClasses)
                 //     .On((q, t) => q.ThePerson.Id == t.PersonId && q.Classes.One().Id == t.ClassId);

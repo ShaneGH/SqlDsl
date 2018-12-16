@@ -24,24 +24,24 @@ namespace SqlDsl.UnitTests.FullPathTests
         class JoinedQueryClass
         {
             public Person ThePerson { get; set; }
-            public List<PersonClass> PersonClasses { get; set; }
-            public List<Class> Classes { get; set; }
-            public List<ClassTag> ClassTags { get; set; }
-            public List<Tag> Tags { get; set; }
+            public List<PersonClass> ThePersonClasses { get; set; }
+            public List<Class> TheClasses { get; set; }
+            public List<ClassTag> TheClassTags { get; set; }
+            public List<Tag> TheTags { get; set; }
         }
 
         IQuery<JoinedQueryClass> FullyJoinedQuery()
         {
             return Sql.Query.Sqlite<JoinedQueryClass>()
                 .From(result => result.ThePerson)
-                .LeftJoin<PersonClass>(result => result.PersonClasses)
+                .LeftJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((r, pc) => r.ThePerson.Id == pc.PersonId)
-                .LeftJoin<Class>(result => result.Classes)
-                    .On((r, pc) => r.PersonClasses.One().ClassId == pc.Id)
-                .LeftJoin<ClassTag>(result => result.ClassTags)
-                    .On((r, pc) => r.Classes.One().Id == pc.ClassId)
-                .LeftJoin<Tag>(result => result.Tags)
-                    .On((r, pc) => r.ClassTags.One().TagId == pc.Id);
+                .LeftJoin<Class>(result => result.TheClasses)
+                    .On((r, pc) => r.ThePersonClasses.One().ClassId == pc.Id)
+                .LeftJoin<ClassTag>(result => result.TheClassTags)
+                    .On((r, pc) => r.TheClasses.One().Id == pc.ClassId)
+                .LeftJoin<Tag>(result => result.TheTags)
+                    .On((r, pc) => r.TheClassTags.One().TagId == pc.Id);
         }
 
         [Test]
@@ -79,11 +79,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery()
                 .OrderBy(x => x.ThePerson.Id)
-                .ThenBy(x => x.Classes.One().Id)
+                .ThenBy(x => x.TheClasses.One().Id)
                 .Map(q => new 
                 {
                     name = q.ThePerson.Name,
-                    classes = q.Classes
+                    classes = q.TheClasses
                         .Select(c => c.Name)
                 })
                 .ToArrayAsync(Executor, logger: Logger);
@@ -100,11 +100,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery()
                 .OrderByDesc(x => x.ThePerson.Id)
-                .ThenBy(x => x.Classes.One().Id)
+                .ThenBy(x => x.TheClasses.One().Id)
                 .Map(q => new 
                 {
                     name = q.ThePerson.Name,
-                    classes = q.Classes
+                    classes = q.TheClasses
                         .Select(c => c.Name)
                 })
                 .ToArrayAsync(Executor, logger: Logger);
@@ -121,11 +121,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery()
                 .OrderByDesc(x => x.ThePerson.Id)
-                .ThenByDesc(x => x.Classes.One().Id)
+                .ThenByDesc(x => x.TheClasses.One().Id)
                 .Map(q => new 
                 {
                     name = q.ThePerson.Name,
-                    classes = q.Classes
+                    classes = q.TheClasses
                         .Select(c => c.Name)
                 })
                 .ToArrayAsync(Executor, logger: Logger);
@@ -142,11 +142,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await FullyJoinedQuery()
                 .OrderBy(x => x.ThePerson.Id)
-                .ThenByDesc(x => x.Classes.Select(y => y.Id))
+                .ThenByDesc(x => x.TheClasses.Select(y => y.Id))
                 .Map(q => new 
                 {
                     name = q.ThePerson.Name,
-                    classes = q.Classes
+                    classes = q.TheClasses
                         .Select(c => c.Name)
                 })
                 .ToArrayAsync(Executor, logger: Logger);

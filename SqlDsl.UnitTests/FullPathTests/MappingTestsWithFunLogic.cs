@@ -25,35 +25,35 @@ namespace SqlDsl.UnitTests.FullPathTests
         class JoinedQueryClass
         {
             public Person ThePerson { get; set; }
-            public List<PersonClass> PersonClasses { get; set; }
-            public List<Class> Classes { get; set; }
-            public List<ClassTag> ClassTags { get; set; }
-            public List<Tag> Tags { get; set; }
+            public List<PersonClass> ThePersonClasses { get; set; }
+            public List<Class> TheClasses { get; set; }
+            public List<ClassTag> TheClassTags { get; set; }
+            public List<Tag> TheTags { get; set; }
         }
 
         static Dsl.IQuery<TArg, JoinedQueryClass> FullyJoinedQuery<TArg>()
         {
             return Sql.Query.Sqlite<TArg, JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.Classes)
-                    .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.ClassTags)
-                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.Tags)
-                    .On((q, t) => q.ClassTags.One().TagId == t.Id);
+                .InnerJoin<Class>(q => q.TheClasses)
+                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
+                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                    .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
+                .InnerJoin<Tag>(q => q.TheTags)
+                    .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
 
         class Cls1
         {
-            public string name;
-            public Cls2[] classes;
+            public string thename;
+            public Cls2[] theclasses;
         }
 
         class Cls2
         {
-            public string name;
+            public string thename;
             public Cls3[] tags1;
             public Cls3[] tags2;
         }
@@ -71,15 +71,15 @@ namespace SqlDsl.UnitTests.FullPathTests
             await FullyJoinedQuery<object>()
                 .Map(x => new Cls1
                 {
-                    name = x.ThePerson.Name,
-                    classes = x.Classes
+                    thename = x.ThePerson.Name,
+                    theclasses = x.TheClasses
                         .Select(cl => new Cls2
                         {
-                            name = cl.Name,
-                            tags1 = x.Tags
+                            thename = cl.Name,
+                            tags1 = x.TheTags
                                 .Select(z => new Cls3 { tagName = z.Name })
                                 .ToArray(),
-                            tags2 = x.Tags
+                            tags2 = x.TheTags
                                 .Select(z => new Cls3 { tagName = z.Name })
                                 .ToArray()
                         })
@@ -104,14 +104,14 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(x => new
                 {
                     name = x.ThePerson.Name,
-                    classes = x.Classes
+                    classes = x.TheClasses
                         .Select(cl => new
                         {
                             name = cl.Name,
-                            tags1 = x.Tags
+                            tags1 = x.TheTags
                                 .Select(z => new { tagName = z.Name })
                                 .ToArray(),
-                            tags2 = x.Tags
+                            tags2 = x.TheTags
                                 .Select(z => new { tagName = z.Name })
                                 .ToArray()
                         })
@@ -180,8 +180,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await FullyJoinedQuery<object>()
-                .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
-                .Map(p => p.PersonClasses.One())
+                .Where(q => q.ThePersonClasses.One().ClassId == Data.Classes.Tennis.Id)
+                .Map(p => p.ThePersonClasses.One())
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
@@ -196,7 +196,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await FullyJoinedQuery<object>()
-                .Map(p => p.PersonClasses)
+                .Map(p => p.ThePersonClasses)
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
@@ -227,7 +227,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await FullyJoinedQuery<object>()
-                .Map(p => p.PersonClasses.Select(pc => new PreMapped { ClassId = pc.ClassId }))
+                .Map(p => p.ThePersonClasses.Select(pc => new PreMapped { ClassId = pc.ClassId }))
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
@@ -245,7 +245,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await FullyJoinedQuery<object>()
-                .Map(p => p.PersonClasses.Select(pc => new PreMapped(pc.PersonId)).ToList())
+                .Map(p => p.ThePersonClasses.Select(pc => new PreMapped(pc.PersonId)).ToList())
                 .ToListAsync(Executor, null, logger: Logger);
 
             // assert
@@ -263,7 +263,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await FullyJoinedQuery<object>()
-                .Map(p => p.PersonClasses.Select(pc => new PreMapped(pc.PersonId) { ClassId = pc.ClassId }).ToList())
+                .Map(p => p.ThePersonClasses.Select(pc => new PreMapped(pc.PersonId) { ClassId = pc.ClassId }).ToList())
                 .ToListAsync(Executor, null, logger: Logger);
 
             // assert
@@ -362,8 +362,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await FullyJoinedQuery<object>()
-                .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
-                .Map(p => p.PersonClasses.One().ClassId)
+                .Where(q => q.ThePersonClasses.One().ClassId == Data.Classes.Tennis.Id)
+                .Map(p => p.ThePersonClasses.One().ClassId)
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
@@ -378,8 +378,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await FullyJoinedQuery<object>()
-                .Where(q => q.PersonClasses.One().ClassId == Data.Classes.Tennis.Id)
-                .Map(p => p.PersonClasses.Select(x => x.ClassId).One())
+                .Where(q => q.ThePersonClasses.One().ClassId == Data.Classes.Tennis.Id)
+                .Map(p => p.ThePersonClasses.Select(x => x.ClassId).One())
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
@@ -394,7 +394,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await FullyJoinedQuery<object>()
-                .Map(p => p.PersonClasses.Select(pc => pc.ClassId))
+                .Map(p => p.ThePersonClasses.Select(pc => pc.ClassId))
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
             // assert
@@ -539,14 +539,14 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id + 1 == pc.PersonId + 1)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .ToListAsync(Executor, logger: Logger);
 
             // assert
             CollectionAssert.AreEqual(new [] {Data.People.John}, data.Select(d => d.ThePerson));
-            CollectionAssert.AreEqual(new [] {Data.PersonClasses.JohnArchery, Data.PersonClasses.JohnTennis}, data.SelectMany(d => d.PersonClasses));
+            CollectionAssert.AreEqual(new [] {Data.PersonClasses.JohnArchery, Data.PersonClasses.JohnTennis}, data.SelectMany(d => d.ThePersonClasses));
         }
 
         [Test]
@@ -558,8 +558,8 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(p => new
                 {
                     pid = p.ThePerson.Id + 1,
-                    classes = p.PersonClasses
-                        .Select(pc => pc.ClassId + p.Classes.One().Id)
+                    classes = p.ThePersonClasses
+                        .Select(pc => pc.ClassId + p.TheClasses.One().Id)
                         .ToList()
                 })
                 .ToArrayAsync(Executor, null, logger: Logger);
@@ -697,7 +697,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.PersonClasses).On(join)
+                .InnerJoin<PersonClass>(q => q.ThePersonClasses).On(join)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -708,7 +708,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 Data.PersonClasses.JohnArchery, 
                 Data.PersonClasses.JohnTennis, 
                 Data.PersonClasses.MaryTennis
-            }, data.SelectMany(d => d.PersonClasses));
+            }, data.SelectMany(d => d.ThePersonClasses));
         }
 
         [Test]

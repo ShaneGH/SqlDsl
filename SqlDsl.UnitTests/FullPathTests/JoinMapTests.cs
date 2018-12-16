@@ -24,24 +24,24 @@ namespace SqlDsl.UnitTests.FullPathTests
         class JoinedQueryClass
         {
             public Person ThePerson { get; set; }
-            public List<PersonClass> PersonClasses { get; set; }
-            public List<Class> Classes { get; set; }
-            public List<ClassTag> ClassTags { get; set; }
-            public List<Tag> Tags { get; set; }
+            public List<PersonClass> ThePersonClasses { get; set; }
+            public List<Class> TheClasses { get; set; }
+            public List<ClassTag> TheClassTags { get; set; }
+            public List<Tag> TheTags { get; set; }
         }
 
         IQuery<JoinedQueryClass> FullyJoinedQuery()
         {
             return Sql.Query.Sqlite<JoinedQueryClass>()
                 .From(result => result.ThePerson)
-                .LeftJoin<PersonClass>(result => result.PersonClasses)
+                .LeftJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((r, pc) => r.ThePerson.Id == pc.PersonId)
-                .LeftJoin<Class>(result => result.Classes)
-                    .On((r, pc) => r.PersonClasses.One().ClassId == pc.Id)
-                .LeftJoin<ClassTag>(result => result.ClassTags)
-                    .On((r, pc) => r.Classes.One().Id == pc.ClassId)
-                .LeftJoin<Tag>(result => result.Tags)
-                    .On((r, pc) => r.ClassTags.One().TagId == pc.Id);
+                .LeftJoin<Class>(result => result.TheClasses)
+                    .On((r, pc) => r.ThePersonClasses.One().ClassId == pc.Id)
+                .LeftJoin<ClassTag>(result => result.TheClassTags)
+                    .On((r, pc) => r.TheClasses.One().Id == pc.ClassId)
+                .LeftJoin<Tag>(result => result.TheTags)
+                    .On((r, pc) => r.TheClassTags.One().TagId == pc.Id);
         }
 
         [Test]
@@ -53,7 +53,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    personClasses = q.PersonClasses
+                    personClasses = q.ThePersonClasses
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -72,7 +72,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    personClasses = q.PersonClasses
+                    personClasses = q.ThePersonClasses
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -91,7 +91,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    personClasses = q.PersonClasses
+                    personClasses = q.ThePersonClasses
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -110,7 +110,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    classes = q.Classes
+                    classes = q.TheClasses
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -129,7 +129,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    classes = q.Classes
+                    classes = q.TheClasses
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -148,7 +148,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    classes = q.Classes
+                    classes = q.TheClasses
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -167,10 +167,10 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    classes = q.PersonClasses
+                    classes = q.ThePersonClasses
                         .Select(pc => new 
                         {
-                            classes = q.Classes.ToArray()
+                            classes = q.TheClasses.ToArray()
                         })
                         .ToArray()
                 })
@@ -195,10 +195,10 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new 
                 {
-                    classes = q.PersonClasses
+                    classes = q.ThePersonClasses
                         .Select(pc => new 
                         {
-                            classes = q.Classes.ToArray()
+                            classes = q.TheClasses.ToArray()
                         })
                         .ToArray()
                 })
@@ -221,7 +221,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    tags = q.ClassTags
+                    tags = q.TheClassTags
                         .Select(tag => new 
                         {
                             tag = tag
@@ -241,7 +241,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class Cls1
         {
-            public Cls2[] tags;
+            public Cls2[] losTags;
         }
 
         class Cls2
@@ -258,10 +258,10 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new Cls1
                 {
-                    tags = q.Tags
+                    losTags = q.TheTags
                         .Select(tag => new Cls2
                         {
-                            cls = q.Classes.One()
+                            cls = q.TheClasses.One()
                         })
                         .ToArray()
                 })
@@ -269,10 +269,10 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(1, data.Count);
-            Assert.AreEqual(3, data[0].tags.Length);
-            Assert.AreEqual(Data.Classes.Tennis, data[0].tags[0].cls);
-            Assert.AreEqual(Data.Classes.Tennis, data[0].tags[1].cls);
-            Assert.AreEqual(Data.Classes.Archery, data[0].tags[2].cls);
+            Assert.AreEqual(3, data[0].losTags.Length);
+            Assert.AreEqual(Data.Classes.Tennis, data[0].losTags[0].cls);
+            Assert.AreEqual(Data.Classes.Tennis, data[0].losTags[1].cls);
+            Assert.AreEqual(Data.Classes.Archery, data[0].losTags[2].cls);
         }
 
         [Test]
@@ -284,10 +284,10 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    tags = q.Tags
+                    tags = q.TheTags
                         .Select(tag => new
                         {
-                            cls = q.Classes.One()
+                            cls = q.TheClasses.One()
                         })
                         .ToArray()
                 })
@@ -310,10 +310,10 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    tags = q.ClassTags
+                    tags = q.TheClassTags
                         .Select(tag => new 
                         {
-                            cls = q.Classes.One().Name
+                            cls = q.TheClasses.One().Name
                         })
                         .ToArray()
                 })
@@ -336,10 +336,10 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    classes = q.Classes
+                    classes = q.TheClasses
                         .Select(c => new 
                         {
-                            data = q.Tags
+                            data = q.TheTags
                                 .Select(t => new 
                                 {
                                     tagName = t.Name,

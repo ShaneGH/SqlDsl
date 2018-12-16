@@ -23,24 +23,24 @@ namespace SqlDsl.UnitTests.FullPathTests
         class JoinedQueryClass
         {
             public Person ThePerson { get; set; }
-            public List<PersonClass> PersonClasses { get; set; }
-            public List<Class> Classes { get; set; }
-            public List<ClassTag> ClassTags { get; set; }
-            public List<Tag> Tags { get; set; }
+            public List<PersonClass> ThePersonClasses { get; set; }
+            public List<Class> TheClasses { get; set; }
+            public List<ClassTag> TheClassTags { get; set; }
+            public List<Tag> TheTags { get; set; }
         }
 
         static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
         {
             return Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.Classes)
-                    .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.ClassTags)
-                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.Tags)
-                    .On((q, t) => q.ClassTags.One().TagId == t.Id);
+                .InnerJoin<Class>(q => q.TheClasses)
+                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
+                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                    .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
+                .InnerJoin<Tag>(q => q.TheTags)
+                    .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
 
         class DeepJoinedQueryClass
@@ -52,14 +52,14 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             return Sql.Query.Sqlite<DeepJoinedQueryClass>()
                 .From<Person>(x => x.Query.ThePerson)
-                .InnerJoin<PersonClass>(q => q.Query.PersonClasses)
+                .InnerJoin<PersonClass>(q => q.Query.ThePersonClasses)
                     .On((q, pc) => q.Query.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.Query.Classes)
-                    .On((q, c) => q.Query.PersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.Query.ClassTags)
-                    .On((q, ct) => q.Query.Classes.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.Query.Tags)
-                    .On((q, t) => q.Query.ClassTags.One().TagId == t.Id);
+                .InnerJoin<Class>(q => q.Query.TheClasses)
+                    .On((q, c) => q.Query.ThePersonClasses.One().ClassId == c.Id)
+                .InnerJoin<ClassTag>(q => q.Query.TheClassTags)
+                    .On((q, ct) => q.Query.TheClasses.One().Id == ct.ClassId)
+                .InnerJoin<Tag>(q => q.Query.TheTags)
+                    .On((q, t) => q.Query.TheClassTags.One().TagId == t.Id);
         }
 
         class SimpleMapClass
@@ -97,8 +97,8 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class MapComplexObjectType1
         {
-            public string PersonName;
-            public Person Person;
+            public string ThePersonName;
+            public Person ThePerson;
         }
 
         [Test]
@@ -110,14 +110,14 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From()
                 .Map(p => new MapComplexObjectType1
                 { 
-                    Person = p
+                    ThePerson = p
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(Data.People.John, data.First().Person);
-            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).Person);
+            Assert.AreEqual(Data.People.John, data.First().ThePerson);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).ThePerson);
         }
 
         [Test]
@@ -129,18 +129,18 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From<Person>(x => x.ThePerson)
                 .Map(p => new MapComplexObjectType1
                 { 
-                    PersonName = p.ThePerson.Name,
-                    Person = p.ThePerson
+                    ThePersonName = p.ThePerson.Name,
+                    ThePerson = p.ThePerson
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(Data.People.John.Name, data.First().PersonName);
-            Assert.AreEqual(Data.People.John, data.First().Person);
+            Assert.AreEqual(Data.People.John.Name, data.First().ThePersonName);
+            Assert.AreEqual(Data.People.John, data.First().ThePerson);
 
-            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).PersonName);
-            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).Person);
+            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).ThePersonName);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).ThePerson);
         }
 
         class DeepSingleClass
@@ -158,29 +158,29 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From<Person>(x => x.Inner.Inner.ThePerson)
                 .Map(p => new MapComplexObjectType1
                 { 
-                    PersonName = p.Inner.Inner.ThePerson.Name,
-                    Person = p.Inner.Inner.ThePerson
+                    ThePersonName = p.Inner.Inner.ThePerson.Name,
+                    ThePerson = p.Inner.Inner.ThePerson
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(Data.People.John.Name, data.First().PersonName);
-            Assert.AreEqual(Data.People.John, data.First().Person);
+            Assert.AreEqual(Data.People.John.Name, data.First().ThePersonName);
+            Assert.AreEqual(Data.People.John, data.First().ThePerson);
 
-            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).PersonName);
-            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).Person);
+            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).ThePersonName);
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1).ThePerson);
         }
 
         class MapComplexObjectType2
         {
             public string PersonName;
-            public Cls1[] Classes;
+            public Cls1[] TheClasses;
 
             public class Cls1
             {
-                public string Name;
-                public Tag[] Tags;
+                public string TheName;
+                public Tag[] TheTags;
             }
         }
 
@@ -193,11 +193,11 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(p => new MapComplexObjectType2
                 { 
                     PersonName = p.ThePerson.Name,
-                    Classes = p.Classes
+                    TheClasses = p.TheClasses
                         .Select(c => new MapComplexObjectType2.Cls1
                         {
-                            Name = c.Name,
-                            Tags = p.Tags
+                            TheName = c.Name,
+                            TheTags = p.TheTags
                                 .ToArray()
                         })
                         .ToArray()
@@ -210,28 +210,28 @@ namespace SqlDsl.UnitTests.FullPathTests
             var mary = data.ElementAt(1);
 
             Assert.AreEqual(Data.People.John.Name, john.PersonName);            
-            Assert.AreEqual(2, john.Classes.Length);
+            Assert.AreEqual(2, john.TheClasses.Length);
 
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.Classes[0].Name);
-            Assert.AreEqual(2, john.Classes[0].Tags.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, john.TheClasses[0].TheName);
+            Assert.AreEqual(2, john.TheClasses[0].TheTags.Length);
 
-            Assert.AreEqual(Data.Tags.Sport, john.Classes[0].Tags[0]);
-            Assert.AreEqual(Data.Tags.BallSport, john.Classes[0].Tags[1]);
+            Assert.AreEqual(Data.Tags.Sport, john.TheClasses[0].TheTags[0]);
+            Assert.AreEqual(Data.Tags.BallSport, john.TheClasses[0].TheTags[1]);
 
-            Assert.AreEqual(Data.Classes.Archery.Name, john.Classes[1].Name);
-            Assert.AreEqual(1, john.Classes[1].Tags.Length);
+            Assert.AreEqual(Data.Classes.Archery.Name, john.TheClasses[1].TheName);
+            Assert.AreEqual(1, john.TheClasses[1].TheTags.Length);
 
-            Assert.AreEqual(Data.Tags.Sport, john.Classes[1].Tags[0]);
+            Assert.AreEqual(Data.Tags.Sport, john.TheClasses[1].TheTags[0]);
             
 
             Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);            
-            Assert.AreEqual(1, mary.Classes.Length);
+            Assert.AreEqual(1, mary.TheClasses.Length);
 
-            Assert.AreEqual(Data.Classes.Tennis.Name, mary.Classes[0].Name);
-            Assert.AreEqual(2, mary.Classes[0].Tags.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, mary.TheClasses[0].TheName);
+            Assert.AreEqual(2, mary.TheClasses[0].TheTags.Length);
 
-            Assert.AreEqual(Data.Tags.Sport, mary.Classes[0].Tags[0]);
-            Assert.AreEqual(Data.Tags.BallSport, mary.Classes[0].Tags[1]);
+            Assert.AreEqual(Data.Tags.Sport, mary.TheClasses[0].TheTags[0]);
+            Assert.AreEqual(Data.Tags.BallSport, mary.TheClasses[0].TheTags[1]);
         }
 
         [Test]
@@ -243,11 +243,11 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(p => new MapComplexObjectType2
                 { 
                     PersonName = p.Query.ThePerson.Name,
-                    Classes = p.Query.Classes
+                    TheClasses = p.Query.TheClasses
                         .Select(c => new MapComplexObjectType2.Cls1
                         {
-                            Name = c.Name,
-                            Tags = p.Query.Tags
+                            TheName = c.Name,
+                            TheTags = p.Query.TheTags
                                 .ToArray()
                         })
                         .ToArray()
@@ -260,28 +260,28 @@ namespace SqlDsl.UnitTests.FullPathTests
             var mary = data.ElementAt(1);
 
             Assert.AreEqual(Data.People.John.Name, john.PersonName);            
-            Assert.AreEqual(2, john.Classes.Length);
+            Assert.AreEqual(2, john.TheClasses.Length);
 
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.Classes[0].Name);
-            Assert.AreEqual(2, john.Classes[0].Tags.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, john.TheClasses[0].TheName);
+            Assert.AreEqual(2, john.TheClasses[0].TheTags.Length);
 
-            Assert.AreEqual(Data.Tags.Sport, john.Classes[0].Tags[0]);
-            Assert.AreEqual(Data.Tags.BallSport, john.Classes[0].Tags[1]);
+            Assert.AreEqual(Data.Tags.Sport, john.TheClasses[0].TheTags[0]);
+            Assert.AreEqual(Data.Tags.BallSport, john.TheClasses[0].TheTags[1]);
 
-            Assert.AreEqual(Data.Classes.Archery.Name, john.Classes[1].Name);
-            Assert.AreEqual(1, john.Classes[1].Tags.Length);
+            Assert.AreEqual(Data.Classes.Archery.Name, john.TheClasses[1].TheName);
+            Assert.AreEqual(1, john.TheClasses[1].TheTags.Length);
 
-            Assert.AreEqual(Data.Tags.Sport, john.Classes[1].Tags[0]);
+            Assert.AreEqual(Data.Tags.Sport, john.TheClasses[1].TheTags[0]);
             
 
             Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);            
-            Assert.AreEqual(1, mary.Classes.Length);
+            Assert.AreEqual(1, mary.TheClasses.Length);
 
-            Assert.AreEqual(Data.Classes.Tennis.Name, mary.Classes[0].Name);
-            Assert.AreEqual(2, mary.Classes[0].Tags.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, mary.TheClasses[0].TheName);
+            Assert.AreEqual(2, mary.TheClasses[0].TheTags.Length);
 
-            Assert.AreEqual(Data.Tags.Sport, mary.Classes[0].Tags[0]);
-            Assert.AreEqual(Data.Tags.BallSport, mary.Classes[0].Tags[1]);
+            Assert.AreEqual(Data.Tags.Sport, mary.TheClasses[0].TheTags[0]);
+            Assert.AreEqual(Data.Tags.BallSport, mary.TheClasses[0].TheTags[1]);
         }
 
         [Test]
@@ -291,13 +291,13 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .Where(q => q.ThePerson.Id == 1)
                 .Map(p => new SimpleMapClass
                 { 
                     TheName = p.ThePerson.Name,
-                    TheClassIds = p.PersonClasses.Select(c => c.ClassId)
+                    TheClassIds = p.ThePersonClasses.Select(c => c.ClassId)
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -318,16 +318,16 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<ClassTag>(q => q.ClassTags)
-                    .On((q, ct) => q.PersonClasses.One().ClassId == ct.ClassId)
+                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                    .On((q, ct) => q.ThePersonClasses.One().ClassId == ct.ClassId)
                 .Where(q => q.ThePerson.Id == 1)
                 .Map(p => new SimpleMapClass
                 { 
                     TheName = p.ThePerson.Name,
-                    TheClassIds = p.PersonClasses.Select(c => c.ClassId),
-                    TheClassTagIds = p.ClassTags.Select(c => c.TagId)
+                    TheClassIds = p.ThePersonClasses.Select(c => c.ClassId),
+                    TheClassTagIds = p.TheClassTags.Select(c => c.TagId)
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -353,12 +353,12 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .Where(q => q.ThePerson.Id == 1)
                 .Map(p => new SimpleMapClass
                 { 
-                    TheClassIds = p.PersonClasses.Select(c => c.ClassId)
+                    TheClassIds = p.ThePersonClasses.Select(c => c.ClassId)
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -428,21 +428,21 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.Classes)
-                    .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.ClassTags)
-                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.Tags)
-                    .On((q, t) => q.ClassTags.One().TagId == t.Id)
+                .InnerJoin<Class>(q => q.TheClasses)
+                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
+                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                    .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
+                .InnerJoin<Tag>(q => q.TheTags)
+                    .On((q, t) => q.TheClassTags.One().TagId == t.Id)
                 .Map(p => new JoinedMapClass
                 { 
                     TheName = p.ThePerson.Name,
-                    TheClassNames = p.Classes.Select(c => c.Name),
-                    TheClassNamesList = p.Classes.Select(c => c.Name).ToList(),
-                    TheClassNamesArray = p.Classes.Select(c => c.Name).ToArray(),
-                    TheTagNames = p.Tags.Select(t => t.Name)
+                    TheClassNames = p.TheClasses.Select(c => c.Name),
+                    TheClassNamesList = p.TheClasses.Select(c => c.Name).ToList(),
+                    TheClassNamesArray = p.TheClasses.Select(c => c.Name).ToArray(),
+                    TheTagNames = p.TheTags.Select(t => t.Name)
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -459,10 +459,10 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(p => new JoinedMapClass
                 { 
                     TheName = p.Query.ThePerson.Name,
-                    TheClassNames = p.Query.Classes.Select(c => c.Name),
-                    TheClassNamesList = p.Query.Classes.Select(c => c.Name).ToList(),
-                    TheClassNamesArray = p.Query.Classes.Select(c => c.Name).ToArray(),
-                    TheTagNames = p.Query.Tags.Select(t => t.Name)
+                    TheClassNames = p.Query.TheClasses.Select(c => c.Name),
+                    TheClassNamesList = p.Query.TheClasses.Select(c => c.Name).ToList(),
+                    TheClassNamesArray = p.Query.TheClasses.Select(c => c.Name).ToArray(),
+                    TheTagNames = p.Query.TheTags.Select(t => t.Name)
                 })
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -490,10 +490,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass3
                 { 
-                    FavouriteClasses = query.Classes
+                    FavouriteClasses = query.TheClasses
                         .Select(c => new SmartJoinedClass4
                         {
-                            TagIds = query.ClassTags
+                            TagIds = query.TheClassTags
                                 .Select(t => t.TagId)
                                 .ToArray()
                         })
@@ -534,10 +534,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await FullyJoinedQuery()
                 .Map(query => new
                 { 
-                    FavouriteClasses = query.Classes
+                    FavouriteClasses = query.TheClasses
                         .Select(c => new
                         {
-                            TagIds = query.ClassTags
+                            TagIds = query.TheClassTags
                                 .Select(t => t.TagId)
                                 .ToArray()
                         })
@@ -587,10 +587,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.ThrowsAsync(typeof(InvalidOperationException), () => FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass3_1
                 { 
-                    FavouriteClasses = query.Classes
+                    FavouriteClasses = query.TheClasses
                         .Select(c => new SmartJoinedClass4_1
                         {
-                            TagId = query.ClassTags
+                            TagId = query.TheClassTags
                                 .Select(t => t.TagId)
                                 .One()
                         })
@@ -625,10 +625,10 @@ namespace SqlDsl.UnitTests.FullPathTests
                     {
                         Inner = new SmartJoinedClass3_2
                         {
-                            FavouriteClasses = query.Classes
+                            FavouriteClasses = query.TheClasses
                                 .Select(c => new SmartJoinedClass4_2
                                 {
-                                    TagIds = query.ClassTags
+                                    TagIds = query.TheClassTags
                                         .Select(t => t.TagId)
                                         .ToArray()
                                 })
@@ -665,9 +665,9 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             public SmartJoinedClass1() { }
 
-            public SmartJoinedClass1(string personName): this() { PersonName = personName; }
+            public SmartJoinedClass1(string personName): this() { PersonsName = personName; }
 
-            public string PersonName;
+            public string PersonsName;
             public SmartJoinedClass2[] FavouriteClasses;
         }
 
@@ -689,12 +689,12 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass1
                 { 
-                    PersonName = query.ThePerson.Name,
-                    FavouriteClasses = query.Classes
+                    PersonsName = query.ThePerson.Name,
+                    FavouriteClasses = query.TheClasses
                         .Select(c => new SmartJoinedClass2
                         {
                             ClassName = c.Name,
-                            TagNames = query.Tags
+                            TagNames = query.TheTags
                                 .Select(t => t.Name)
                                 .ToArray()
                         })
@@ -708,7 +708,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var mary = data.ElementAt(1);
 
             // John
-            Assert.AreEqual(Data.People.John.Name, john.PersonName);
+            Assert.AreEqual(Data.People.John.Name, john.PersonsName);
             
             Assert.AreEqual(2, john.FavouriteClasses.Length);
             Assert.AreEqual(Data.Classes.Tennis.Name, john.FavouriteClasses[0].ClassName);
@@ -722,7 +722,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.Tags.Sport.Name, john.FavouriteClasses[1].TagNames[0]);
             
             // Mary
-            Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);
+            Assert.AreEqual(Data.People.Mary.Name, mary.PersonsName);
             
             Assert.AreEqual(1, mary.FavouriteClasses.Length);
             Assert.AreEqual(Data.Classes.Tennis.Name, mary.FavouriteClasses[0].ClassName);
@@ -740,10 +740,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass1(query.ThePerson.Name)
                 { 
-                    FavouriteClasses = query.Classes
+                    FavouriteClasses = query.TheClasses
                         .Select(c => new SmartJoinedClass2(c.Name)
                         {
-                            TagNames = query.Tags
+                            TagNames = query.TheTags
                                 .Select(t => t.Name)
                                 .ToArray()
                         })
@@ -757,7 +757,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var mary = data.ElementAt(1);
 
             // John
-            Assert.AreEqual(Data.People.John.Name, john.PersonName);
+            Assert.AreEqual(Data.People.John.Name, john.PersonsName);
             
             Assert.AreEqual(2, john.FavouriteClasses.Length);
             Assert.AreEqual(Data.Classes.Tennis.Name, john.FavouriteClasses[0].ClassName);
@@ -771,7 +771,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.Tags.Sport.Name, john.FavouriteClasses[1].TagNames[0]);
             
             // Mary
-            Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);
+            Assert.AreEqual(Data.People.Mary.Name, mary.PersonsName);
             
             Assert.AreEqual(1, mary.FavouriteClasses.Length);
             Assert.AreEqual(Data.Classes.Tennis.Name, mary.FavouriteClasses[0].ClassName);
@@ -799,15 +799,15 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await FullyJoinedQuery()
-                .Where(q => q.Tags.One().Name == Data.Tags.Sport.Name)
+                .Where(q => q.TheTags.One().Name == Data.Tags.Sport.Name)
                 .Map(query => new SmartJoinedClass5
                 { 
                     PersonName = query.ThePerson.Name,
-                    FavouriteClasses = query.Classes
+                    FavouriteClasses = query.TheClasses
                         .Select(c => new SmartJoinedClass6
                         {
                             ClassName = c.Name,
-                            TagName = query.Tags
+                            TagName = query.TheTags
                                 .One()
                                 .Name
                         })
