@@ -8,6 +8,9 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
+// TODO: clean up BuildBinaryCondition/BuildBinaryConditionX
+// I think the more complex case (BuildBinaryCondition) is not needed anymore
+
 namespace SqlDsl.SqlBuilders
 {   
     using OtherParams = IEnumerable<(ParameterExpression param, string alias)>;
@@ -198,6 +201,26 @@ namespace SqlDsl.SqlBuilders
                 combo.sql,
                 references);
         }
+        
+        static ConditionResult BuildBinaryConditionX(
+            this ISqlFragmentBuilder sqlBuilder, 
+            ParameterExpression queryRoot, 
+            ParameterExpression argsParam, 
+            OtherParams otherParams, 
+            ConditionResult lhs, 
+            ConditionResult rhs, 
+            ParamBuilder parameters, 
+            Func<string, string, string> combinator, 
+            bool checkForEmpty = false) => BuildBinaryCondition(
+                sqlBuilder, 
+                queryRoot, 
+                argsParam, 
+                otherParams, 
+                lhs, 
+                rhs, 
+                parameters, 
+                (x, y) => (null, combinator(x, y)), 
+                checkForEmpty: checkForEmpty);
 
         /// <summary>
         /// Build an and condition from an expression
@@ -209,7 +232,7 @@ namespace SqlDsl.SqlBuilders
         /// <param name="equality">The body of the condition</param>
         /// <param name="parameters">A list of parameters which may be added to</param>
         static ConditionResult BuildAndCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, BinaryExpression and, ParamBuilder parameters) =>
-            sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, and, parameters, sqlBuilder.BuildAndCondition);
+            sqlBuilder.BuildBinaryConditionX(queryRoot, argsParam, otherParams, and, parameters, sqlBuilder.BuildAndCondition);
 
         /// <summary>
         /// Build a condition from a method call expression
@@ -251,7 +274,7 @@ namespace SqlDsl.SqlBuilders
             // TODO: can I relax this condition
             if (!string.IsNullOrWhiteSpace(r.sql) && !MultiParamRegex.IsMatch(r.sql))
                 throw new InvalidOperationException($"The values in an \"IN (...)\" clause must be a real parameter value. " + 
-                $"They cannot come from another table:\n{sqlBuilder.BuildInCondition(l.sql, r.sql).sql}");
+                $"They cannot come from another table:\n{sqlBuilder.BuildInCondition(l.sql, r.sql)}");
 
             var rhsType = ReflectionUtils.RemoveConvert(rhs).NodeType;
             if (!InPlaceArrayCreation.Contains(rhsType))
@@ -265,7 +288,7 @@ namespace SqlDsl.SqlBuilders
                     r.queryObjectReferences);
             }
 
-            return sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, l, r, parameters, sqlBuilder.BuildInCondition);
+            return sqlBuilder.BuildBinaryConditionX(queryRoot, argsParam, otherParams, l, r, parameters, sqlBuilder.BuildInCondition);
         }
 
         /// <summary>
@@ -278,7 +301,7 @@ namespace SqlDsl.SqlBuilders
         /// <param name="equality">The body of the condition</param>
         /// <param name="parameters">A list of parameters which may be added to</param>
         static ConditionResult BuildOrCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, BinaryExpression or, ParamBuilder parameters) =>
-            sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, or, parameters, sqlBuilder.BuildOrCondition);
+            sqlBuilder.BuildBinaryConditionX(queryRoot, argsParam, otherParams, or, parameters, sqlBuilder.BuildOrCondition);
 
         /// <summary>
         /// Build n = condition from an expression
@@ -290,7 +313,7 @@ namespace SqlDsl.SqlBuilders
         /// <param name="equality">The body of the condition</param>
         /// <param name="parameters">A list of parameters which may be added to</param>
         static ConditionResult BuildEqualityCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, BinaryExpression eq, ParamBuilder parameters) =>
-            sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, eq, parameters, sqlBuilder.BuildEqualityCondition);
+            sqlBuilder.BuildBinaryConditionX(queryRoot, argsParam, otherParams, eq, parameters, sqlBuilder.BuildEqualityCondition);
 
         /// <summary>
         /// Build a <> condition from an expression
@@ -302,7 +325,7 @@ namespace SqlDsl.SqlBuilders
         /// <param name="equality">The body of the condition</param>
         /// <param name="parameters">A list of parameters which may be added to</param>
         static ConditionResult BuildNonEqualityCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, BinaryExpression neq, ParamBuilder parameters) =>
-            sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, neq, parameters, sqlBuilder.BuildNonEqualityCondition);
+            sqlBuilder.BuildBinaryConditionX(queryRoot, argsParam, otherParams, neq, parameters, sqlBuilder.BuildNonEqualityCondition);
 
         /// <summary>
         /// Build a < condition from an expression
@@ -314,7 +337,7 @@ namespace SqlDsl.SqlBuilders
         /// <param name="equality">The body of the condition</param>
         /// <param name="parameters">A list of parameters which may be added to</param>
         static ConditionResult BuildLessThanCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, BinaryExpression lt, ParamBuilder parameters) =>
-            sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, lt, parameters, sqlBuilder.BuildLessThanCondition);
+            sqlBuilder.BuildBinaryConditionX(queryRoot, argsParam, otherParams, lt, parameters, sqlBuilder.BuildLessThanCondition);
 
         /// <summary>
         /// Build a <= condition from an expression
@@ -326,7 +349,7 @@ namespace SqlDsl.SqlBuilders
         /// <param name="equality">The body of the condition</param>
         /// <param name="parameters">A list of parameters which may be added to</param>
         static ConditionResult BuildLessThanEqualToCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, BinaryExpression lte, ParamBuilder parameters) =>
-            sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, lte, parameters, sqlBuilder.BuildLessThanEqualToCondition);
+            sqlBuilder.BuildBinaryConditionX(queryRoot, argsParam, otherParams, lte, parameters, sqlBuilder.BuildLessThanEqualToCondition);
 
         /// <summary>
         /// Build a > condition from an expression
@@ -338,7 +361,7 @@ namespace SqlDsl.SqlBuilders
         /// <param name="equality">The body of the condition</param>
         /// <param name="parameters">A list of parameters which may be added to</param>
         static ConditionResult BuildGreaterThanCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, BinaryExpression gt, ParamBuilder parameters) =>
-            sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, gt, parameters, sqlBuilder.BuildGreaterThanCondition);
+            sqlBuilder.BuildBinaryConditionX(queryRoot, argsParam, otherParams, gt, parameters, sqlBuilder.BuildGreaterThanCondition);
 
         /// <summary>
         /// Build a >= condition from an expression
@@ -350,7 +373,7 @@ namespace SqlDsl.SqlBuilders
         /// <param name="equality">The body of the condition</param>
         /// <param name="parameters">A list of parameters which may be added to</param>
         static ConditionResult BuildGreaterThanEqualToCondition(this ISqlFragmentBuilder sqlBuilder, ParameterExpression queryRoot, ParameterExpression argsParam, OtherParams otherParams, BinaryExpression gte, ParamBuilder parameters) =>
-            sqlBuilder.BuildBinaryCondition(queryRoot, argsParam, otherParams, gte, parameters, sqlBuilder.BuildGreaterThanEqualToCondition);
+            sqlBuilder.BuildBinaryConditionX(queryRoot, argsParam, otherParams, gte, parameters, sqlBuilder.BuildGreaterThanEqualToCondition);
 
         /// <summary>
         /// Get the name and root parameter from an expression
@@ -489,7 +512,7 @@ namespace SqlDsl.SqlBuilders
             ConditionResult Combine(ConditionResult x, ConditionResult y)
             {
 
-                return BuildBinaryCondition(sqlBuilder, 
+                return BuildBinaryConditionX(sqlBuilder, 
                     queryRoot, 
                     argsParam, 
                     otherParams, 

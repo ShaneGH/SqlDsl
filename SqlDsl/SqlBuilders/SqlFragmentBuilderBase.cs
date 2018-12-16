@@ -29,32 +29,32 @@ namespace SqlDsl.SqlBuilders
         public abstract string WrapAlias(string alias);
 
         /// <inheritdoc />
-        public virtual (string setupSql, string sql) BuildAndCondition(string lhs, string rhs) => (null, $"({lhs} AND {rhs})");
+        public virtual string BuildAndCondition(string lhs, string rhs) => $"({lhs} AND {rhs})";
 
         /// <inheritdoc />
-        public virtual (string setupSql, string sql) BuildOrCondition(string lhs, string rhs) => (null, $"({lhs} OR {rhs})");
+        public virtual string BuildOrCondition(string lhs, string rhs) => $"({lhs} OR {rhs})";
 
         /// <inheritdoc />
-        public virtual (string setupSql, string sql) BuildEqualityCondition(string lhs, string rhs) => (null, $"({lhs} = {rhs})");
+        public virtual string BuildEqualityCondition(string lhs, string rhs) => $"({lhs} = {rhs})";
 
         /// <inheritdoc />
-        public virtual (string setupSql, string sql) BuildNonEqualityCondition(string lhs, string rhs) => (null, $"({lhs} <> {rhs})");
+        public virtual string BuildNonEqualityCondition(string lhs, string rhs) => $"({lhs} <> {rhs})";
 
         /// <inheritdoc />
-        public virtual (string setupSql, string sql) BuildLessThanCondition(string lhs, string rhs) => (null, $"({lhs} < {rhs})");
+        public virtual string BuildLessThanCondition(string lhs, string rhs) => $"({lhs} < {rhs})";
 
         /// <inheritdoc />
-        public virtual (string setupSql, string sql) BuildLessThanEqualToCondition(string lhs, string rhs) => (null, $"({lhs} <= {rhs})");
+        public virtual string BuildLessThanEqualToCondition(string lhs, string rhs) => $"({lhs} <= {rhs})";
 
         /// <inheritdoc />
-        public virtual (string setupSql, string sql) BuildGreaterThanCondition(string lhs, string rhs) => (null, $"({lhs} > {rhs})");
+        public virtual string BuildGreaterThanCondition(string lhs, string rhs) => $"({lhs} > {rhs})";
 
         /// <inheritdoc />
-        public virtual (string setupSql, string sql) BuildGreaterThanEqualToCondition(string lhs, string rhs) => (null, $"({lhs} >= {rhs})");
+        public virtual string BuildGreaterThanEqualToCondition(string lhs, string rhs) => $"({lhs} >= {rhs})";
 
-        public virtual (string setupSql, string sql) BuildInCondition(string lhs, string rhs) => (null, $"({lhs} IN ({rhs}))");
+        public virtual string BuildInCondition(string lhs, string rhs) => $"({lhs} IN ({rhs}))";
 
-        public virtual (string setupSql, string sql) BuildCommaCondition(string lhs, string rhs) => (null, $"{lhs}, {rhs}");
+        public virtual string BuildCommaCondition(string lhs, string rhs) => $"{lhs}, {rhs}";
 
         public virtual string BuildAddCondition(string lhs, string rhs) => $"({lhs} + {rhs})";
 

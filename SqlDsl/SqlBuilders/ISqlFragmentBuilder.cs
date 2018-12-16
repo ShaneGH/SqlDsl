@@ -33,52 +33,52 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Combine 2 statements with an AND condition
         /// </summary>
-        (string setupSql, string sql) BuildAndCondition(string lhs, string rhs);
+        string BuildAndCondition(string lhs, string rhs);
 
         /// <summary>
         /// Combine 2 statements with an OR condition
         /// </summary>
-        (string setupSql, string sql) BuildOrCondition(string lhs, string rhs);
+        string BuildOrCondition(string lhs, string rhs);
 
         /// <summary>
         /// Combine 2 statements with an = condition
         /// </summary>
-        (string setupSql, string sql) BuildEqualityCondition(string lhs, string rhs);
+        string BuildEqualityCondition(string lhs, string rhs);
 
         /// <summary>
         /// Combine 2 statements with an <> condition
         /// </summary>
-        (string setupSql, string sql) BuildNonEqualityCondition(string lhs, string rhs);
+        string BuildNonEqualityCondition(string lhs, string rhs);
 
         /// <summary>
         /// Combine 2 statements with < condition
         /// </summary>
-        (string setupSql, string sql) BuildLessThanCondition(string lhs, string rhs);
+        string BuildLessThanCondition(string lhs, string rhs);
 
         /// <summary>
         /// Combine 2 statements with a <= condition
         /// </summary>
-        (string setupSql, string sql) BuildLessThanEqualToCondition(string lhs, string rhs);
+        string BuildLessThanEqualToCondition(string lhs, string rhs);
 
         /// <summary>
         /// Combine 2 statements with a > condition
         /// </summary>
-        (string setupSql, string sql) BuildGreaterThanCondition(string lhs, string rhs);
+        string BuildGreaterThanCondition(string lhs, string rhs);
 
         /// <summary>
         /// Combine 2 statements with a >= condition
         /// </summary>
-        (string setupSql, string sql) BuildGreaterThanEqualToCondition(string lhs, string rhs);
+        string BuildGreaterThanEqualToCondition(string lhs, string rhs);
 
         /// <summary>
         /// Combine 2 statements with an IN condition
         /// </summary>
-        (string setupSql, string sql) BuildInCondition(string lhs, string rhs);
+        string BuildInCondition(string lhs, string rhs);
 
         /// <summary>
         /// Combine 2 params with comma
         /// </summary>
-        (string setupSql, string sql) BuildCommaCondition(string lhs, string rhs);
+        string BuildCommaCondition(string lhs, string rhs);
 
         /// <summary>
         /// Alias an item
