@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using SqlDsl.Mapper;
 
 namespace SqlDsl.SqlBuilders
 {
@@ -14,33 +15,33 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Concat 2 query parts in a defined way (e.g. l + r)
         /// </summary>
-        public static string Concat(this ISqlFragmentBuilder builder, string l, string r, ExpressionType concatType)
+        public static string Concat(this ISqlFragmentBuilder builder, string l, string r, CombinationType concatType)
         {
             switch (concatType)
             {
-                case ExpressionType.Add:
+                case CombinationType.Add:
                     return builder.BuildAddCondition(l, r);
-                case ExpressionType.Subtract:
+                case CombinationType.Subtract:
                     return builder.BuildSubtractCondition(l, r);
-                case ExpressionType.Multiply:
+                case CombinationType.Multiply:
                     return builder.BuildMultiplyCondition(l, r);
-                case ExpressionType.Divide:
+                case CombinationType.Divide:
                     return builder.BuildDivideCondition(l, r);
-                case ExpressionType.OnesComplement:
+                case CombinationType.In:
                     return builder.BuildInCondition(l, r);
-                case ExpressionType.Modulo:
+                case CombinationType.Comma:
                     return builder.BuildCommaCondition(l, r);
-                case ExpressionType.Equal:
+                case CombinationType.Equal:
                     return builder.BuildEqualityCondition(l, r);
-                case ExpressionType.NotEqual:
+                case CombinationType.NotEqual:
                     return builder.BuildNonEqualityCondition(l, r);
-                case ExpressionType.GreaterThan:
+                case CombinationType.GreaterThan:
                     return builder.BuildGreaterThanCondition(l, r);
-                case ExpressionType.GreaterThanOrEqual:
+                case CombinationType.GreaterThanOrEqual:
                     return builder.BuildGreaterThanEqualToCondition(l, r);
-                case ExpressionType.LessThan:
+                case CombinationType.LessThan:
                     return builder.BuildLessThanCondition(l, r);
-                case ExpressionType.LessThanOrEqual:
+                case CombinationType.LessThanOrEqual:
                     return builder.BuildLessThanEqualToCondition(l, r);
                 default:
                     throw new NotSupportedException($"Cannot combine query parts using concatType: {concatType}.");

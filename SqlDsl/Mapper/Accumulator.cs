@@ -7,16 +7,16 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.Mapper
 {
-    class Accumulator : Accumulator<(ParameterExpression paramRoot, string param), ExpressionType>
+    class Accumulator : Accumulator<(ParameterExpression paramRoot, string param), CombinationType>
     {   
         public Accumulator(
             ParameterExpression firstParamRoot, string firstParam, 
-            IEnumerable<((ParameterExpression paramRoot, string param), ExpressionType)> next = null)
+            IEnumerable<((ParameterExpression paramRoot, string param), CombinationType)> next = null)
             : base((firstParamRoot, firstParam), next)
         {
         }
         
-        public Accumulator(Accumulator<(ParameterExpression paramRoot, string param), ExpressionType> acc)
+        public Accumulator(Accumulator<(ParameterExpression paramRoot, string param), CombinationType> acc)
             : this(acc.First.paramRoot, acc.First.param, acc.Next)
         {
         }
@@ -32,7 +32,7 @@ namespace SqlDsl.Mapper
             (ParameterExpression, string) _Map((ParameterExpression x, string y) z) => (z.x, map(z.y));
         }
 
-        public Accumulator Combine(Accumulator x, ExpressionType combiner)
+        public Accumulator Combine(Accumulator x, CombinationType combiner)
         {
             return new Accumulator(base.Combine(x, combiner));
         }
@@ -58,47 +58,47 @@ namespace SqlDsl.Mapper
                 BuildColumn(table1, First.paramRoot, First.param),
                 Aggregate);
 
-            string Aggregate(string x, ((ParameterExpression paramRoot, string param) param, ExpressionType type) y)
+            string Aggregate(string x, ((ParameterExpression paramRoot, string param) param, CombinationType type) y)
             {
                 var table = (y.param.param ?? "").StartsWith("@") ? null : wrappedQueryAlias;
                 var yValue = BuildColumn(table, y.param.paramRoot, y.param.param);
 
                 switch (y.type)
                 {
-                    case ExpressionType.Add:
+                    case CombinationType.Add:
                         return sqlFragmentBuilder.BuildAddCondition(x, yValue);
 
-                    case ExpressionType.Subtract:
+                    case CombinationType.Subtract:
                         return sqlFragmentBuilder.BuildSubtractCondition(x, yValue);
                         
-                    case ExpressionType.Multiply:
+                    case CombinationType.Multiply:
                         return sqlFragmentBuilder.BuildMultiplyCondition(x, yValue);
                         
-                    case ExpressionType.Divide:
+                    case CombinationType.Divide:
                         return sqlFragmentBuilder.BuildDivideCondition(x, yValue);
                         
-                    case ExpressionType.OnesComplement:
+                    case CombinationType.In:
                         return sqlFragmentBuilder.BuildInCondition(x, yValue);
                         
-                    case ExpressionType.Modulo:
+                    case CombinationType.Comma:
                         return sqlFragmentBuilder.BuildCommaCondition(x, yValue);
                         
-                    case ExpressionType.Equal:
+                    case CombinationType.Equal:
                         return sqlFragmentBuilder.BuildEqualityCondition(x, yValue);
                         
-                    case ExpressionType.NotEqual:
+                    case CombinationType.NotEqual:
                         return sqlFragmentBuilder.BuildNonEqualityCondition(x, yValue);
                         
-                    case ExpressionType.GreaterThan:
+                    case CombinationType.GreaterThan:
                         return sqlFragmentBuilder.BuildGreaterThanCondition(x, yValue);
                         
-                    case ExpressionType.GreaterThanOrEqual:
+                    case CombinationType.GreaterThanOrEqual:
                         return sqlFragmentBuilder.BuildGreaterThanEqualToCondition(x, yValue);
                         
-                    case ExpressionType.LessThan:
+                    case CombinationType.LessThan:
                         return sqlFragmentBuilder.BuildLessThanCondition(x, yValue);
                         
-                    case ExpressionType.LessThanOrEqual:
+                    case CombinationType.LessThanOrEqual:
                         return sqlFragmentBuilder.BuildLessThanEqualToCondition(x, yValue);
 
                     default:
@@ -151,6 +151,54 @@ namespace SqlDsl.Mapper
         public static string AddRoot(ParameterExpression root, string property, BuildMapState state)
         {
             return AddRoot(state)((root, property));
+        }
+    }
+
+    public enum CombinationType
+    {
+        Add,
+        Subtract,
+        Multiply,
+        Divide,
+        In,
+        Comma,
+        Equal,
+        NotEqual,
+        GreaterThan,
+        GreaterThanOrEqual,
+        LessThan,
+        LessThanOrEqual
+    }
+
+    public static class CombinationTypeUtils
+    {
+        public static CombinationType ToCombinationType(this ExpressionType e)
+        {
+            switch (e)
+            {
+                case ExpressionType.Add:
+                    return CombinationType.Add;
+                case ExpressionType.Subtract:
+                    return CombinationType.Subtract;
+                case ExpressionType.Multiply:
+                    return CombinationType.Multiply;
+                case ExpressionType.Divide:
+                    return CombinationType.Divide;
+                case ExpressionType.Equal:
+                    return CombinationType.Equal;
+                case ExpressionType.NotEqual:
+                    return CombinationType.NotEqual;
+                case ExpressionType.GreaterThan:
+                    return CombinationType.GreaterThan;
+                case ExpressionType.GreaterThanOrEqual:
+                    return CombinationType.GreaterThanOrEqual;
+                case ExpressionType.LessThan:
+                    return CombinationType.LessThan;
+                case ExpressionType.LessThanOrEqual:
+                    return CombinationType.LessThanOrEqual;
+                default:
+                    throw new NotSupportedException(e.ToString());
+            }
         }
     }
 }

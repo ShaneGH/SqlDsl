@@ -210,6 +210,21 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public async Task Select1SimpleObject_WithWhereIn2_2WithMultipleParts()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<QueryClass>()
+                .From(nameof(Person), result => result.ThePerson)
+                .Where(result => result.ThePerson.Id.In(new [] { Data.People.John.Id + 1, 1000 + 1 }))
+                .ToArrayAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count());
+            Assert.AreEqual(Data.People.Mary, data.First().ThePerson);
+        }
+
+        [Test]
         public async Task Select1SimpleObject_WithWhereIn3()
         {
             // arrange

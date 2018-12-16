@@ -28,7 +28,7 @@ namespace SqlDsl.Mapper
         {
             var mappedChains = chains
                 .GetEnumerable2()
-                .Select(c => BuildMapForOneAccumulatorBranch(state, chains.Next.Any(), c.Item1.root, c.Item1.chain, c.Item1.fullExpression, c.Item2))
+                .Select(c => BuildMapForOneAccumulatorBranch(state, chains.Next.Any(), c.Item1.root, c.Item1.chain, c.Item1.fullExpression, c.Item2?.ToCombinationType()))
                 .ToArray();
 
             if (mappedChains.Length == 0)
@@ -65,7 +65,7 @@ namespace SqlDsl.Mapper
             );
         }
 
-        static (ExpressionType? combiner, BuildMapResult type, MappedProperty result) BuildMapForOneAccumulatorBranch(BuildMapState state, bool moreThanOneBranch, Expression root, IEnumerable<string> chain, Expression fullExpression, ExpressionType? combiner)
+        static (CombinationType? combiner, BuildMapResult type, MappedProperty result) BuildMapForOneAccumulatorBranch(BuildMapState state, bool moreThanOneBranch, Expression root, IEnumerable<string> chain, Expression fullExpression, CombinationType? combiner)
         {
             if (root is ConstantExpression)
                 return BuildMapForConstant(state, root, chain, combiner);
@@ -95,7 +95,7 @@ namespace SqlDsl.Mapper
             throw new InvalidOperationException("Unable to understand mapping statement: " + fullExpression);
         }
 
-        static (ExpressionType? combiner, BuildMapResult type, MappedProperty result) BuildMapForArgs(BuildMapState state, Expression fullExpression, ExpressionType? combiner)
+        static (CombinationType? combiner, BuildMapResult type, MappedProperty result) BuildMapForArgs(BuildMapState state, Expression fullExpression, CombinationType? combiner)
         {
             var result = QueryArgAccessor.Create(state.ArgsObject, fullExpression);
             var paramName = state.Parameters.AddParam(result);
@@ -107,7 +107,7 @@ namespace SqlDsl.Mapper
             );
         }
 
-        static (ExpressionType? combiner, BuildMapResult type, MappedProperty result) BuildMapForConstant(BuildMapState state, Expression root, IEnumerable<string> chain, ExpressionType? combiner)
+        static (CombinationType? combiner, BuildMapResult type, MappedProperty result) BuildMapForConstant(BuildMapState state, Expression root, IEnumerable<string> chain, CombinationType? combiner)
         {
             var chainExpr = chain
                 .Aggregate(root, Expression.PropertyOrField);
@@ -150,7 +150,7 @@ namespace SqlDsl.Mapper
             return type;
         }
 
-        static (ExpressionType? combiner, BuildMapResult type, MappedProperty result)? TryBuildMapForTableProperty(IQueryTable property, BuildMapState state, bool moreThanOneBranch, ParameterExpression rootParam, string chain, Expression fullExpression, ExpressionType? combiner)
+        static (CombinationType? combiner, BuildMapResult type, MappedProperty result)? TryBuildMapForTableProperty(IQueryTable property, BuildMapState state, bool moreThanOneBranch, ParameterExpression rootParam, string chain, Expression fullExpression, CombinationType? combiner)
         {
             // get property from one table (no query object)
             if (property.Alias == SqlStatementConstants.RootObjectAlias && !chain.Contains("."))
@@ -175,7 +175,7 @@ namespace SqlDsl.Mapper
             return null;
         }
 
-        static (ExpressionType? combiner, BuildMapResult type, MappedProperty result) BuildMapForSimpleProperty(BuildMapState state, ParameterExpression rootParam, string chain, Expression fullExpression, ExpressionType? combiner)
+        static (CombinationType? combiner, BuildMapResult type, MappedProperty result) BuildMapForSimpleProperty(BuildMapState state, ParameterExpression rootParam, string chain, Expression fullExpression, CombinationType? combiner)
         {
             return (
                 combiner,
@@ -184,7 +184,7 @@ namespace SqlDsl.Mapper
             );
         }
 
-        static (ExpressionType? combiner, BuildMapResult type, MappedProperty result) BuildMapForTable(ParameterExpression rootParam, string chain, Expression fullExpression, ExpressionType? combiner)
+        static (CombinationType? combiner, BuildMapResult type, MappedProperty result) BuildMapForTable(ParameterExpression rootParam, string chain, Expression fullExpression, CombinationType? combiner)
         {
             var resultType = ReflectionUtils.GetIEnumerableType(fullExpression.Type) == null ?
                 BuildMapResult.SingleComplexProp :
@@ -197,7 +197,7 @@ namespace SqlDsl.Mapper
             );
         }
 
-        static (ExpressionType? combiner, BuildMapResult type, MappedProperty result) BuildMapForTableProperty(BuildMapState state, ParameterExpression rootParam, string chain, Expression fullExpression, ExpressionType? combiner)
+        static (CombinationType? combiner, BuildMapResult type, MappedProperty result) BuildMapForTableProperty(BuildMapState state, ParameterExpression rootParam, string chain, Expression fullExpression, CombinationType? combiner)
         {
             return (
                 combiner,

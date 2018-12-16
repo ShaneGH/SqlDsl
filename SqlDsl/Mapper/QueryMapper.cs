@@ -148,7 +148,7 @@ namespace SqlDsl.Mapper
 
             var referencedColumns = new List<(string, string)>();
             string sql = null;
-            string Add(string sqlPart, ExpressionType combiner)
+            string Add(string sqlPart, CombinationType combiner)
             {
                 if (!sqlPart.StartsWith("@"))
                 {
@@ -164,7 +164,7 @@ namespace SqlDsl.Mapper
             }
 
             // second arg does not matter, as sql is null
-            sql = Add(property.First.param, ExpressionType.ModuloAssign);
+            sql = Add(property.First.param, CombinationType.Add);
             foreach (var part in property.Next)
             {
                 sql = Add(part.element.param, part.combiner);

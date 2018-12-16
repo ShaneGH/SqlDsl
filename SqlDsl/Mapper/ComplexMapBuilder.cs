@@ -59,8 +59,6 @@ namespace SqlDsl.Mapper
                 case ExpressionType.Subtract:
                 case ExpressionType.Multiply:
                 case ExpressionType.Divide:
-                case ExpressionType.OnesComplement:
-                case ExpressionType.Modulo:
                 case ExpressionType.Equal:
                 case ExpressionType.NotEqual:
                 case ExpressionType.GreaterThan:
@@ -197,7 +195,10 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForBinaryCondition(BuildMapState state, Expression left, Expression right, Type combinedType, ExpressionType combiner, string toPrefix = null)
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForBinaryCondition(BuildMapState state, Expression left, Expression right, Type combinedType, ExpressionType combiner, string toPrefix = null) =>
+            BuildMapForBinaryCondition(state, left, right, combinedType, combiner.ToCombinationType(), toPrefix);
+
+        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForBinaryCondition(BuildMapState state, Expression left, Expression right, Type combinedType, CombinationType combiner, string toPrefix = null)
         {
             var l = BuildMap(state, left, MapType.Other, toPrefix);
             var r = BuildMap(state, right, MapType.Other, toPrefix);
@@ -311,8 +312,7 @@ namespace SqlDsl.Mapper
             }
 
             var inPart = new MappedProperty(
-                // TODO: BAAAAAAD hack
-                lProp.FromParams.Combine(rProp.FromParams, ExpressionType.OnesComplement),
+                lProp.FromParams.Combine(rProp.FromParams, CombinationType.In),
                 toPrefix,
                 typeof(bool),
                 lProp.PropertySegmentConstructors.Concat(rProp.PropertySegmentConstructors).ToArray());
@@ -405,8 +405,7 @@ namespace SqlDsl.Mapper
                 if (xProps.Length != 1 || yProps.Length != 1)
                     throw new InvalidOperationException($"Unsupported mapping expression \"{elements.JoinString(", ")}\".");
 
-                // TODO: BAAAAAAAAAAAAAAAD hack
-                var prop = xProps[0].FromParams.Combine(yProps[0].FromParams, ExpressionType.Modulo);
+                var prop = xProps[0].FromParams.Combine(yProps[0].FromParams, CombinationType.Comma);
                 return (
                     new MappedProperty(
                         prop,
