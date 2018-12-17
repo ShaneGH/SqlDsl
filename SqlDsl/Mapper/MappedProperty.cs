@@ -1,7 +1,9 @@
 
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using SqlDsl.Utils;
 
 namespace SqlDsl.Mapper
 {
@@ -12,9 +14,9 @@ namespace SqlDsl.Mapper
         public readonly Type MappedPropertyType;
         public readonly ConstructorInfo[] PropertySegmentConstructors;
         public readonly string To;
-        public readonly Accumulator FromParams;
+        public readonly IAccumulator FromParams;
 
-        public MappedProperty(Accumulator fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+        public MappedProperty(IAccumulator fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
         {
             To = to;
             FromParams = fromParams;
@@ -25,6 +27,45 @@ namespace SqlDsl.Mapper
         public MappedProperty(ParameterExpression fromParamRoot, string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
             : this (new Accumulator(fromParamRoot, from), to, mappedPropertyType, constructorArgs)
         {
+        }
+
+        public string GetDebugView(BuildMapState state) => new[]
+        {
+            $"Type: {MappedPropertyType}",
+            $"CArgs: {PropertySegmentConstructors.JoinString(", ")}",
+            $"From: {TryGetFromString(state)}",
+            $"To: {To}"
+        }
+        .RemoveNullOrEmpty()
+        .JoinString("\n");
+
+        /// <summary>
+        /// Debug only
+        /// </summary>
+        string TryGetFromString(BuildMapState state)
+        {
+            try
+            {
+                return FromParams.BuildFromString(state, new SqlFragmentBuilder());
+            }
+            catch (Exception e)
+            {
+                return $"Cannot build from string: {e}";
+            }
+        }
+
+        class SqlFragmentBuilder : SqlBuilders.SqlFragmentBuilderBase
+        {
+            public override (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override string WrapAlias(string alias) => $"[{alias}]";
+
+            public override string WrapColumn(string column) => $"[{column}]";
+
+            public override string WrapTable(string table) => $"[{table}]";
         }
     }
 }

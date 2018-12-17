@@ -7,34 +7,133 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.Mapper
 {
-    class Accumulator : Accumulator<(ParameterExpression paramRoot, string param), CombinationType>
+    interface IAccumulator
+    {
+        bool HasOneItemOnly { get; }
+        (ParameterExpression paramRoot, string param) First  { get; }
+        IEnumerable<(ParameterExpression paramRoot, string param)> GetEnumerable1();
+        IAccumulator MapParam(Func<(ParameterExpression paramRoot, string param), (ParameterExpression, string)> map);
+        IAccumulator MapParamName(Func<string, string> map);
+        IAccumulator Combine(IAccumulator x, CombinationType combiner);
+        string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias);
+        string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder);
+    }
+
+    class Accumulators : IAccumulator
+    {
+        readonly IAccumulator First;
+        readonly (IAccumulator, CombinationType) Next;
+
+        public Accumulators(IAccumulator first, (IAccumulator, CombinationType) next)
+        {
+            First = first;
+            Next = next;
+        }
+
+        public bool HasOneItemOnly => false;
+
+        (ParameterExpression paramRoot, string param) IAccumulator.First => First.First;
+
+        public string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
+        {
+            // todo: put string part in ISqlFragmentBuilder
+
+            var first = First.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias);
+            var second = Next.Item1.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias);
+
+            return BuildFromString(sqlFragmentBuilder, first, second);
+        }
+
+        public string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder)
+        {
+            // todo: put string part in ISqlFragmentBuilder
+
+            var first = First.BuildFromString(state, sqlFragmentBuilder);
+            var second = Next.Item1.BuildFromString(state, sqlFragmentBuilder);
+
+            return BuildFromString(sqlFragmentBuilder, first, second);
+        }
+
+        string BuildFromString(ISqlFragmentBuilder sqlFragmentBuilder, string first, string next)
+        {
+            if (!First.HasOneItemOnly) first = $"({first})";
+            if (!Next.Item1.HasOneItemOnly) next = $"({next})";
+
+            return Accumulator.Combine(
+                sqlFragmentBuilder,
+                first, 
+                next,
+                Next.Item2);
+        }
+
+        public IAccumulator Combine(IAccumulator x, CombinationType combiner)
+        {
+            return new Accumulators(this, (x, combiner));
+        }
+
+        public IEnumerable<(ParameterExpression paramRoot, string param)> GetEnumerable1()
+        {
+            return First
+                .GetEnumerable1()
+                .Concat(Next.Item1.GetEnumerable1());
+        }
+
+        public IAccumulator MapParam(Func<(ParameterExpression paramRoot, string param), (ParameterExpression, string)> map)
+        {
+            var first = First.MapParam(map);
+            var second = Next.Item1.MapParam(map);
+
+            return first.Combine(second, Next.Item2);
+        }
+
+        public IAccumulator MapParamName(Func<string, string> map)
+        {
+            var first = First.MapParamName(map);
+            var second = Next.Item1.MapParamName(map);
+
+            return first.Combine(second, Next.Item2);
+        }
+    }
+
+    class Accumulator: IAccumulator
     {   
+        public bool HasOneItemOnly => !Inner.Next.Any();
+        
+        public (ParameterExpression paramRoot, string param) First => Inner.First;
+
+        readonly Accumulator<(ParameterExpression paramRoot, string param), CombinationType> Inner;
+
         public Accumulator(
             ParameterExpression firstParamRoot, string firstParam, 
             IEnumerable<((ParameterExpression paramRoot, string param), CombinationType)> next = null)
-            : base((firstParamRoot, firstParam), next)
+            : this(new Accumulator<(ParameterExpression paramRoot, string param), CombinationType>((firstParamRoot, firstParam), next))
         {
         }
         
         public Accumulator(Accumulator<(ParameterExpression paramRoot, string param), CombinationType> acc)
-            : this(acc.First.paramRoot, acc.First.param, acc.Next)
         {
+            Inner = acc;
         }
 
-        public Accumulator MapParam(Func<(ParameterExpression paramRoot, string param), (ParameterExpression, string)> map)
+        public IEnumerable<(ParameterExpression paramRoot, string param)> GetEnumerable1()
         {
-            return new Accumulator(base.Map(map));
+            return Inner.GetEnumerable1();
         }
 
-        public Accumulator MapParamName(Func<string, string> map)
+        public IAccumulator MapParam(Func<(ParameterExpression paramRoot, string param), (ParameterExpression, string)> map)
+        {
+            return new Accumulator(Inner.Map(map));
+        }
+
+        public IAccumulator MapParamName(Func<string, string> map)
         {
             return MapParam(_Map);
             (ParameterExpression, string) _Map((ParameterExpression x, string y) z) => (z.x, map(z.y));
         }
 
-        public Accumulator Combine(Accumulator x, CombinationType combiner)
+        public IAccumulator Combine(IAccumulator x, CombinationType combiner)
         {
-            return new Accumulator(base.Combine(x, combiner));
+            return new Accumulators(this, (x, combiner));
         }
 
         public string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
@@ -47,15 +146,60 @@ namespace SqlDsl.Mapper
             return BuildFromString(state, sqlFragmentBuilder, null, true);
         }
 
+        public static string Combine(ISqlFragmentBuilder sqlFragmentBuilder, string l, string r, CombinationType combine)
+        {
+            switch (combine)
+            {
+                case CombinationType.Add:
+                    return sqlFragmentBuilder.BuildAddCondition(l, r);
+
+                case CombinationType.Subtract:
+                    return sqlFragmentBuilder.BuildSubtractCondition(l, r);
+                    
+                case CombinationType.Multiply:
+                    return sqlFragmentBuilder.BuildMultiplyCondition(l, r);
+                    
+                case CombinationType.Divide:
+                    return sqlFragmentBuilder.BuildDivideCondition(l, r);
+                    
+                case CombinationType.In:
+                    return sqlFragmentBuilder.BuildInCondition(l, r);
+                    
+                case CombinationType.Comma:
+                    return sqlFragmentBuilder.BuildCommaCondition(l, r);
+                    
+                case CombinationType.Equal:
+                    return sqlFragmentBuilder.BuildEqualityCondition(l, r);
+                    
+                case CombinationType.NotEqual:
+                    return sqlFragmentBuilder.BuildNonEqualityCondition(l, r);
+                    
+                case CombinationType.GreaterThan:
+                    return sqlFragmentBuilder.BuildGreaterThanCondition(l, r);
+                    
+                case CombinationType.GreaterThanOrEqual:
+                    return sqlFragmentBuilder.BuildGreaterThanEqualToCondition(l, r);
+                    
+                case CombinationType.LessThan:
+                    return sqlFragmentBuilder.BuildLessThanCondition(l, r);
+                    
+                case CombinationType.LessThanOrEqual:
+                    return sqlFragmentBuilder.BuildLessThanEqualToCondition(l, r);
+
+                default:
+                    throw new InvalidOperationException($"Cannot build accumulator for expression type {combine}.");
+            }
+        }
+
         private string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias, bool tableIsFirstParamPart)
         {
             if (tableIsFirstParamPart && wrappedQueryAlias != null)
                 throw new InvalidOperationException($"You cannot specify {nameof(wrappedQueryAlias)} and {nameof(tableIsFirstParamPart)}");
 
-            var table1 = (First.param ?? "").StartsWith("@") ? null : wrappedQueryAlias;
+            var table1 = (Inner.First.param ?? "").StartsWith("@") ? null : wrappedQueryAlias;
 
-            return Next.Aggregate(
-                BuildColumn(table1, First.paramRoot, First.param),
+            return Inner.Next.Aggregate(
+                BuildColumn(table1, Inner.First.paramRoot, Inner.First.param),
                 Aggregate);
 
             string Aggregate(string x, ((ParameterExpression paramRoot, string param) param, CombinationType type) y)
@@ -63,47 +207,7 @@ namespace SqlDsl.Mapper
                 var table = (y.param.param ?? "").StartsWith("@") ? null : wrappedQueryAlias;
                 var yValue = BuildColumn(table, y.param.paramRoot, y.param.param);
 
-                switch (y.type)
-                {
-                    case CombinationType.Add:
-                        return sqlFragmentBuilder.BuildAddCondition(x, yValue);
-
-                    case CombinationType.Subtract:
-                        return sqlFragmentBuilder.BuildSubtractCondition(x, yValue);
-                        
-                    case CombinationType.Multiply:
-                        return sqlFragmentBuilder.BuildMultiplyCondition(x, yValue);
-                        
-                    case CombinationType.Divide:
-                        return sqlFragmentBuilder.BuildDivideCondition(x, yValue);
-                        
-                    case CombinationType.In:
-                        return sqlFragmentBuilder.BuildInCondition(x, yValue);
-                        
-                    case CombinationType.Comma:
-                        return sqlFragmentBuilder.BuildCommaCondition(x, yValue);
-                        
-                    case CombinationType.Equal:
-                        return sqlFragmentBuilder.BuildEqualityCondition(x, yValue);
-                        
-                    case CombinationType.NotEqual:
-                        return sqlFragmentBuilder.BuildNonEqualityCondition(x, yValue);
-                        
-                    case CombinationType.GreaterThan:
-                        return sqlFragmentBuilder.BuildGreaterThanCondition(x, yValue);
-                        
-                    case CombinationType.GreaterThanOrEqual:
-                        return sqlFragmentBuilder.BuildGreaterThanEqualToCondition(x, yValue);
-                        
-                    case CombinationType.LessThan:
-                        return sqlFragmentBuilder.BuildLessThanCondition(x, yValue);
-                        
-                    case CombinationType.LessThanOrEqual:
-                        return sqlFragmentBuilder.BuildLessThanEqualToCondition(x, yValue);
-
-                    default:
-                        throw new InvalidOperationException($"Cannot build accumulator for expression type {y.type}.");
-                }
+                return Combine(sqlFragmentBuilder, x, yValue, y.type);
             }
 
             string BuildColumn(string tab, ParameterExpression paramRoot, string parameter)
@@ -113,8 +217,8 @@ namespace SqlDsl.Mapper
                     var p = parameter.Split('.');
                     if (p.Length > 1)
                     {
-                        tab = p[0];
-                        parameter = p.Skip(1).JoinString(".");
+                        tab = p.Take(p.Length - 1).JoinString(".");
+                        parameter = p[p.Length - 1];
                     }
                 }
 
@@ -139,7 +243,7 @@ namespace SqlDsl.Mapper
                     .FirstOrDefault();
 
                 if (propertyRoot == null)
-                    throw new InvalidOperationException($"Could not find alias for mapping parameter \"{root}\".");
+                    throw new InvalidOperationException($"Could not find alias for mapping parameter \"{root}\". {property}");
 
                 if (!string.IsNullOrEmpty(property))
                     propertyRoot += ".";

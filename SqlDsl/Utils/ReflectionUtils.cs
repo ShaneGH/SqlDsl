@@ -246,20 +246,63 @@ namespace SqlDsl.Utils
         /// </summary>
         public static bool IsConstant(Expression expr)
         {
+            return IsConstant(expr, null).isConstant;
+        }
+
+        /// <summary>
+        /// Returns true if the input expression does not require any parameters to execute
+        /// </summary>
+        public static (bool isConstant, bool requiresArgs) IsConstant(Expression expr, ParameterExpression argsParam)
+        {
+            bool isConstant, requiresArgs;
             switch (expr.NodeType)
             {
                 case ExpressionType.NewArrayInit:
-                    return (expr as NewArrayExpression).Expressions.All(IsConstant);
+                    var ra1 = false;
+                    foreach (var el in (expr as NewArrayExpression).Expressions)
+                    {
+                        (isConstant, requiresArgs) = IsConstant(el, argsParam);
+                        if (!isConstant) return (false, false);
+                        ra1 |= requiresArgs;
+                    }
+
+                    return (true, ra1);
+
                 case ExpressionType.Constant:
-                    return true;
+                    return (true, false);
+                    
                 case ExpressionType.MemberAccess:
                     var mem = expr as MemberExpression;
-                    return mem.Expression == null || IsConstant(mem.Expression);
+                    if (mem.Expression == null)
+                        return (true, false);
+
+                    return IsConstant(mem.Expression, argsParam);
+
                 case ExpressionType.Call:
                     var call = expr as MethodCallExpression;
-                    return (call.Object == null || IsConstant(call.Object)) && call.Arguments.All(IsConstant);
+                    
+                    var ra2 = false;
+                    if (call.Object != null)
+                    {
+                        (isConstant, requiresArgs) = IsConstant(call.Object, argsParam);
+                        if (!isConstant) return (false, false);
+                        ra2 |= requiresArgs;
+                    }
+
+                    foreach (var el in call.Arguments)
+                    {
+                        (isConstant, requiresArgs) = IsConstant(el, argsParam);
+                        if (!isConstant) return (false, false);
+                        ra2 |= requiresArgs;
+                    }
+
+                    return (true, ra2);
+
+                case ExpressionType.Parameter:
+                    return (expr == argsParam, true);
+                    
                 default:
-                    return false;
+                    return (false, false);
             }
         }
 

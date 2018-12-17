@@ -25,14 +25,17 @@ namespace SqlDsl.Mapper
             string toPrefix = null, 
             bool isExprTip = false)
         {
-            if (ReflectionUtils.IsConstant(expr))
+            var (isConstant, requiresArgs) = ReflectionUtils.IsConstant(expr, state.ArgsObject);
+            if (isConstant)
             {
-                var result = Expression
-                    .Lambda<Func<object>>(
-                        ReflectionUtils.Convert(
-                            expr,
-                            typeof(object)))
-                    .Compile()();
+                var result = requiresArgs ?
+                    QueryArgAccessor.Create(state.ArgsObject, expr) :
+                    Expression
+                        .Lambda<Func<object>>(
+                            ReflectionUtils.Convert(
+                                expr,
+                                typeof(object)))
+                        .Compile()();
 
                 var paramName = state.Parameters.AddParam(result);
 
@@ -48,6 +51,9 @@ namespace SqlDsl.Mapper
 
             switch (expr.NodeType)
             {
+                case ExpressionType.Convert:
+                    return BuildMap(state, (expr as UnaryExpression).Operand, nextMap, toPrefix, isExprTip);
+
                 case ExpressionType.Parameter:
                     return (
                         new [] { new MappedProperty(expr as ParameterExpression, null, toPrefix, expr.Type) },
@@ -227,7 +233,7 @@ namespace SqlDsl.Mapper
             var properties = result.properties.Enumerate();
 
             // cannot support (x + y).Value
-            if (properties.Any(p => p.FromParams.Next.Any()))
+            if (properties.Any(p => !p.FromParams.HasOneItemOnly))
                 throw new InvalidOperationException("Unable to understand mapping statement: " + expr);
 
             return (
@@ -292,7 +298,7 @@ namespace SqlDsl.Mapper
 
             // TODO: can I relax this condition?
             if (rProp.FromParams.GetEnumerable1()
-                .Any(x => !x.param.StartsWith("@")))
+                .Any(x => x.param != null && !x.param.StartsWith("@")))
             {
                 throw new InvalidOperationException($"The values in an \"IN (...)\" clause must be a real parameter value. " + 
                     $"They cannot come from another table:\n{rhs}");
@@ -340,7 +346,7 @@ namespace SqlDsl.Mapper
                 new MappedTable(name, null).ToEnumerable()
                 : EmptyMappedTables;
 
-            if (outerMapProperties.Length != 1 || outerMapProperties[0].FromParams.Next.Any())
+            if (outerMapProperties.Length != 1 || !outerMapProperties[0].FromParams.HasOneItemOnly)
                 throw new InvalidOperationException($"Mapping from \"{enumerable}\" is not supported.");
 
             return (
@@ -420,7 +426,7 @@ namespace SqlDsl.Mapper
         static bool PropertyRepresentsTable(BuildMapState state, MappedProperty property)
         {
             // a 2 part property (e.g. x + 1) cannot represent a table
-            if (property.FromParams.Next.Any())
+            if (!property.FromParams.HasOneItemOnly)
                 return false;
 
             // mapped property points to the root query object

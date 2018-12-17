@@ -75,6 +75,11 @@ namespace SqlDsl.Utils
         {
         }
 
+        public StructAccumulator(TElement first)
+            : base(first)
+        {
+        }
+
         public IEnumerable<(TElement, TCombiner?)> GetEnumerable2()
         {
             yield return (First, null);

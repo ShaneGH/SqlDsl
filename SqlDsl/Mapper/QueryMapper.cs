@@ -45,8 +45,8 @@ namespace SqlDsl.Mapper
 
             switch (resultType)
             {
-                case MapBuilder.BuildMapResult.Map:
-                case MapBuilder.BuildMapResult.SimpleProp:
+                case MapBuilder.MappingType.Map:
+                case MapBuilder.MappingType.SimpleProp:
                     var requiredPropAliases = properties
                         .SelectMany(pms => pms.FromParams.GetEnumerable1())
                         .Where(x => x.paramRoot == state.QueryObject || state.ParameterRepresentsProperty.Any(y => y.parameter == x.paramRoot))
@@ -58,7 +58,7 @@ namespace SqlDsl.Mapper
                     wrappedBuilder.FilterUnusedTables(requiredPropAliases);
                     wrappedStatement = new SqlStatement(wrappedBuilder);
 
-                    if (resultType == MapBuilder.BuildMapResult.Map)
+                    if (resultType == MapBuilder.MappingType.Map)
                         return ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state)
                             .Compile<TArgs, TMapped>(mutableParameters.Parameters, QueryParseType.ORM);
                             
@@ -69,10 +69,10 @@ namespace SqlDsl.Mapper
                     }
 
                     var p = properties.First();
-                    return ToSqlBuilder(sqlFragmentBuilder, p.FromParams, p.MappedPropertyType, wrappedBuilder, wrappedStatement)
+                    return ToSqlBuilder(sqlFragmentBuilder, p.FromParams, p.MappedPropertyType, wrappedBuilder, wrappedStatement, state)
                         .CompileSimple<TArgs, TMapped>(mutableParameters.Parameters, SqlStatementConstants.SingleColumnAlias);
 
-                case MapBuilder.BuildMapResult.SingleComplexProp:
+                case MapBuilder.MappingType.SingleComplexProp:
                 
                     // convert x => x to x => new X { x1 = x.x1, x2 = x.x2 }
                     // this is easier for mapper to understand
@@ -82,7 +82,7 @@ namespace SqlDsl.Mapper
 
                     return Compile<TArgs, TResult, TMapped, TSqlBuilder>(sqlFragmentBuilder, query, init, logger: logger);
 
-                case MapBuilder.BuildMapResult.MultiComplexProp:
+                case MapBuilder.MappingType.MultiComplexProp:
 
                     // convert xs => xs to xs => xs.Select(x => new X { x1 = x.x1, x2 = x.x2 })
                     // this is easier for mapper to understand
@@ -141,40 +141,23 @@ namespace SqlDsl.Mapper
             return builder;
         }
 
-        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, Accumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement)
+        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IAccumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var builder = new SqlStatementBuilder(sqlFragmentBuilder);
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
 
-            var referencedColumns = new List<(string, string)>();
-            string sql = null;
-            string Add(string sqlPart, CombinationType combiner)
-            {
-                if (!sqlPart.StartsWith("@"))
-                {
-                    referencedColumns.Add((wrappedStatement.UniqueAlias, sqlPart));
-                    sqlPart = sqlFragmentBuilder.BuildSelectColumn(
-                        wrappedStatement.UniqueAlias,
-                        sqlPart);
-                }
+            var referencedColumns = property
+                .GetEnumerable1()
+                .Where(x => !x.param.StartsWith("@"))
+                .Select(x => (wrappedStatement.UniqueAlias, Accumulator.AddRoot(x.paramRoot, x.param, state)))
+                .ToArray();
 
-                return sql == null ?
-                    sqlPart :
-                    sqlFragmentBuilder.Concat(sql, sqlPart, combiner);
-            }
-
-            // second arg does not matter, as sql is null
-            sql = Add(property.First.param, CombinationType.Add);
-            foreach (var part in property.Next)
-            {
-                sql = Add(part.element.param, part.combiner);
-            }
-
+            var sql = property.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias);
             builder.AddSelectColumn(
                 cellDataType,
                 sql,
                 SqlStatementConstants.SingleColumnAlias,
-                referencedColumns.ToArray());
+                referencedColumns);
                 
             return builder;
         }

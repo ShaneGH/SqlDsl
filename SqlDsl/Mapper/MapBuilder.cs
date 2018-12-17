@@ -11,207 +11,105 @@ namespace SqlDsl.Mapper
     {
         static readonly IEnumerable<MappedTable> EmptyMappedTables = Enumerable.Empty<MappedTable>();
 
-        public static (BuildMapResult resultType, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expression)
+        public static (MappingType resultType, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expression)
         {
-            var (isPropertyChain, chains) = ReflectionUtils.GetPropertyChains(expression, allowOne: true, allowSelect: true, allowConstants: true);
-            if (isPropertyChain)
-                return BuildMapForPropertyChain(state, expression, chains);
-
             var (properties, tables) = ComplexMapBuilder.BuildMap(state, expression);
-            return (BuildMapResult.Map, properties, tables);
+            var ps = properties.ToArray();
+            
+            return (ExpressionMappingTypeFinder.GetMappingType(ps, expression, state), ps, tables);
         }
 
-        static (BuildMapResult resultType, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForPropertyChain(
-            BuildMapState state, 
-            Expression expression,
-            StructAccumulator<(Expression root, IEnumerable<string> chain, Expression fullExpression), ExpressionType> chains)
+        class ExpressionMappingTypeFinder : ExpressionVisitor, IDisposable
         {
-            var mappedChains = chains
-                .GetEnumerable2()
-                .Select(c => BuildMapForOneAccumulatorBranch(state, chains.Next.Any(), c.Item1.root, c.Item1.chain, c.Item1.fullExpression, c.Item2?.ToCombinationType()))
-                .ToArray();
+            [ThreadStatic]
+            static readonly ExpressionMappingTypeFinder Instance = new ExpressionMappingTypeFinder();
 
-            if (mappedChains.Length == 0)
-                throw new InvalidOperationException("Unable to understand mapping statement: " + expression);
+            bool IsMap;
 
-            if (mappedChains.Length == 1)
+            private ExpressionMappingTypeFinder()
             {
-                return (
-                    mappedChains[0].type,
-                    mappedChains[0].result.ToEnumerable(),
-                    EmptyMappedTables);
+                Init();
             }
 
-            if (mappedChains.Any(x => x.type != BuildMapResult.SimpleProp))
-                throw new InvalidOperationException("Unable to understand mapping statement: " + expression);
+            public void Dispose() => Init();
 
-            var combinedChains = mappedChains
-                .Skip(1)
-                .Select(c => (result: c.result.FromParams, combiner: c.combiner))
-                .Aggregate(
-                    mappedChains[0].result.FromParams,
-                    (x, y) => x.Combine(y.result, y.combiner ?? throw new InvalidOperationException("Expecting combination logic.")));
-
-            return (
-                BuildMapResult.SimpleProp,
-                new [] 
-                { 
-                    new MappedProperty(
-                        new Accumulator(combinedChains),
-                        null,
-                        expression.Type) 
-                },
-                EmptyMappedTables
-            );
-        }
-
-        static (CombinationType? combiner, BuildMapResult type, MappedProperty result) BuildMapForOneAccumulatorBranch(BuildMapState state, bool moreThanOneBranch, Expression root, IEnumerable<string> chain, Expression fullExpression, CombinationType? combiner)
-        {
-            if (root is ConstantExpression)
-                return BuildMapForConstant(state, root, chain, combiner);
-
-            var rootParam = root as ParameterExpression;
-            if (rootParam == null)
-                throw new InvalidOperationException($"Invalid root param type: {root}.");
-
-            if (rootParam == state.ArgsObject)
-                return BuildMapForArgs(state, fullExpression, combiner);
-
-            if (rootParam != state.QueryObject)
-                throw new InvalidOperationException("Unable to understand mapping statement: " + fullExpression);
-
-            var pChain = chain.JoinString(".");
-            if (pChain == "")
-                throw new InvalidOperationException("You must provide a valid mapping with the Map(...) method.");
-
-            foreach (var property in state.WrappedSqlStatement.Tables)
+            void Init()
             {
-                var result = TryBuildMapForTableProperty(property, state, moreThanOneBranch, rootParam, pChain, fullExpression, combiner);
-                if (result.HasValue)
-                    return result.Value;
+                IsMap = false;
             }
 
-            // TODO: there is a third case where mapping expr is x => x.Outer (and Outer is {Inner: {Val: string}}
-            throw new InvalidOperationException("Unable to understand mapping statement: " + fullExpression);
-        }
-
-        static (CombinationType? combiner, BuildMapResult type, MappedProperty result) BuildMapForArgs(BuildMapState state, Expression fullExpression, CombinationType? combiner)
-        {
-            var result = QueryArgAccessor.Create(state.ArgsObject, fullExpression);
-            var paramName = state.Parameters.AddParam(result);
-
-            return (
-                combiner,
-                BuildMapResult.SimpleProp,
-                new MappedProperty(null, paramName, null, fullExpression.Type)
-            );
-        }
-
-        static (CombinationType? combiner, BuildMapResult type, MappedProperty result) BuildMapForConstant(BuildMapState state, Expression root, IEnumerable<string> chain, CombinationType? combiner)
-        {
-            var chainExpr = chain
-                .Aggregate(root, Expression.PropertyOrField);
-
-            var value = Expression
-                .Lambda<Func<object>>(
-                    Expression.Convert(
-                        chainExpr,
-                        typeof(object)))
-                .Compile()();
-
-            var paramName = state.Parameters.AddParam(value);
-            return (
-                combiner,
-                BuildMapResult.SimpleProp,
-                new MappedProperty(null, paramName, null, chainExpr.Type)
-            );
-        }
-
-        static Type GetSimplePropertyCellType(Expression simpleProperty, ParameterExpression queryRoot, int expectedChainLength)
-        {
-            var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(simpleProperty, allowOne: true, allowSelect: true);
-            if (!isPropertyChain)
+            public override Expression Visit(Expression node)
             {
-                throw new InvalidOperationException($"Cannot find data cell type for expression {simpleProperty}");
-            }
-
-            chain = chain.Enumerate();
-            if (chain.Count() != expectedChainLength)
-            {
-                throw new InvalidOperationException($"Cannot find data cell type for expression {simpleProperty}");
-            }
-
-            var (chainIsValid, type) = ReflectionUtils.GetTypeForPropertyChain(queryRoot.Type, chain);
-            if (!chainIsValid)
-            {
-                throw new InvalidOperationException($"Cannot find data cell type for expression {simpleProperty}");
+                // early out if most complex form has been found
+                if (IsMap)
+                    return node;
+                    
+                return base.Visit(node);
             }
             
-            return type;
-        }
-
-        static (CombinationType? combiner, BuildMapResult type, MappedProperty result)? TryBuildMapForTableProperty(IQueryTable property, BuildMapState state, bool moreThanOneBranch, ParameterExpression rootParam, string chain, Expression fullExpression, CombinationType? combiner)
-        {
-            // get property from one table (no query object)
-            if (property.Alias == SqlStatementConstants.RootObjectAlias && !chain.Contains("."))
-                return BuildMapForSimpleProperty(state, rootParam, chain, fullExpression, combiner);
-
-            if (chain == property.Alias)
+            protected override Expression VisitNew(NewExpression node)
             {
-                // cannot support (1 + new { ... })
-                if (moreThanOneBranch)
-                    throw new InvalidOperationException("Unable to understand mapping statement: " + fullExpression);
-
-                return BuildMapForTable(rootParam, chain, fullExpression, combiner);
+                if (node.Arguments.Count == 0)
+                    return base.VisitNew(node);
+                    
+                IsMap = true;
+                return node;
+            }
+            
+            protected override Expression VisitMemberInit(MemberInitExpression node)
+            {
+                IsMap = true;
+                return node;
             }
 
-            if (chain.StartsWith(property.Alias) && 
-                chain.Length >= (property.Alias.Length + 2) &&
-                chain[property.Alias.Length] == '.' &&
-                !chain.Substring(property.Alias.Length + 1).Contains('.'))
+            public static MappingType GetMappingType(MappedProperty[] properties, Expression expression, BuildMapState state)
+            {
+                if (properties.Length == 0)
+                    return MappingType.SimpleProp;
+
+                using (Instance)
+                {
+                    Instance.Visit(expression);
+                    if (Instance.IsMap)
+                        return MappingType.Map;
+                }
+
+                if (properties.Length != 1 || properties.Any(p => p.To != null))
+                {
+                    return ReflectionUtils.GetIEnumerableType(expression.Type) == null ?
+                        MappingType.SingleComplexProp :
+                        MappingType.MultiComplexProp;
+                }
                 
-                return BuildMapForTableProperty(state, rootParam, chain, fullExpression, combiner);
+                var fromParams = properties[0].FromParams
+                    .GetEnumerable1()
+                    .Select(x => Accumulator.AddRoot(x.paramRoot, x.param, state))
+                    .ToArray();
 
-            return null;
-        }
+                foreach (var table in state.WrappedSqlStatement.Tables)
+                {
+                    if (fromParams.Any(p => p == table.Alias))
+                    {
+                        return ReflectionUtils.GetIEnumerableType(expression.Type) == null ?
+                            MappingType.SingleComplexProp :
+                            MappingType.MultiComplexProp;
+                    }
+                }
 
-        static (CombinationType? combiner, BuildMapResult type, MappedProperty result) BuildMapForSimpleProperty(BuildMapState state, ParameterExpression rootParam, string chain, Expression fullExpression, CombinationType? combiner)
-        {
-            return (
-                combiner,
-                BuildMapResult.SimpleProp,
-                new MappedProperty(rootParam, chain, null, GetSimplePropertyCellType(fullExpression, state.QueryObject, 1))
-            );
-        }
-
-        static (CombinationType? combiner, BuildMapResult type, MappedProperty result) BuildMapForTable(ParameterExpression rootParam, string chain, Expression fullExpression, CombinationType? combiner)
-        {
-            var resultType = ReflectionUtils.GetIEnumerableType(fullExpression.Type) == null ?
-                BuildMapResult.SingleComplexProp :
-                BuildMapResult.MultiComplexProp;
-                
-            return (
-                combiner,
-                resultType,
-                new MappedProperty(rootParam, chain, null, fullExpression.Type)
-            );
-        }
-
-        static (CombinationType? combiner, BuildMapResult type, MappedProperty result) BuildMapForTableProperty(BuildMapState state, ParameterExpression rootParam, string chain, Expression fullExpression, CombinationType? combiner)
-        {
-            return (
-                combiner,
-                BuildMapResult.SimpleProp,
-                new MappedProperty(rootParam, chain, null, GetSimplePropertyCellType(fullExpression, state.QueryObject, 2))
-            );
+                return MappingType.SimpleProp;
+            }
         }
         
-        public enum BuildMapResult
+        /// <summary>
+        /// The type of mapping to be performed.
+        /// The results are ordered to hace the simplest mapping first, down to the most complex
+        /// </summary>
+        public enum MappingType
         {
-            Map = 1,
-            SimpleProp,
+            SimpleProp = 1,
             SingleComplexProp,
-            MultiComplexProp
+            MultiComplexProp,
+            Map,
         }
     }
 }

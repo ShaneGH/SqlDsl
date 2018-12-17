@@ -163,4 +163,17 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 person.ClassId == ClassId;
         }
     }
+
+    public class TableWithOneColumn : EqComparer
+    {
+        public string Value { get; set; }
+
+        public override int GetHashCode() => Value.GetHashCode();
+        public override bool Equals(object t)
+        {
+            var table = t as TableWithOneColumn;
+            return table != null && 
+                table.Value == Value;
+        }
+    }
 }

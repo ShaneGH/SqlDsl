@@ -1,3 +1,4 @@
+using SqlDsl.Mapper;
 using SqlDsl.Query;
 using SqlDsl.Utils;
 using System;
@@ -223,13 +224,13 @@ namespace SqlDsl.SqlBuilders
         /// <param name="parameters">A list of parameters which will be added to if a constant is found in the equalityStatement</param>
         public void SetWhere(ParameterExpression queryRoot, ParameterExpression args, Expression equality, ParamBuilder parameters)
         {
-            var oldParams = new ParamBuilder(parameters.Parameters.ToList());
-            var oldWhere = SqlBuilder.BuildCondition(queryRoot, args, Enumerable.Empty<(ParameterExpression, string)>(), equality, oldParams);
-
+            // Where = SqlBuilder.BuildCondition(queryRoot, args, Enumerable.Empty<(ParameterExpression, string)>(), equality, parameters);
+            // return;
 
             var stat = new SqlStatementParts.SqlStatement(this);
             var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRoot, args, stat);
-            var (_, wh, _) = Mapper.MapBuilder.BuildMapFromRoot(state, equality);
+
+            var (wh, _) = ComplexMapBuilder.BuildMap(state, equality);
             var where = wh.ToArray();
             if (where.Length != 1)
                 throw new InvalidOperationException($"Invalid WHERE statement: {equality}.");
@@ -243,8 +244,6 @@ namespace SqlDsl.SqlBuilders
 
             Where = ("", whereSql, queryObjectReferences);
 
-            CompareWheres(oldWhere, Where.Value);
-
             string param((ParameterExpression, string) x) => x.Item2;
 
             string table(string tableAndField)
@@ -252,17 +251,6 @@ namespace SqlDsl.SqlBuilders
                 var parts = tableAndField.Split('.');
                 return parts.Length > 1 ? parts[0] : null;
             }
-        }
-
-        [Obsolete("Test only for refactor")]
-        void CompareWheres((string setupSql, string sql, IEnumerable<string> queryObjectReferences) old, (string setupSql, string sql, IEnumerable<string> queryObjectReferences) @new)
-        {
-            if (old.setupSql != @new.setupSql)
-                throw new InvalidOperationException($"Old setupSql different from new:\nold:{old.setupSql}\nnew:{@new.setupSql}");
-            // if (old.sql != @new.sql)
-            //     throw new InvalidOperationException($"Old sql different from new:\nold:{old.sql}\nnew:{@new.sql}");
-            if (!Utils.EqualityComparers.ArrayComparer<string>.Instance.Equals(old.queryObjectReferences.ToArray(), @new.queryObjectReferences.ToArray()))
-                throw new InvalidOperationException($"Old queryObjectReferences different from new:\nold:{old.queryObjectReferences.JoinString(", ")}\nnew:{@new.queryObjectReferences.JoinString(", ")}");
         }
 
         /// <summary>

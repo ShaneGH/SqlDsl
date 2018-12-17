@@ -23,6 +23,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         public static readonly PersonClasses PersonClasses = new PersonClasses();
         public static readonly ClassTags ClassTags = new ClassTags();
         public static readonly Purchases Purchases = new Purchases();
+        public static readonly TablesWithOneColumn TablesWithOneColumn = new TablesWithOneColumn();
     }
 
     public static class InitData
@@ -56,7 +57,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 tags: Data.Tags,
                 personClasses: Data.PersonClasses,
                 classTags: Data.ClassTags,
-                purchases: Data.Purchases);
+                purchases: Data.Purchases,
+                tablesWithOneColumn: Data.TablesWithOneColumn);
 
         public static void InitWithData(
             IEnumerable<Person> people = null,
@@ -65,7 +67,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             IEnumerable<Class> classes = null,
             IEnumerable<ClassTag> classTags = null,
             IEnumerable<Tag> tags = null,
-            IEnumerable<Purchase> purchases = null)
+            IEnumerable<Purchase> purchases = null,
+            IEnumerable<TableWithOneColumn> tablesWithOneColumn = null)
         {
             var location = GetDbLocation();
             if (File.Exists(location)) File.Delete(location);
@@ -82,7 +85,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                     PopulatedTableSql(tags.OrEmpty(), paramaters),
                     PopulatedTableSql(personClasses.OrEmpty(), paramaters),
                     PopulatedTableSql(classTags.OrEmpty(), paramaters),
-                    PopulatedTableSql(purchases.OrEmpty(), paramaters)
+                    PopulatedTableSql(purchases.OrEmpty(), paramaters),
+                    PopulatedTableSql(tablesWithOneColumn.OrEmpty(), paramaters)
                 }.JoinString("\n");
                 
                 Console.WriteLine($" * Adding data");
@@ -341,6 +345,21 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             MaryPurchasedHerselfTennis,
             MaryPurchasedJohnArchery
         } as IEnumerable<Purchase>).GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+    
+    class TablesWithOneColumn : IEnumerable<TableWithOneColumn>
+    {
+        public readonly TableWithOneColumn Record = new TableWithOneColumn
+        {
+            Value = "The value"
+        };
+
+        public IEnumerator<TableWithOneColumn> GetEnumerator() => (new [] 
+        { 
+            Record
+        } as IEnumerable<TableWithOneColumn>).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

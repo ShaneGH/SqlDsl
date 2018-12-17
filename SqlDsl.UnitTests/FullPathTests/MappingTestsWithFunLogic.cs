@@ -208,6 +208,48 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1).First());
         }
 
+        public class TableWithOneColumnMapper1
+        {
+            public TableWithOneColumn Tab { get; set; }
+        }
+
+        [Test]
+        public async Task ReturnMultipleFromMap_With1Column_1()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<TableWithOneColumnMapper1>()
+                .From(x => x.Tab)
+                .Map(x => x.Tab)
+                .ToIEnumerableAsync(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(Data.TablesWithOneColumn, data);
+        }
+
+        public class TableWithOneColumnMapper2
+        {
+            public Person ThePerson { get; set; }
+            public IEnumerable<TableWithOneColumn> Tabs { get; set; }
+        }
+
+        [Test]
+        public void ReturnMultipleFromMap_With1Column_2()
+        {
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<TableWithOneColumnMapper2>()
+                .From(x => x.ThePerson)
+                .InnerJoin(q => q.Tabs).On((q, t) => q.ThePerson.Id == Data.People.John.Id)
+                .Where(q => q.ThePerson.Id == Data.People.John.Id)
+                .Map(x => x.Tabs)
+                .ToIEnumerable(Executor, logger: Logger)
+                .SelectMany(x => x);
+
+            // assert
+            CollectionAssert.AreEqual(Data.TablesWithOneColumn, data);
+        }
+
         class PreMapped 
         {
             public long ClassId;
@@ -469,6 +511,20 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, data.Count());
             Assert.AreEqual(77, data.First().Id);
             Assert.AreEqual(77, data.ElementAt(1).Id);
+        }
+
+        [Test]
+        public async Task SimpleMapWithAddition_PreservesOperatorPrecedence()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<Person>()
+                .From()
+                .Map(p => p.Id + 1 == Data.People.John.Id + 1)
+                .ToListAsync(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new [] {true, false}, data);
         }
 
         [Test]
