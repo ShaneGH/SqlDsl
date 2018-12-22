@@ -249,7 +249,7 @@ namespace SqlDsl.SqlBuilders
             string table(string tableAndField)
             {
                 var parts = tableAndField.Split('.');
-                return parts.Length > 1 ? parts[0] : null;
+                return parts.Length > 1 ? parts.Take(parts.Length - 1).JoinString(".") : null;
             }
         }
 
