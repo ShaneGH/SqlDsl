@@ -207,14 +207,14 @@ namespace SqlDsl.Utils
         }
             
         /// <summary>
-        /// A set of generic methods that can be used to represent a sql IN.
+        /// The sql IN method.
         /// </summary>
-        static readonly HashSet<MethodInfo> _In = new HashSet<MethodInfo>
-        {
-            // indexes are important in this hash set
-            GetMethod(() => Sql.In<object>(null, null)).GetGenericMethodDefinition(),
-            GetMethod(() => Enumerable.Contains<object>(null, null)).GetGenericMethodDefinition()
-        };
+        static readonly MethodInfo _In = GetMethod(() => Sql.In<object>(null, null)).GetGenericMethodDefinition();
+            
+        /// <summary>
+        /// The sql Contains (IN) method.
+        /// </summary>
+        static readonly MethodInfo _Contains = GetMethod(() => Enumerable.Contains<object>(null, null)).GetGenericMethodDefinition();
 
         /// <summary>
         /// If the input expression represents a call to Sql.In([inner expr]), Enumerable.Contains([inner expr])
@@ -227,13 +227,12 @@ namespace SqlDsl.Utils
                 return (false, null, null);
 
             var methodGeneric = method.Method.GetGenericMethodDefinition();
-            var methodIndex = _In.IndexOf(methodGeneric);
-            if (methodIndex == 0)
+            if (_In == methodGeneric)
             {
                 return (true, RemoveConvert(method.Arguments[0]), RemoveConvert(method.Arguments[1]));
             }
 
-            if (methodIndex == 1)
+            if (_Contains == methodGeneric)
             {
                 return (true, RemoveConvert(method.Arguments[1]), RemoveConvert(method.Arguments[0]));
             }
