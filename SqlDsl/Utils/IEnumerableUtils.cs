@@ -11,10 +11,13 @@ namespace SqlDsl.Utils
     public static class IEnumerableUtils
     {
         /// <summary>
-        /// Ensure that the input has been enumerated by testing whether it is a List<>, T[] or HashSet<T>.If not return a List<>.
+        /// Ensure that the input has been enumerated by testing whether it is a List<>, T[] or HashSet<T>. If not return an Array.
         /// </summary>
         public static IEnumerable<T> Enumerate<T>(this IEnumerable<T> xs) =>
-            xs is List<T> || xs is T[] || xs is HashSet<T> ? xs : xs.ToList();
+            xs == null || 
+            xs is List<T> || 
+            xs is T[] || 
+            xs is HashSet<T> ? xs : xs.ToArray();   // TODO: speed test on this -vs- TypeHashes.Contains(xs.GetType().GerIEnumerableType())
         
         /// <summary>
         /// Alias for string.Join(...)

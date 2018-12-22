@@ -47,11 +47,11 @@ namespace SqlDsl.ObjectBuilders
             if (enumerableType == null)
                 return builder;
 
-            // xs => (IEnumerable<T>)xs.ToArray()
+            // xs => (IEnumerable<T>)xs.Enumerate()
             return Expression.Lambda<Func<IEnumerable<T>, TCollection>>(
                 Expression.Convert(
                     Expression.Call(
-                        ReflectionUtils.GetMethod<IEnumerable<object>>(xs => xs.ToArray(), enumerableType),
+                        ReflectionUtils.GetMethod<IEnumerable<object>>(xs => xs.Enumerate(), enumerableType),
                         builder.Body),
                     builder.Body.Type),
                 builder.Parameters);
