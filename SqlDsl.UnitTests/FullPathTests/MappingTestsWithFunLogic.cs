@@ -805,5 +805,17 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             // assert would not provide much value and would be complex
         }
+
+        [Test]
+        [Ignore("This case")]
+        public void LeftJoinReturnsNull()
+        {
+        }
+
+        [Test]
+        [Ignore("This case")]
+        public void RightJoinReturnsNull()
+        {
+        }
     }
 }
