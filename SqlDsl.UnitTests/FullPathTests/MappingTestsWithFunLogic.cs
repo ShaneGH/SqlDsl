@@ -818,13 +818,48 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task CountAndGroup()
         {
             // arrange
             // act
             var data = await FullyJoinedQuery<object>()
                 .Map(p => new 
+                {
+                    person = p.ThePerson.Name,
+                    classes = p.TheClasses.Select(x => x.Id).Count()
+                })
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new [] 
+            {
+                new 
+                {
+                    person = Data.People.John.Name,
+                    classes = 2
+                },
+                new 
+                {
+                    person = Data.People.Mary.Name,
+                    classes = 1
+                }
+            }, data);
+        }
+
+        class CountAndGroupTest
+        {
+            public string person;
+            public int classes;
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task CountAndGroup_ToProperties()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Map(p => new CountAndGroupTest
                 {
                     person = p.ThePerson.Name,
                     classes = p.TheClasses.Select(x => x.Id).Count()

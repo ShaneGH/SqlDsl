@@ -219,9 +219,28 @@ namespace SqlDsl.Mapper
 
             string BuildColumn(string tab, ParameterExpression paramRoot, string parameter, bool isAggregate)
             {
+                //SqlStatementConstants.OpenFunctionAlias
+                var p = parameter.Split('.');
+                for (var i = 0; i < p.Length - 1; i++)
+                {
+                    if (p[i].StartsWith(SqlStatementConstants.OpenFunctionAlias))
+                        throw new NotSupportedException("You can only have one function per column reference.");
+                }
+
+                string func = null;
+                if (p[p.Length - 1].StartsWith(SqlStatementConstants.OpenFunctionAlias))
+                {
+                    func = p[p.Length - 1].Substring(SqlStatementConstants.OpenFunctionAlias.Length);
+                    parameter = p.Take(p.Length - 1).JoinString(".");
+                }
+                else
+                {
+                    parameter = p.JoinString(".");
+                }
+
                 if (tableIsFirstParamPart)
                 {
-                    var p = parameter.Split('.');
+                    p = parameter.Split('.');
                     if (p.Length > 1)
                     {
                         tab = p.Take(p.Length - 1).JoinString(".");
@@ -229,7 +248,10 @@ namespace SqlDsl.Mapper
                     }
                 }
 
-                return sqlFragmentBuilder.BuildSelectColumn(tab, AddRoot(paramRoot, parameter, isAggregate, state).param);
+                var col = sqlFragmentBuilder.BuildSelectColumn(tab, AddRoot(paramRoot, parameter, isAggregate, state).param);
+                return func == null ?
+                    col :
+                    $"{func}({col})";   // TODO: call func in sqlBuilder
             }
         }
 
