@@ -157,5 +157,24 @@ namespace SqlDsl.UnitTests.FullPathTests
                 new[] { Data.Classes.Archery.Name, Data.Classes.Tennis.Name, Data.Classes.Tennis.Name }, 
                 data.SelectMany(x => x.classes));
         }
+
+        [Test]
+        public async Task OrderBy_WithBinaryCondition()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<PersonClass>()
+                .From()
+                .OrderByDesc(x => x.PersonId + x.ClassId)
+                .ToArrayAsync(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new[] 
+            { 
+                Data.PersonClasses.JohnArchery,
+                Data.PersonClasses.MaryTennis,
+                Data.PersonClasses.JohnTennis
+            }, data);
+        }
     }
 }

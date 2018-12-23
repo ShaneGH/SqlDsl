@@ -90,19 +90,23 @@ namespace SqlDsl.SqlBuilders
             }
         }
 
-        private readonly List<(string column, OrderDirection direction)> Ordering = new List<(string, OrderDirection)>();
+        private readonly List<(string sql, OrderDirection direction)> Ordering = new List<(string, OrderDirection)>();
 
-        public void AddOrderBy(Expression orderBy, OrderDirection direction)
+        public void AddOrderBy(ParameterExpression queryRootParam, Expression orderBy, OrderDirection direction, ParamBuilder parameters)
         {
-            var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(orderBy, allowOne: true, allowSelect: true);
-            if (!isPropertyChain)
-                throw new InvalidOperationException($"Invalid order by statement: {orderBy}");
+            // TODO: use args in order by
 
-            var ch = chain.ToArray();
-            if (ch.Length != 2)
-                throw new InvalidOperationException($"Invalid order by statement: {orderBy}");
+            var (sql, _) = BuildCondition(queryRootParam, null, orderBy, parameters, "ORDER BY");
 
-            Ordering.Add((ch.JoinString("."), direction));
+            // var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(orderBy, allowOne: true, allowSelect: true);
+            // if (!isPropertyChain)
+            //     throw new InvalidOperationException($"Invalid order by statement: {orderBy}");
+
+            // var ch = chain.ToArray();
+            // if (ch.Length != 2)
+            //     throw new InvalidOperationException($"Invalid order by statement: {orderBy}");
+
+            Ordering.Add((sql, direction));
         }
 
         /// <summary>
@@ -387,7 +391,7 @@ namespace SqlDsl.SqlBuilders
             // build the order by part
             var orderBy = Ordering
                 // TODO: test in indivisual sql languages
-                .Select(o => SqlBuilder.WrapAlias(o.column) + (o.direction == OrderDirection.Ascending ? "" : " DESC"))
+                .Select(o => o.sql + (o.direction == OrderDirection.Ascending ? "" : " DESC"))
                 .JoinString(", ");
 
             if (orderBy.Length > 0)

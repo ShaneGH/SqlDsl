@@ -181,19 +181,19 @@ namespace SqlDsl.Query
             return Map(addedArgs);
         }
 
-        private readonly List<(Expression orderExpression, OrderDirection direction)> Ordering = new List<(Expression, OrderDirection)>();
+        private readonly List<(ParameterExpression queryRoot, Expression orderExpression, OrderDirection direction)> Ordering = new List<(ParameterExpression, Expression, OrderDirection)>();
 
         /// <inheritdoc />
         public IOrdererAgain<TArgs, TResult> OrderBy<T>(Expression<Func<TResult, T>> order)
         {
-            Ordering.Add((order.Body, OrderDirection.Ascending));
+            Ordering.Add((order.Parameters[0], order.Body, OrderDirection.Ascending));
             return this;
         }
         
         /// <inheritdoc />
         public IOrdererAgain<TArgs, TResult> OrderByDesc<T>(Expression<Func<TResult, T>> order)
         {
-            Ordering.Add((order.Body, OrderDirection.Descending));
+            Ordering.Add((order.Parameters[0], order.Body, OrderDirection.Descending));
             return this;
         }
 
