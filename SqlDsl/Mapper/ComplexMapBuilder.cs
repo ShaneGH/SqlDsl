@@ -107,7 +107,7 @@ namespace SqlDsl.Mapper
                     var (isCount, countExpr) = ReflectionUtils.IsCount(expr);
                     if (isCount)
                         // .One(...) is invisible as far as nextMap is concerned
-                        return BuildMapForCount(state, countExpr, nextMap, toPrefix);
+                        return BuildMapForCount(state, countExpr, nextMap, toPrefix).AddT(false);
                         
                     var oneExpr = ReflectionUtils.IsOne(exprMethod);
                     if (oneExpr != null)
@@ -341,7 +341,7 @@ namespace SqlDsl.Mapper
             string toPrefix = null, 
             bool isExprTip = false)
         {
-            var (properties, tables) = BuildMap(state, enumerable, nextMap, toPrefix, isExprTip);
+            var (properties, tables, _) = BuildMap(state, enumerable, nextMap, toPrefix, isExprTip);
             tables = tables.Enumerate();
 
             return (
@@ -350,11 +350,11 @@ namespace SqlDsl.Mapper
 
             MappedProperty WrapWithFunc(MappedProperty property)
             {
-                if (property.FromParams.Next.Any())
+                if (!property.FromParams.HasOneItemOnly)
                     throw BuildMappingError(enumerable);
 
                 return new MappedProperty(
-                    new Accumulator(property.FromParams.Map(Map)),
+                    property.FromParams.MapParam(Map),
                     property.To,
                     property.MappedPropertyType,
                     property.PropertySegmentConstructors);

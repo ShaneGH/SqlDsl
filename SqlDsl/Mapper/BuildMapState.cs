@@ -15,7 +15,13 @@ namespace SqlDsl.Mapper
         public readonly string PrimarySelectTable;
         public readonly ISqlFragmentBuilder SqlBuilder;
 
-        public BuildMapState(string primarySelectTable, ParamBuilder parameters, ParameterExpression queryObject, ParameterExpression argsObject, ISqlStatement wrappedSqlStatement, ISqlFragmentBuilder sqlBuilder)
+        public BuildMapState(
+            string primarySelectTable, 
+            ParamBuilder parameters, 
+            ParameterExpression queryObject, 
+            ParameterExpression argsObject, 
+            ISqlStatement wrappedSqlStatement, 
+            ISqlFragmentBuilder sqlBuilder)
         {
             Parameters = parameters;
             QueryObject = queryObject;

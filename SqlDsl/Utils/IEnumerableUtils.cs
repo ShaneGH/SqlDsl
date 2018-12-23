@@ -18,6 +18,20 @@ namespace SqlDsl.Utils
             xs is List<T> || 
             xs is T[] || 
             xs is HashSet<T> ? xs : xs.ToArray();   // TODO: speed test on this -vs- TypeHashes.Contains(xs.GetType().GerIEnumerableType())
+            
+        /// <summary>
+        /// Create hash set
+        /// </summary>
+        public static HashSet<T> ToHashSet<T>(this IEnumerable<T> xs) => new HashSet<T>(xs);
+            
+        /// <summary>
+        /// Add to hash set
+        /// </summary>
+        public static void AddRange<T>(this HashSet<T> xs, IEnumerable<T> items)
+        {
+            foreach (var i in items)
+                xs.Add(i);
+        }
         
         /// <summary>
         /// Alias for string.Join(...)

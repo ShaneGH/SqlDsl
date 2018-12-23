@@ -90,12 +90,12 @@ namespace SqlDsl.Mapper
                 
                 var fromParams = properties[0].FromParams
                     .GetEnumerable1()
-                    .Select(x => Accumulator.AddRoot(x.paramRoot, x.param, state))
+                    .Select(x => Accumulator.AddRoot(x.paramRoot, x.param, x.isAggregate, state))
                     .ToArray();
 
                 foreach (var table in state.WrappedSqlStatement.Tables)
                 {
-                    if (fromParams.Any(p => p == table.Alias))
+                    if (fromParams.Any(p => p.param == table.Alias))
                     {
                         return ReflectionUtils.GetIEnumerableType(expression.Type) == null ?
                             MappingType.SingleComplexProp :

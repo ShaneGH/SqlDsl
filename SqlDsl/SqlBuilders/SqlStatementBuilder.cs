@@ -90,20 +90,12 @@ namespace SqlDsl.SqlBuilders
             }
         }
 
-        private readonly List<(string sql, OrderDirection direction)> Ordering = new List<(string, OrderDirection)>();
+        private readonly List<(string sql, IEnumerable<string> queryObjectReferences, OrderDirection direction)> Ordering = new List<(string, IEnumerable<string>, OrderDirection)>();
 
         public void AddOrderBy(ParameterExpression queryRootParam, ParameterExpression argsParam, Expression orderBy, OrderDirection direction, ParamBuilder parameters)
         {
-<<<<<<< HEAD
-            var (sql, _) = BuildCondition(queryRootParam, argsParam, orderBy, parameters, "ORDER BY");
-            Ordering.Add((sql, direction));
-=======
-            var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(orderBy, allowOne: true, allowSelect: true);
-            if (!isPropertyChain)
-                throw new InvalidOperationException($"Invalid order by statement: {orderBy}");
-
-            Ordering.Add((chain.JoinString("."), direction));
->>>>>>> todos
+            var (sql, queryObjectReferences) = BuildCondition(queryRootParam, argsParam, orderBy, parameters, "ORDER BY");
+            Ordering.Add((sql, queryObjectReferences, direction));
         }
 
         /// <summary>
@@ -293,7 +285,7 @@ namespace SqlDsl.SqlBuilders
             string description)
         {
             var stat = new SqlStatementParts.SqlStatement(this);
-            var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRootParam, queryArgsParam, stat);
+            var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRootParam, queryArgsParam, stat, SqlBuilder);
 
             var (mp, _) = ComplexMapBuilder.BuildMap(state, conditionStatement);
             var map = mp.ToArray();
@@ -309,7 +301,7 @@ namespace SqlDsl.SqlBuilders
 
             return (mapSql, queryObjectReferences);
 
-            string param((ParameterExpression, string) x) => x.Item2;
+            string param((ParameterExpression, string, bool) x) => x.Item2;
 
             string table(string tableAndField)
             {
@@ -459,14 +451,30 @@ namespace SqlDsl.SqlBuilders
                 // Get row id from each join
                 foreach (var join in _Joins)
                 {
-                    yield return (SqlStatementConstants.RowIdName, join.alias, $"{join.alias}.{SqlStatementConstants.RowIdName}");
+                    yield return (
+                        SqlStatementConstants.RowIdName, 
+                        join.alias, 
+                        $"{join.alias}.{SqlStatementConstants.RowIdName}");
                 }
             }
             else
             {
+                // looking at removing row id from joined tables
+                // where all properties are aggregated (question: should it be all properties?)
+                // var selectTables = _Select
+                //     .SelectMany(s => s.representsColumns)
+                //     .Where(s => !s.isAggregate)
+                //     .SelectMany(s => InnerQuery.Value.statement.SelectColumns[s.column].ReferencesColumns)
+                //     .Where(s => !s.isAggregate)
+                //     .Select(s => s.table)
+                //     .ToHashSet();
+
                 // if there is an inner query, all columns will come from it
                 foreach (var table in InnerQuery.Value.statement.Tables)
                 {
+                    // if (!selectTables.Contains(table.Alias))
+                    //     break;
+
                     // the only row id will be [inner query alias].[##rowid]
                     yield return (
                         InnerQuery.Value.statement.SelectColumns[table.RowNumberColumnIndex].Alias, 
@@ -489,6 +497,13 @@ namespace SqlDsl.SqlBuilders
         {
             var tables = new HashSet<string>(requiredTableAliases
                 .SelectMany(t => GetLineage(t, EmptyStrings)));
+
+            if (Where != null)
+                tables.AddRange(Where.Value.queryObjectReferences);
+            foreach (var j in Joins)
+                tables.AddRange(j.queryObjectReferences);
+            foreach (var o in Ordering)
+                tables.AddRange(o.queryObjectReferences);
 
             for (var i = _Joins.Count - 1; i >= 0; i--)
             {

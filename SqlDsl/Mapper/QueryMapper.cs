@@ -72,6 +72,7 @@ namespace SqlDsl.Mapper
                         throw new InvalidOperationException($"Expected one property, but got {properties.Count()}.");
                     }
 
+                    //static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, Accumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
                     var p = properties.First();
                     return ToSqlBuilder(sqlFragmentBuilder, p.FromParams, p.MappedPropertyType, wrappedBuilder, wrappedStatement, state)
                         .CompileSimple<TArgs, TMapped>(mutableParameters.Parameters, SqlStatementConstants.SingleColumnAlias);
@@ -165,34 +166,16 @@ namespace SqlDsl.Mapper
             return (innerQueryAlias, colParts.JoinString("."));
         }
 
-        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, Accumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
+        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IAccumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var builder = new SqlStatementBuilder(sqlFragmentBuilder);
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
 
-            var referencedColumns = new List<(string, string, bool)>();
-            string sql = null;
-            string Add(string sqlPart, ExpressionType combiner, bool isAggregate)
-            {
-                if (!sqlPart.StartsWith("@"))
-                {
-                    referencedColumns.Add((wrappedStatement.UniqueAlias, sqlPart, isAggregate));
-                    sqlPart = sqlFragmentBuilder.BuildSelectColumn(
-                        wrappedStatement.UniqueAlias,
-                        sqlPart);
-                }
-
-                return sql == null ?
-                    sqlPart :
-                    sqlFragmentBuilder.Concat(sql, sqlPart, combiner);
-            }
-
-            // second arg does not matter, as sql is null
-            sql = Add(property.First.param, ExpressionType.ModuloAssign, property.First.isAggregate);
-            foreach (var part in property.Next)
-            {
-                sql = Add(part.element.param, part.combiner, part.element.isAggregate);
-            }
+            var referencedColumns = property
+                .GetEnumerable1()
+                .Where(x => !x.param.StartsWith("@"))
+                .Select(x => (wrappedStatement.UniqueAlias, Accumulator.AddRoot(x.paramRoot, x.param, x.isAggregate, state).param, x.isAggregate))
+                .ToArray();
 
             var sql = property.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias);
             builder.AddSelectColumn(

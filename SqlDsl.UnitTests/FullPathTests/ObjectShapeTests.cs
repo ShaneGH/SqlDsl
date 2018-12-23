@@ -24,6 +24,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             public Person ThePerson { get; set; }
             public List<PersonClass> ThePersonClasses { get; set; }
+            public List<PersonsData> ThePersonsData { get; set; }
             public List<Class> TheClasses { get; set; }
             public List<ClassTag> TheClassTags { get; set; }
             public List<Tag> TheTags { get; set; }
@@ -44,6 +45,8 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .LeftJoin<Tag>(q => q.TheTags)
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id)
                 .LeftJoin<Purchase>(q => q.ThePurchasesByMe)
+                    .On((q, t) => q.ThePerson.Id == t.PersonId)
+                .LeftJoin<PersonsData>(q => q.ThePersonsData)
                     .On((q, t) => q.ThePerson.Id == t.PersonId);
                 // .LeftJoin<Purchase>(q => q.PurchasesByMeForMyClasses)
                 //     .On((q, t) => q.ThePerson.Id == t.PersonId && q.Classes.One().Id == t.ClassId);
@@ -608,6 +611,49 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(new[]{2, 2}, data[1].tags);
         }
 
+        [Test]
+        public async Task FullyJoinedQuery_WhereTableNotInSelect_MapsCorrectly()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Where(x => x.ThePersonsData.One().PersonId == 555L)
+                .Map(x => new
+                {
+                    person = x.ThePerson.Name
+                })
+                .ToListAsync(Executor);
+
+            // assert
+            Assert.AreEqual(0, data.Count);
+
+            // TODO: this test verifies that if a column is present in the WHERE
+            // statement, but it (or none of it's sibling columns) is not present in the 
+            // map, then the SqlStatementBuilder.FilterUnusedTables does not remove it
+            // from the query.
+
+            // Need also to write a test for the JOIN ON (...) part, but first,
+            // will need to suport multi dimentional joins. This is because single 
+            // dimentional joins are handled correctly for a different reason
+        }
+
+        [Test]
+        public async Task FullyJoinedQuery_OrderByTableNotInSelect_MapsCorrectly()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .OrderBy(x => x.ThePersonsData.One().PersonId)
+                .Map(x => new
+                {
+                    person = x.ThePerson.Name
+                })
+                .ToListAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count);
+        }
+
         /// <summary>
         /// This is meant as a smoke test for other things
         /// </summary>
@@ -617,6 +663,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await FullyJoinedQuery()
+                .Where(x => x.ThePersonsData.One().PersonId == 555L)
                 .Map(x => new
                 {
                     person = x.ThePerson.Name,
@@ -629,7 +676,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .ToListAsync(Executor);
 
             // assert
-            Assert.Pass();
+            //Assert.Fail();
         }
     }
 }
