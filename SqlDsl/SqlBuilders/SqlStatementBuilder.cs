@@ -92,20 +92,9 @@ namespace SqlDsl.SqlBuilders
 
         private readonly List<(string sql, OrderDirection direction)> Ordering = new List<(string, OrderDirection)>();
 
-        public void AddOrderBy(ParameterExpression queryRootParam, Expression orderBy, OrderDirection direction, ParamBuilder parameters)
+        public void AddOrderBy(ParameterExpression queryRootParam, ParameterExpression argsParam, Expression orderBy, OrderDirection direction, ParamBuilder parameters)
         {
-            // TODO: use args in order by
-
-            var (sql, _) = BuildCondition(queryRootParam, null, orderBy, parameters, "ORDER BY");
-
-            // var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(orderBy, allowOne: true, allowSelect: true);
-            // if (!isPropertyChain)
-            //     throw new InvalidOperationException($"Invalid order by statement: {orderBy}");
-
-            // var ch = chain.ToArray();
-            // if (ch.Length != 2)
-            //     throw new InvalidOperationException($"Invalid order by statement: {orderBy}");
-
+            var (sql, _) = BuildCondition(queryRootParam, argsParam, orderBy, parameters, "ORDER BY");
             Ordering.Add((sql, direction));
         }
 

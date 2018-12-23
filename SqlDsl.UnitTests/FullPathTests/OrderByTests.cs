@@ -176,5 +176,19 @@ namespace SqlDsl.UnitTests.FullPathTests
                 Data.PersonClasses.JohnTennis
             }, data);
         }
+
+        [Test]
+        public async Task OrderBy_WithArgsCondition()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<int, PersonClass>()
+                .From()
+                .OrderByDesc((x, a) => a)
+                .ToArrayAsync(Executor, 7, logger: Logger);
+
+            // assert
+            Assert.AreEqual(3, data.Length);
+        }
     }
 }

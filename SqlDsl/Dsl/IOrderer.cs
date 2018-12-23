@@ -51,6 +51,16 @@ namespace SqlDsl.Dsl
         /// Order by a property (descending)
         /// </summary>
         IOrdererAgain<TArgs, TResult> OrderByDesc<T>(Expression<Func<TResult, T>> order);
+        
+        /// <summary>
+        /// Order by a property (ascending)
+        /// </summary>
+        IOrdererAgain<TArgs, TResult> OrderBy<T>(Expression<Func<TResult, TArgs, T>> order);
+        
+        /// <summary>
+        /// Order by a property (descending)
+        /// </summary>
+        IOrdererAgain<TArgs, TResult> OrderByDesc<T>(Expression<Func<TResult, TArgs, T>> order);
     }
 
     /// <summary>
@@ -67,5 +77,15 @@ namespace SqlDsl.Dsl
         /// Order by a property (descending)
         /// </summary>
         IOrdererAgain<TArgs, TResult> ThenByDesc<T>(Expression<Func<TResult, T>> order);
+        
+        /// <summary>
+        /// Order by a property (ascending)
+        /// </summary>
+        IOrdererAgain<TArgs, TResult> ThenBy<T>(Expression<Func<TResult, TArgs, T>> order);
+        
+        /// <summary>
+        /// Order by a property (descending)
+        /// </summary>
+        IOrdererAgain<TArgs, TResult> ThenByDesc<T>(Expression<Func<TResult, TArgs, T>> order);
     }
 }

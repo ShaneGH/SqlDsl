@@ -181,19 +181,33 @@ namespace SqlDsl.Query
             return Map(addedArgs);
         }
 
-        private readonly List<(ParameterExpression queryRoot, Expression orderExpression, OrderDirection direction)> Ordering = new List<(ParameterExpression, Expression, OrderDirection)>();
+        private readonly List<(ParameterExpression queryRoot, ParameterExpression args, Expression orderExpression, OrderDirection direction)> Ordering = new List<(ParameterExpression, ParameterExpression, Expression, OrderDirection)>();
+
+        /// <inheritdoc />
+        public IOrdererAgain<TArgs, TResult> OrderBy<T>(Expression<Func<TResult, TArgs, T>> order)
+        {
+            Ordering.Add((order.Parameters[0], order.Parameters[1], order.Body, OrderDirection.Ascending));
+            return this;
+        }
+        
+        /// <inheritdoc />
+        public IOrdererAgain<TArgs, TResult> OrderByDesc<T>(Expression<Func<TResult, TArgs, T>> order)
+        {
+            Ordering.Add((order.Parameters[0], order.Parameters[1], order.Body, OrderDirection.Descending));
+            return this;
+        }
 
         /// <inheritdoc />
         public IOrdererAgain<TArgs, TResult> OrderBy<T>(Expression<Func<TResult, T>> order)
         {
-            Ordering.Add((order.Parameters[0], order.Body, OrderDirection.Ascending));
+            Ordering.Add((order.Parameters[0], null, order.Body, OrderDirection.Ascending));
             return this;
         }
         
         /// <inheritdoc />
         public IOrdererAgain<TArgs, TResult> OrderByDesc<T>(Expression<Func<TResult, T>> order)
         {
-            Ordering.Add((order.Parameters[0], order.Body, OrderDirection.Descending));
+            Ordering.Add((order.Parameters[0], null, order.Body, OrderDirection.Descending));
             return this;
         }
 
@@ -202,5 +216,11 @@ namespace SqlDsl.Query
         
         /// <inheritdoc />
         public IOrdererAgain<TArgs, TResult> ThenByDesc<T>(Expression<Func<TResult, T>> order) => OrderByDesc(order);
+
+        /// <inheritdoc />
+        public IOrdererAgain<TArgs, TResult> ThenBy<T>(Expression<Func<TResult, TArgs, T>> order) => OrderBy(order);
+        
+        /// <inheritdoc />
+        public IOrdererAgain<TArgs, TResult> ThenByDesc<T>(Expression<Func<TResult, TArgs, T>> order) => OrderByDesc(order);
     }
 }

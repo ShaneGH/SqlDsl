@@ -113,8 +113,8 @@ namespace SqlDsl.Query
                 builder.SetWhere(WhereClause.Value.queryRoot, WhereClause.Value.args, WhereClause.Value.where, param);
 
             // add order by if specified
-            foreach (var (queryRoot, orderExpression, direction) in Ordering)
-                builder.AddOrderBy(queryRoot, orderExpression, direction, param);
+            foreach (var (queryRoot, args, orderExpression, direction) in Ordering)
+                builder.AddOrderBy(queryRoot, args, orderExpression, direction, param);
 
             return (builder, param.Parameters);
         }
