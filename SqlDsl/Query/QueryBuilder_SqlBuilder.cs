@@ -78,6 +78,20 @@ namespace SqlDsl.Query
                 .Concat(ColumnsOf(PrimaryTableMember.Value.type)
                     .Select(y => (table: PrimaryTableMember.Value.name, column: y)));
 
+            // add each join
+            foreach (var join in Joins)
+            {
+                builder.AddJoin(
+                    join.JoinType, 
+                    join.TableName, 
+                    join.JoinExpression.rootObjectParam,
+                    join.JoinExpression.queryArgs,
+                    join.JoinExpression.joinParam,
+                    join.JoinExpression.joinExpression,
+                    param,
+                    join.JoinedTableProperty.name);
+            }
+
             // Filter select columns if specified
             if (filterSelectCols != null)
             {
@@ -92,20 +106,6 @@ namespace SqlDsl.Query
             {
                 var alias = col.table == SqlStatementConstants.RootObjectAlias ? col.column.name : $"{col.table}.{col.column.name}";
                 builder.AddSelectColumn(col.column.dataType, SqlFragmentBuilder.BuildSelectColumn(col.table, col.column.name), alias, new [] {(col.table, col.column.name)});
-            }
-
-            // add each join
-            foreach (var join in Joins)
-            {
-                builder.AddJoin(
-                    join.JoinType, 
-                    join.TableName, 
-                    join.JoinExpression.rootObjectParam,
-                    join.JoinExpression.queryArgs,
-                    join.JoinExpression.joinParam,
-                    join.JoinExpression.joinExpression,
-                    param,
-                    join.JoinedTableProperty.name);
             }
 
             // add a where clause if specified

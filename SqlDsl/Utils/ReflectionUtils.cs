@@ -448,6 +448,8 @@ namespace SqlDsl.Utils
 
                     return (true, new Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>((e, Enumerable.Empty<string>(), e)));
 
+                case ExpressionType.AndAlso:
+                case ExpressionType.OrElse:
                 case ExpressionType.Add:
                 case ExpressionType.Subtract:
                 case ExpressionType.Multiply:

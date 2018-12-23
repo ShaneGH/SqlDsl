@@ -228,20 +228,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public void Select_JoinComparrisonComparesComplexObjects_ThrowsError()
-        {
-            // arrange
-            // act
-            // assert
-            Assert.Throws(typeof(NotImplementedException), () =>
-                Sql.Query.Sqlite<WhereErrorQueryClass>()
-                    .From(result => result.Person1)
-                    .InnerJoin(result => result.Person2)
-                        .On((q, p) => q.Person1 == p)
-                    .Compile());
-        }
-
-        [Test]
         public void Select_WhereComparrisonComparesComplexObjects_ThrowsError()
         {
             // arrange

@@ -25,7 +25,7 @@ namespace SqlDsl
             RootObjectPropertyGraph propertyGraph)
         {
             SqlParts = sql;
-            Parameters = RewriteParameters(sql.WhereSql, parameters);
+            Parameters = RewriteParameters(sql.Assemble(), parameters);
             SelectColumns = selectColumns;
             PropertyGraph = propertyGraph;
         }
@@ -120,9 +120,7 @@ namespace SqlDsl
 
         public string BuildSql(TArgs args)
         {
-            return RewriteSql(args, SqlParts.BeforeWhereSql) + 
-                RewriteSql(args, SqlParts.WhereSql) + 
-                RewriteSql(args, SqlParts.AfterWhereSql);
+            return SqlParts.Assemble(x => RewriteSql(args, x));
         }
 
         public string RewriteSql(TArgs args, string sql)

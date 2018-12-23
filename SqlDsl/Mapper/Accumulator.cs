@@ -150,6 +150,12 @@ namespace SqlDsl.Mapper
         {
             switch (combine)
             {
+                case CombinationType.And:
+                    return sqlFragmentBuilder.BuildAndCondition(l, r);
+                    
+                case CombinationType.Or:
+                    return sqlFragmentBuilder.BuildOrCondition(l, r);
+                    
                 case CombinationType.Add:
                     return sqlFragmentBuilder.BuildAddCondition(l, r);
 
@@ -271,7 +277,9 @@ namespace SqlDsl.Mapper
         GreaterThan,
         GreaterThanOrEqual,
         LessThan,
-        LessThanOrEqual
+        LessThanOrEqual,
+        And,
+        Or
     }
 
     public static class CombinationTypeUtils
@@ -280,6 +288,10 @@ namespace SqlDsl.Mapper
         {
             switch (e)
             {
+                case ExpressionType.AndAlso:
+                    return CombinationType.And;
+                case ExpressionType.OrElse:
+                    return CombinationType.Or;
                 case ExpressionType.Add:
                     return CombinationType.Add;
                 case ExpressionType.Subtract:

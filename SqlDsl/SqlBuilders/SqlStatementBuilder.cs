@@ -116,6 +116,44 @@ namespace SqlDsl.SqlBuilders
         readonly List<(string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences)> _Joins = new List<(string, string, string, IEnumerable<string>)>();
         public IEnumerable<(string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences)> Joins => _Joins.Skip(0);
 
+        class ParameterReplacer : ExpressionVisitor, IDisposable
+        {
+            ParameterExpression Parameter;
+            Expression Replacement;
+
+            private ParameterReplacer()
+            {
+            }
+
+            void Init(ParameterExpression parameter, Expression replacement)
+            {
+                Parameter = parameter;
+                Replacement = replacement;
+            }
+
+            protected override Expression VisitParameter(ParameterExpression node)
+            {
+                if (node != Parameter)
+                    return base.VisitParameter(node);
+
+                return Replacement;
+            }
+
+            public void Dispose() => Init(null, null);
+
+            [ThreadStatic]
+            static readonly ParameterReplacer Instance = new ParameterReplacer();
+
+            public static Expression ReplaceParameter(Expression expr, ParameterExpression parameter, Expression replacement)
+            {
+                using (Instance)
+                {
+                    Instance.Init(parameter, replacement);
+                    return Instance.Visit(expr);
+                }
+            }
+        }
+
         /// <summary>
         /// Add a JOIN to the query
         /// </summary>
@@ -136,32 +174,50 @@ namespace SqlDsl.SqlBuilders
             ParamBuilder parameters, 
             string joinTableAlias)
         {
-            var condition = SqlBuilder.BuildCondition(
-                queryRootParam, 
-                queryArgsParam,
-                new[]{ (joinTableParam, joinTableAlias) }, 
-                equalityStatement, 
-                parameters);
+            // convert (q, j) => q.Table1.Id == j.Table1Id
+            // to
+            // q => q.Table1.Id == q.Table2.One().Table1Id
+            var joinTableProp = joinTableAlias
+                .Split('.')
+                .Aggregate(
+                    queryRootParam as Expression,
+                    AddJoinProperty);
+            
+            equalityStatement = ParameterReplacer.ReplaceParameter(equalityStatement, joinTableParam, joinTableProp);
+            var (sql, queryObjectReferences) = BuildCondition(queryRootParam, queryArgsParam, equalityStatement, parameters, "JOIN ON");
+            queryObjectReferences = queryObjectReferences.Where(x => x != joinTableAlias);
 
             // if there are no query object references, add a reference to
             // the root (SELECT) object
             // this can happen if join condition is like "... ON x.Val = 1" 
-            var queryObjectReferences = condition.queryObjectReferences.Enumerate();
+            queryObjectReferences = queryObjectReferences.Enumerate();
             if (!queryObjectReferences.Any())
             {
                 queryObjectReferences = new [] { PrimaryTableAlias };
             }
 
-            var join = BuildJoin(joinType, joinTable, condition.sql, joinTableAlias);
+            var join = BuildJoin(joinType, joinTable, sql, joinTableAlias);
 
             _Joins.Add((
                 joinTableAlias, 
                 join.sql, 
                 // combine all setup sql statements
-                new [] { condition.setupSql, join.setupSql }
-                    .RemoveNullOrEmpty()
-                    .JoinString(";\n"),
-                queryObjectReferences));
+                join.setupSql,
+                queryObjectReferences.Where(r => r != joinTableAlias)));
+
+            Expression AddJoinProperty(Expression rootExpression, string property)
+            {
+                Expression rawProp = Expression.PropertyOrField(rootExpression, property);
+                var enumerableType = ReflectionUtils.GetIEnumerableType(rawProp.Type);
+                if (enumerableType != null)
+                {
+                    rawProp = Expression.Call(
+                        ReflectionUtils.GetMethod(() => new string[0].One(), enumerableType),
+                        rawProp);
+                }
+
+                return rawProp;
+            }
         }
 
         /// <summary>
@@ -224,25 +280,33 @@ namespace SqlDsl.SqlBuilders
         /// <param name="parameters">A list of parameters which will be added to if a constant is found in the equalityStatement</param>
         public void SetWhere(ParameterExpression queryRoot, ParameterExpression args, Expression equality, ParamBuilder parameters)
         {
-            // Where = SqlBuilder.BuildCondition(queryRoot, args, Enumerable.Empty<(ParameterExpression, string)>(), equality, parameters);
-            // return;
+            var (whereSql, queryObjectReferences) = BuildCondition(queryRoot, args, equality, parameters, "WHERE");
+            Where = ("", whereSql, queryObjectReferences);
+        }
 
+        (string sql, IEnumerable<string> queryObjectReferences) BuildCondition(
+            ParameterExpression queryRootParam, 
+            ParameterExpression queryArgsParam,
+            Expression conditionStatement, 
+            ParamBuilder parameters,
+            string description)
+        {
             var stat = new SqlStatementParts.SqlStatement(this);
-            var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRoot, args, stat);
+            var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRootParam, queryArgsParam, stat);
 
-            var (wh, _) = ComplexMapBuilder.BuildMap(state, equality);
-            var where = wh.ToArray();
-            if (where.Length != 1)
-                throw new InvalidOperationException($"Invalid WHERE statement: {equality}.");
+            var (mp, _) = ComplexMapBuilder.BuildMap(state, conditionStatement);
+            var map = mp.ToArray();
+            if (map.Length != 1)
+                throw new InvalidOperationException($"Invalid {description} condition: {conditionStatement}.");
 
-            var whereSql = where[0].FromParams.BuildFromString(state, SqlBuilder);
-            var queryObjectReferences = where[0].FromParams
+            var mapSql = map[0].FromParams.BuildFromString(state, SqlBuilder);
+            var queryObjectReferences = map[0].FromParams
                 .GetEnumerable1()
                 .Select(param)
                 .Select(table)
                 .RemoveNulls();
 
-            Where = ("", whereSql, queryObjectReferences);
+            return (mapSql, queryObjectReferences);
 
             string param((ParameterExpression, string) x) => x.Item2;
 

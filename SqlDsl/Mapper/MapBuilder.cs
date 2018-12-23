@@ -40,7 +40,7 @@ namespace SqlDsl.Mapper
 
             public override Expression Visit(Expression node)
             {
-                // early out if most complex form has been found
+                // early out if map has been found
                 if (IsMap)
                     return node;
                     

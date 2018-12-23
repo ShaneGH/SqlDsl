@@ -19,6 +19,10 @@ namespace SqlDsl.SqlBuilders
         {
             switch (concatType)
             {
+                case CombinationType.And:
+                    return builder.BuildAndCondition(l, r);
+                case CombinationType.Or:
+                    return builder.BuildOrCondition(l, r);
                 case CombinationType.Add:
                     return builder.BuildAddCondition(l, r);
                 case CombinationType.Subtract:

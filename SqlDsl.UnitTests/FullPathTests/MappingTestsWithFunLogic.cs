@@ -658,6 +658,8 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        [TestCase(ExpressionType.AndAlso, 2L, true, typeof(bool), Ignore = "Requires separate test")]
+        [TestCase(ExpressionType.OrElse, 2L, 3L, typeof(long), Ignore = "Requires separate test")]
         [TestCase(ExpressionType.Add, 2L, 3L, typeof(long))]
         [TestCase(ExpressionType.Subtract, 2L, -1L, typeof(long))]
         [TestCase(ExpressionType.Multiply, 2L, 2L, typeof(long))]
@@ -678,6 +680,8 @@ namespace SqlDsl.UnitTests.FullPathTests
         static long Add(long x) => x + x;
 
         [Test]
+        [TestCase(ExpressionType.AndAlso, 3L, true, false, Ignore = "Requires separate test")]
+        [TestCase(ExpressionType.OrElse, 3L, true, false, Ignore = "Requires separate test")]
         [TestCase(ExpressionType.Add, 3L, true, false)]
         [TestCase(ExpressionType.Subtract, -1L, true, false)]
         [TestCase(ExpressionType.Multiply, 2L, true, false)]
@@ -719,6 +723,8 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        [TestCase(ExpressionType.AndAlso, 3L, Ignore = "Requires separate test")]
+        [TestCase(ExpressionType.OrElse, 3L, Ignore = "Requires separate test")]
         [TestCase(ExpressionType.Add, 3L)]
         [TestCase(ExpressionType.Subtract, -1L)]
         [TestCase(ExpressionType.Multiply, 2L)]
@@ -769,6 +775,8 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         [Test]
         [Ignore("Waiting on OrderBy to use mapper instead of condition builder")]
+        [TestCase(ExpressionType.AndAlso, 1L, Ignore = "Requires separate test")]
+        [TestCase(ExpressionType.OrElse, 1L, Ignore = "Requires separate test")]
         [TestCase(ExpressionType.Add, 1L)]
         [TestCase(ExpressionType.Subtract, 1L)]
         [TestCase(ExpressionType.Multiply, 1L)]

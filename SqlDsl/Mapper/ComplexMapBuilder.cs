@@ -61,6 +61,8 @@ namespace SqlDsl.Mapper
                         false
                     );
                     
+                case ExpressionType.AndAlso:
+                case ExpressionType.OrElse:
                 case ExpressionType.Add:
                 case ExpressionType.Subtract:
                 case ExpressionType.Multiply:
