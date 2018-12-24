@@ -57,8 +57,8 @@ namespace SqlDsl.Mapper
                         .SelectMany(x => x.ReferencesColumns.Select(y => y.table))
                         .Concat(tables.Select(t => t.From));
 
-                    wrappedBuilder.FilterUnusedTables(requiredPropAliases);
-                    wrappedStatement = new SqlStatement(wrappedBuilder);
+                    // wrappedBuilder.FilterUnusedTables(requiredPropAliases);
+                    // wrappedStatement = new SqlStatement(wrappedBuilder);
 
                     if (resultType == MapBuilder.MappingType.Map)
                         return ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state)

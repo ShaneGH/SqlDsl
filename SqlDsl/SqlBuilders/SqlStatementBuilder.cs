@@ -245,12 +245,12 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// A list of columns in the SELECT statement
         /// </summary>
-        readonly List<(Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] argConstructors)> _Select = new List<(Type, string, string, (string, string, string)[], ConstructorInfo[])>();
+        readonly List<SelectColumn> _Select = new List<SelectColumn>();
 
         /// <summary>
         /// A list of columns in the SELECT statement
         /// </summary>
-        public IEnumerable<(Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] argConstructors)> Select => _Select.Skip(0);
+        public IEnumerable<SelectColumn> Select => _Select.Skip(0);
 
         private static readonly ConstructorInfo[] EmptyConstructorInfo = new ConstructorInfo[0];
 
@@ -258,7 +258,7 @@ namespace SqlDsl.SqlBuilders
         /// Add a column to the SELECT statement
         /// </summary>
         public void AddSelectColumn(Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] argConstructors = null) =>
-            _Select.Add((cellDataType, selectCode, alias ?? throw new ArgumentNullException(nameof(alias)), representsColumns, argConstructors ?? EmptyConstructorInfo));
+            _Select.Add(new SelectColumn(cellDataType, selectCode, alias ?? throw new ArgumentNullException(nameof(alias)), representsColumns, argConstructors ?? EmptyConstructorInfo));
 
         /// <summary>
         /// The WHERE statement, if necessary
@@ -331,7 +331,7 @@ namespace SqlDsl.SqlBuilders
 
             // build SELECT columns (cols and row ids)
             var select = GetAllSelectColumns()
-                .Select(s => SqlBuilder.AddAliasColumn(s.selectCode, s.alias))
+                .Select(s => SqlBuilder.AddAliasColumn(s.col.SelectCode, s.col.Alias))
                 .Enumerate();
 
             // add placeholder in case no SELECT columns were specified
@@ -368,12 +368,12 @@ namespace SqlDsl.SqlBuilders
 
         string BuildGroupByStatement(string prefix)
         {
-            if (GetAllSelectColumns().All(cs => cs.representsColumns.All(c => c.aggregatedToTable == null)))
+            if (GetAllSelectColumns().All(cs => cs.col.RepresentsColumns.All(c => c.aggregatedToTable == null)))
                 return "";
 
             var output = new List<string>(16);
             foreach (var col in GetAllSelectColumns()
-                .SelectMany(cs => cs.representsColumns)
+                .SelectMany(cs => cs.col.RepresentsColumns)
                 .Where(c => c.aggregatedToTable == null))
             {
                 output.Add(SqlBuilder.BuildSelectColumn(col.table, col.column));
@@ -444,7 +444,7 @@ namespace SqlDsl.SqlBuilders
             {
                 // Get row id from the SELECT
                 var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? 
-                    null : 
+                    SqlStatementConstants.RowIdName : 
                     $"{PrimaryTableAlias}.{SqlStatementConstants.RowIdName}";
 
                 yield return (SqlStatementConstants.RowIdName, PrimaryTableAlias, ptAlias);
@@ -460,32 +460,20 @@ namespace SqlDsl.SqlBuilders
             }
             else
             {
-                // var selectTables = _Select
-                //     .SelectMany(s => s.representsColumns)
-                //     .Select(s => s.aggregatedToTable ?? RemoveLastPart(s.column))
-                //     .RemoveNulls()
-                //     .ToHashSet();
-
                 // if there is an inner query, all columns will come from it
                 foreach (var table in InnerQuery.Value.statement.Tables)
                 {
-                    // if (selectTables.Contains(table.Alias))
-                    // {
-                        // the only row id will be [inner query alias].[##rowid]
-                        yield return (
-                            InnerQuery.Value.statement.SelectColumns[table.RowNumberColumnIndex].Alias, 
-                            InnerQuery.Value.statement.UniqueAlias, 
-                            null);
-                    //}
+                    // Get row id from the SELECT
+                    var alias = table.Alias == null || table.Alias == SqlStatementConstants.RootObjectAlias ? 
+                        SqlStatementConstants.RowIdName : 
+                        $"{table.Alias}.{SqlStatementConstants.RowIdName}";
+                    
+                    // the only row id will be [inner query alias].[##rowid]
+                    yield return (
+                        InnerQuery.Value.statement.SelectColumns[table.RowNumberColumnIndex].Alias, 
+                        InnerQuery.Value.statement.UniqueAlias, 
+                        alias);
                 }
-
-                // string RemoveLastPart(string input)
-                // {
-                //     var ip = input.Split('.');
-                //     return ip.Length == 0 ? 
-                //         "" :
-                //         ip.Take(ip.Length - 1).JoinString(".");
-                // }
             }
         }
 
@@ -494,57 +482,59 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Concat DB table columns with row id columns
         /// </summary>
-        IEnumerable<(Type dataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] constructors)> GetAllSelectColumns() =>
-            GetRowIdSelectColumns().Select(x => ((Type)null, SqlBuilder.BuildSelectColumn(x.tableAlias, x.rowIdColumnName), x.rowIdColumnNameAlias, new [] { (x.tableAlias, x.rowIdColumnName, NullString) }, EmptyConstructorInfo)).Concat(_Select);
+        IEnumerable<(bool isRowId, SelectColumn col)> GetAllSelectColumns() =>
+            GetRowIdSelectColumns()
+            .Select(x => (true, new SelectColumn((Type)null, SqlBuilder.BuildSelectColumn(x.tableAlias, x.rowIdColumnName), x.rowIdColumnNameAlias, new [] { (x.tableAlias, x.rowIdColumnName, NullString) }, EmptyConstructorInfo)))
+            .Concat(_Select.Select(x => (false, x)));
 
-        /// <summary>
-        /// Remove any tables from the query which are not in the requiredTableAliases list
-        /// </summary>
-        public void FilterUnusedTables(IEnumerable<string> requiredTableAliases)
-        {
-            var tables = new HashSet<string>(requiredTableAliases
-                .SelectMany(t => GetLineage(t, EmptyStrings)));
+        // /// <summary>
+        // /// Remove any tables from the query which are not in the requiredTableAliases list
+        // /// </summary>
+        // public void FilterUnusedTables(IEnumerable<string> requiredTableAliases)
+        // {
+        //     var tables = new HashSet<string>(requiredTableAliases
+        //         .SelectMany(t => GetLineage(t, EmptyStrings)));
 
-            if (Where != null)
-                tables.AddRange(Where.Value.queryObjectReferences);
-            foreach (var j in Joins)
-                tables.AddRange(j.queryObjectReferences);
-            foreach (var o in Ordering)
-                tables.AddRange(o.queryObjectReferences);
+        //     if (Where != null)
+        //         tables.AddRange(Where.Value.queryObjectReferences);
+        //     foreach (var j in Joins)
+        //         tables.AddRange(j.queryObjectReferences);
+        //     foreach (var o in Ordering)
+        //         tables.AddRange(o.queryObjectReferences);
 
-            for (var i = _Joins.Count - 1; i >= 0; i--)
-            {
-                if (!tables.Contains(_Joins[i].alias))
-                    _Joins.RemoveAt(i);
-            }
+        //     for (var i = _Joins.Count - 1; i >= 0; i--)
+        //     {
+        //         if (!tables.Contains(_Joins[i].alias))
+        //             _Joins.RemoveAt(i);
+        //     }
 
-            for (var i = _Select.Count - 1; i >= 0; i--)
-            {
-                if (_Select[i].representsColumns.Any(c => !tables.Contains(c.table)))
-                    _Select.RemoveAt(i);
-            }
-        }
+        //     for (var i = _Select.Count - 1; i >= 0; i--)
+        //     {
+        //         if (_Select[i].representsColumns.Any(c => !tables.Contains(c.table)))
+        //             _Select.RemoveAt(i);
+        //     }
+        // }
 
-        IEnumerable<string> GetLineage(string table, IEnumerable<string> complete)
-        {
-            if (table == PrimaryTableAlias)
-                return table.ToEnumerable();
+        // IEnumerable<string> GetLineage(string table, IEnumerable<string> complete)
+        // {
+        //     if (table == PrimaryTableAlias)
+        //         return table.ToEnumerable();
 
-            if (complete.Contains(table))
-                return complete;
+        //     if (complete.Contains(table))
+        //         return complete;
 
-            var join = Joins
-                .Where(j => j.alias == table)
-                .AsNullable()
-                .FirstOrDefault();
+        //     var join = Joins
+        //         .Where(j => j.alias == table)
+        //         .AsNullable()
+        //         .FirstOrDefault();
 
-            if (join == null)
-                throw new InvalidOperationException($"Cannot find join {table}.");
+        //     if (join == null)
+        //         throw new InvalidOperationException($"Cannot find join {table}.");
 
-            return join.Value.queryObjectReferences
-                .SelectMany(x => GetLineage(x, complete.Append(table)))
-                .Append(table);
-        }
+        //     return join.Value.queryObjectReferences
+        //         .SelectMany(x => GetLineage(x, complete.Append(table)))
+        //         .Append(table);
+        // }
         
         #region ISqlStatementPartValues
 
@@ -558,16 +548,40 @@ namespace SqlDsl.SqlBuilders
 
         ISqlFragmentBuilder ISqlStatementPartValues.SqlBuilder => SqlBuilder;
 
-        IEnumerable<SqlStatementPartSelect> ISqlStatementPartValues.SelectColumns => Select.Select(BuildSelectCol);
+        IEnumerable<SqlStatementPartSelect> ISqlStatementPartValues.SelectColumns => GetAllSelectColumns().Select(BuildSelectCol);
 
         IEnumerable<(string rowIdColumnName, string resultClassProperty)> ISqlStatementPartValues.RowIdsForMappedProperties => RowIdsForMappedProperties;
 
         static readonly Func<(string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences), SqlStatementPartJoin> BuildJoinTable = join =>
             new SqlStatementPartJoin(join.alias, join.queryObjectReferences);
 
-        static readonly Func<(Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] argConstructors), SqlStatementPartSelect> BuildSelectCol = select =>
-            new SqlStatementPartSelect(select.cellDataType, select.alias, select.representsColumns, select.argConstructors);
+        static readonly Func<(bool, SelectColumn), SqlStatementPartSelect> BuildSelectCol = select =>
+            // TODO: string manipulation
+            new SqlStatementPartSelect(select.Item1, select.Item2.CellDataType, select.Item2.Alias, select.Item2.RepresentsColumns, select.Item2.ArgConstructors);
 
         #endregion
+
+        public class SelectColumn
+        {
+            public readonly Type CellDataType;
+            public readonly string SelectCode;
+            public readonly  string Alias;
+            public readonly  (string table, string column, string aggregatedToTable)[] RepresentsColumns;
+            public readonly  ConstructorInfo[] ArgConstructors;
+
+            public SelectColumn(
+                Type cellDataType, 
+                string selectCode, 
+                string alias, 
+                (string table, string column, string aggregatedToTable)[] representsColumns, 
+                ConstructorInfo[] argConstructors)
+            {
+                CellDataType = cellDataType;
+                SelectCode = selectCode;
+                Alias = alias;
+                RepresentsColumns = representsColumns;
+                ArgConstructors = argConstructors;
+            }
+        }
     }
 }

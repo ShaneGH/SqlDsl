@@ -18,6 +18,8 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
         public SelectColumns(ISqlStatementPartValues queryBuilder, IQueryTables tables)
         {
+            // TODO: this constructor is called a lot. Why??
+
             Columns = BuildColumns(queryBuilder, tables).Enumerate();
         }
 
@@ -39,35 +41,12 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         static IEnumerable<ISelectColumn> BuildColumns(ISqlStatementPartValues queryBuilder, IQueryTables tables)
         {
             var hasInnerQuery = queryBuilder.InnerStatement != null;
-            var cols = queryBuilder.SelectColumns.Select(BuildColumn);
+            return queryBuilder.SelectColumns.Select(BuildColumn);
 
-            var ridCols = hasInnerQuery ?
-                queryBuilder.InnerStatement.SelectColumns.Where(IsRowNumber) :
-                tables.Select(BuildRowIdColumn);
-
-            return ridCols.Concat(cols);
-
-            bool IsRowNumber(ISelectColumn col) => col.IsRowNumber;
-
-            ISelectColumn _BuildColumn(SqlStatementPartSelect col, bool isRowId) =>
+            ISelectColumn BuildColumn(SqlStatementPartSelect col) => 
                 hasInnerQuery ?
-                    new InnerQuerySelectColumn(col.RepresentsColumns, col.Alias, isRowId, col.CellDataType, col.ArgConstructors, queryBuilder) :
-                    (ISelectColumn)new SelectColumn(col.RepresentsColumns, col.Alias, col.RepresentsColumns.Select(x => x.table), isRowId, col.CellDataType, col.ArgConstructors, tables);
-
-            ISelectColumn BuildColumn(SqlStatementPartSelect col) => _BuildColumn(col, false);
-
-            ISelectColumn BuildRowIdColumn(IQueryTable table)
-            {
-                var columnAlias = table.Alias == SqlStatementConstants.RootObjectAlias ?
-                    SqlStatementConstants.RowIdName :
-                    $"{table.Alias}.{SqlStatementConstants.RowIdName}";
-
-                return _BuildColumn(new SqlStatementPartSelect(
-                    null,
-                    columnAlias,
-                    new [] { (table.Alias, SqlStatementConstants.RowIdName, NullString) },
-                    null), true);
-            }
+                    new InnerQuerySelectColumn(col.RepresentsColumns, col.Alias, col.IsRowId, col.CellDataType, col.ArgConstructors, queryBuilder) :
+                    (ISelectColumn)new SelectColumn(col.RepresentsColumns, col.Alias, col.RepresentsColumns.Select(x => x.table), col.IsRowId, col.CellDataType, col.ArgConstructors, tables);
         }
 
         public IEnumerator<ISelectColumn> GetEnumerator() => Columns.GetEnumerator();

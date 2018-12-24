@@ -29,13 +29,15 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     
     public struct SqlStatementPartSelect
     {
+        public readonly bool IsRowId;
         public readonly Type CellDataType;
         public readonly string Alias;
         public readonly (string table, string column, string aggregatedTo)[] RepresentsColumns;
         public readonly ConstructorInfo[] ArgConstructors;
 
-        public SqlStatementPartSelect(Type cellDataType, string alias, (string table, string column, string aggregatedTo)[] representsColumns, ConstructorInfo[] argConstructors)
+        public SqlStatementPartSelect(bool isRowId, Type cellDataType, string alias, (string table, string column, string aggregatedTo)[] representsColumns, ConstructorInfo[] argConstructors)
         {
+            IsRowId = isRowId;
             CellDataType = cellDataType;
             Alias = alias;
             RepresentsColumns = representsColumns;
