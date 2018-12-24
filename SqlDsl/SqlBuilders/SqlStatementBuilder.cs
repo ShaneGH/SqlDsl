@@ -302,7 +302,7 @@ namespace SqlDsl.SqlBuilders
 
             return (mapSql, queryObjectReferences);
 
-            string param((ParameterExpression, string, string) x) => x.Item2;
+            string param(Element x) => x.Param;
 
             string table(string tableAndField)
             {

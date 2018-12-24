@@ -49,9 +49,9 @@ namespace SqlDsl.Mapper
                 case MapBuilder.MappingType.SimpleProp:
                     var requiredPropAliases = properties
                         .SelectMany(pms => pms.FromParams.GetEnumerable1())
-                        .Where(x => x.paramRoot == state.QueryObject || state.ParameterRepresentsProperty.Any(y => y.parameter == x.paramRoot))
+                        .Where(x => x.ParamRoot == state.QueryObject || state.ParameterRepresentsProperty.Any(y => y.parameter == x.ParamRoot))
                         // TODO: using Accumulator.AddRoot here seems wrong
-                        .Select(x => Accumulator.AddRoot(x.paramRoot, x.param, x.aggregatedToTable, state))
+                        .Select(x => Accumulator.AddRoot(x, state))
                         .Select(x => wrappedStatement.SelectColumns.TryGetColumn(x.param))
                         .RemoveNulls()
                         .SelectMany(x => x.ReferencesColumns.Select(y => y.table))
@@ -148,20 +148,7 @@ namespace SqlDsl.Mapper
 
         static (string table, string column) FilterSelectColumn(string innerQueryAlias, string column)
         {
-            // TODO: string manipulation
-            var colParts = new List<string>(4);
-            foreach (var col in column.Split('.'))
-            {
-                if (col.StartsWith(SqlStatementConstants.OpenFunctionAlias))
-                    break;
-
-                colParts.Add(col);
-            }
-
-            if (colParts.Count > 0 && colParts[0].StartsWith("@"))
-                innerQueryAlias = null;
-
-            return (innerQueryAlias, colParts.JoinString("."));
+            return (innerQueryAlias, column);
         }
 
         static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IAccumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
@@ -171,8 +158,8 @@ namespace SqlDsl.Mapper
 
             var referencedColumns = property
                 .GetEnumerable1()
-                .Where(x => !x.param.StartsWith("@"))
-                .Select(x => (wrappedStatement.UniqueAlias, Accumulator.AddRoot(x.paramRoot, x.param, x.aggregatedToTable, state).param, x.aggregatedToTable))
+                .Where(x => !x.Param.StartsWith("@"))
+                .Select(x => (wrappedStatement.UniqueAlias, Accumulator.AddRoot(x, state).param, x.AggregatedToTable))
                 .ToArray();
 
             var sql = property.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias);

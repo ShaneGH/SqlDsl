@@ -304,7 +304,7 @@ namespace SqlDsl.Mapper
 
             // TODO: can I relax this condition?
             if (rProp.FromParams.GetEnumerable1()
-                .Any(x => x.param != null && !x.param.StartsWith("@")))
+                .Any(x => x.Param != null && !x.Param.StartsWith("@")))
             {
                 throw new InvalidOperationException($"The values in an \"IN (...)\" clause must be a real parameter value. " + 
                     $"They cannot come from another table:\n{rhs}");
@@ -360,17 +360,17 @@ namespace SqlDsl.Mapper
                     property.PropertySegmentConstructors);
             }
 
-            (ParameterExpression paramRoot, string param, string aggregatedToTable) Map((ParameterExpression paramRoot, string param, string aggregatedToTable) x)
+            Element Map(Element x)
             {
-                var param = x.param;
+                var param = x.Param;
                 if (tables.Any(t => t.From == param))
-                    param = $"{param}{SqlStatementConstants.RowIdName}";
+                    param = $"{param}.{SqlStatementConstants.RowIdName}";
 
-                param = string.IsNullOrEmpty(param) ?
-                    $"{SqlStatementConstants.OpenFunctionAlias}{state.SqlBuilder.CountFunctionName}" :
-                    $"{x.param}.{SqlStatementConstants.OpenFunctionAlias}{state.SqlBuilder.CountFunctionName}";
+                // param = string.IsNullOrEmpty(param) ?
+                //     $"{SqlStatementConstants.OpenFunctionAlias}{state.SqlBuilder.CountFunctionName}" :
+                //     $"{x.Param}.{SqlStatementConstants.OpenFunctionAlias}{state.SqlBuilder.CountFunctionName}";
                 
-                return (x.paramRoot, param, state.CurrentTable.JoinString("."));
+                return new Element(x.ParamRoot, param, state.CurrentTable.JoinString("."), state.SqlBuilder.CountFunctionName);
             }
         }
 
@@ -401,10 +401,11 @@ namespace SqlDsl.Mapper
             return (
                 innerMap.properties
                     .Select(m => new MappedProperty(
-                        m.FromParams.MapParam(x => (
-                            x.paramRoot ?? outerMapProperties[0].FromParams.First.paramRoot, 
-                            x.paramRoot == null ? CombineStrings(outerMapProperties[0].FromParams.First.param, x.param) : x.param,
-                            x.aggregatedToTable)),
+                        m.FromParams.MapParam(x => new Element(
+                            x.ParamRoot ?? outerMapProperties[0].FromParams.First.ParamRoot, 
+                            x.ParamRoot == null ? CombineStrings(outerMapProperties[0].FromParams.First.Param, x.Param) : x.Param,
+                            x.AggregatedToTable,
+                            x.Function)),
                         CombineStrings(outerMapProperties[0].To, m.To), 
                         m.MappedPropertyType, 
                         m.PropertySegmentConstructors)),
@@ -480,15 +481,15 @@ namespace SqlDsl.Mapper
                 return false;
 
             // mapped property points to the root query object
-            if (property.FromParams.First.param == null && property.FromParams.First.paramRoot == state.QueryObject)
+            if (property.FromParams.First.Param == null && property.FromParams.First.ParamRoot == state.QueryObject)
                 return true;
 
             // mapped property points to a table on the query object
-            if (property.FromParams.First.paramRoot == state.QueryObject && state.WrappedSqlStatement.ContainsTable(property.FromParams.First.param))
+            if (property.FromParams.First.ParamRoot == state.QueryObject && state.WrappedSqlStatement.ContainsTable(property.FromParams.First.Param))
                 return true;
 
             // mapped property points to a table on the query object
-            if (property.FromParams.First.param == null && state.ParameterRepresentsProperty.Any(p => p.parameter == property.FromParams.First.paramRoot))
+            if (property.FromParams.First.Param == null && state.ParameterRepresentsProperty.Any(p => p.parameter == property.FromParams.First.ParamRoot))
                 return true;
 
             return false;

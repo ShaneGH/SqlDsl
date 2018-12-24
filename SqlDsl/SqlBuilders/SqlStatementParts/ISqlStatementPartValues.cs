@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using SqlDsl.Utils;
 
 namespace SqlDsl.SqlBuilders.SqlStatementParts
 {
@@ -24,6 +25,11 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         {
             Alias = alias;
             QueryObjectReferences = queryObjectReferences;
+        }
+
+        public override string ToString()
+        {
+            return $"{Alias}: {QueryObjectReferences.JoinString(", ")}";
         }
     }
     
