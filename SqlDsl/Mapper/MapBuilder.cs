@@ -90,7 +90,7 @@ namespace SqlDsl.Mapper
                 
                 var fromParams = properties[0].FromParams
                     .GetEnumerable1()
-                    .Select(x => Accumulator.AddRoot(x.paramRoot, x.param, x.isAggregate, state))
+                    .Select(x => Accumulator.AddRoot(x.paramRoot, x.param, x.aggregatedToTable, state))
                     .ToArray();
 
                 foreach (var table in state.WrappedSqlStatement.Tables)

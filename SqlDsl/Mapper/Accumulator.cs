@@ -10,9 +10,9 @@ namespace SqlDsl.Mapper
     interface IAccumulator
     {
         bool HasOneItemOnly { get; }
-        (ParameterExpression paramRoot, string param, bool isAggregate) First  { get; }
-        IEnumerable<(ParameterExpression paramRoot, string param, bool isAggregate)> GetEnumerable1();
-        IAccumulator MapParam(Func<(ParameterExpression paramRoot, string param, bool isAggregate), (ParameterExpression, string, bool)> map);
+        (ParameterExpression paramRoot, string param, string aggregatedToTable) First  { get; }
+        IEnumerable<(ParameterExpression paramRoot, string param, string aggregatedToTable)> GetEnumerable1();
+        IAccumulator MapParam(Func<(ParameterExpression paramRoot, string param, string aggregatedToTable), (ParameterExpression, string, string)> map);
         IAccumulator MapParamName(Func<string, string> map);
         IAccumulator Combine(IAccumulator x, CombinationType combiner);
         string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias);
@@ -32,7 +32,7 @@ namespace SqlDsl.Mapper
 
         public bool HasOneItemOnly => false;
 
-        (ParameterExpression paramRoot, string param, bool isAggregate) IAccumulator.First => First.First;
+        (ParameterExpression paramRoot, string param, string aggregatedToTable) IAccumulator.First => First.First;
 
         public string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
         {
@@ -71,14 +71,14 @@ namespace SqlDsl.Mapper
             return new Accumulators(this, (x, combiner));
         }
 
-        public IEnumerable<(ParameterExpression paramRoot, string param, bool isAggregate)> GetEnumerable1()
+        public IEnumerable<(ParameterExpression paramRoot, string param, string aggregatedToTable)> GetEnumerable1()
         {
             return First
                 .GetEnumerable1()
                 .Concat(Next.Item1.GetEnumerable1());
         }
 
-        public IAccumulator MapParam(Func<(ParameterExpression paramRoot, string param, bool isAggregate), (ParameterExpression, string, bool)> map)
+        public IAccumulator MapParam(Func<(ParameterExpression paramRoot, string param, string aggregatedToTable), (ParameterExpression, string, string)> map)
         {
             var first = First.MapParam(map);
             var second = Next.Item1.MapParam(map);
@@ -99,29 +99,29 @@ namespace SqlDsl.Mapper
     {   
         public bool HasOneItemOnly => !Inner.Next.Any();
         
-        public (ParameterExpression paramRoot, string param, bool isAggregate) First => Inner.First;
+        public (ParameterExpression paramRoot, string param, string aggregatedToTable) First => Inner.First;
 
-        readonly Accumulator<(ParameterExpression paramRoot, string param, bool isAggregate), CombinationType> Inner;
+        readonly Accumulator<(ParameterExpression paramRoot, string param, string aggregatedToTable), CombinationType> Inner;
 
         public Accumulator(
-            ParameterExpression firstParamRoot, string firstParam, bool isAggregate, 
-            IEnumerable<((ParameterExpression paramRoot, string param, bool isAggregate), CombinationType)> next = null)
-            : this(new Accumulator<(ParameterExpression paramRoot, string param, bool isAggregate), CombinationType>((firstParamRoot, firstParam, isAggregate), next))
+            ParameterExpression firstParamRoot, string firstParam, string aggregatedToTable, 
+            IEnumerable<((ParameterExpression paramRoot, string param, string aggregatedToTable), CombinationType)> next = null)
+            : this(new Accumulator<(ParameterExpression paramRoot, string param, string aggregatedToTable), CombinationType>((firstParamRoot, firstParam, aggregatedToTable), next))
         {
         }
         
-        public Accumulator(Accumulator<(ParameterExpression paramRoot, string param, bool isAggregate), CombinationType> acc)
+        public Accumulator(Accumulator<(ParameterExpression paramRoot, string param, string aggregatedToTable), CombinationType> acc)
         {
             Inner = acc;
         }
 
-        public IEnumerable<(ParameterExpression paramRoot, string param, bool isAggregate)> GetEnumerable1()
+        public IEnumerable<(ParameterExpression paramRoot, string param, string aggregatedToTable)> GetEnumerable1()
         {
             return Inner.GetEnumerable1();
         }
 
 
-        public IAccumulator MapParam(Func<(ParameterExpression paramRoot, string param, bool isAggregate), (ParameterExpression, string, bool)> map)
+        public IAccumulator MapParam(Func<(ParameterExpression paramRoot, string param, string aggregatedToTable), (ParameterExpression, string, string)> map)
         {
             return new Accumulator(Inner.Map(map));
         }
@@ -129,7 +129,7 @@ namespace SqlDsl.Mapper
         public IAccumulator MapParamName(Func<string, string> map)
         {
             return MapParam(_Map);
-            (ParameterExpression, string, bool) _Map((ParameterExpression x, string y, bool z) w) => (w.x, map(w.y), w.z);
+            (ParameterExpression, string, string) _Map((ParameterExpression x, string y, string z) w) => (w.x, map(w.y), w.z);
         }
 
         public IAccumulator Combine(IAccumulator x, CombinationType combiner)
@@ -206,18 +206,18 @@ namespace SqlDsl.Mapper
             var table1 = (Inner.First.param ?? "").StartsWith("@") ? null : wrappedQueryAlias;
 
             return Inner.Next.Aggregate(
-                BuildColumn(table1, Inner.First.paramRoot, Inner.First.param, Inner.First.isAggregate),
+                BuildColumn(table1, Inner.First.paramRoot, Inner.First.param, Inner.First.aggregatedToTable),
                 Aggregate);
 
-            string Aggregate(string x, ((ParameterExpression paramRoot, string param, bool isAggregate) param, CombinationType type) y)
+            string Aggregate(string x, ((ParameterExpression paramRoot, string param, string aggregatedToTable) param, CombinationType type) y)
             {
                 var table = (y.param.param ?? "").StartsWith("@") ? null : wrappedQueryAlias;
-                var yValue = BuildColumn(table, y.param.paramRoot, y.param.param, y.param.isAggregate);
+                var yValue = BuildColumn(table, y.param.paramRoot, y.param.param, y.param.aggregatedToTable);
 
                 return Combine(sqlFragmentBuilder, x, yValue, y.type);
             }
 
-            string BuildColumn(string tab, ParameterExpression paramRoot, string parameter, bool isAggregate)
+            string BuildColumn(string tab, ParameterExpression paramRoot, string parameter, string aggregatedToTable)
             {
                 //SqlStatementConstants.OpenFunctionAlias
                 var p = parameter.Split('.');
@@ -248,23 +248,23 @@ namespace SqlDsl.Mapper
                     }
                 }
 
-                var col = sqlFragmentBuilder.BuildSelectColumn(tab, AddRoot(paramRoot, parameter, isAggregate, state).param);
+                var col = sqlFragmentBuilder.BuildSelectColumn(tab, AddRoot(paramRoot, parameter, aggregatedToTable, state).param);
                 return func == null ?
                     col :
                     $"{func}({col})";   // TODO: call func in sqlBuilder
             }
         }
 
-        public static Func<(ParameterExpression, string, bool), (string param, bool isAggregate)> AddRoot(BuildMapState state)
+        public static Func<(ParameterExpression, string, string), (string param, string aggregatedToTable)> AddRoot(BuildMapState state)
         {
             return Execute;
 
-            (string , bool) Execute((ParameterExpression root, string property, bool isAggregate) x)
+            (string, string) Execute((ParameterExpression root, string property, string aggregatedToTable) x)
             {
                 var (root, property, _) = x;
 
                 // I am not 100% sure about the "root == state.QueryObject" part
-                if (root == null || root == state.QueryObject) return (property, x.isAggregate);
+                if (root == null || root == state.QueryObject) return (property, x.aggregatedToTable);
 
                 var propertyRoot = state.ParameterRepresentsProperty
                     .Where(p => p.parameter == root)
@@ -277,13 +277,13 @@ namespace SqlDsl.Mapper
                 if (!string.IsNullOrEmpty(property))
                     propertyRoot += ".";
 
-                return ($"{propertyRoot}{property}", x.isAggregate);
+                return ($"{propertyRoot}{property}", x.aggregatedToTable);
             }
         }
 
-        public static (string param, bool isAggregate) AddRoot(ParameterExpression root, string property, bool isAggregate, BuildMapState state)
+        public static (string param, string aggregatedToTable) AddRoot(ParameterExpression root, string property, string aggregatedToTable, BuildMapState state)
         {
-            return AddRoot(state)((root, property, isAggregate));
+            return AddRoot(state)((root, property, aggregatedToTable));
         }
     }
 

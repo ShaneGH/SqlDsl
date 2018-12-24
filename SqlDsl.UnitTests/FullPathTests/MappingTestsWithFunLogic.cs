@@ -914,6 +914,30 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         [Test]
         [Ignore("TODO")]
+        public async Task CountAndGroup_GroupByTableWithNoOtherColumns()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Where(x => x.ThePerson.Id == Data.People.John.Id)
+                .Map(p => new 
+                {
+                    person = p.ThePerson.Name,
+                    classes = p.TheClasses.Select(x => new
+                    {
+                        tags = p.TheTags.Count
+                    }).ToArray()
+                })
+                .ToArrayAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Length);
+            Assert.AreEqual(Data.People.John.Name, data[0].person);
+            Assert.AreEqual(new [] { new { tags = 2 }, new { tags = 1 } }, data[0].classes);
+        }
+
+        [Test]
+        [Ignore("TODO")]
         public async Task SumAndGroup_WithAdd()
         {
             // arrange

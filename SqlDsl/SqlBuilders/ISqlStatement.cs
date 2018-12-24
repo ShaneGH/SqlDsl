@@ -116,7 +116,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The actual columns and tables that this SELECT column represents
         /// </summary>
-        (string table, string column, bool isAggregate)[] ReferencesColumns { get; }
+        (string table, string column, string aggregatedToTable)[] ReferencesColumns { get; }
         
         /// <summary>
         /// The alias of the column

@@ -37,9 +37,7 @@ namespace SqlDsl.Mapper
             var wrappedStatement = new SqlStatement(wrappedBuilder);
 
             if (query.PrimaryTableMember == null)
-            {
                 throw new InvalidOperationException("The query must have at least one select table.");
-            }
 
             var argsParam = mapper.Parameters.Count > 1 ? mapper.Parameters[1] : null;
             var state = new BuildMapState(query.PrimaryTableMember.Value.name, mutableParameters, mapper.Parameters[0], argsParam, wrappedStatement, query.SqlFragmentBuilder);
@@ -53,7 +51,7 @@ namespace SqlDsl.Mapper
                         .SelectMany(pms => pms.FromParams.GetEnumerable1())
                         .Where(x => x.paramRoot == state.QueryObject || state.ParameterRepresentsProperty.Any(y => y.parameter == x.paramRoot))
                         // TODO: using Accumulator.AddRoot here seems wrong
-                        .Select(x => Accumulator.AddRoot(x.paramRoot, x.param, x.isAggregate, state))
+                        .Select(x => Accumulator.AddRoot(x.paramRoot, x.param, x.aggregatedToTable, state))
                         .Select(x => wrappedStatement.SelectColumns.TryGetColumn(x.param))
                         .RemoveNulls()
                         .SelectMany(x => x.ReferencesColumns.Select(y => y.table))
@@ -118,7 +116,7 @@ namespace SqlDsl.Mapper
                     fromParams: x.FromParams
                         .GetEnumerable1()
                         .Select(Accumulator.AddRoot(state))
-                        .Select(p => (sc: FilterSelectColumn(wrappedStatement.UniqueAlias, p.param), ia: p.isAggregate))
+                        .Select(p => (sc: FilterSelectColumn(wrappedStatement.UniqueAlias, p.param), aT: p.aggregatedToTable))
                         .ToArray(),
                     to: x.To, 
                     propertySegmentConstructors: x.PropertySegmentConstructors));
@@ -138,7 +136,7 @@ namespace SqlDsl.Mapper
                     col.type,
                     col.from,
                     col.to,
-                    col.fromParams.Select(p => (p.sc.table, p.sc.column, p.ia)).ToArray(),
+                    col.fromParams.Select(p => (p.sc.table, p.sc.column, p.aT)).ToArray(),
                     argConstructors: col.propertySegmentConstructors);
             }
 
@@ -174,7 +172,7 @@ namespace SqlDsl.Mapper
             var referencedColumns = property
                 .GetEnumerable1()
                 .Where(x => !x.param.StartsWith("@"))
-                .Select(x => (wrappedStatement.UniqueAlias, Accumulator.AddRoot(x.paramRoot, x.param, x.isAggregate, state).param, x.isAggregate))
+                .Select(x => (wrappedStatement.UniqueAlias, Accumulator.AddRoot(x.paramRoot, x.param, x.aggregatedToTable, state).param, x.aggregatedToTable))
                 .ToArray();
 
             var sql = property.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias);

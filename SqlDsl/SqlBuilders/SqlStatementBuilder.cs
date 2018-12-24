@@ -244,19 +244,19 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// A list of columns in the SELECT statement
         /// </summary>
-        readonly List<(Type cellDataType, string selectCode, string alias, (string table, string column, bool isAggregate)[] representsColumns, ConstructorInfo[] argConstructors)> _Select = new List<(Type, string, string, (string, string, bool)[], ConstructorInfo[])>();
+        readonly List<(Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] argConstructors)> _Select = new List<(Type, string, string, (string, string, string)[], ConstructorInfo[])>();
 
         /// <summary>
         /// A list of columns in the SELECT statement
         /// </summary>
-        public IEnumerable<(Type cellDataType, string selectCode, string alias, (string table, string column, bool isAggregate)[] representsColumns, ConstructorInfo[] argConstructors)> Select => _Select.Skip(0);
+        public IEnumerable<(Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] argConstructors)> Select => _Select.Skip(0);
         
         private static readonly ConstructorInfo[] EmptyConstructorInfo = new ConstructorInfo[0];
 
         /// <summary>
         /// Add a column to the SELECT statement
         /// </summary>
-        public void AddSelectColumn(Type cellDataType, string selectCode, string alias, (string table, string column, bool isAggregate)[] representsColumns, ConstructorInfo[] argConstructors = null) =>
+        public void AddSelectColumn(Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] argConstructors = null) =>
             _Select.Add((cellDataType, selectCode, alias ?? throw new ArgumentNullException(nameof(alias)), representsColumns, argConstructors ?? EmptyConstructorInfo));
 
         /// <summary>
@@ -301,7 +301,7 @@ namespace SqlDsl.SqlBuilders
 
             return (mapSql, queryObjectReferences);
 
-            string param((ParameterExpression, string, bool) x) => x.Item2;
+            string param((ParameterExpression, string, string) x) => x.Item2;
 
             string table(string tableAndField)
             {
@@ -367,13 +367,13 @@ namespace SqlDsl.SqlBuilders
 
         string BuildGroupByStatement(string prefix)
         {
-            if (GetAllSelectColumns().All(cs => cs.representsColumns.All(c => !c.isAggregate)))
+            if (GetAllSelectColumns().All(cs => cs.representsColumns.All(c => c.aggregatedToTable == null)))
                 return "";
 
             var output = new List<string>(16);
             foreach (var col in GetAllSelectColumns()
                 .SelectMany(cs => cs.representsColumns)
-                .Where(c => !c.isAggregate))
+                .Where(c => c.aggregatedToTable == null))
             {
                 output.Add(SqlBuilder.BuildSelectColumn(col.table, col.column));
             }
@@ -436,7 +436,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Get a list of row id colums, the alias of the table they are identifying, and the alias for the row id column (if any)
         /// </summary>
-        IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns()
+        public IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns()
         {
             // if there is no inner query, columns will come from SELECT and JOIN parts
             if (InnerQuery == null)
@@ -459,36 +459,42 @@ namespace SqlDsl.SqlBuilders
             }
             else
             {
-                // looking at removing row id from joined tables
-                // where all properties are aggregated (question: should it be all properties?)
                 // var selectTables = _Select
                 //     .SelectMany(s => s.representsColumns)
-                //     .Where(s => !s.isAggregate)
-                //     .SelectMany(s => InnerQuery.Value.statement.SelectColumns[s.column].ReferencesColumns)
-                //     .Where(s => !s.isAggregate)
-                //     .Select(s => s.table)
+                //     .Select(s => s.aggregatedToTable ?? RemoveLastPart(s.column))
+                //     .RemoveNulls()
                 //     .ToHashSet();
 
                 // if there is an inner query, all columns will come from it
                 foreach (var table in InnerQuery.Value.statement.Tables)
                 {
-                    // if (!selectTables.Contains(table.Alias))
-                    //     break;
-
-                    // the only row id will be [inner query alias].[##rowid]
-                    yield return (
-                        InnerQuery.Value.statement.SelectColumns[table.RowNumberColumnIndex].Alias, 
-                        InnerQuery.Value.statement.UniqueAlias, 
-                        null);
+                    // if (selectTables.Contains(table.Alias))
+                    // {
+                        // the only row id will be [inner query alias].[##rowid]
+                        yield return (
+                            InnerQuery.Value.statement.SelectColumns[table.RowNumberColumnIndex].Alias, 
+                            InnerQuery.Value.statement.UniqueAlias, 
+                            null);
+                    //}
                 }
+
+                // string RemoveLastPart(string input)
+                // {
+                //     var ip = input.Split('.');
+                //     return ip.Length == 0 ? 
+                //         "" :
+                //         ip.Take(ip.Length - 1).JoinString(".");
+                // }
             }
         }
+
+        static readonly string NullString = null;
 
         /// <summary>
         /// Concat DB table columns with row id columns
         /// </summary>
-        IEnumerable<(Type dataType, string selectCode, string alias, (string table, string column, bool isAggregate)[] representsColumns, ConstructorInfo[] constructors)> GetAllSelectColumns() =>
-            GetRowIdSelectColumns().Select(x => ((Type)null, SqlBuilder.BuildSelectColumn(x.tableAlias, x.rowIdColumnName), x.rowIdColumnNameAlias, new [] { (x.tableAlias, x.rowIdColumnName, false) }, EmptyConstructorInfo)).Concat(_Select);
+        IEnumerable<(Type dataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] constructors)> GetAllSelectColumns() =>
+            GetRowIdSelectColumns().Select(x => ((Type)null, SqlBuilder.BuildSelectColumn(x.tableAlias, x.rowIdColumnName), x.rowIdColumnNameAlias, new [] { (x.tableAlias, x.rowIdColumnName, NullString) }, EmptyConstructorInfo)).Concat(_Select);
 
         /// <summary>
         /// Remove any tables from the query which are not in the requiredTableAliases list

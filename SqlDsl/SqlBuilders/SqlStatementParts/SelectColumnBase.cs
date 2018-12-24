@@ -30,9 +30,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public abstract int RowNumberColumnIndex { get; }
 
          /// <inheritdoc />
-        public (string table, string column, bool isAggregate)[] ReferencesColumns { get; }
+        public (string table, string column, string aggregatedToTable)[] ReferencesColumns { get; }
 
-        public SelectColumnBase((string table, string column, bool isAggregate)[] referencesColumns, string alias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors)
+        public SelectColumnBase((string table, string column, string aggregatedToTable)[] referencesColumns, string alias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors)
         {
             ReferencesColumns = referencesColumns;
             Alias = alias;

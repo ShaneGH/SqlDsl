@@ -31,6 +31,8 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public ISelectColumn this[string alias] => GetColumn(alias);
 
+        static readonly string NullString = null;
+
         /// <summary>
         /// Build a list of columns
         /// </summary>
@@ -38,6 +40,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         {
             var hasInnerQuery = queryBuilder.InnerStatement != null;
             var cols = queryBuilder.Select.Select(BuildColumn);
+
             var ridCols = hasInnerQuery ?
                 queryBuilder.InnerStatement.SelectColumns.Where(IsRowNumber) :
                 tables.Select(BuildRowIdColumn);
@@ -46,12 +49,12 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
             bool IsRowNumber(ISelectColumn col) => col.IsRowNumber;
 
-            ISelectColumn _BuildColumn((Type cellDataType, string selectCode, string alias, (string table, string column, bool isAggregate)[] representsColumns, ConstructorInfo[] argConstructors) col, bool isRowId) =>
+            ISelectColumn _BuildColumn((Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedTo)[] representsColumns, ConstructorInfo[] argConstructors) col, bool isRowId) =>
                 hasInnerQuery ?
                     new InnerQuerySelectColumn(col.representsColumns, col.alias, isRowId, col.cellDataType, col.argConstructors, queryBuilder) :
                     (ISelectColumn)new SelectColumn(col.representsColumns, col.alias, col.representsColumns.Select(x => x.table), isRowId, col.cellDataType, col.argConstructors, tables);
 
-            ISelectColumn BuildColumn((Type cellDataType, string selectCode, string alias, (string table, string column, bool isAggregate)[] representsColumns, ConstructorInfo[] argConstructors) col) => _BuildColumn(col, false);
+            ISelectColumn BuildColumn((Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedTo)[] representsColumns, ConstructorInfo[] argConstructors) col) => _BuildColumn(col, false);
 
             ISelectColumn BuildRowIdColumn(IQueryTable table)
             {
@@ -59,7 +62,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                     SqlStatementConstants.RowIdName :
                     $"{table.Alias}.{SqlStatementConstants.RowIdName}";
 
-                return _BuildColumn((null, queryBuilder.SqlBuilder.BuildSelectColumn(table.Alias, SqlStatementConstants.RowIdName), columnAlias, new []{(table.Alias, SqlStatementConstants.RowIdName, false)}, null), true);
+                return _BuildColumn((null, queryBuilder.SqlBuilder.BuildSelectColumn(table.Alias, SqlStatementConstants.RowIdName), columnAlias, new []{(table.Alias, SqlStatementConstants.RowIdName, NullString)}, null), true);
             }
         }
 

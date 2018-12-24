@@ -360,7 +360,7 @@ namespace SqlDsl.Mapper
                     property.PropertySegmentConstructors);
             }
 
-            (ParameterExpression paramRoot, string param, bool isAggregate) Map((ParameterExpression paramRoot, string param, bool isAggregate) x)
+            (ParameterExpression paramRoot, string param, string aggregatedToTable) Map((ParameterExpression paramRoot, string param, string aggregatedToTable) x)
             {
                 var param = x.param;
                 if (tables.Any(t => t.From == param))
@@ -370,7 +370,7 @@ namespace SqlDsl.Mapper
                     $"{SqlStatementConstants.OpenFunctionAlias}{state.SqlBuilder.CountFunctionName}" :
                     $"{x.param}.{SqlStatementConstants.OpenFunctionAlias}{state.SqlBuilder.CountFunctionName}";
                 
-                return (x.paramRoot, param, true);
+                return (x.paramRoot, param, state.CurrentTable.JoinString("."));
             }
         }
 
@@ -383,8 +383,11 @@ namespace SqlDsl.Mapper
 
             TryAddSelectStatementParameterToProperty(state, enumerable, mapper.Parameters[0]);
 
+            (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, bool) innerMap;
             var outerMap = BuildMap(state, enumerable, MapType.Select, toPrefix);
-            var innerMap = BuildMap(state, mapper.Body, MapType.Other, isExprTip: isExprTip);
+            using (state.SwitchContext(mapper.Parameters[0]))
+                innerMap = BuildMap(state, mapper.Body, MapType.Other, isExprTip: isExprTip);
+
             var outerMapProperties  = outerMap.properties.ToArray();
             
             var (isSuccess, name) = CompileMemberName(enumerable);
@@ -401,7 +404,7 @@ namespace SqlDsl.Mapper
                         m.FromParams.MapParam(x => (
                             x.paramRoot ?? outerMapProperties[0].FromParams.First.paramRoot, 
                             x.paramRoot == null ? CombineStrings(outerMapProperties[0].FromParams.First.param, x.param) : x.param,
-                            x.isAggregate)),
+                            x.aggregatedToTable)),
                         CombineStrings(outerMapProperties[0].To, m.To), 
                         m.MappedPropertyType, 
                         m.PropertySegmentConstructors)),
