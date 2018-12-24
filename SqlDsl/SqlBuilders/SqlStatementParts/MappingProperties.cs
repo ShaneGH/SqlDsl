@@ -22,14 +22,14 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// <summary>
         /// The inner query
         /// </summary>
-        readonly SqlStatementBuilder InnerQuery;
+        readonly ISqlStatementPartValues InnerQuery;
         
         /// <summary>
         /// A list of column name prefixes which are bound to a specific table, along with an index to reference that table
         /// </summary>
         public IEnumerable<(string columnGroupPrefix, int rowNumberColumnIndex)> ColumnGroupRowNumberColumIndex => GetColumnGroupRowNumberColumIndex();
 
-        public MappingProperties(SqlStatementBuilder mappedStatement)
+        public MappingProperties(ISqlStatementPartValues mappedStatement)
         {
             InnerQuery = mappedStatement ?? throw new ArgumentNullException(nameof(mappedStatement));
             if (InnerQuery.InnerStatement == null)

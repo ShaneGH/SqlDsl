@@ -16,7 +16,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     {
         readonly IEnumerable<IQueryTable> Tables;
 
-        public QueryTables(SqlStatementBuilder queryBuilder)
+        public QueryTables(ISqlStatementPartValues queryBuilder)
         {
             Tables = BuildTables(queryBuilder, this).ToArray();
         }
@@ -38,12 +38,12 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// <summary>
         /// Return a table object for the SELECT and each JOIN
         /// </summary>
-        static IEnumerable<IQueryTable> BuildTables(SqlStatementBuilder queryBuilder, IQueryTables tables)
+        static IEnumerable<IQueryTable> BuildTables(ISqlStatementPartValues queryBuilder, IQueryTables tables)
         {
             yield return new QueryTable(queryBuilder.PrimaryTableAlias, queryBuilder, tables);
 
-            foreach (var j in queryBuilder.Joins)
-                yield return new QueryTable(j.alias, queryBuilder, tables);
+            foreach (var j in queryBuilder.JoinTables)
+                yield return new QueryTable(j.Alias, queryBuilder, tables);
         }
 
         /// <summary>

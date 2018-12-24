@@ -1,5 +1,6 @@
 using SqlDsl.Mapper;
 using SqlDsl.Query;
+using SqlDsl.SqlBuilders.SqlStatementParts;
 using SqlDsl.Utils;
 using System;
 using System.Collections;
@@ -22,7 +23,7 @@ namespace SqlDsl.SqlBuilders
     /// <summary>
     /// A class to build sql statements
     /// </summary>
-    public class SqlStatementBuilder : ISqlBuilder
+    public class SqlStatementBuilder : ISqlBuilder, SqlStatementParts.ISqlStatementPartValues
     {
         readonly IEnumerable<string> EmptyStrings = new string[0];
 
@@ -250,7 +251,7 @@ namespace SqlDsl.SqlBuilders
         /// A list of columns in the SELECT statement
         /// </summary>
         public IEnumerable<(Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] argConstructors)> Select => _Select.Skip(0);
-        
+
         private static readonly ConstructorInfo[] EmptyConstructorInfo = new ConstructorInfo[0];
 
         /// <summary>
@@ -544,5 +545,29 @@ namespace SqlDsl.SqlBuilders
                 .SelectMany(x => GetLineage(x, complete.Append(table)))
                 .Append(table);
         }
+        
+        #region ISqlStatementPartValues
+
+        string ISqlStatementPartValues.UniqueAlias => UniqueAlias;
+
+        string ISqlStatementPartValues.PrimaryTableAlias => PrimaryTableAlias;
+
+        IEnumerable<SqlStatementPartJoin> ISqlStatementPartValues.JoinTables => Joins.Select(BuildJoinTable);
+
+        ISqlStatement ISqlStatementPartValues.InnerStatement => InnerStatement;
+
+        ISqlFragmentBuilder ISqlStatementPartValues.SqlBuilder => SqlBuilder;
+
+        IEnumerable<SqlStatementPartSelect> ISqlStatementPartValues.SelectColumns => Select.Select(BuildSelectCol);
+
+        IEnumerable<(string rowIdColumnName, string resultClassProperty)> ISqlStatementPartValues.RowIdsForMappedProperties => RowIdsForMappedProperties;
+
+        static readonly Func<(string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences), SqlStatementPartJoin> BuildJoinTable = join =>
+            new SqlStatementPartJoin(join.alias, join.queryObjectReferences);
+
+        static readonly Func<(Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] argConstructors), SqlStatementPartSelect> BuildSelectCol = select =>
+            new SqlStatementPartSelect(select.cellDataType, select.alias, select.representsColumns, select.argConstructors);
+
+        #endregion
     }
 }

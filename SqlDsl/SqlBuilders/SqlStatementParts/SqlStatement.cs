@@ -35,7 +35,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public IMappingProperties MappingProperties { get; }
 
-        public SqlStatement(SqlStatementBuilder builder)
+        public SqlStatement(ISqlStatementPartValues builder)
         {
             UniqueAlias = builder.UniqueAlias;
             Tables = new QueryTables(builder);

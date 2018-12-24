@@ -14,7 +14,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     /// </summary>
     class QueryTable : IQueryTable
     {
-        readonly SqlStatementBuilder QueryBuilder;
+        readonly ISqlStatementPartValues QueryBuilder;
 
         readonly IQueryTables Tables;
 
@@ -34,7 +34,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public IQueryTable JoinedFrom => GetJoinedFrom();
 
-        public QueryTable(string alias, SqlStatementBuilder queryBuilder, IQueryTables tables)
+        public QueryTable(string alias, ISqlStatementPartValues queryBuilder, IQueryTables tables)
         {
             Alias = alias ?? throw new ArgumentNullException(nameof(alias));
             QueryBuilder = queryBuilder ?? throw new ArgumentNullException(nameof(queryBuilder));
@@ -52,10 +52,10 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             if (QueryBuilder.PrimaryTableAlias == Alias)
                 return null;
 
-            var table = QueryBuilder.Joins
-                .Where(j => j.alias == Alias)
+            var table = QueryBuilder.JoinTables
+                .Where(j => j.Alias == Alias)
                 // TODO: Will fail when a table is joined to multiple other tables
-                .Select(x => x.queryObjectReferences.Single()).FirstOrDefault();
+                .Select(x => x.QueryObjectReferences.Single()).FirstOrDefault();
 
             if (table == null)
                 throw new InvalidOperationException($"Cannot find join table with alias: {Alias}");
@@ -66,12 +66,12 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// <summary>
         /// The index of the column which provides row numbers for this table
         /// </summary>
-        static int GetRowNumberColumnIndex(SqlStatementBuilder queryBuilder, string alias)
+        static int GetRowNumberColumnIndex(ISqlStatementPartValues queryBuilder, string alias)
         {
             if (queryBuilder.PrimaryTableAlias == alias)
                 return 0;
 
-            var index = queryBuilder.Joins
+            var index = queryBuilder.JoinTables
                 .Select(GetAlias)
                 .Select(CombineWithIndex)
                 .Where(FilterByAlias)
@@ -84,7 +84,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
             return index;
 
-            string GetAlias((string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences) val) => val.alias;
+            string GetAlias(SqlStatementPartJoin val) => val.Alias;
 
             (int, T) CombineWithIndex<T>(T val, int i) => (i + 1, val);
 
