@@ -59,7 +59,7 @@ namespace SqlDsl
             var pcs = new List<PersonClass>();
             for (var i = 1; i <= 50; i++)
             {
-                ps.Add(new Person(i, $"person {i.ToString()}", i %2 == 0 ? Gender.Male : Gender.Female));
+                ps.Add(new Person(i, $"person {i.ToString()}", i %2 == 0 ? Gender.Male : Gender.Female, i %3 == 0));
                 foreach (var c in cs)
                 {
                     pcs.Add(new PersonClass
