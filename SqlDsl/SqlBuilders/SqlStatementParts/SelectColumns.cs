@@ -38,14 +38,14 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// <summary>
         /// Build a list of columns
         /// </summary>
-        static IEnumerable<ISelectColumn> BuildColumns(ISqlStatementPartValues queryBuilder, IQueryTables tables)
+        static IEnumerable<ISelectColumn> BuildColumns(ISqlStatementPartValues queryParts, IQueryTables tables)
         {
-            var hasInnerQuery = queryBuilder.InnerStatement != null;
-            return queryBuilder.SelectColumns.Select(BuildColumn);
+            var hasInnerQuery = queryParts.InnerStatement != null;
+            return queryParts.SelectColumns.Select(BuildColumn);
 
             ISelectColumn BuildColumn(SqlStatementPartSelect col) => 
                 hasInnerQuery ?
-                    new InnerQuerySelectColumn(col.RepresentsColumns, col.Alias, col.IsRowId, col.CellDataType, col.ArgConstructors, queryBuilder) :
+                    new InnerQuerySelectColumn(col.RepresentsColumns, col.Alias, col.IsRowId, col.CellDataType, col.ArgConstructors, queryParts) :
                     (ISelectColumn)new SelectColumn(col.RepresentsColumns, col.Alias, col.RepresentsColumns.Select(x => x.table), col.IsRowId, col.CellDataType, col.ArgConstructors, tables);
         }
 
