@@ -28,11 +28,7 @@ namespace SqlDsl.Mapper
             ILogger logger)
             where TSqlBuilder: ISqlFragmentBuilder, new()
         {
-            // TODO: filter columns
-            // var wrappedSql = Query.ToSqlBuilder(MappedValues.Select(m => m.from));
-            // also, find a way to filter joins
-
-            var (wrappedBuilder, parameters) = query.ToSqlStatement(null);
+            var (wrappedBuilder, parameters) = query.ToSqlStatement();
             var mutableParameters = new ParamBuilder(parameters.ToList());
             var wrappedStatement = new SqlStatement(wrappedBuilder);
 

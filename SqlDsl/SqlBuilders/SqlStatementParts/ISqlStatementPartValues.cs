@@ -10,9 +10,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         string UniqueAlias { get; }
         string PrimaryTableAlias { get; }
         IEnumerable<SqlStatementPartJoin> JoinTables { get; }
+        IEnumerable<SqlStatementPartSelect> SelectColumns { get; }
         ISqlStatement InnerStatement { get; }
         ISqlFragmentBuilder SqlBuilder { get; }
-        IEnumerable<SqlStatementPartSelect> SelectColumns { get; }
         IEnumerable<(string rowIdColumnName, string resultClassProperty)> RowIdsForMappedProperties { get; }
     }
     

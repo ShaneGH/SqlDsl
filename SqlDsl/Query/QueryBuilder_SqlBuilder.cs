@@ -45,7 +45,7 @@ namespace SqlDsl.Query
         public ICompiledQuery<TArgs, TResult> Compile(ILogger logger = null)
         {
             var timer = new Timer(true);
-            var sqlBuilder = ToSqlStatement(null);
+            var sqlBuilder = ToSqlStatement();
             var compiled = sqlBuilder.builder
                 .Compile<TArgs, TResult>(sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
 
@@ -61,7 +61,7 @@ namespace SqlDsl.Query
         /// Create a populated sql builder along with any constants specified in the query
         /// </summary>
         /// <param name="filterSelectCols">If specified, only add the given columns to the SELECT statement</param>
-        public (SqlStatementBuilder builder, IEnumerable<object> paramaters) ToSqlStatement(IEnumerable<string> filterSelectCols)
+        public (SqlStatementBuilder builder, IEnumerable<object> paramaters) ToSqlStatement()
         {
             if (PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
@@ -92,15 +92,6 @@ namespace SqlDsl.Query
                     join.JoinExpression.joinExpression,
                     param,
                     join.JoinedTableProperty.name);
-            }
-
-            // Filter select columns if specified
-            if (filterSelectCols != null)
-            {
-                var cols = new HashSet<string>(filterSelectCols);
-                selectColumns = selectColumns.Where(c => c.table == SqlStatementConstants.RootObjectAlias ?
-                    cols.Contains(c.column.name) :
-                    cols.Contains($"{c.table}.{c.column.name}"));
             }
 
             // Add select columns to builder
