@@ -84,7 +84,7 @@ namespace SqlDsl.Query
         /// Get a sql statement and corresponding sql paramaters from the builder
         /// </summary>
         /// <param name="builder">The sql builder to use in order to render sql</param>
-        public static QueryParts ToSql(this ISqlBuilder builder)
+        public static QueryParts ToSql(this ISqlString builder)
         {
             var sql = builder.ToSqlString();
             return new QueryParts(

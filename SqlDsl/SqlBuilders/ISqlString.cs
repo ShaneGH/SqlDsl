@@ -8,7 +8,7 @@ namespace SqlDsl.SqlBuilders
     /// <summary>
     /// Build sql and expose it's metadata
     /// </summary>
-    public interface ISqlBuilder
+    public interface ISqlString
     {
         /// <summary>
         /// Generate sql. Setup sql will be executd before querySql, but in the same sql script

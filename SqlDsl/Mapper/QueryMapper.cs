@@ -102,7 +102,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static SqlStatementBuilder ToSqlBuilder(ISqlSyntax sqlFragmentBuilder, IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
+        static SqlStatementBuilder ToSqlBuilder(ISqlSyntax sqlFragmentBuilder, IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, ISqlString wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var rowIdPropertyMap = tables
                 // if mapping does not map to a specific property (e.g. q => q.Args.Select(a => new object()))
@@ -150,7 +150,13 @@ namespace SqlDsl.Mapper
             return builder;
         }
 
-        static SqlStatementBuilder ToSqlBuilder(ISqlSyntax sqlFragmentBuilder, IAccumulator<Element> property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
+        static SqlStatementBuilder ToSqlBuilder(
+            ISqlSyntax sqlFragmentBuilder, 
+            IAccumulator<Element> property, 
+            Type cellDataType, 
+            ISqlString wrappedBuilder, 
+            ISqlStatement wrappedStatement, 
+            BuildMapState state)
         {
             var builder = new SqlStatementBuilder(sqlFragmentBuilder);
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);

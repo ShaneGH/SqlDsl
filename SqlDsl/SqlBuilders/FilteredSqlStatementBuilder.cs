@@ -14,7 +14,7 @@ namespace SqlDsl.SqlBuilders
     /// <summary>
     /// A class to build sql statements
     /// </summary>
-    public class FilteredSqlStatementBuilder : ISqlBuilder, ISqlStatementPartValues
+    public class FilteredSqlStatementBuilder : ISqlString, ISqlStatementPartValues
     {
         static readonly IEnumerable<string> EmptyStrings = new string[0];
 

@@ -14,16 +14,7 @@ namespace SqlDsl.SqlBuilders
     /// <summary>
     /// A class to build sql statements
     /// </summary>
-    public class SqlStatementBuilder<TSqlBuilder> : SqlStatementBuilder
-        where TSqlBuilder : ISqlSyntax, new()
-    {
-        public SqlStatementBuilder() : base(new TSqlBuilder()) { }
-    }
-
-    /// <summary>
-    /// A class to build sql statements
-    /// </summary>
-    public class SqlStatementBuilder : ISqlBuilder, SqlStatementParts.ISqlStatementPartValues
+    public class SqlStatementBuilder : ISqlString, SqlStatementParts.ISqlStatementPartValues
     {
         public readonly ISqlSyntax SqlBuilder;
 
@@ -56,7 +47,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The inner query used in the SELECT clause
         /// </summary>
-        (ISqlBuilder builder, ISqlStatement statement)? InnerQuery;
+        (ISqlString builder, ISqlStatement statement)? InnerQuery;
 
         /// <summary>
         /// The inner statement used in the SELECT clause, or null if there is no inner statement
@@ -66,7 +57,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Set the inner query and is's alias in the SELECT clause. alias can be null
         /// </summary>
-        public void SetPrimaryTable(ISqlBuilder innerQueryBuilder, ISqlStatement innerQueryStatement, string alias)
+        public void SetPrimaryTable(ISqlString innerQueryBuilder, ISqlStatement innerQueryStatement, string alias)
         {
             InnerQuery = (innerQueryBuilder, innerQueryStatement);
             PrimaryTableAlias = alias;
