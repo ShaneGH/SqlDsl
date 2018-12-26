@@ -188,18 +188,21 @@ namespace SqlDsl.Mapper
             Element _Map(Element el) => new Element(el.ParamRoot, map(el.Param), el.AggregatedToTable, el.Function);
         }
 
-        public static string BuildFromString(this IAccumulator<Element> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
+        public static string BuildFromString<TElement>(this IAccumulator<TElement> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias = null)
         {
-            return acc is Accumulator<Element> ?
-                BuildFromString(acc as Accumulator<Element>, state, sqlFragmentBuilder, wrappedQueryAlias, false) :
-                BuildFromString(acc as Accumulators<Element>, state, sqlFragmentBuilder, wrappedQueryAlias, false);
-        }
-
-        public static string BuildFromString(this IAccumulator<Element> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder)
-        {
-            return acc is Accumulator<Element>
-                ? BuildFromString(acc as Accumulator<Element>, state, sqlFragmentBuilder, null, true)
-                : BuildFromString(acc as Accumulators<Element>, state, sqlFragmentBuilder, null, true);
+            switch (acc)
+            {
+                case Accumulator<Element> a:
+                    return BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias, wrappedQueryAlias == null);
+                case Accumulators<Element> a:
+                    return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
+                case Accumulator<TheAmazingElement> a:
+                    return BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
+                case Accumulators<TheAmazingElement> a:
+                    return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
+                default:
+                    throw new NotSupportedException($"IAccumulator<{typeof(TElement)}>");
+            }
         }
 
         public static string Combine(ISqlFragmentBuilder sqlFragmentBuilder, string l, string r, CombinationType combine)
@@ -292,8 +295,33 @@ namespace SqlDsl.Mapper
                     $"{el.Function}({col})";   // TODO: call func in sqlBuilder
             }
         }
+
+        private static string BuildFromString(Accumulator<TheAmazingElement> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
+        {
+            return acc.Next.Aggregate(
+                BuildColumn(acc.First),
+                Aggregate);
+
+            string Aggregate(string x, (TheAmazingElement param, CombinationType type) y)
+            {
+                var yValue = BuildColumn(y.param);
+
+                return Combine(sqlFragmentBuilder, x, yValue, y.type);
+            }
+
+            string BuildColumn(TheAmazingElement el)
+            {
+                var col = sqlFragmentBuilder.BuildSelectColumn(
+                    el.IsParameter ? null : wrappedQueryAlias, 
+                    el.IsParameter ? el.ParameterName : el.Column.Alias);
+
+                return el.Function == null ?
+                    col :
+                    $"{el.Function}({col})";   // TODO: call func in sqlBuilder
+            }
+        }
         
-        static string BuildFromString(Accumulators<Element> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias, bool tableIsFirstParamPart)
+        static string _BuildFromString<TElement>(Accumulators<TElement> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
         {
             var first = wrappedQueryAlias != null 
                 ? acc.First.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)

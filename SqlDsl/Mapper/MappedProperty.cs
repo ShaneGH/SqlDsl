@@ -21,9 +21,9 @@ namespace SqlDsl.Mapper
         {
         }
 
-        public QueryElementElementBasedMappedProperty Convert(BuildMapState state)
+        public QueryElementBasedMappedProperty Convert(BuildMapState state)
         {
-            return new QueryElementElementBasedMappedProperty(
+            return new QueryElementBasedMappedProperty(
                 FromParams.Convert(state),
                 To,
                 MappedPropertyType,
@@ -70,9 +70,9 @@ namespace SqlDsl.Mapper
         }
     }
     
-    class QueryElementElementBasedMappedProperty : MappedProperty<TheAmazingElement>
+    class QueryElementBasedMappedProperty : MappedProperty<TheAmazingElement>
     {
-        public QueryElementElementBasedMappedProperty(IAccumulator<TheAmazingElement> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+        public QueryElementBasedMappedProperty(IAccumulator<TheAmazingElement> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
             : base(fromParams, to, mappedPropertyType, constructorArgs)
         {
         }

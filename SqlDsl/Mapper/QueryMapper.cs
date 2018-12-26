@@ -115,8 +115,10 @@ namespace SqlDsl.Mapper
                     from: x.FromParams.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias),
                     fromParams: x.FromParams
                         .GetEnumerable1()
-                        .Select(IAccumulatorUtils.AddRoot(state))
-                        .Select(p => (sc: FilterSelectColumn(wrappedStatement.UniqueAlias, p.param), aT: p.aggregatedToTable))
+                            // .Where(p => !p.IsParameter)
+                            // .Select(p => (sc: (table: wrappedStatement.UniqueAlias, column: p.Column.Alias), aT: p.RowIdColumn.Alias))
+                            .Select(IAccumulatorUtils.AddRoot(state))
+                            .Select(p => (sc: (table: wrappedStatement.UniqueAlias, column: p.param), aT: p.aggregatedToTable))
                         .ToArray(),
                     to: x.To, 
                     propertySegmentConstructors: x.PropertySegmentConstructors));
@@ -144,11 +146,6 @@ namespace SqlDsl.Mapper
                 builder.RowIdsForMappedProperties.Add((col.rowIdColumnName, col.resultClassProperty));
                 
             return builder;
-        }
-
-        static (string table, string column) FilterSelectColumn(string innerQueryAlias, string column)
-        {
-            return (innerQueryAlias, column);
         }
 
         static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IAccumulator<Element> property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
