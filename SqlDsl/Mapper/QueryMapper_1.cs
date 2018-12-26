@@ -11,10 +11,10 @@ namespace SqlDsl.Mapper
 {
     public class QueryMapper<TArgs, TResult, TMapped> : ISqlBuilder<TArgs, TMapped>
     {
-        readonly QueryBuilder<TArgs, TResult> Query;
+        readonly SqlBuilder<TArgs, TResult> Query;
         readonly Expression<Func<TResult, TArgs, TMapped>> Mapper;
         
-        public QueryMapper(QueryBuilder<TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
+        public QueryMapper(SqlBuilder<TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
         {
             Query = query ?? throw new ArgumentNullException(nameof(query));
             Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));

@@ -23,7 +23,7 @@ namespace SqlDsl.Mapper
         /// </summary>
         public static ICompiledQuery<TArgs, TMapped> Compile<TArgs, TResult, TMapped>(
             ISqlSyntax sqlFragmentBuilder, 
-            QueryBuilder<TArgs, TResult> query, 
+            SqlBuilder<TArgs, TResult> query, 
             LambdaExpression mapper, 
             ILogger logger)
         {

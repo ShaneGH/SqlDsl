@@ -14,17 +14,17 @@ namespace SqlDsl
         /// <summary>
         /// Build a Sqlite query
         /// </summary>
-        public static ITable<TResult> Sqlite<TResult>(this QueryBuilder builder)
+        public static ISqlSelect<TResult> Sqlite<TResult>(this QueryBuilder builder)
         {
-            return new QueryBuilder<TResult>(SqliteSyntax);
+            return new SqlSelect<TResult>(SqliteSyntax);
         }
 
         /// <summary>
         /// Build a Sqlite query with args
         /// </summary>
-        public static ITable<TArgs, TResult> Sqlite<TArgs, TResult>(this QueryBuilder builder)
+        public static ISqlSelect<TArgs, TResult> Sqlite<TArgs, TResult>(this QueryBuilder builder)
         {
-            return new QueryBuilder<TArgs, TResult>(SqliteSyntax);
+            return new SqlSelect<TArgs, TResult>(SqliteSyntax);
         }
     }
 }

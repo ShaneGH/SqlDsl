@@ -33,7 +33,7 @@ namespace SqlDsl.UnitTests.DataParser
             public List<Tag> Tags { get; set; }
         }
 
-        static QueryBuilder<object, JoinedQueryClass> FullyJoinedQuery()
+        static SqlSelect<object, JoinedQueryClass> FullyJoinedQuery()
         {
             return Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
@@ -44,7 +44,7 @@ namespace SqlDsl.UnitTests.DataParser
                 .InnerJoin<ClassTag>(q => q.ClassTags)
                     .On((q, ct) => q.Classes.One().Id == ct.ClassId)
                 .InnerJoin<Tag>(q => q.Tags)
-                    .On((q, t) => q.ClassTags.One().TagId == t.Id) as QueryBuilder<object, JoinedQueryClass>;
+                    .On((q, t) => q.ClassTags.One().TagId == t.Id) as SqlSelect<object, JoinedQueryClass>;
         }
 
         void Compare(ObjectPropertyGraph expected, ObjectPropertyGraph actual)
@@ -1081,7 +1081,7 @@ namespace SqlDsl.UnitTests.DataParser
         
         public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult>(this Dsl.IQuery<TResult> builder)
         {
-            var compiled = (CompiledQuery<object, TResult>)((QueryBuilder<object, TResult>)builder)
+            var compiled = (CompiledQuery<object, TResult>)((SqlSelect<object, TResult>)builder)
                 .Compile();
 
             return compiled.PropertyGraph;
@@ -1089,7 +1089,7 @@ namespace SqlDsl.UnitTests.DataParser
         
         public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult>(this Dsl.IQuery<object, TResult> builder)
         {
-            var compiled = (CompiledQuery<object, TResult>)((QueryBuilder<object, TResult>)builder)
+            var compiled = (CompiledQuery<object, TResult>)((SqlSelect<object, TResult>)builder)
                 .Compile();
 
             return compiled.PropertyGraph;

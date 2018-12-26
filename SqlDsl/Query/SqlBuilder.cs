@@ -1,7 +1,7 @@
 using SqlDsl.DataParser;
 using SqlDsl.Dsl;
+using SqlDsl.Mapper;
 using SqlDsl.SqlBuilders;
-using SqlDsl.SqlBuilders.SqlStatementParts;
 using SqlDsl.Utils;
 using System;
 using System.Collections.Concurrent;
@@ -13,8 +13,40 @@ using System.Threading.Tasks;
 
 namespace SqlDsl.Query
 {
-    public partial class QueryBuilder<TArgs, TResult>
+    /// <summary>
+    /// Build and execute sql queries
+    /// </summary>
+    public abstract class SqlBuilder<TArgs, TResult> : ISqlBuilder<TArgs, TResult>
     {
+        /// <summary>
+        /// The name of the table in the SELECT statement
+        /// </summary>
+        protected abstract string PrimaryTableName { get; }
+        
+        /// <summary>
+        /// The name of the member on the TResult which the primary table is appended to
+        /// </summary>
+        public abstract (string name, Type type)? PrimaryTableMember { get; }
+        
+        /// <summary>
+        /// The joins applied to the query
+        /// </summary>
+        public abstract IEnumerable<Join> Joins { get; }
+        
+        /// <summary>
+        /// The WHERE part of the query
+        /// </summary>
+        protected abstract (ParameterExpression queryRoot, ParameterExpression args, Expression where)? WhereClause { get; }
+        
+        protected abstract IEnumerable<(ParameterExpression queryRoot, ParameterExpression args, Expression orderExpression, OrderDirection direction)> Ordering { get; }
+        
+        public readonly ISqlSyntax SqlFragmentBuilder;
+
+        public SqlBuilder(ISqlSyntax sqlSyntax)
+        {
+            SqlFragmentBuilder = sqlSyntax;
+        }
+        
         /// <inheritdoc />
         public Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
             Compile(logger).ToIEnumerableAsync(executor, args, logger);
@@ -110,6 +142,38 @@ namespace SqlDsl.Query
                 builder.AddOrderBy(queryRoot, args, orderExpression, direction, param);
 
             return (builder, param.Parameters);
+        }
+
+        /// <summary>
+        /// A cache of column names for a given type
+        /// </summary>
+        static readonly ConcurrentDictionary<Type, IEnumerable<(string name, Type dataType)>> Columns = new ConcurrentDictionary<Type, IEnumerable<(string, Type)>>();
+        
+        /// <summary>
+        /// Get all of the column names for a given type
+        /// </summary>
+        static IEnumerable<(string name, Type dataType)> ColumnsOf(Type t)
+        {
+            if (Columns.TryGetValue(t, out IEnumerable<(string, Type)> value))
+                return value;
+
+            value = GetColumnNames(t)
+                .ToList()
+                .AsReadOnly();
+                
+            return Columns.GetOrAdd(t, value);
+        }
+
+        /// <summary>
+        /// Return all of the property and field names of a type as column names
+        /// </summary>
+        static IEnumerable<(string name, Type dataType)> GetColumnNames(Type t)
+        {
+            foreach (var col in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                yield return (col.Name, col.PropertyType);
+                
+            foreach (var col in t.GetFields(BindingFlags.Public | BindingFlags.Instance))
+                yield return (col.Name, col.FieldType);
         }
     }
 }

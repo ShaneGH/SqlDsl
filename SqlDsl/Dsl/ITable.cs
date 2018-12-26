@@ -8,7 +8,7 @@ namespace SqlDsl.Dsl
     /// <summary>
     /// Interface to help with query building DSL
     /// </summary>
-    public interface ITable<TResult>
+    public interface ISqlSelect<TResult>
     {
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table]
@@ -39,7 +39,7 @@ namespace SqlDsl.Dsl
     /// <summary>
     /// Interface to help with query building DSL
     /// </summary>
-    public interface ITable<TArgs, TResult>
+    public interface ISqlSelect<TArgs, TResult>
     {
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table]

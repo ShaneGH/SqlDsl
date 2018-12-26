@@ -13,11 +13,11 @@ using System.Threading.Tasks;
 namespace SqlDsl.Query
 {
     /// <summary>
-    /// Object to append query values to via underlying DSL
+    /// Class to kick off a sql statement
     /// </summary>
-    public class QueryBuilder<TResult> : QueryBuilder<object, TResult>, ITable<TResult>, IQuery<TResult>, IOrdererAgain<TResult>
+    public class SqlSelect<TResult> : SqlSelect<object, TResult>, ISqlSelect<TResult>, IQuery<TResult>, IOrdererAgain<TResult>
     {
-        public QueryBuilder(ISqlSyntax syntax)
+        public SqlSelect(ISqlSyntax syntax)
             : base(syntax)
         {
         }
@@ -36,17 +36,17 @@ namespace SqlDsl.Query
 
         ICompiledQuery<TResult> ISqlBuilder<TResult>.Compile(ILogger logger) => new CompiledQuery<TResult>(base.Compile(logger: logger));
 
-        IQuery<TResult> ITable<TResult>.From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty) =>
-            (QueryBuilder<TResult>)base.From(tableName, resultProperty);
+        IQuery<TResult> ISqlSelect<TResult>.From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty) =>
+            (SqlSelect<TResult>)base.From(tableName, resultProperty);
 
-        IQuery<TResult> ITable<TResult>.From<TTable>(Expression<Func<TResult, TTable>> resultProperty) =>
-            (QueryBuilder<TResult>)base.From(resultProperty);
+        IQuery<TResult> ISqlSelect<TResult>.From<TTable>(Expression<Func<TResult, TTable>> resultProperty) =>
+            (SqlSelect<TResult>)base.From(resultProperty);
 
-        IQuery<TResult> ITable<TResult>.From(string tableName) =>
-            (QueryBuilder<TResult>)base.From(tableName);
+        IQuery<TResult> ISqlSelect<TResult>.From(string tableName) =>
+            (SqlSelect<TResult>)base.From(tableName);
 
-        IQuery<TResult> ITable<TResult>.From() =>
-            (QueryBuilder<TResult>)base.From();
+        IQuery<TResult> ISqlSelect<TResult>.From() =>
+            (SqlSelect<TResult>)base.From();
 
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
             new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(tableName, joinProperty));
@@ -76,23 +76,23 @@ namespace SqlDsl.Query
             new QueryMapper<TMapped>(base.Map(mapper));
 
         IResultMapper<TResult> IFilter<TResult>.Where(Expression<Func<TResult, bool>> filter) =>
-            (QueryBuilder<TResult>)base.Where(filter);
+            (SqlSelect<TResult>)base.Where(filter);
 
         /// <inheritdoc />
         IOrdererAgain<TResult> IOrderer<TResult>.OrderBy<T>(Expression<Func<TResult, T>> order) => 
-            (QueryBuilder<TResult>)base.OrderBy(order);
+            (SqlSelect<TResult>)base.OrderBy(order);
 
         /// <inheritdoc />
         IOrdererAgain<TResult> IOrderer<TResult>.OrderByDesc<T>(Expression<Func<TResult, T>> order) => 
-            (QueryBuilder<TResult>)base.OrderByDesc(order);
+            (SqlSelect<TResult>)base.OrderByDesc(order);
 
         /// <inheritdoc />
         IOrdererAgain<TResult> IOrdererAgain<TResult>.ThenBy<T>(Expression<Func<TResult, T>> order) => 
-            (QueryBuilder<TResult>)base.ThenBy(order);
+            (SqlSelect<TResult>)base.ThenBy(order);
 
         /// <inheritdoc />
         IOrdererAgain<TResult> IOrdererAgain<TResult>.ThenByDesc<T>(Expression<Func<TResult, T>> order) => 
-            (QueryBuilder<TResult>)base.ThenByDesc(order);
+            (SqlSelect<TResult>)base.ThenByDesc(order);
 
         public Task<List<TResult>> ToListAsync(IExecutor executor, ILogger logger = null) =>
             base.ToListAsync(executor, null, logger);
@@ -126,7 +126,7 @@ namespace SqlDsl.Query
             /// </param>
             public IQuery<TResult> On(Expression<Func<TResult, TJoin, bool>> joinExpression)
             {
-                return (QueryBuilder<TResult>)Worker.On(joinExpression);
+                return (SqlSelect<TResult>)Worker.On(joinExpression);
             }
         }
     }
