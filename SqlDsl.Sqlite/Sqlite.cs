@@ -14,7 +14,7 @@ namespace SqlDsl
         /// </summary>
         public static ITable<TResult> Sqlite<TResult>(this QueryBuilder builder)
         {
-            return new QueryBuilder<SqliteBuilder, TResult>();
+            return new QueryBuilder<SqliteSyntax, TResult>();
         }
 
         /// <summary>
@@ -22,7 +22,7 @@ namespace SqlDsl
         /// </summary>
         public static ITable<TArgs, TResult> Sqlite<TArgs, TResult>(this QueryBuilder builder)
         {
-            return new QueryBuilder<SqliteBuilder, TArgs, TResult>();
+            return new QueryBuilder<SqliteSyntax, TArgs, TResult>();
         }
     }
 }

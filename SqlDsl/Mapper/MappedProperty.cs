@@ -55,7 +55,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        class DebugOnlySqlFragmentBuilder : SqlBuilders.SqlFragmentBuilderBase
+        class DebugOnlySqlFragmentBuilder : SqlBuilders.SqlSyntaxBase
         {
             public override (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias)
             {

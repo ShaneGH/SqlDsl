@@ -5,7 +5,7 @@ namespace SqlDsl.Sqlite
     /// <summary>
     /// Class for building sqlite statements
     /// </summary>
-    public class SqliteBuilder : SqlFragmentBuilderBase
+    public class SqliteSyntax : SqlSyntaxBase
     {
         /// <summary>
         /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}

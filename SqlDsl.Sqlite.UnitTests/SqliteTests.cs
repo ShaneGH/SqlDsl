@@ -13,7 +13,7 @@ using SqlDsl.Query;
 namespace SqlDsl.Sqlite.UnitTests
 {
     [TestFixture]
-    public class SqliteTests : SqlFragmentBuilderTestBase<SqliteBuilder>
+    public class SqliteTests : SqlFragmentBuilderTestBase<SqliteSyntax>
     {
         protected override Type GetTypeOfExceptionForEmptyIn() => null;
 

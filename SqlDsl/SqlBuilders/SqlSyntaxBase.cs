@@ -11,7 +11,7 @@ namespace SqlDsl.SqlBuilders
     /// <summary>
     /// Base class for building sql statements. Inherit from this class to build different flavours of sql
     /// </summary>
-    public abstract class SqlFragmentBuilderBase : ISqlSyntax
+    public abstract class SqlSyntaxBase : ISqlSyntax
     {
         /// <inheritdoc />
         public string Descending => "DESC";
