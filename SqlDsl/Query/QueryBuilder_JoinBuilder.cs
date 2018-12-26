@@ -15,21 +15,21 @@ namespace SqlDsl.Query
     /// <summary>
     /// Object to append query values to via underlying DSL
     /// </summary>
-    public partial class QueryBuilder<TSqlBuilder, TArgs, TResult>
+    public partial class QueryBuilder<TArgs, TResult>
     {
         /// <summary>
         /// Holds partial join state and can build a join
         /// </summary>
         class JoinBuilder<TJoin> : IJoinBuilder<TArgs, TResult, TJoin>
         {
-            readonly QueryBuilder<TSqlBuilder, TArgs, TResult> Query;
+            readonly QueryBuilder<TArgs, TResult> Query;
             readonly JoinType JoinType;
             readonly string TableName;
             readonly Expression JoinResultBody;
             readonly ParameterExpression JoinResultQueryParam;
 
             private JoinBuilder(
-                QueryBuilder<TSqlBuilder, TArgs, TResult> query, 
+                QueryBuilder<TArgs, TResult> query, 
                 JoinType joinType, 
                 string tableName, 
                 Expression joinResultBody, 
@@ -42,12 +42,12 @@ namespace SqlDsl.Query
                 TableName = tableName ?? throw new ArgumentNullException(nameof(tableName));
             }
 
-            public JoinBuilder(QueryBuilder<TSqlBuilder, TArgs, TResult> query, JoinType joinType, string tableName, Expression<Func<TResult, TJoin>> joinResult)
+            public JoinBuilder(QueryBuilder<TArgs, TResult> query, JoinType joinType, string tableName, Expression<Func<TResult, TJoin>> joinResult)
                 : this(query, joinType, tableName, joinResult?.Body, joinResult?.Parameters[0])
             {
             }
 
-            public JoinBuilder(QueryBuilder<TSqlBuilder, TArgs, TResult> query, JoinType joinType, string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult)
+            public JoinBuilder(QueryBuilder<TArgs, TResult> query, JoinType joinType, string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult)
                 : this(query, joinType, tableName, joinResult?.Body, joinResult?.Parameters[0])
             {
             }

@@ -9,13 +9,12 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.Mapper
 {
-    public class QueryMapper<TSqlBuilder, TArgs, TResult, TMapped> : ISqlBuilder<TArgs, TMapped>
-        where TSqlBuilder: ISqlSyntax, new()
+    public class QueryMapper<TArgs, TResult, TMapped> : ISqlBuilder<TArgs, TMapped>
     {
-        readonly QueryBuilder<TSqlBuilder, TArgs, TResult> Query;
+        readonly QueryBuilder<TArgs, TResult> Query;
         readonly Expression<Func<TResult, TArgs, TMapped>> Mapper;
         
-        public QueryMapper(QueryBuilder<TSqlBuilder, TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
+        public QueryMapper(QueryBuilder<TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
         {
             Query = query ?? throw new ArgumentNullException(nameof(query));
             Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -25,7 +24,7 @@ namespace SqlDsl.Mapper
         public ICompiledQuery<TArgs, TMapped> Compile(ILogger logger = null)
         {
             var timer = new Timer(true);
-            var result = QueryMapper.Compile<TArgs, TResult, TMapped, TSqlBuilder>(Query.SqlFragmentBuilder, Query, Mapper, logger: logger);
+            var result = QueryMapper.Compile<TArgs, TResult, TMapped>(Query.SqlFragmentBuilder, Query, Mapper, logger: logger);
 
             if (logger.CanLogInfo(LogMessages.CompiledQuery))
                 logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);

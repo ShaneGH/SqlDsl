@@ -21,12 +21,11 @@ namespace SqlDsl.Mapper
         /// <summary>
         /// Compile the query into something which can be executed multiple times
         /// </summary>
-        public static ICompiledQuery<TArgs, TMapped> Compile<TArgs, TResult, TMapped, TSqlBuilder>(
+        public static ICompiledQuery<TArgs, TMapped> Compile<TArgs, TResult, TMapped>(
             ISqlSyntax sqlFragmentBuilder, 
-            QueryBuilder<TSqlBuilder, TArgs, TResult> query, 
+            QueryBuilder<TArgs, TResult> query, 
             LambdaExpression mapper, 
             ILogger logger)
-            where TSqlBuilder: ISqlSyntax, new()
         {
             var (wrappedBuilder, parameters) = query.ToSqlStatement();
             var mutableParameters = new ParamBuilder(parameters.ToList());
@@ -85,7 +84,7 @@ namespace SqlDsl.Mapper
                         ReflectionUtils.ConvertToFullMemberInit(mapper.Body), 
                         mapper.Parameters);
 
-                    return Compile<TArgs, TResult, TMapped, TSqlBuilder>(sqlFragmentBuilder, query, init, logger: logger);
+                    return Compile<TArgs, TResult, TMapped>(sqlFragmentBuilder, query, init, logger: logger);
 
                 case MapBuilder.MappingType.MultiComplexProp:
 
@@ -95,7 +94,7 @@ namespace SqlDsl.Mapper
                         AddMemberInitSelector(typeof(TMapped), mapper.Body), 
                         mapper.Parameters);
 
-                    return Compile<TArgs, TResult, TMapped, TSqlBuilder>(sqlFragmentBuilder, query, identityMap, logger: logger);
+                    return Compile<TArgs, TResult, TMapped>(sqlFragmentBuilder, query, identityMap, logger: logger);
 
                 default:
                     throw new NotSupportedException(resultType.ToString());

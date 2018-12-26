@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace SqlDsl.Query
 {
-    public partial class QueryBuilder<TSqlBuilder, TArgs, TResult>
+    public partial class QueryBuilder<TArgs, TResult>
     {
         /// <inheritdoc />
         public Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null) =>

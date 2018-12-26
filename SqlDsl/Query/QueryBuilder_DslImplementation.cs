@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace SqlDsl.Query
 {
-    public partial class QueryBuilder<TSqlBuilder, TArgs, TResult>
+    public partial class QueryBuilder<TArgs, TResult>
     {
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table]
@@ -163,7 +163,7 @@ namespace SqlDsl.Query
         /// An expression to build a mapped object
         /// </param>
         public ISqlBuilder<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TArgs, TMapped>> mapper) =>
-            new QueryMapper<TSqlBuilder, TArgs, TResult, TMapped>(this, mapper);
+            new QueryMapper<TArgs, TResult, TMapped>(this, mapper);
 
         /// <summary>
         /// Map the result TResult to another type of object. Use this method to cherry pick the columns you want to return

@@ -33,7 +33,7 @@ namespace SqlDsl.UnitTests.DataParser
             public List<Tag> Tags { get; set; }
         }
 
-        static QueryBuilder<Sqlite.SqliteSyntax, object, JoinedQueryClass> FullyJoinedQuery()
+        static QueryBuilder<object, JoinedQueryClass> FullyJoinedQuery()
         {
             return Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
@@ -44,7 +44,7 @@ namespace SqlDsl.UnitTests.DataParser
                 .InnerJoin<ClassTag>(q => q.ClassTags)
                     .On((q, ct) => q.Classes.One().Id == ct.ClassId)
                 .InnerJoin<Tag>(q => q.Tags)
-                    .On((q, t) => q.ClassTags.One().TagId == t.Id) as QueryBuilder<Sqlite.SqliteSyntax, object, JoinedQueryClass>;
+                    .On((q, t) => q.ClassTags.One().TagId == t.Id) as QueryBuilder<object, JoinedQueryClass>;
         }
 
         void Compare(ObjectPropertyGraph expected, ObjectPropertyGraph actual)
@@ -1062,7 +1062,7 @@ namespace SqlDsl.UnitTests.DataParser
     {
         public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.ISqlBuilder<object, TResult> builder)
         {
-            var compiled = (CompiledQuery<object, TResult>)((QueryMapper<Sqlite.SqliteSyntax, object, TMappedFrom, TResult>)builder)
+            var compiled = (CompiledQuery<object, TResult>)((QueryMapper<object, TMappedFrom, TResult>)builder)
                 .Compile();
 
             return compiled.PropertyGraph;
@@ -1081,7 +1081,7 @@ namespace SqlDsl.UnitTests.DataParser
         
         public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult>(this Dsl.IQuery<TResult> builder)
         {
-            var compiled = (CompiledQuery<object, TResult>)((QueryBuilder<Sqlite.SqliteSyntax, object, TResult>)builder)
+            var compiled = (CompiledQuery<object, TResult>)((QueryBuilder<object, TResult>)builder)
                 .Compile();
 
             return compiled.PropertyGraph;
@@ -1089,7 +1089,7 @@ namespace SqlDsl.UnitTests.DataParser
         
         public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult>(this Dsl.IQuery<object, TResult> builder)
         {
-            var compiled = (CompiledQuery<object, TResult>)((QueryBuilder<Sqlite.SqliteSyntax, object, TResult>)builder)
+            var compiled = (CompiledQuery<object, TResult>)((QueryBuilder<object, TResult>)builder)
                 .Compile();
 
             return compiled.PropertyGraph;

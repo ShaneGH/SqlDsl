@@ -13,8 +13,7 @@ using System.Threading.Tasks;
 
 namespace SqlDsl.UnitTests.SqlFlavours
 {
-    public abstract class SqlFragmentBuilderTestBase<TSqlBuilder>
-        where TSqlBuilder : ISqlSyntax, new()
+    public abstract class SqlFragmentBuilderTestBase
     {
         const string TestDataTableName = "TestDataTable";
         protected bool PrintStatusOnFailure;        
@@ -65,6 +64,7 @@ namespace SqlDsl.UnitTests.SqlFlavours
             DropDb();
         }
 
+        public abstract ISqlSyntax GetSyntax();
         public abstract void CreateDb(TableDescriptor table);
         public abstract void SeedDb(string tableName, IEnumerable<IEnumerable<KeyValuePair<string, object>>> rows);
         public abstract IExecutor CreateExecutor();
@@ -80,7 +80,7 @@ namespace SqlDsl.UnitTests.SqlFlavours
             #pragma warning restore 0649
         }
 
-        protected ITable<TestDataTable> StartTest() => ((ITable<TestDataTable>)new QueryBuilder<TSqlBuilder, TestDataTable>());
+        protected ITable<TestDataTable> StartTest() => ((ITable<TestDataTable>)new QueryBuilder<TestDataTable>(GetSyntax()));
 
         [Test]
         public void TestValues()
@@ -103,7 +103,7 @@ namespace SqlDsl.UnitTests.SqlFlavours
         {
             // arrange
             // act
-            var values = ((ITable<One2One>)new QueryBuilder<TSqlBuilder, One2One>())
+            var values = ((ITable<One2One>)new QueryBuilder<One2One>(GetSyntax()))
                 .From(x => x.T1)
                 .InnerJoin(x => x.T2).On((q, t2) => q.T1.PrimaryKey == t2.PrimaryKey)
                 .ToIEnumerable(Executor)

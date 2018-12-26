@@ -15,8 +15,7 @@ namespace SqlDsl.Query
     /// <summary>
     /// Object to append query values to via underlying DSL
     /// </summary>
-    public partial class QueryBuilder<TSqlBuilder, TArgs, TResult> : ITable<TArgs, TResult>, IQuery<TArgs, TResult>, IOrdererAgain<TArgs, TResult>
-        where TSqlBuilder: ISqlSyntax, new()
+    public partial class QueryBuilder<TArgs, TResult> : ITable<TArgs, TResult>, IQuery<TArgs, TResult>, IOrdererAgain<TArgs, TResult>
     {
         /// <summary>
         /// The name of the table in the SELECT statement
@@ -33,12 +32,17 @@ namespace SqlDsl.Query
         /// </summary>
         readonly List<Join> Joins = new List<Join>();
 
-        public readonly ISqlSyntax SqlFragmentBuilder = new TSqlBuilder();
+        public readonly ISqlSyntax SqlFragmentBuilder;
         
         /// <summary>
         /// The WHERE part of the query
         /// </summary>
         (ParameterExpression queryRoot, ParameterExpression args, Expression where)? WhereClause = null;
+
+        public QueryBuilder(ISqlSyntax sqlSyntax)
+        {
+            SqlFragmentBuilder = sqlSyntax;
+        }
 
         /// <summary>
         /// Check an expression ultimately points to the query object. Throw an exception if not

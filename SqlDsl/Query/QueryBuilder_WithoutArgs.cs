@@ -15,9 +15,13 @@ namespace SqlDsl.Query
     /// <summary>
     /// Object to append query values to via underlying DSL
     /// </summary>
-    public class QueryBuilder<TSqlBuilder, TResult> : QueryBuilder<TSqlBuilder, object, TResult>, ITable<TResult>, IQuery<TResult>, IOrdererAgain<TResult>
-        where TSqlBuilder : ISqlSyntax, new()
+    public class QueryBuilder<TResult> : QueryBuilder<object, TResult>, ITable<TResult>, IQuery<TResult>, IOrdererAgain<TResult>
     {
+        public QueryBuilder(ISqlSyntax syntax)
+            : base(syntax)
+        {
+        }
+
         Task<IEnumerable<TResult>> ISqlBuilder<TResult>.ToIEnumerableAsync(IExecutor executor, ILogger logger) => ToIEnumerableAsync(executor, null, logger: logger);
 
         IEnumerable<TResult> ISqlBuilder<TResult>.ToIEnumerable(IExecutor executor, ILogger logger) => ToIEnumerable(executor, null, logger: logger);
@@ -33,16 +37,16 @@ namespace SqlDsl.Query
         ICompiledQuery<TResult> ISqlBuilder<TResult>.Compile(ILogger logger) => new CompiledQuery<TResult>(base.Compile(logger: logger));
 
         IQuery<TResult> ITable<TResult>.From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty) =>
-            (QueryBuilder<TSqlBuilder, TResult>)base.From(tableName, resultProperty);
+            (QueryBuilder<TResult>)base.From(tableName, resultProperty);
 
         IQuery<TResult> ITable<TResult>.From<TTable>(Expression<Func<TResult, TTable>> resultProperty) =>
-            (QueryBuilder<TSqlBuilder, TResult>)base.From(resultProperty);
+            (QueryBuilder<TResult>)base.From(resultProperty);
 
         IQuery<TResult> ITable<TResult>.From(string tableName) =>
-            (QueryBuilder<TSqlBuilder, TResult>)base.From(tableName);
+            (QueryBuilder<TResult>)base.From(tableName);
 
         IQuery<TResult> ITable<TResult>.From() =>
-            (QueryBuilder<TSqlBuilder, TResult>)base.From();
+            (QueryBuilder<TResult>)base.From();
 
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
             new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(tableName, joinProperty));
@@ -72,23 +76,23 @@ namespace SqlDsl.Query
             new QueryMapper<TMapped>(base.Map(mapper));
 
         IResultMapper<TResult> IFilter<TResult>.Where(Expression<Func<TResult, bool>> filter) =>
-            (QueryBuilder<TSqlBuilder, TResult>)base.Where(filter);
+            (QueryBuilder<TResult>)base.Where(filter);
 
         /// <inheritdoc />
         IOrdererAgain<TResult> IOrderer<TResult>.OrderBy<T>(Expression<Func<TResult, T>> order) => 
-            (QueryBuilder<TSqlBuilder, TResult>)base.OrderBy(order);
+            (QueryBuilder<TResult>)base.OrderBy(order);
 
         /// <inheritdoc />
         IOrdererAgain<TResult> IOrderer<TResult>.OrderByDesc<T>(Expression<Func<TResult, T>> order) => 
-            (QueryBuilder<TSqlBuilder, TResult>)base.OrderByDesc(order);
+            (QueryBuilder<TResult>)base.OrderByDesc(order);
 
         /// <inheritdoc />
         IOrdererAgain<TResult> IOrdererAgain<TResult>.ThenBy<T>(Expression<Func<TResult, T>> order) => 
-            (QueryBuilder<TSqlBuilder, TResult>)base.ThenBy(order);
+            (QueryBuilder<TResult>)base.ThenBy(order);
 
         /// <inheritdoc />
         IOrdererAgain<TResult> IOrdererAgain<TResult>.ThenByDesc<T>(Expression<Func<TResult, T>> order) => 
-            (QueryBuilder<TSqlBuilder, TResult>)base.ThenByDesc(order);
+            (QueryBuilder<TResult>)base.ThenByDesc(order);
 
         public Task<List<TResult>> ToListAsync(IExecutor executor, ILogger logger = null) =>
             base.ToListAsync(executor, null, logger);
@@ -122,7 +126,7 @@ namespace SqlDsl.Query
             /// </param>
             public IQuery<TResult> On(Expression<Func<TResult, TJoin, bool>> joinExpression)
             {
-                return (QueryBuilder<TSqlBuilder, TResult>)Worker.On(joinExpression);
+                return (QueryBuilder<TResult>)Worker.On(joinExpression);
             }
         }
     }

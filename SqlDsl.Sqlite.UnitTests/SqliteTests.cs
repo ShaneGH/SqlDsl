@@ -9,11 +9,12 @@ using Microsoft.Data.Sqlite;
 using System.IO;
 using SqlDsl.Dsl;
 using SqlDsl.Query;
+using SqlDsl.SqlBuilders;
 
 namespace SqlDsl.Sqlite.UnitTests
 {
     [TestFixture]
-    public class SqliteTests : SqlFragmentBuilderTestBase<SqliteSyntax>
+    public class SqliteTests : SqlFragmentBuilderTestBase
     {
         protected override Type GetTypeOfExceptionForEmptyIn() => null;
 
@@ -153,5 +154,7 @@ namespace SqlDsl.Sqlite.UnitTests
 
             return data;
         }
+
+        public override ISqlSyntax GetSyntax() => new SqliteSyntax();
     }
 }

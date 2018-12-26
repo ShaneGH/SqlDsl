@@ -9,12 +9,14 @@ namespace SqlDsl
     /// </summary>
     public static class SqliteUtils
     {
+        static readonly SqliteSyntax SqliteSyntax = new SqliteSyntax();
+
         /// <summary>
         /// Build a Sqlite query
         /// </summary>
         public static ITable<TResult> Sqlite<TResult>(this QueryBuilder builder)
         {
-            return new QueryBuilder<SqliteSyntax, TResult>();
+            return new QueryBuilder<TResult>(SqliteSyntax);
         }
 
         /// <summary>
@@ -22,7 +24,7 @@ namespace SqlDsl
         /// </summary>
         public static ITable<TArgs, TResult> Sqlite<TArgs, TResult>(this QueryBuilder builder)
         {
-            return new QueryBuilder<SqliteSyntax, TArgs, TResult>();
+            return new QueryBuilder<TArgs, TResult>(SqliteSyntax);
         }
     }
 }
