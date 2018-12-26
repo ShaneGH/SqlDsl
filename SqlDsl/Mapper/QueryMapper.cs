@@ -63,8 +63,10 @@ namespace SqlDsl.Mapper
                     // wrappedStatement = new SqlStatement(filteredWrappedBuilder);
 
                     if (resultType == MapBuilder.MappingType.Map)
-                        return ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state)
-                            .Compile<TArgs, TMapped>(mutableParameters.Parameters, QueryParseType.ORM);
+                    {
+                        var b = ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state);
+                        return b.Compile<TArgs, TMapped>(b, mutableParameters.Parameters, QueryParseType.ORM);
+                    }
                             
                     properties = properties.Enumerate();
                     if (properties.Count() != 1)
@@ -101,7 +103,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static SqlStatementBuilder ToSqlBuilder(ISqlSyntax sqlFragmentBuilder, IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, ISqlString wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
+        static MappedSqlStatementBuilder ToSqlBuilder(ISqlSyntax sqlFragmentBuilder, IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, ISqlString wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var rowIdPropertyMap = tables
                 // if mapping does not map to a specific property (e.g. q => q.Args.Select(a => new object()))
@@ -126,8 +128,7 @@ namespace SqlDsl.Mapper
 
             var allProperties = mappedValues.SelectMany(x => x.fromParams);
 
-            var builder = new SqlStatementBuilder(sqlFragmentBuilder);
-            builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
+            var builder = new MappedSqlStatementBuilder(sqlFragmentBuilder, wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
 
             foreach (var col in mappedValues)
             {
@@ -149,7 +150,7 @@ namespace SqlDsl.Mapper
             return builder;
         }
 
-        static SqlStatementBuilder ToSqlBuilder(
+        static MappedSqlStatementBuilder ToSqlBuilder(
             ISqlSyntax sqlFragmentBuilder, 
             IAccumulator<Element> property, 
             Type cellDataType, 
@@ -157,8 +158,7 @@ namespace SqlDsl.Mapper
             ISqlStatement wrappedStatement, 
             BuildMapState state)
         {
-            var builder = new SqlStatementBuilder(sqlFragmentBuilder);
-            builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
+            var builder = new MappedSqlStatementBuilder(sqlFragmentBuilder, wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
 
             var referencedColumns = property
                 .GetEnumerable1()

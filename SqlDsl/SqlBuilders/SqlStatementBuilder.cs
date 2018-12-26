@@ -14,57 +14,35 @@ namespace SqlDsl.SqlBuilders
     /// <summary>
     /// A class to build sql statements
     /// </summary>
-    public class SqlStatementBuilder : ISqlString, SqlStatementParts.ISqlStatementPartValues
+    public class SqlStatementBuilder : SqlStatementBuilderBase, SqlStatementParts.ISqlStatementPartValues
     {
-        public readonly ISqlSyntax SqlBuilder;
+        static int _InnerQueryAlias = 0;
+        static readonly object InnerQueryLock = new object();
+        
+        /// <summary>
+        /// The WHERE statement, if necessary
+        /// </summary>
+        (string setupSql, string sql, IEnumerable<string> queryObjectReferences)? Where = null;
 
-        public SqlStatementBuilder(ISqlSyntax sqlFragmentBuilder)
-        {
-            SqlBuilder = sqlFragmentBuilder ?? throw new ArgumentNullException(nameof(sqlFragmentBuilder));
-        }
-                
         public readonly string UniqueAlias = BuildInnerQueryAlias();
+
+        readonly List<(string sql, IEnumerable<string> queryObjectReferences, OrderDirection direction)> Ordering = new List<(string, IEnumerable<string>, OrderDirection)>();
+
+        /// <summary>
+        /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join
+        /// </summary>
+        readonly List<(string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences)> _Joins = new List<(string, string, string, IEnumerable<string>)>();
 
         /// <summary>
         /// The name of the table in the SELECT clause
         /// </summary>
-        string PrimaryTable;
-        
-        /// <summary>
-        /// The alias of the table in the SELECT clause
-        /// </summary>
-        public string PrimaryTableAlias;
-        
-        /// <summary>
-        /// Set the name and alias of the table in the SELECT clause. alias can be null
-        /// </summary>
-        public void SetPrimaryTable(string tableName, string alias)
-        {
-            PrimaryTable = tableName;
-            PrimaryTableAlias = alias;
-        }
+        readonly string PrimaryTable;
 
-        /// <summary>
-        /// The inner query used in the SELECT clause
-        /// </summary>
-        (ISqlString builder, ISqlStatement statement)? InnerQuery;
-
-        /// <summary>
-        /// The inner statement used in the SELECT clause, or null if there is no inner statement
-        /// </summary>
-        public ISqlStatement InnerStatement => InnerQuery?.statement;
-        
-        /// <summary>
-        /// Set the inner query and is's alias in the SELECT clause. alias can be null
-        /// </summary>
-        public void SetPrimaryTable(ISqlString innerQueryBuilder, ISqlStatement innerQueryStatement, string alias)
+        public SqlStatementBuilder(ISqlSyntax sqlFragmentBuilder, string primaryTable, string primaryTableAlias)
+            : base(sqlFragmentBuilder, primaryTableAlias)
         {
-            InnerQuery = (innerQueryBuilder, innerQueryStatement);
-            PrimaryTableAlias = alias;
+            PrimaryTable = primaryTable ?? throw new ArgumentNullException(nameof(primaryTable));
         }
-        
-        static int _InnerQueryAlias = 0;
-        static readonly object InnerQueryLock = new object();
         
         /// <summary>
         /// Get a new 4 digit code for alias. Aliass' must be unique in the scope of a query only
@@ -80,61 +58,10 @@ namespace SqlDsl.SqlBuilders
             }
         }
 
-        private readonly List<(string sql, IEnumerable<string> queryObjectReferences, OrderDirection direction)> Ordering = new List<(string, IEnumerable<string>, OrderDirection)>();
-
         public void AddOrderBy(ParameterExpression queryRootParam, ParameterExpression argsParam, Expression orderBy, OrderDirection direction, ParamBuilder parameters)
         {
             var (sql, queryObjectReferences) = BuildCondition(queryRootParam, argsParam, orderBy, parameters, "ORDER BY");
             Ordering.Add((sql, queryObjectReferences, direction));
-        }
-
-        /// <summary>
-        /// A map from a row id column to a location in a mapped property graph
-        /// </summary>
-        public readonly List<(string rowIdColumnName, string resultClassProperty)> RowIdsForMappedProperties = new List<(string, string)>();
-
-        /// <summary>
-        /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join
-        /// </summary>
-        readonly List<(string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences)> _Joins = new List<(string, string, string, IEnumerable<string>)>();
-        public IEnumerable<(string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences)> Joins => _Joins.Skip(0);
-
-        class ParameterReplacer : ExpressionVisitor, IDisposable
-        {
-            ParameterExpression Parameter;
-            Expression Replacement;
-
-            private ParameterReplacer()
-            {
-            }
-
-            void Init(ParameterExpression parameter, Expression replacement)
-            {
-                Parameter = parameter;
-                Replacement = replacement;
-            }
-
-            protected override Expression VisitParameter(ParameterExpression node)
-            {
-                if (node != Parameter)
-                    return base.VisitParameter(node);
-
-                return Replacement;
-            }
-
-            public void Dispose() => Init(null, null);
-
-            [ThreadStatic]
-            static readonly ParameterReplacer Instance = new ParameterReplacer();
-
-            public static Expression ReplaceParameter(Expression expr, ParameterExpression parameter, Expression replacement)
-            {
-                using (Instance)
-                {
-                    Instance.Init(parameter, replacement);
-                    return Instance.Visit(expr);
-                }
-            }
         }
 
         /// <summary>
@@ -232,29 +159,6 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <summary>
-        /// A list of columns in the SELECT statement
-        /// </summary>
-        readonly List<SelectColumn> _Select = new List<SelectColumn>();
-
-        /// <summary>
-        /// A list of columns in the SELECT statement
-        /// </summary>
-        public IEnumerable<SelectColumn> Select => _Select.Skip(0);
-
-        private static readonly ConstructorInfo[] EmptyConstructorInfo = new ConstructorInfo[0];
-
-        /// <summary>
-        /// Add a column to the SELECT statement
-        /// </summary>
-        public void AddSelectColumn(Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] argConstructors = null) =>
-            _Select.Add(new SelectColumn(cellDataType, selectCode, alias ?? throw new ArgumentNullException(nameof(alias)), representsColumns, argConstructors ?? EmptyConstructorInfo));
-
-        /// <summary>
-        /// The WHERE statement, if necessary
-        /// </summary>
-        (string setupSql, string sql, IEnumerable<string> queryObjectReferences)? Where = null;
-
-        /// <summary>
         /// The WHERE statement, if necessary
         /// </summary>
         /// <param name="queryRoot">The parameter which represents the query object in the expression</param>
@@ -300,85 +204,8 @@ namespace SqlDsl.SqlBuilders
             }
         }
 
-        /// <summary>
-        /// Compile the sql statment to a script
-        /// </summary>
-        /// <returns>querySetupSql: sql which must be executed before the query is run. 
-        /// beforeWhereSql: the query sql before the WHERE statement. 
-        /// whereSql: the query sql whereSql the WHERE statement. 
-        /// afterWhereSql: the query sql after the WHERE statement</returns>
-        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString()
-        {
-            if (PrimaryTable != null && InnerQuery != null)
-                throw new InvalidOperationException("You can only call one overload of SetPrimaryTable.");
-                
-            if (PrimaryTable == null && InnerQuery == null)
-                throw new InvalidOperationException("You must call SetPrimaryTable before calling ToSqlString.");
-                
-            if (PrimaryTableAlias == null)
-                throw new InvalidOperationException("You must call SetPrimaryTable before calling ToSqlString.");
-
-            // build SELECT columns (cols and row ids)
-            var select = GetAllSelectColumns()
-                .Select(s => SqlBuilder.AddAliasColumn(s.col.SelectCode, s.col.Alias))
-                .Enumerate();
-
-            // add placeholder in case no SELECT columns were specified
-            if (!select.Any())
-                select = new [] { "1" };
-
-            return InnerQuery != null ?
-                ToSqlStringWithInnerQuery(select) :
-                ToSqlStringWithoutInnerQuery(select);
-        }
-
-        /// <summary>
-        /// Compile the sql statment to a script where the statement has an inner query
-        /// </summary>
-        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlStringWithInnerQuery(IEnumerable<string> selectColumns)
-        {
-            if (Where != null)
-                throw new InvalidOperationException($"You can not have an inner query and a WHERE clause. You should put the WHERE clause inside the inner query. WHERE: {Where}");
-
-            if (_Joins.Count != 0)
-                throw new InvalidOperationException("You can not have an inner query and a JOIN clause. You should put the JOIN clauses inside the inner query");
-
-            if (Ordering.Count > 0)
-                throw new InvalidOperationException("You can not have with an ORDER BY clause. You should put the ORDER BY inside the inner query");
-
-            // get the sql from the inner query if possible
-            var (querySetupSql, beforeWhereSql, whereSql, afterWhereSql) = InnerQuery.Value.builder.ToSqlString();
-
-            beforeWhereSql = $"SELECT {selectColumns.JoinString(",")}\nFROM ({beforeWhereSql}";
-            afterWhereSql = $"{afterWhereSql}) {SqlBuilder.WrapAlias(PrimaryTableAlias)}{BuildGroupByStatement("\n")}";
-
-            return (querySetupSql, beforeWhereSql, whereSql, afterWhereSql);
-        }
-
-        string BuildGroupByStatement(string prefix)
-        {
-            if (GetAllSelectColumns().All(cs => cs.col.RepresentsColumns.All(c => c.aggregatedToTable == null)))
-                return "";
-
-            var output = new List<string>(16);
-            foreach (var col in GetAllSelectColumns()
-                .SelectMany(cs => cs.col.RepresentsColumns)
-                .Where(c => c.aggregatedToTable == null))
-            {
-                output.Add(SqlBuilder.BuildSelectColumn(col.table, col.column));
-            }
-
-            if (output.Count > 0)
-                prefix += "GROUP BY ";
-
-            return $"{prefix}{output.JoinString(",")}";
-        }
-
-        /// <summary>
-        /// Compile the sql statment to a script
-        /// </summary>
-        /// <returns>querySetupSql: sql which must be executed before the query is run. querySql: the query sql</returns>
-        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlStringWithoutInnerQuery(IEnumerable<string> selectColumns)
+        /// <inheritdoc />
+        protected override (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString(IEnumerable<string> selectColumns)
         {
             // build WHERE part
             var where = Where == null ? "" : $" WHERE {Where.Value.sql}";
@@ -426,102 +253,47 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Get a list of row id colums, the alias of the table they are identifying, and the alias for the row id column (if any)
         /// </summary>
-        public IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns()
+        protected override IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns()
         {
-            // if there is no inner query, columns will come from SELECT and JOIN parts
-            if (InnerQuery == null)
-            {
-                // Get row id from the SELECT
-                var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? 
-                    SqlStatementConstants.RowIdName : 
-                    $"{PrimaryTableAlias}.{SqlStatementConstants.RowIdName}";
+            // Get row id from the SELECT
+            var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? 
+                SqlStatementConstants.RowIdName : 
+                $"{PrimaryTableAlias}.{SqlStatementConstants.RowIdName}";
 
-                yield return (SqlStatementConstants.RowIdName, PrimaryTableAlias, ptAlias);
+            yield return (SqlStatementConstants.RowIdName, PrimaryTableAlias, ptAlias);
 
-                // Get row id from each join
-                foreach (var join in _Joins)
-                {
-                    yield return (
-                        SqlStatementConstants.RowIdName, 
-                        join.alias, 
-                        $"{join.alias}.{SqlStatementConstants.RowIdName}");
-                }
-            }
-            else
+            // Get row id from each join
+            foreach (var join in _Joins)
             {
-                // if there is an inner query, all columns will come from it
-                foreach (var table in InnerQuery.Value.statement.Tables)
-                {
-                    // Get row id from the SELECT
-                    var alias = table.Alias == null || table.Alias == SqlStatementConstants.RootObjectAlias ? 
-                        SqlStatementConstants.RowIdName : 
-                        $"{table.Alias}.{SqlStatementConstants.RowIdName}";
-                    
-                    // the only row id will be [inner query alias].[##rowid]
-                    yield return (
-                        InnerQuery.Value.statement.SelectColumns[table.RowNumberColumnIndex].Alias, 
-                        InnerQuery.Value.statement.UniqueAlias, 
-                        alias);
-                }
+                yield return (
+                    SqlStatementConstants.RowIdName, 
+                    join.alias, 
+                    $"{join.alias}.{SqlStatementConstants.RowIdName}");
             }
         }
 
-        static readonly string NullString = null;
-
-        /// <summary>
-        /// Concat DB table columns with row id columns
-        /// </summary>
-        IEnumerable<(bool isRowId, SelectColumn col)> GetAllSelectColumns() =>
-            GetRowIdSelectColumns()
-            .Select(x => (true, new SelectColumn((Type)null, SqlBuilder.BuildSelectColumn(x.tableAlias, x.rowIdColumnName), x.rowIdColumnNameAlias, new [] { (x.tableAlias, x.rowIdColumnName, NullString) }, EmptyConstructorInfo)))
-            .Concat(_Select.Select(x => (false, x)));
-        
         #region ISqlStatementPartValues
 
         string ISqlStatementPartValues.UniqueAlias => UniqueAlias;
 
         string ISqlStatementPartValues.PrimaryTableAlias => PrimaryTableAlias;
 
-        IEnumerable<SqlStatementPartJoin> ISqlStatementPartValues.JoinTables => Joins.Select(BuildJoinTable);
+        IEnumerable<SqlStatementPartJoin> ISqlStatementPartValues.JoinTables => _Joins.Select(BuildJoinTable);
 
-        ISqlStatement ISqlStatementPartValues.InnerStatement => InnerStatement;
+        ISqlStatement ISqlStatementPartValues.InnerStatement => null;
 
         ISqlSyntax ISqlStatementPartValues.SqlBuilder => SqlBuilder;
 
         IEnumerable<SqlStatementPartSelect> ISqlStatementPartValues.SelectColumns => GetAllSelectColumns().Select(BuildSelectCol);
 
-        IEnumerable<(string rowIdColumnName, string resultClassProperty)> ISqlStatementPartValues.RowIdsForMappedProperties => RowIdsForMappedProperties;
+        IEnumerable<(string rowIdColumnName, string resultClassProperty)> ISqlStatementPartValues.RowIdsForMappedProperties => Enumerable.Empty<(string, string)>();
 
         static readonly Func<(string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences), SqlStatementPartJoin> BuildJoinTable = join =>
             new SqlStatementPartJoin(join.alias, join.queryObjectReferences);
 
         static readonly Func<(bool, SelectColumn), SqlStatementPartSelect> BuildSelectCol = select =>
-            // TODO: string manipulation
             new SqlStatementPartSelect(select.Item1, select.Item2.CellDataType, select.Item2.Alias, select.Item2.RepresentsColumns, select.Item2.ArgConstructors);
 
         #endregion
-
-        public class SelectColumn
-        {
-            public readonly Type CellDataType;
-            public readonly string SelectCode;
-            public readonly  string Alias;
-            public readonly  (string table, string column, string aggregatedToTable)[] RepresentsColumns;
-            public readonly  ConstructorInfo[] ArgConstructors;
-
-            public SelectColumn(
-                Type cellDataType, 
-                string selectCode, 
-                string alias, 
-                (string table, string column, string aggregatedToTable)[] representsColumns, 
-                ConstructorInfo[] argConstructors)
-            {
-                CellDataType = cellDataType;
-                SelectCode = selectCode;
-                Alias = alias;
-                RepresentsColumns = representsColumns;
-                ArgConstructors = argConstructors;
-            }
-        }
     }
 }

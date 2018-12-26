@@ -11,22 +11,22 @@ using System.Reflection;
 namespace SqlDsl.Query
 {
     public static class QueryExecutionUtils
-    {
+    {        
         /// <summary>
         /// Compile a sqlBuilder into a query which can be executed multiple times
         /// </summary>
         /// <param name="sqlBuilder">The builder with all properties populated</param>
         /// <param name="parameters">Any constant parameters in the statement</param>
         /// <param name="queryParseType">Define the way results are to be parsed</param>
-        public static CompiledQuery<TArgs, TResult> Compile<TArgs, TResult> (this SqlStatementBuilder sqlBuilder, IEnumerable<object> parameters, QueryParseType queryParseType)
+        public static CompiledQuery<TArgs, TResult> Compile<TArgs, TResult> (this ISqlString sqlBuilder, ISqlStatementPartValues statementBuilder, IEnumerable<object> parameters, QueryParseType queryParseType)
         {
             var sql = ToSql(sqlBuilder);
-            var statement = new SqlStatement(sqlBuilder);
+            var statement = new SqlStatement(statementBuilder);
 
             var selectColumns = statement.SelectColumns.Select(Alias).ToArray();
             var propertyGraph = statement.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
 
-            return new CompiledQuery<TArgs, TResult>(sql, parameters.ToArray(), selectColumns, propertyGraph, sqlBuilder.SqlBuilder);
+            return new CompiledQuery<TArgs, TResult>(sql, parameters.ToArray(), selectColumns, propertyGraph, statementBuilder.SqlBuilder);
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace SqlDsl.Query
         /// <param name="sqlBuilder">The builder with the property populated</param>
         /// <param name="parameters">Any constant parameters in the statement</param>
         /// <param name="property">The name of the singe property</param>
-        public static CompiledQuery<TArgs, TResult> CompileSimple<TArgs, TResult>(this SqlStatementBuilder sqlBuilder, IEnumerable<object> parameters, string property)
+        public static CompiledQuery<TArgs, TResult> CompileSimple<TArgs, TResult>(this MappedSqlStatementBuilder sqlBuilder, IEnumerable<object> parameters, string property)
         {
             var statement = new SqlStatement(sqlBuilder);
             var i = statement.IndexOfColumnAlias(property);

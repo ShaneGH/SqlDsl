@@ -79,7 +79,7 @@ namespace SqlDsl.Query
             var timer = new Timer(true);
             var sqlBuilder = ToSqlStatement();
             var compiled = sqlBuilder.builder
-                .Compile<TArgs, TResult>(sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
+                .Compile<TArgs, TResult>(sqlBuilder.builder, sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
 
             if (logger.CanLogInfo(LogMessages.CompiledQuery))
                 logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);
@@ -97,13 +97,9 @@ namespace SqlDsl.Query
         {
             if (PrimaryTableMember == null)
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
-
-            // create output objects
-            var param = new ParamBuilder();
-            var builder = new SqlStatementBuilder(SqlFragmentBuilder);
-
+            
             // Set the SELECT table
-            builder.SetPrimaryTable(PrimaryTableName, PrimaryTableMember.Value.name);
+            var builder = new SqlStatementBuilder(SqlFragmentBuilder, PrimaryTableName, PrimaryTableMember.Value.name);
 
             // get all columns from SELECT and JOINs
             var selectColumns = Joins
@@ -113,6 +109,7 @@ namespace SqlDsl.Query
                     .Select(y => (table: PrimaryTableMember.Value.name, column: y)));
 
             // add each join
+            var param = new ParamBuilder();
             foreach (var join in Joins)
             {
                 builder.AddJoin(

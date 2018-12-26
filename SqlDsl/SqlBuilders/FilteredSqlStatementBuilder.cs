@@ -18,11 +18,11 @@ namespace SqlDsl.SqlBuilders
     {
         static readonly IEnumerable<string> EmptyStrings = new string[0];
 
-        readonly SqlStatementBuilder InnerSqlBuilder;
+        readonly MappedSqlStatementBuilder InnerSqlBuilder;
         readonly ISqlStatementPartValues InnerSqlStatementPartValues;
         readonly IEnumerable<(string tableAlias, string columnAlias, string aggregatesToTable)> RequiredColumns;
 
-        public FilteredSqlStatementBuilder(SqlStatementBuilder innerSqlBuilder, IEnumerable<(string tableAlias, string columnAlias, string aggregatesToTable)> requiredColumns)
+        public FilteredSqlStatementBuilder(MappedSqlStatementBuilder innerSqlBuilder, IEnumerable<(string tableAlias, string columnAlias, string aggregatesToTable)> requiredColumns)
         {
             InnerSqlBuilder = innerSqlBuilder ?? throw new ArgumentNullException(nameof(innerSqlBuilder));
             InnerSqlStatementPartValues = innerSqlBuilder ?? throw new ArgumentNullException(nameof(innerSqlBuilder));
