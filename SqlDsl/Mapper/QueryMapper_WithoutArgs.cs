@@ -8,7 +8,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
-namespace SqlDsl.Query
+namespace SqlDsl.Mapper
 {
     /// <summary>
     /// Wrapper for ISqlBuilder&lt;object, TMapped> which ignores args
