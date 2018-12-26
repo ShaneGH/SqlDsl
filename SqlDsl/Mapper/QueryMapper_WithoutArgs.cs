@@ -13,11 +13,11 @@ namespace SqlDsl.Mapper
     /// <summary>
     /// Wrapper for ISqlBuilder&lt;object, TMapped> which ignores args
     /// </summary>
-    public class QueryMapper<TMapped> : ISqlBuilder<TMapped>
+    public class QueryMapper<TMapped> : ISqlExecutor<TMapped>
     {
-        readonly ISqlBuilder<object, TMapped> Worker;
+        readonly ISqlExecutor<object, TMapped> Worker;
         
-        public QueryMapper(ISqlBuilder<object, TMapped> worker)
+        public QueryMapper(ISqlExecutor<object, TMapped> worker)
         {
             Worker = worker ?? throw new ArgumentNullException(nameof(worker));
         }

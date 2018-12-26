@@ -16,7 +16,7 @@ namespace SqlDsl.Query
     /// <summary>
     /// Build and execute sql queries
     /// </summary>
-    public abstract class SqlBuilder<TArgs, TResult> : ISqlBuilder<TArgs, TResult>
+    public abstract class SqlExecutor<TArgs, TResult> : ISqlExecutor<TArgs, TResult>
     {
         /// <summary>
         /// The name of the table in the SELECT statement
@@ -42,7 +42,7 @@ namespace SqlDsl.Query
         
         public readonly ISqlSyntax SqlFragmentBuilder;
 
-        public SqlBuilder(ISqlSyntax sqlSyntax)
+        public SqlExecutor(ISqlSyntax sqlSyntax)
         {
             SqlFragmentBuilder = sqlSyntax;
         }

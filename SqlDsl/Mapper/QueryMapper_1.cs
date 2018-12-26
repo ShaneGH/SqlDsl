@@ -9,12 +9,12 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.Mapper
 {
-    public class QueryMapper<TArgs, TResult, TMapped> : ISqlBuilder<TArgs, TMapped>
+    public class QueryMapper<TArgs, TResult, TMapped> : ISqlExecutor<TArgs, TMapped>
     {
-        readonly SqlBuilder<TArgs, TResult> Query;
+        readonly SqlExecutor<TArgs, TResult> Query;
         readonly Expression<Func<TResult, TArgs, TMapped>> Mapper;
         
-        public QueryMapper(SqlBuilder<TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
+        public QueryMapper(SqlExecutor<TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
         {
             Query = query ?? throw new ArgumentNullException(nameof(query));
             Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));

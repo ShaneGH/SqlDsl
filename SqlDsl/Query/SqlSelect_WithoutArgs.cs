@@ -23,19 +23,19 @@ namespace SqlDsl.Query
         {
         }
 
-        Task<IEnumerable<TResult>> ISqlBuilder<TResult>.ToIEnumerableAsync(IExecutor executor, ILogger logger) => ToIEnumerableAsync(executor, null, logger: logger);
+        Task<IEnumerable<TResult>> ISqlExecutor<TResult>.ToIEnumerableAsync(IExecutor executor, ILogger logger) => ToIEnumerableAsync(executor, null, logger: logger);
 
-        IEnumerable<TResult> ISqlBuilder<TResult>.ToIEnumerable(IExecutor executor, ILogger logger) => ToIEnumerable(executor, null, logger: logger);
+        IEnumerable<TResult> ISqlExecutor<TResult>.ToIEnumerable(IExecutor executor, ILogger logger) => ToIEnumerable(executor, null, logger: logger);
 
-        Task<List<TResult>> ISqlBuilder<TResult>.ToListAsync(IExecutor executor, ILogger logger) => ToListAsync(executor, null, logger: logger);
+        Task<List<TResult>> ISqlExecutor<TResult>.ToListAsync(IExecutor executor, ILogger logger) => ToListAsync(executor, null, logger: logger);
 
-        List<TResult> ISqlBuilder<TResult>.ToList(IExecutor executor, ILogger logger) => ToList(executor, null, logger: logger);
+        List<TResult> ISqlExecutor<TResult>.ToList(IExecutor executor, ILogger logger) => ToList(executor, null, logger: logger);
 
-        Task<TResult[]> ISqlBuilder<TResult>.ToArrayAsync(IExecutor executor, ILogger logger) => ToArrayAsync(executor, null, logger: logger);
+        Task<TResult[]> ISqlExecutor<TResult>.ToArrayAsync(IExecutor executor, ILogger logger) => ToArrayAsync(executor, null, logger: logger);
 
-        TResult[] ISqlBuilder<TResult>.ToArray(IExecutor executor, ILogger logger) => ToArray(executor, null, logger: logger);
+        TResult[] ISqlExecutor<TResult>.ToArray(IExecutor executor, ILogger logger) => ToArray(executor, null, logger: logger);
 
-        ICompiledQuery<TResult> ISqlBuilder<TResult>.Compile(ILogger logger) => new CompiledQuery<TResult>(base.Compile(logger: logger));
+        ICompiledQuery<TResult> ISqlExecutor<TResult>.Compile(ILogger logger) => new CompiledQuery<TResult>(base.Compile(logger: logger));
 
         IQuery<TResult> ISqlSelect<TResult>.From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty) =>
             (SqlSelect<TResult>)base.From(tableName, resultProperty);
@@ -73,7 +73,7 @@ namespace SqlDsl.Query
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoin<TJoin>(Expression<Func<TResult, TJoin>> joinProperty) =>
             new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(joinProperty));
 
-        ISqlBuilder<TMapped> IResultMapper<TResult>.Map<TMapped>(Expression<Func<TResult, TMapped>> mapper) =>
+        ISqlExecutor<TMapped> IResultMapper<TResult>.Map<TMapped>(Expression<Func<TResult, TMapped>> mapper) =>
             new QueryMapper<TMapped>(base.Map(mapper));
 
         IResultMapper<TResult> IFilter<TResult>.Where(Expression<Func<TResult, bool>> filter) =>

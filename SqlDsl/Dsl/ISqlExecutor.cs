@@ -8,7 +8,7 @@ namespace SqlDsl.Dsl
     /// <summary>
     /// Interface to help with query building DSL
     /// </summary>
-    public interface ISqlBuilder<TResult>
+    public interface ISqlExecutor<TResult>
     {
         /// <summary>
         /// Execute the sql query and get a list of results
@@ -74,7 +74,7 @@ namespace SqlDsl.Dsl
     /// <summary>
     /// Interface to help with query building DSL
     /// </summary>
-    public interface ISqlBuilder<TArgs, TResult>
+    public interface ISqlExecutor<TArgs, TResult>
     {
         /// <summary>
         /// Execute the sql query and get a list of results
