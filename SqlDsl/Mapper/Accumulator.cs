@@ -32,6 +32,20 @@ namespace SqlDsl.Mapper
         }
     }
 
+    struct TheAmazingElement
+    {
+        public ISelectColumn Column;
+        public ISelectColumn RowIdColumn;
+        public readonly string Function;
+
+        public TheAmazingElement(ISelectColumn column, ISelectColumn rowIdColumn, string function)
+        {
+            Column = column;
+            RowIdColumn = rowIdColumn;
+            Function = function;
+        }
+    }
+
     class Accumulators<TElement> : IAccumulator<TElement>
     {
         public readonly IAccumulator<TElement> First;
@@ -77,13 +91,6 @@ namespace SqlDsl.Mapper
         public IEnumerable<(TElement element, CombinationType combiner)> Next => Inner.Next;
 
         readonly Accumulator<TElement, CombinationType> Inner;
-
-        // public Accumulator(
-        //     ParameterExpression firstParamRoot, string firstParam, string aggregatedToTable, string function, 
-        //     IEnumerable<(Element, CombinationType)> next = null)
-        //     : this(new Accumulator<Element, CombinationType>(new Element(firstParamRoot, firstParam, aggregatedToTable, function), next))
-        // {
-        // }
         
         public Accumulator(Accumulator<TElement, CombinationType> acc)
         {
@@ -105,7 +112,11 @@ namespace SqlDsl.Mapper
         {
             return new Accumulators<TElement>(this, (x, combiner));
         }
+    }
 
+    // todo: move file
+    static class IAccumulatorUtils
+    {
         // todo: move file??
         public static Func<Element, (string param, string aggregatedToTable)> AddRoot(BuildMapState state)
         {
@@ -131,12 +142,31 @@ namespace SqlDsl.Mapper
             }
         }
 
-        public static (string param, string aggregatedToTable) AddRoot(Element value, BuildMapState state) => AddRoot(state)(value);
-    }
+        public static (string param, string aggregatedToTable) AddRoot(this Element value, BuildMapState state) => AddRoot(state)(value);
 
-    // todo: move file
-    static class IAccumulatorUtils
-    {
+        public static IAccumulator<TheAmazingElement> Convert(this IAccumulator<Element> acc, BuildMapState state)
+        {
+            return acc.MapParam(Map);
+
+            TheAmazingElement Map(Element el)
+            {
+                var (fullName, overrideTable) = el.AddRoot(state);
+                var col = state.WrappedSqlStatement.SelectColumns[fullName];
+                var tab = state.WrappedSqlStatement.Tables[overrideTable ?? GetTableName(fullName)];
+                var rid = state.WrappedSqlStatement.SelectColumns[tab.RowNumberColumnIndex];
+
+                return new TheAmazingElement(col, rid, el.Function);
+            }
+        }
+
+        static string GetTableName(string fullName)
+        {
+            var i = fullName.LastIndexOf('.');
+            return i == -1 ?
+                "" : 
+                fullName.Substring(0, i);
+        }
+
         public static IAccumulator<Element> MapParamName(this IAccumulator<Element> acc, Func<string, string> map)
         {
             return acc.MapParam(_Map);
@@ -241,7 +271,7 @@ namespace SqlDsl.Mapper
                     }
                 }
 
-                var col = sqlFragmentBuilder.BuildSelectColumn(tab, Accumulator<Element>.AddRoot(new Element(el.ParamRoot, parameter, el.AggregatedToTable, el.Function), state).param);
+                var col = sqlFragmentBuilder.BuildSelectColumn(tab, new Element(el.ParamRoot, parameter, el.AggregatedToTable, el.Function).AddRoot(state).param);
                 return el.Function == null ?
                     col :
                     $"{el.Function}({col})";   // TODO: call func in sqlBuilder
