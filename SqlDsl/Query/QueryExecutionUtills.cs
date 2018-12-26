@@ -18,15 +18,19 @@ namespace SqlDsl.Query
         /// <param name="sqlBuilder">The builder with all properties populated</param>
         /// <param name="parameters">Any constant parameters in the statement</param>
         /// <param name="queryParseType">Define the way results are to be parsed</param>
-        public static CompiledQuery<TArgs, TResult> Compile<TArgs, TResult> (this ISqlString sqlBuilder, ISqlStatementPartValues statementBuilder, IEnumerable<object> parameters, QueryParseType queryParseType)
+        public static CompiledQuery<TArgs, TResult> Compile<TArgs, TResult> (
+            this ISqlString sqlBuilder, 
+            ISqlStatement statement, 
+            IEnumerable<object> parameters,
+            ISqlSyntax sqlSyntax, 
+            QueryParseType queryParseType)
         {
             var sql = ToSql(sqlBuilder);
-            var statement = new SqlStatement(statementBuilder);
 
             var selectColumns = statement.SelectColumns.Select(Alias).ToArray();
             var propertyGraph = statement.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
 
-            return new CompiledQuery<TArgs, TResult>(sql, parameters.ToArray(), selectColumns, propertyGraph, statementBuilder.SqlBuilder);
+            return new CompiledQuery<TArgs, TResult>(sql, parameters.ToArray(), selectColumns, propertyGraph, sqlSyntax);
         }
 
         /// <summary>
@@ -44,7 +48,7 @@ namespace SqlDsl.Query
 
             var col = statement.SelectColumns[i];
             var graph = new RootObjectPropertyGraph(typeof(TResult), i, col.RowNumberColumnIndex, col.DataType, ReflectionUtils.GetIEnumerableType(col.DataType) != null);
-            return new CompiledQuery<TArgs, TResult>(sqlBuilder.ToSql(), parameters.ToArray(), statement.SelectColumns.Select(Alias).ToArray(), graph, sqlBuilder.SqlBuilder);
+            return new CompiledQuery<TArgs, TResult>(sqlBuilder.ToSql(), parameters.ToArray(), statement.SelectColumns.Select(Alias).ToArray(), graph, sqlBuilder.SqlSyntax);
         }
 
         static string Alias(ISelectColumn c) => c.Alias;

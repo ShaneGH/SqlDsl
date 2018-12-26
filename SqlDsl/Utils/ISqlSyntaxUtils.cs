@@ -8,9 +8,9 @@ using SqlDsl.Mapper;
 namespace SqlDsl.SqlBuilders
 {
     /// <summary>
-    /// Extension methods for Reflection
+    /// Extension methods for ISqlSyntax
     /// </summary>
-    public static class ISqlFragmentBuilderUtils
+    public static class ISqlSyntaxUtils
     {
         /// <summary>
         /// Concat 2 query parts in a defined way (e.g. l + r)

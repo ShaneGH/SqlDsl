@@ -33,8 +33,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public ISelectColumn this[string alias] => GetColumn(alias);
 
-        static readonly string NullString = null;
-
         /// <summary>
         /// Build a list of columns
         /// </summary>

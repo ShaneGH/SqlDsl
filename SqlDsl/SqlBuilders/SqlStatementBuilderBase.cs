@@ -20,7 +20,7 @@ namespace SqlDsl.SqlBuilders
 
         static readonly string NullString = null;
 
-        public readonly ISqlSyntax SqlBuilder;
+        public readonly ISqlSyntax SqlSyntax;
         
         /// <summary>
         /// The alias of the table in the SELECT clause
@@ -39,7 +39,7 @@ namespace SqlDsl.SqlBuilders
 
         public SqlStatementBuilderBase(ISqlSyntax sqlFragmentBuilder, string primaryTableAlias)
         {
-            SqlBuilder = sqlFragmentBuilder ?? throw new ArgumentNullException(nameof(sqlFragmentBuilder));
+            SqlSyntax = sqlFragmentBuilder ?? throw new ArgumentNullException(nameof(sqlFragmentBuilder));
             PrimaryTableAlias = primaryTableAlias ?? throw new ArgumentNullException(nameof(primaryTableAlias));
         }
 
@@ -55,7 +55,7 @@ namespace SqlDsl.SqlBuilders
         {
             // build SELECT columns (cols and row ids)
             var select = GetAllSelectColumns()
-                .Select(s => SqlBuilder.AddAliasColumn(s.col.SelectCode, s.col.Alias))
+                .Select(s => SqlSyntax.AddAliasColumn(s.col.SelectCode, s.col.Alias))
                 .Enumerate();
 
             // add placeholder in case no SELECT columns were specified
@@ -72,7 +72,7 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         protected IEnumerable<(bool isRowId, SelectColumn col)> GetAllSelectColumns() =>
             GetRowIdSelectColumns()
-            .Select(x => (true, new SelectColumn((Type)null, SqlBuilder.BuildSelectColumn(x.tableAlias, x.rowIdColumnName), x.rowIdColumnNameAlias, new [] { (x.tableAlias, x.rowIdColumnName, NullString) }, EmptyConstructorInfo)))
+            .Select(x => (true, new SelectColumn((Type)null, SqlSyntax.BuildSelectColumn(x.tableAlias, x.rowIdColumnName), x.rowIdColumnNameAlias, new [] { (x.tableAlias, x.rowIdColumnName, NullString) }, EmptyConstructorInfo)))
             .Concat(_Select.Select(x => (false, x)));
 
         /// <summary>

@@ -2,6 +2,7 @@ using SqlDsl.DataParser;
 using SqlDsl.Dsl;
 using SqlDsl.Mapper;
 using SqlDsl.SqlBuilders;
+using SqlDsl.SqlBuilders.SqlStatementParts;
 using SqlDsl.Utils;
 using System;
 using System.Collections.Concurrent;
@@ -40,11 +41,11 @@ namespace SqlDsl.Query
         
         protected abstract IEnumerable<(ParameterExpression queryRoot, ParameterExpression args, Expression orderExpression, OrderDirection direction)> Ordering { get; }
         
-        public readonly ISqlSyntax SqlFragmentBuilder;
+        public readonly ISqlSyntax SqlSyntax;
 
         public SqlExecutor(ISqlSyntax sqlSyntax)
         {
-            SqlFragmentBuilder = sqlSyntax;
+            SqlSyntax = sqlSyntax;
         }
         
         /// <inheritdoc />
@@ -77,9 +78,9 @@ namespace SqlDsl.Query
         public ICompiledQuery<TArgs, TResult> Compile(ILogger logger = null)
         {
             var timer = new Timer(true);
-            var sqlBuilder = ToSqlStatement();
-            var compiled = sqlBuilder.builder
-                .Compile<TArgs, TResult>(sqlBuilder.builder, sqlBuilder.paramaters, QueryParseType.DoNotDuplicate);
+            var (builder, paramaters) = ToSqlStatement();
+            var compiled = builder
+                .Compile<TArgs, TResult>(new SqlStatement(builder), paramaters, builder.SqlSyntax, QueryParseType.DoNotDuplicate);
 
             if (logger.CanLogInfo(LogMessages.CompiledQuery))
                 logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);
@@ -95,18 +96,19 @@ namespace SqlDsl.Query
         /// <param name="filterSelectCols">If specified, only add the given columns to the SELECT statement</param>
         public (SqlStatementBuilder builder, IEnumerable<object> paramaters) ToSqlStatement()
         {
-            if (PrimaryTableMember == null)
+            var (primaryTableMemberName, primaryTableMemberType) = 
+                PrimaryTableMember ?? 
                 throw new InvalidOperationException("You must set the FROM table before calling ToSql");
             
             // Set the SELECT table
-            var builder = new SqlStatementBuilder(SqlFragmentBuilder, PrimaryTableName, PrimaryTableMember.Value.name);
+            var builder = new SqlStatementBuilder(SqlSyntax, PrimaryTableName, primaryTableMemberName);
 
             // get all columns from SELECT and JOINs
             var selectColumns = Joins
                 .SelectMany((x, i) => ColumnsOf(x.JoinExpression.joinParam.Type)
                     .Select(y => (table: x.JoinedTableProperty.name, column: y)))
-                .Concat(ColumnsOf(PrimaryTableMember.Value.type)
-                    .Select(y => (table: PrimaryTableMember.Value.name, column: y)));
+                .Concat(ColumnsOf(primaryTableMemberType)
+                    .Select(y => (table: primaryTableMemberName, column: y)));
 
             // add each join
             var param = new ParamBuilder();
@@ -127,7 +129,7 @@ namespace SqlDsl.Query
             foreach (var col in selectColumns)
             {
                 var alias = col.table == SqlStatementConstants.RootObjectAlias ? col.column.name : $"{col.table}.{col.column.name}";
-                builder.AddSelectColumn(col.column.dataType, SqlFragmentBuilder.BuildSelectColumn(col.table, col.column.name), alias, new [] {(col.table, col.column.name, NullString)});
+                builder.AddSelectColumn(col.column.dataType, SqlSyntax.BuildSelectColumn(col.table, col.column.name), alias, new [] {(col.table, col.column.name, NullString)});
             }
 
             // add a where clause if specified

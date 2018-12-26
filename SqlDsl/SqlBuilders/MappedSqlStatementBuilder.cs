@@ -45,7 +45,7 @@ namespace SqlDsl.SqlBuilders
             var (querySetupSql, beforeWhereSql, whereSql, afterWhereSql) = InnerQueryBuilder.ToSqlString();
 
             beforeWhereSql = $"SELECT {selectColumns.JoinString(",")}\nFROM ({beforeWhereSql}";
-            afterWhereSql = $"{afterWhereSql}) {SqlBuilder.WrapAlias(PrimaryTableAlias)}{BuildGroupByStatement("\n")}";
+            afterWhereSql = $"{afterWhereSql}) {SqlSyntax.WrapAlias(PrimaryTableAlias)}{BuildGroupByStatement("\n")}";
 
             return (querySetupSql, beforeWhereSql, whereSql, afterWhereSql);
         }
@@ -60,7 +60,7 @@ namespace SqlDsl.SqlBuilders
                 .SelectMany(cs => cs.col.RepresentsColumns)
                 .Where(c => c.aggregatedToTable == null))
             {
-                output.Add(SqlBuilder.BuildSelectColumn(col.table, col.column));
+                output.Add(SqlSyntax.BuildSelectColumn(col.table, col.column));
             }
 
             if (output.Count > 0)
@@ -98,7 +98,7 @@ namespace SqlDsl.SqlBuilders
 
         ISqlStatement ISqlStatementPartValues.InnerStatement => InnerQueryStatement;
 
-        ISqlSyntax ISqlStatementPartValues.SqlBuilder => SqlBuilder;
+        ISqlSyntax ISqlStatementPartValues.SqlSyntax => SqlSyntax;
 
         IEnumerable<SqlStatementPartSelect> ISqlStatementPartValues.SelectColumns => GetAllSelectColumns().Select(BuildSelectCol);
 

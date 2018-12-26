@@ -135,7 +135,7 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         (string setupSql, string sql) BuildJoin(JoinType joinType, string joinTable, string equalityStatement, string joinTableAlias = null)
         {
-            joinTableAlias = joinTableAlias == null ? "" : $" {SqlBuilder.WrapAlias(joinTableAlias)}";
+            joinTableAlias = joinTableAlias == null ? "" : $" {SqlSyntax.WrapAlias(joinTableAlias)}";
 
             var join = "";
             switch (joinType)
@@ -151,7 +151,7 @@ namespace SqlDsl.SqlBuilders
                     throw new NotImplementedException($"Cannot use join type {joinType}");
             }
 
-            var sql = SqlBuilder.GetSelectTableSqlWithRowId(joinTable, SqlStatementConstants.RowIdName);
+            var sql = SqlSyntax.GetSelectTableSqlWithRowId(joinTable, SqlStatementConstants.RowIdName);
             return (
                 sql.setupSql,
                 $"{join} JOIN ({sql.sql}){joinTableAlias} ON {equalityStatement}"
@@ -179,14 +179,14 @@ namespace SqlDsl.SqlBuilders
             string description)
         {
             var stat = new SqlStatementParts.SqlStatement(this);
-            var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRootParam, queryArgsParam, stat, SqlBuilder);
+            var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRootParam, queryArgsParam, stat, SqlSyntax);
 
             var (mp, _) = ComplexMapBuilder.BuildMap(state, conditionStatement);
             var map = mp.ToArray();
             if (map.Length != 1)
                 throw new InvalidOperationException($"Invalid {description} condition: {conditionStatement}.");
 
-            var mapSql = map[0].FromParams.BuildFromString(state, SqlBuilder);
+            var mapSql = map[0].FromParams.BuildFromString(state, SqlSyntax);
             var queryObjectReferences = map[0].FromParams
                 .GetEnumerable1()
                 .Select(param)
@@ -211,17 +211,17 @@ namespace SqlDsl.SqlBuilders
             var where = Where == null ? "" : $" WHERE {Where.Value.sql}";
 
             // build FROM part
-            var primaryTable = SqlBuilder.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName);
+            var primaryTable = SqlSyntax.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName);
                 
             var orderByText = Ordering
                 // TODO: test in indivisual sql languages
-                .Select(o => o.sql + (o.direction == OrderDirection.Ascending ? "" : $" {SqlBuilder.Descending}"))
+                .Select(o => o.sql + (o.direction == OrderDirection.Ascending ? "" : $" {SqlSyntax.Descending}"))
                 .ToArray();
 
             // build the order by part
             var orderBy = orderByText.Length == 0 ?
                 "" :
-                orderByText.Aggregate(SqlBuilder.BuildCommaCondition);
+                orderByText.Aggregate(SqlSyntax.BuildCommaCondition);
 
             if (orderBy.Length > 0)
                 orderBy = "ORDER BY " + orderBy;
@@ -240,7 +240,7 @@ namespace SqlDsl.SqlBuilders
             var query = new[]
             {
                 $"\nSELECT {selectColumns.JoinString(",")}",
-                $"FROM ({primaryTable.sql}) " + SqlBuilder.WrapAlias(PrimaryTableAlias),
+                $"FROM ({primaryTable.sql}) " + SqlSyntax.WrapAlias(PrimaryTableAlias),
                 $"{_Joins.Select(j => j.sql).JoinString("\n")}",
                 orderBy
             }
@@ -282,7 +282,7 @@ namespace SqlDsl.SqlBuilders
 
         ISqlStatement ISqlStatementPartValues.InnerStatement => null;
 
-        ISqlSyntax ISqlStatementPartValues.SqlBuilder => SqlBuilder;
+        ISqlSyntax ISqlStatementPartValues.SqlSyntax => SqlSyntax;
 
         IEnumerable<SqlStatementPartSelect> ISqlStatementPartValues.SelectColumns => GetAllSelectColumns().Select(BuildSelectCol);
 

@@ -24,7 +24,7 @@ namespace SqlDsl.Mapper
         public ICompiledQuery<TArgs, TMapped> Compile(ILogger logger = null)
         {
             var timer = new Timer(true);
-            var result = QueryMapper.Compile<TArgs, TResult, TMapped>(Query.SqlFragmentBuilder, Query, Mapper, logger: logger);
+            var result = QueryMapper.Compile<TArgs, TResult, TMapped>(Query.SqlSyntax, Query, Mapper, logger: logger);
 
             if (logger.CanLogInfo(LogMessages.CompiledQuery))
                 logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);

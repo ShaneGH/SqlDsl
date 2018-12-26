@@ -35,7 +35,7 @@ namespace SqlDsl.Mapper
                 throw new InvalidOperationException("The query must have at least one select table.");
 
             var argsParam = mapper.Parameters.Count > 1 ? mapper.Parameters[1] : null;
-            var state = new BuildMapState(query.PrimaryTableMember.Value.name, mutableParameters, mapper.Parameters[0], argsParam, wrappedStatement, query.SqlFragmentBuilder);
+            var state = new BuildMapState(query.PrimaryTableMember.Value.name, mutableParameters, mapper.Parameters[0], argsParam, wrappedStatement, query.SqlSyntax);
             var (resultType, properties, tables) = MapBuilder.BuildMapFromRoot(state, mapper.Body);
 
             switch (resultType)
@@ -65,7 +65,7 @@ namespace SqlDsl.Mapper
                     if (resultType == MapBuilder.MappingType.Map)
                     {
                         var b = ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state);
-                        return b.Compile<TArgs, TMapped>(b, mutableParameters.Parameters, QueryParseType.ORM);
+                        return b.Compile<TArgs, TMapped>(new SqlStatement(b), mutableParameters.Parameters, b.SqlSyntax, QueryParseType.ORM);
                     }
                             
                     properties = properties.Enumerate();
