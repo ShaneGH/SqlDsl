@@ -43,7 +43,7 @@ namespace SqlDsl.Mapper
             {
                 case MapBuilder.MappingType.Map:
                 case MapBuilder.MappingType.SimpleProp:
-                    var requiredPropAliases = properties
+                    var requiredColumns = properties
                         .SelectMany(pms => pms.FromParams.GetEnumerable1())
                         .Where(x => x.ParamRoot == state.QueryObject || state.ParameterRepresentsProperty.Any(y => y.parameter == x.ParamRoot))
                         // TODO: using Accumulator.AddRoot here seems wrong
@@ -53,12 +53,15 @@ namespace SqlDsl.Mapper
                         .SelectMany(x => x.ReferencesColumns.Select(y => y.table))
                         .Concat(tables.Select(t => t.From));
 
-                    var wow = properties
-                        .Select(xx => xx.Convert(state))
-                        .ToArray();
+                    // var wow = properties
+                    //     .Select(xx => xx.Convert(state))
+                    //     .ToArray();
 
                     // wrappedBuilder.FilterUnusedTables(requiredPropAliases);
                     // wrappedStatement = new SqlStatement(wrappedBuilder);
+                    
+                    // var filteredWrappedBuilder = new FilteredSqlStatementBuilder(wrappedBuilder, requiredColumns);
+                    // wrappedStatement = new SqlStatement(filteredWrappedBuilder);
 
                     if (resultType == MapBuilder.MappingType.Map)
                         return ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state)
@@ -70,7 +73,6 @@ namespace SqlDsl.Mapper
                         throw new InvalidOperationException($"Expected one property, but got {properties.Count()}.");
                     }
 
-                    //static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, Accumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
                     var p = properties.First();
                     return ToSqlBuilder(sqlFragmentBuilder, p.FromParams, p.MappedPropertyType, wrappedBuilder, wrappedStatement, state)
                         .CompileSimple<TArgs, TMapped>(mutableParameters.Parameters, SqlStatementConstants.SingleColumnAlias);

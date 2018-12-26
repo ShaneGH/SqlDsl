@@ -25,8 +25,6 @@ namespace SqlDsl.SqlBuilders
     /// </summary>
     public class SqlStatementBuilder : ISqlBuilder, SqlStatementParts.ISqlStatementPartValues
     {
-        readonly IEnumerable<string> EmptyStrings = new string[0];
-
         public readonly ISqlFragmentBuilder SqlBuilder;
 
         public SqlStatementBuilder(ISqlFragmentBuilder sqlFragmentBuilder)
@@ -486,55 +484,6 @@ namespace SqlDsl.SqlBuilders
             GetRowIdSelectColumns()
             .Select(x => (true, new SelectColumn((Type)null, SqlBuilder.BuildSelectColumn(x.tableAlias, x.rowIdColumnName), x.rowIdColumnNameAlias, new [] { (x.tableAlias, x.rowIdColumnName, NullString) }, EmptyConstructorInfo)))
             .Concat(_Select.Select(x => (false, x)));
-
-        // /// <summary>
-        // /// Remove any tables from the query which are not in the requiredTableAliases list
-        // /// </summary>
-        // public void FilterUnusedTables(IEnumerable<string> requiredTableAliases)
-        // {
-        //     var tables = new HashSet<string>(requiredTableAliases
-        //         .SelectMany(t => GetLineage(t, EmptyStrings)));
-
-        //     if (Where != null)
-        //         tables.AddRange(Where.Value.queryObjectReferences);
-        //     foreach (var j in Joins)
-        //         tables.AddRange(j.queryObjectReferences);
-        //     foreach (var o in Ordering)
-        //         tables.AddRange(o.queryObjectReferences);
-
-        //     for (var i = _Joins.Count - 1; i >= 0; i--)
-        //     {
-        //         if (!tables.Contains(_Joins[i].alias))
-        //             _Joins.RemoveAt(i);
-        //     }
-
-        //     for (var i = _Select.Count - 1; i >= 0; i--)
-        //     {
-        //         if (_Select[i].representsColumns.Any(c => !tables.Contains(c.table)))
-        //             _Select.RemoveAt(i);
-        //     }
-        // }
-
-        // IEnumerable<string> GetLineage(string table, IEnumerable<string> complete)
-        // {
-        //     if (table == PrimaryTableAlias)
-        //         return table.ToEnumerable();
-
-        //     if (complete.Contains(table))
-        //         return complete;
-
-        //     var join = Joins
-        //         .Where(j => j.alias == table)
-        //         .AsNullable()
-        //         .FirstOrDefault();
-
-        //     if (join == null)
-        //         throw new InvalidOperationException($"Cannot find join {table}.");
-
-        //     return join.Value.queryObjectReferences
-        //         .SelectMany(x => GetLineage(x, complete.Append(table)))
-        //         .Append(table);
-        // }
         
         #region ISqlStatementPartValues
 

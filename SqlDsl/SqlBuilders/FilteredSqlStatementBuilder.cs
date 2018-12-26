@@ -45,18 +45,66 @@ namespace SqlDsl.SqlBuilders
 
         IEnumerable<SqlStatementPartJoin> GetJoinTables()
         {
+            var requiredTables = RequiredColumns
+                .SelectMany(c => new[] { c.tableAlias, c.aggregatesToTable })
+                .RemoveNulls()
+                .ToHashSet();
+
+            foreach (var table in requiredTables.ToArray())
+                requiredTables.AddRange(GetLineage(table, EmptyStrings));
+
             return InnerSqlStatementPartValues.JoinTables.Where(FilterJoinTable);
 
-            bool FilterJoinTable(SqlStatementPartJoin join) => 
-                RequiredColumns.Any(c => c.tableAlias == join.Alias || c.aggregatesToTable == join.Alias);
+            bool FilterJoinTable(SqlStatementPartJoin join) => requiredTables.Contains(join.Alias);
+        }
+
+        IEnumerable<string> GetLineage(string table, IEnumerable<string> complete)
+        {
+            if (table == PrimaryTableAlias)
+                return table.ToEnumerable();
+
+            if (complete.Contains(table))
+                return complete;
+
+            var join = InnerSqlStatementPartValues.JoinTables
+                .Where(j => j.Alias == table)
+                .AsNullable()
+                .FirstOrDefault();
+
+            // TODO: add where and order by column tables
+
+            if (join == null)
+                throw new InvalidOperationException($"Cannot find join {table}.");
+
+            return join.Value.QueryObjectReferences
+                .SelectMany(x => GetLineage(x, complete.Append(table)))
+                .Append(table);
         }
 
         IEnumerable<SqlStatementPartSelect> GetSelectColumns()
         {
-            return InnerSqlStatementPartValues.SelectColumns.Where(FilterSelectColumn);
+            // TODO: add where and order by columns
 
-            bool FilterSelectColumn(SqlStatementPartSelect select) => true;
-                //RequiredColumns.Any(c => c.tableAlias == join.Alias || c.aggregatesToTable == join.Alias);
+            return GetRowIdColumns().Concat(_GetSelectColumns());
+        }
+
+        IEnumerable<SqlStatementPartSelect> GetRowIdColumns()
+        {
+            var tables = RequiredColumns
+                .Select(t => t.aggregatesToTable ?? t.tableAlias)
+                .SelectMany(t => GetLineage(t, EmptyStrings).Prepend(t))
+                .ToHashSet();
+
+            return InnerSqlStatementPartValues.SelectColumns
+                .Where(x => x.IsRowId)
+                .Where(x => x.RepresentsColumns.Any(c => tables.Contains(c.table)));
+        }
+
+        IEnumerable<SqlStatementPartSelect> _GetSelectColumns()
+        {
+            return InnerSqlStatementPartValues.SelectColumns
+                .Where(x => !x.IsRowId)
+                .Where(x => x.RepresentsColumns.Any(c1 => RequiredColumns.Any(c2 => c2.tableAlias == c1.table && c2.columnAlias == c1.column)));
         }
 
         public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString()
@@ -92,27 +140,6 @@ namespace SqlDsl.SqlBuilders
         //         if (_Select[i].representsColumns.Any(c => !tables.Contains(c.table)))
         //             _Select.RemoveAt(i);
         //     }
-        // }
-
-        // IEnumerable<string> GetLineage(string table, IEnumerable<string> complete)
-        // {
-        //     if (table == PrimaryTableAlias)
-        //         return table.ToEnumerable();
-
-        //     if (complete.Contains(table))
-        //         return complete;
-
-        //     var join = Joins
-        //         .Where(j => j.alias == table)
-        //         .AsNullable()
-        //         .FirstOrDefault();
-
-        //     if (join == null)
-        //         throw new InvalidOperationException($"Cannot find join {table}.");
-
-        //     return join.Value.queryObjectReferences
-        //         .SelectMany(x => GetLineage(x, complete.Append(table)))
-        //         .Append(table);
         // }
     }
 }
