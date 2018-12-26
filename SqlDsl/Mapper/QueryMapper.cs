@@ -53,9 +53,9 @@ namespace SqlDsl.Mapper
                         .SelectMany(x => x.ReferencesColumns.Select(y => y.table))
                         .Concat(tables.Select(t => t.From));
 
-                    // var wow = properties
-                    //     .Select(xx => xx.FromParams.Convert(state))
-                    //     .ToArray();
+                    var wow = properties
+                        .Select(xx => xx.Convert(state))
+                        .ToArray();
 
                     // wrappedBuilder.FilterUnusedTables(requiredPropAliases);
                     // wrappedStatement = new SqlStatement(wrappedBuilder);
@@ -100,7 +100,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
+        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var rowIdPropertyMap = tables
                 // if mapping does not map to a specific property (e.g. q => q.Args.Select(a => new object()))

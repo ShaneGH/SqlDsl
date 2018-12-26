@@ -34,8 +34,10 @@ namespace SqlDsl.Mapper
 
     struct TheAmazingElement
     {
-        public ISelectColumn Column;
-        public ISelectColumn RowIdColumn;
+        public bool IsParameter => ParameterName != null;
+        public readonly string ParameterName;
+        public readonly ISelectColumn Column;
+        public readonly ISelectColumn RowIdColumn;
         public readonly string Function;
 
         public TheAmazingElement(ISelectColumn column, ISelectColumn rowIdColumn, string function)
@@ -43,6 +45,17 @@ namespace SqlDsl.Mapper
             Column = column;
             RowIdColumn = rowIdColumn;
             Function = function;
+            
+            ParameterName = null;
+        }
+
+        public TheAmazingElement(string parameterName, string function)
+        {
+            ParameterName = parameterName;
+            Function = function;
+            
+            Column = null;
+            RowIdColumn = null;
         }
     }
 
@@ -151,6 +164,8 @@ namespace SqlDsl.Mapper
             TheAmazingElement Map(Element el)
             {
                 var (fullName, overrideTable) = el.AddRoot(state);
+                if (fullName.StartsWith("@")) return new TheAmazingElement(fullName, el.Function);
+
                 var col = state.WrappedSqlStatement.SelectColumns[fullName];
                 var tab = state.WrappedSqlStatement.Tables[overrideTable ?? GetTableName(fullName)];
                 var rid = state.WrappedSqlStatement.SelectColumns[tab.RowNumberColumnIndex];
@@ -163,7 +178,7 @@ namespace SqlDsl.Mapper
         {
             var i = fullName.LastIndexOf('.');
             return i == -1 ?
-                "" : 
+                SqlStatementConstants.RootObjectAlias : 
                 fullName.Substring(0, i);
         }
 

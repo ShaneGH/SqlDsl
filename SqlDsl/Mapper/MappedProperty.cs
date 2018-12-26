@@ -7,28 +7,27 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.Mapper
 {
-    class MappedProperty
+    class StringBasedMappedProperty : MappedProperty<Element>
     {
-        static readonly ConstructorInfo[] EmptyConstructorArgs = new ConstructorInfo[0];
-
-        public readonly Type MappedPropertyType;
-        public readonly ConstructorInfo[] PropertySegmentConstructors;
-        public readonly string To;
-        public readonly IAccumulator<Element> FromParams;
-
-        public MappedProperty(IAccumulator<Element> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+        public StringBasedMappedProperty(IAccumulator<Element> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+            : base(fromParams, to, mappedPropertyType, constructorArgs)
         {
-            To = to;
-            FromParams = fromParams;
-            MappedPropertyType = mappedPropertyType;
-            PropertySegmentConstructors = constructorArgs ?? EmptyConstructorArgs;
         }
         
-        public MappedProperty(ParameterExpression fromParamRoot, string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+        public StringBasedMappedProperty(ParameterExpression fromParamRoot, string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
             : this (new Accumulator<Element>(
                 new Accumulator<Element, CombinationType>(
                     new Element(fromParamRoot, from, null, null))), to, mappedPropertyType, constructorArgs)
         {
+        }
+
+        public QueryElementElementBasedMappedProperty Convert(BuildMapState state)
+        {
+            return new QueryElementElementBasedMappedProperty(
+                FromParams.Convert(state),
+                To,
+                MappedPropertyType,
+                PropertySegmentConstructors);
         }
 
         public string GetDebugView(BuildMapState state) => new[]
@@ -48,7 +47,7 @@ namespace SqlDsl.Mapper
         {
             try
             {
-                return FromParams.BuildFromString(state, new SqlFragmentBuilder());
+                return FromParams.BuildFromString(state, new DebugOnlySqlFragmentBuilder());
             }
             catch (Exception e)
             {
@@ -56,7 +55,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        class SqlFragmentBuilder : SqlBuilders.SqlFragmentBuilderBase
+        class DebugOnlySqlFragmentBuilder : SqlBuilders.SqlFragmentBuilderBase
         {
             public override (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias)
             {
@@ -68,6 +67,32 @@ namespace SqlDsl.Mapper
             public override string WrapColumn(string column) => $"[{column}]";
 
             public override string WrapTable(string table) => $"[{table}]";
+        }
+    }
+    
+    class QueryElementElementBasedMappedProperty : MappedProperty<TheAmazingElement>
+    {
+        public QueryElementElementBasedMappedProperty(IAccumulator<TheAmazingElement> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+            : base(fromParams, to, mappedPropertyType, constructorArgs)
+        {
+        }
+    }
+
+    class MappedProperty<TElement>
+    {
+        static readonly ConstructorInfo[] EmptyConstructorArgs = new ConstructorInfo[0];
+
+        public readonly Type MappedPropertyType;
+        public readonly ConstructorInfo[] PropertySegmentConstructors;
+        public readonly string To;
+        public readonly IAccumulator<TElement> FromParams;
+
+        public MappedProperty(IAccumulator<TElement> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs)
+        {
+            To = to;
+            FromParams = fromParams;
+            MappedPropertyType = mappedPropertyType;
+            PropertySegmentConstructors = constructorArgs ?? EmptyConstructorArgs;
         }
     }
 }

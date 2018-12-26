@@ -11,7 +11,7 @@ namespace SqlDsl.Mapper
     {
         static readonly IEnumerable<MappedTable> EmptyMappedTables = Enumerable.Empty<MappedTable>();
 
-        public static (MappingType resultType, IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expression)
+        public static (MappingType resultType, IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expression)
         {
             var (properties, tables) = ComplexMapBuilder.BuildMap(state, expression);
             var ps = properties.ToArray();
@@ -69,7 +69,7 @@ namespace SqlDsl.Mapper
                 return node;
             }
 
-            public static MappingType GetMappingType(MappedProperty[] properties, Expression expression, BuildMapState state)
+            public static MappingType GetMappingType(StringBasedMappedProperty[] properties, Expression expression, BuildMapState state)
             {
                 if (properties.Length == 0)
                     return MappingType.SimpleProp;

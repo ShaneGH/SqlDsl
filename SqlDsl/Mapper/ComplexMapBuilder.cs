@@ -12,13 +12,13 @@ namespace SqlDsl.Mapper
     {
         static readonly IEnumerable<MappedTable> EmptyMappedTables = Enumerable.Empty<MappedTable>();
 
-        public static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMap(BuildMapState state, Expression expr)
+        public static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMap(BuildMapState state, Expression expr)
         {
             var (x, y, _) = BuildMap(state, expr, MapType.Root, isExprTip: true);
             return (x, y);
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, bool isConstant) BuildMap(
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool isConstant) BuildMap(
             BuildMapState state, 
             Expression expr, 
             MapType nextMap,
@@ -40,7 +40,7 @@ namespace SqlDsl.Mapper
                 var paramName = state.Parameters.AddParam(result);
 
                 return (
-                    new MappedProperty(null, paramName, toPrefix, expr.Type).ToEnumerable(),
+                    new StringBasedMappedProperty(null, paramName, toPrefix, expr.Type).ToEnumerable(),
                     EmptyMappedTables,
                     true
                 );
@@ -56,7 +56,7 @@ namespace SqlDsl.Mapper
 
                 case ExpressionType.Parameter:
                     return (
-                        new [] { new MappedProperty(expr as ParameterExpression, null, toPrefix, expr.Type) },
+                        new [] { new StringBasedMappedProperty(expr as ParameterExpression, null, toPrefix, expr.Type) },
                         EmptyMappedTables,
                         false
                     );
@@ -168,7 +168,7 @@ namespace SqlDsl.Mapper
             return state.WrappedSqlStatement.ContainsTable(property);
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForConstructor(BuildMapState state, NewExpression expr, MapType nextMap, string toPrefix = null)
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForConstructor(BuildMapState state, NewExpression expr, MapType nextMap, string toPrefix = null)
         {
             // TODO: relax this condition
             // The issue is within ObjectPropertyGraphBuilder, complex properties (or constructor args)
@@ -193,13 +193,13 @@ namespace SqlDsl.Mapper
                     map.map.tables.Select(x => new MappedTable(x.From, CombineStrings(SqlStatementConstants.ConstructorArgs.BuildConstructorArg(i), x.To)))))
                 .AggregateTuple2();
 
-            IEnumerable<MappedProperty> CreateContructorArg(MappedProperty arg, Type argType, int argIndex)
+            IEnumerable<StringBasedMappedProperty> CreateContructorArg(StringBasedMappedProperty arg, Type argType, int argIndex)
             {
                 var many = PropertyRepresentsTable(state, arg) ?
                     SplitMapOfComplexProperty(arg, argType) :
                     arg.ToEnumerable();
 
-                return many.Select(q => new MappedProperty(
+                return many.Select(q => new StringBasedMappedProperty(
                     q.FromParams,
                     CombineStrings(toPrefix, CombineStrings(SqlStatementConstants.ConstructorArgs.BuildConstructorArg(argIndex), q.To)), 
                     q.MappedPropertyType,
@@ -207,10 +207,10 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForBinaryCondition(BuildMapState state, Expression left, Expression right, Type combinedType, ExpressionType combiner, string toPrefix = null) =>
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForBinaryCondition(BuildMapState state, Expression left, Expression right, Type combinedType, ExpressionType combiner, string toPrefix = null) =>
             BuildMapForBinaryCondition(state, left, right, combinedType, combiner.ToCombinationType(), toPrefix);
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForBinaryCondition(BuildMapState state, Expression left, Expression right, Type combinedType, CombinationType combiner, string toPrefix = null)
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForBinaryCondition(BuildMapState state, Expression left, Expression right, Type combinedType, CombinationType combiner, string toPrefix = null)
         {
             var l = BuildMap(state, left, MapType.Other, toPrefix);
             var r = BuildMap(state, right, MapType.Other, toPrefix);
@@ -225,7 +225,7 @@ namespace SqlDsl.Mapper
                 throw BuildMappingError(right);
 
             return (
-                new MappedProperty(
+                new StringBasedMappedProperty(
                     lProp[0].FromParams.Combine(rProp[0].FromParams, combiner),
                     null, 
                     combinedType).ToEnumerable(),
@@ -233,7 +233,7 @@ namespace SqlDsl.Mapper
             );
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMemberAccess(BuildMapState state, MemberExpression expr, string toPrefix = null)
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMemberAccess(BuildMapState state, MemberExpression expr, string toPrefix = null)
         {
             var result = BuildMap(state, expr.Expression, MapType.MemberAccess, toPrefix);
             var properties = result.properties.Enumerate();
@@ -244,7 +244,7 @@ namespace SqlDsl.Mapper
 
             return (
                 result.properties
-                    .Select(p => new MappedProperty(
+                    .Select(p => new StringBasedMappedProperty(
                         p.FromParams.MapParamName(x => CombineStrings(x, expr.Member.Name)),
                         p.To,
                         expr.Type))
@@ -253,7 +253,7 @@ namespace SqlDsl.Mapper
             );
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMemberInit(BuildMapState state, MemberInitExpression expr, string toPrefix = null)
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMemberInit(BuildMapState state, MemberInitExpression expr, string toPrefix = null)
         {
             var bindings = expr.Bindings.OfType<MemberAssignment>();
             var mapType = bindings.Any() ? MapType.MemberInit : MapType.Other;
@@ -271,7 +271,7 @@ namespace SqlDsl.Mapper
                                 return SplitMapOfComplexProperty(x, m.binding.Member.GetPropertyOrFieldType());
                             }
 
-                            return new MappedProperty(
+                            return new StringBasedMappedProperty(
                                 x.FromParams, 
                                 CombineStrings(toPrefix, x.To),
                                 x.MappedPropertyType, 
@@ -281,7 +281,7 @@ namespace SqlDsl.Mapper
                 .AggregateTuple2();
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForIn(
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForIn(
             BuildMapState state, 
             Expression lhs, 
             Expression rhs, 
@@ -314,7 +314,7 @@ namespace SqlDsl.Mapper
             if (rConstant || !InPlaceArrayCreation.Contains(rhsType))
             {
                 // TODO: this method will require find and replace in strings (inefficient)
-                rProp = new MappedProperty(
+                rProp = new StringBasedMappedProperty(
                     // if there is only one parameter, it is an array and will need to be
                     // split into parts when rendering
                     rProp.FromParams.MapParamName(n => $"{n}{SqlStatementConstants.ParamArrayFlag}"),
@@ -323,7 +323,7 @@ namespace SqlDsl.Mapper
                     rProp.PropertySegmentConstructors);
             }
 
-            var inPart = new MappedProperty(
+            var inPart = new StringBasedMappedProperty(
                 lProp.FromParams.Combine(rProp.FromParams, CombinationType.In),
                 toPrefix,
                 typeof(bool),
@@ -334,7 +334,7 @@ namespace SqlDsl.Mapper
                 lTab.Concat(rTab));
         }
         
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForCount(
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForCount(
             BuildMapState state, 
             Expression enumerable, 
             MapType nextMap,
@@ -348,12 +348,12 @@ namespace SqlDsl.Mapper
                 properties.Select(WrapWithFunc),
                 tables);
 
-            MappedProperty WrapWithFunc(MappedProperty property)
+            StringBasedMappedProperty WrapWithFunc(StringBasedMappedProperty property)
             {
                 if (!property.FromParams.HasOneItemOnly)
                     throw BuildMappingError(enumerable);
 
-                return new MappedProperty(
+                return new StringBasedMappedProperty(
                     property.FromParams.MapParam(Map),
                     property.To,
                     property.MappedPropertyType,
@@ -374,7 +374,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, LambdaExpression mapper, string toPrefix, bool isExprTip)
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, LambdaExpression mapper, string toPrefix, bool isExprTip)
         {
             if (mapper.Body == mapper.Parameters[0])
             {
@@ -383,7 +383,7 @@ namespace SqlDsl.Mapper
 
             TryAddSelectStatementParameterToProperty(state, enumerable, mapper.Parameters[0]);
 
-            (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, bool) innerMap;
+            (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool) innerMap;
             var outerMap = BuildMap(state, enumerable, MapType.Select, toPrefix);
             using (state.SwitchContext(mapper.Parameters[0]))
                 innerMap = BuildMap(state, mapper.Body, MapType.Other, isExprTip: isExprTip);
@@ -400,7 +400,7 @@ namespace SqlDsl.Mapper
 
             return (
                 innerMap.properties
-                    .Select(m => new MappedProperty(
+                    .Select(m => new StringBasedMappedProperty(
                         m.FromParams.MapParam(x => new Element(
                             x.ParamRoot ?? outerMapProperties[0].FromParams.First.ParamRoot, 
                             x.ParamRoot == null ? CombineStrings(outerMapProperties[0].FromParams.First.Param, x.Param) : x.Param,
@@ -418,13 +418,13 @@ namespace SqlDsl.Mapper
         /// <summary>
         /// Build a condition for a new list expression
         /// </summary>
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForNewArray(BuildMapState state, NewArrayExpression expr, string toPrefix) => 
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForNewArray(BuildMapState state, NewArrayExpression expr, string toPrefix) => 
             BuildMapForNewArray(state, expr.Expressions, toPrefix, expr.Type);
 
         /// <summary>
         /// Build a condition for a new list expression
         /// </summary>
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForNewList(BuildMapState state, ListInitExpression expr, string toPrefix) => 
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForNewList(BuildMapState state, ListInitExpression expr, string toPrefix) => 
             BuildMapForNewArray(state, expr.Initializers.Select(GetFirstListAddParam), toPrefix, expr.Type);
 
         static Expression GetFirstListAddParam(ElementInit i)
@@ -438,7 +438,7 @@ namespace SqlDsl.Mapper
         /// <summary>
         /// Build a condition from a list of expressions
         /// </summary>
-        static (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForNewArray(
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForNewArray(
             BuildMapState state, 
             IEnumerable<Expression> elements, 
             string toPrefix,
@@ -446,16 +446,16 @@ namespace SqlDsl.Mapper
         {
             elements = elements.Enumerate();
             if (!elements.Any())
-                return (Enumerable.Empty<MappedProperty>(), Enumerable.Empty<MappedTable>());
+                return (Enumerable.Empty<StringBasedMappedProperty>(), Enumerable.Empty<MappedTable>());
 
             return elements
                 .Select(e => BuildMap(state, e, MapType.Other, null, false))
                 .Aggregate(Combine)
                 .RemoveLastT();
 
-            (IEnumerable<MappedProperty>, IEnumerable<MappedTable>, bool) Combine(
-                (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, bool) x, 
-                (IEnumerable<MappedProperty> properties, IEnumerable<MappedTable> tables, bool) y)
+            (IEnumerable<StringBasedMappedProperty>, IEnumerable<MappedTable>, bool) Combine(
+                (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool) x, 
+                (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool) y)
             {
                 var xProps = x.properties.ToArray();
                 var yProps = y.properties.ToArray();
@@ -464,7 +464,7 @@ namespace SqlDsl.Mapper
 
                 var prop = xProps[0].FromParams.Combine(yProps[0].FromParams, CombinationType.Comma);
                 return (
-                    new MappedProperty(
+                    new StringBasedMappedProperty(
                         prop,
                         toPrefix,
                         outputType,
@@ -474,7 +474,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static bool PropertyRepresentsTable(BuildMapState state, MappedProperty property)
+        static bool PropertyRepresentsTable(BuildMapState state, StringBasedMappedProperty property)
         {
             // a 2 part property (e.g. x + 1) cannot represent a table
             if (!property.FromParams.HasOneItemOnly)
@@ -495,12 +495,12 @@ namespace SqlDsl.Mapper
             return false;
         }
 
-        static IEnumerable<MappedProperty> SplitMapOfComplexProperty(MappedProperty property, Type propertyType)
+        static IEnumerable<StringBasedMappedProperty> SplitMapOfComplexProperty(StringBasedMappedProperty property, Type propertyType)
         {
             propertyType = ReflectionUtils.GetIEnumerableType(propertyType) ?? propertyType;
             return propertyType
                 .GetFieldsAndProperties()
-                .Select(mem => new MappedProperty(
+                .Select(mem => new StringBasedMappedProperty(
                     property.FromParams.MapParamName(x => CombineStrings(x, mem.name)), 
                     CombineStrings(property.To, mem.name), 
                     mem.type));
