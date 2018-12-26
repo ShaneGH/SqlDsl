@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace SqlDsl.UnitTests.SqlFlavours
 {
     public abstract class SqlFragmentBuilderTestBase<TSqlBuilder>
-        where TSqlBuilder : ISqlFragmentBuilder, new()
+        where TSqlBuilder : ISqlSyntax, new()
     {
         const string TestDataTableName = "TestDataTable";
         protected bool PrintStatusOnFailure;        

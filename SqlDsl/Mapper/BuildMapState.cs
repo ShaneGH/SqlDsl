@@ -15,7 +15,7 @@ namespace SqlDsl.Mapper
         public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
         public readonly ISqlStatement WrappedSqlStatement;
         public readonly string PrimarySelectTable;
-        public readonly ISqlFragmentBuilder SqlBuilder;
+        public readonly ISqlSyntax SqlBuilder;
         public IEnumerable<string> CurrentTable { get; private set; }
 
         public BuildMapState(
@@ -24,7 +24,7 @@ namespace SqlDsl.Mapper
             ParameterExpression queryObject, 
             ParameterExpression argsObject, 
             ISqlStatement wrappedSqlStatement, 
-            ISqlFragmentBuilder sqlBuilder)
+            ISqlSyntax sqlBuilder)
         {
             Parameters = parameters;
             QueryObject = queryObject;

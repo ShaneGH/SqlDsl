@@ -15,7 +15,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Concat 2 query parts in a defined way (e.g. l + r)
         /// </summary>
-        public static string Concat(this ISqlFragmentBuilder builder, string l, string r, CombinationType concatType)
+        public static string Concat(this ISqlSyntax builder, string l, string r, CombinationType concatType)
         {
             switch (concatType)
             {
@@ -55,7 +55,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Build the string for a SELECT column
         /// </summary>
-        public static string BuildSelectColumn(this ISqlFragmentBuilder builder, string tableName, string columnName)
+        public static string BuildSelectColumn(this ISqlSyntax builder, string tableName, string columnName)
         {
             columnName = (columnName ?? "").StartsWith("@") ? columnName : builder.WrapColumn(columnName);
 
@@ -67,7 +67,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Add an alias to a SELECT column
         /// </summary>
-        public static string AddAliasColumn(this ISqlFragmentBuilder builder, string sqlCode, string alias)
+        public static string AddAliasColumn(this ISqlSyntax builder, string sqlCode, string alias)
         {
             if (string.IsNullOrEmpty(alias) ||
                 alias.StartsWith($"{SqlStatementConstants.RootObjectAlias}."))

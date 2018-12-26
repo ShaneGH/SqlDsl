@@ -37,7 +37,7 @@ namespace SqlDsl.SqlBuilders
 
         public ISqlStatement InnerStatement => InnerSqlStatementPartValues.InnerStatement;
 
-        public ISqlFragmentBuilder SqlBuilder => InnerSqlStatementPartValues.SqlBuilder;
+        public ISqlSyntax SqlBuilder => InnerSqlStatementPartValues.SqlBuilder;
 
         public IEnumerable<SqlStatementPartSelect> SelectColumns => GetSelectColumns();
 

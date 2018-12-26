@@ -10,7 +10,7 @@ using SqlDsl.Utils;
 namespace SqlDsl.Mapper
 {
     public class QueryMapper<TSqlBuilder, TArgs, TResult, TMapped> : ISqlBuilder<TArgs, TMapped>
-        where TSqlBuilder: ISqlFragmentBuilder, new()
+        where TSqlBuilder: ISqlSyntax, new()
     {
         readonly QueryBuilder<TSqlBuilder, TArgs, TResult> Query;
         readonly Expression<Func<TResult, TArgs, TMapped>> Mapper;

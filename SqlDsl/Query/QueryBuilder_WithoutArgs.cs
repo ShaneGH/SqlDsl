@@ -16,7 +16,7 @@ namespace SqlDsl.Query
     /// Object to append query values to via underlying DSL
     /// </summary>
     public class QueryBuilder<TSqlBuilder, TResult> : QueryBuilder<TSqlBuilder, object, TResult>, ITable<TResult>, IQuery<TResult>, IOrdererAgain<TResult>
-        where TSqlBuilder : ISqlFragmentBuilder, new()
+        where TSqlBuilder : ISqlSyntax, new()
     {
         Task<IEnumerable<TResult>> ISqlBuilder<TResult>.ToIEnumerableAsync(IExecutor executor, ILogger logger) => ToIEnumerableAsync(executor, null, logger: logger);
 

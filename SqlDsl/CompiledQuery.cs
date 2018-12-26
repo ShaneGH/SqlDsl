@@ -16,7 +16,7 @@ namespace SqlDsl
         internal readonly QueryParts SqlParts;
         readonly object[] Parameters;
         readonly string[] SelectColumns;
-        readonly ISqlFragmentBuilder SqlFragmentBuilder;
+        readonly ISqlSyntax SqlFragmentBuilder;
         public readonly RootObjectPropertyGraph PropertyGraph;
 
         public CompiledQuery(
@@ -24,7 +24,7 @@ namespace SqlDsl
             object[] parameters, 
             string[] selectColumns,
             RootObjectPropertyGraph propertyGraph,
-            ISqlFragmentBuilder sqlFragmentBuilder)
+            ISqlSyntax sqlFragmentBuilder)
         {
             SqlParts = sql;
             Parameters = RewriteParameters(sql.Assemble(), parameters);

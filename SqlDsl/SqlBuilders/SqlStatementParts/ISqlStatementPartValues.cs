@@ -12,7 +12,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         IEnumerable<SqlStatementPartJoin> JoinTables { get; }
         IEnumerable<SqlStatementPartSelect> SelectColumns { get; }
         ISqlStatement InnerStatement { get; }
-        ISqlFragmentBuilder SqlBuilder { get; }
+        ISqlSyntax SqlBuilder { get; }
         IEnumerable<(string rowIdColumnName, string resultClassProperty)> RowIdsForMappedProperties { get; }
     }
     

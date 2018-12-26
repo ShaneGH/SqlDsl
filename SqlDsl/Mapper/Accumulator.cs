@@ -188,7 +188,7 @@ namespace SqlDsl.Mapper
             Element _Map(Element el) => new Element(el.ParamRoot, map(el.Param), el.AggregatedToTable, el.Function);
         }
 
-        public static string BuildFromString<TElement>(this IAccumulator<TElement> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias = null)
+        public static string BuildFromString<TElement>(this IAccumulator<TElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias = null)
         {
             switch (acc)
             {
@@ -205,7 +205,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        public static string Combine(ISqlFragmentBuilder sqlFragmentBuilder, string l, string r, CombinationType combine)
+        public static string Combine(ISqlSyntax sqlFragmentBuilder, string l, string r, CombinationType combine)
         {
             switch (combine)
             {
@@ -256,7 +256,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        private static string BuildFromString(Accumulator<Element> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias, bool tableIsFirstParamPart)
+        private static string BuildFromString(Accumulator<Element> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias, bool tableIsFirstParamPart)
         {
             if (tableIsFirstParamPart && wrappedQueryAlias != null)
                 throw new InvalidOperationException($"You cannot specify {nameof(wrappedQueryAlias)} and {nameof(tableIsFirstParamPart)}");
@@ -296,7 +296,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        private static string BuildFromString(Accumulator<TheAmazingElement> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
+        private static string BuildFromString(Accumulator<TheAmazingElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
         {
             return acc.Next.Aggregate(
                 BuildColumn(acc.First),
@@ -321,7 +321,7 @@ namespace SqlDsl.Mapper
             }
         }
         
-        static string _BuildFromString<TElement>(Accumulators<TElement> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
+        static string _BuildFromString<TElement>(Accumulators<TElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
         {
             var first = wrappedQueryAlias != null 
                 ? acc.First.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)

@@ -15,7 +15,7 @@ namespace SqlDsl.SqlBuilders
     /// A class to build sql statements
     /// </summary>
     public class SqlStatementBuilder<TSqlBuilder> : SqlStatementBuilder
-        where TSqlBuilder : ISqlFragmentBuilder, new()
+        where TSqlBuilder : ISqlSyntax, new()
     {
         public SqlStatementBuilder() : base(new TSqlBuilder()) { }
     }
@@ -25,9 +25,9 @@ namespace SqlDsl.SqlBuilders
     /// </summary>
     public class SqlStatementBuilder : ISqlBuilder, SqlStatementParts.ISqlStatementPartValues
     {
-        public readonly ISqlFragmentBuilder SqlBuilder;
+        public readonly ISqlSyntax SqlBuilder;
 
-        public SqlStatementBuilder(ISqlFragmentBuilder sqlFragmentBuilder)
+        public SqlStatementBuilder(ISqlSyntax sqlFragmentBuilder)
         {
             SqlBuilder = sqlFragmentBuilder ?? throw new ArgumentNullException(nameof(sqlFragmentBuilder));
         }
@@ -495,7 +495,7 @@ namespace SqlDsl.SqlBuilders
 
         ISqlStatement ISqlStatementPartValues.InnerStatement => InnerStatement;
 
-        ISqlFragmentBuilder ISqlStatementPartValues.SqlBuilder => SqlBuilder;
+        ISqlSyntax ISqlStatementPartValues.SqlBuilder => SqlBuilder;
 
         IEnumerable<SqlStatementPartSelect> ISqlStatementPartValues.SelectColumns => GetAllSelectColumns().Select(BuildSelectCol);
 

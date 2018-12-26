@@ -16,7 +16,7 @@ namespace SqlDsl.Query
     /// Object to append query values to via underlying DSL
     /// </summary>
     public partial class QueryBuilder<TSqlBuilder, TArgs, TResult> : ITable<TArgs, TResult>, IQuery<TArgs, TResult>, IOrdererAgain<TArgs, TResult>
-        where TSqlBuilder: ISqlFragmentBuilder, new()
+        where TSqlBuilder: ISqlSyntax, new()
     {
         /// <summary>
         /// The name of the table in the SELECT statement
@@ -33,7 +33,7 @@ namespace SqlDsl.Query
         /// </summary>
         readonly List<Join> Joins = new List<Join>();
 
-        public readonly ISqlFragmentBuilder SqlFragmentBuilder = new TSqlBuilder();
+        public readonly ISqlSyntax SqlFragmentBuilder = new TSqlBuilder();
         
         /// <summary>
         /// The WHERE part of the query

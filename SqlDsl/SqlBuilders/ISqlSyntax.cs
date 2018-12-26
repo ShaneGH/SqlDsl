@@ -8,7 +8,7 @@ using System.Reflection;
 
 namespace SqlDsl.SqlBuilders
 {
-    public interface ISqlFragmentBuilder
+    public interface ISqlSyntax
     {
         /// <summary>
         /// The text for DESCENDING in the sql flavour

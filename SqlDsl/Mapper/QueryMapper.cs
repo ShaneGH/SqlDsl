@@ -22,11 +22,11 @@ namespace SqlDsl.Mapper
         /// Compile the query into something which can be executed multiple times
         /// </summary>
         public static ICompiledQuery<TArgs, TMapped> Compile<TArgs, TResult, TMapped, TSqlBuilder>(
-            ISqlFragmentBuilder sqlFragmentBuilder, 
+            ISqlSyntax sqlFragmentBuilder, 
             QueryBuilder<TSqlBuilder, TArgs, TResult> query, 
             LambdaExpression mapper, 
             ILogger logger)
-            where TSqlBuilder: ISqlFragmentBuilder, new()
+            where TSqlBuilder: ISqlSyntax, new()
         {
             var (wrappedBuilder, parameters) = query.ToSqlStatement();
             var mutableParameters = new ParamBuilder(parameters.ToList());
@@ -102,7 +102,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
+        static SqlStatementBuilder ToSqlBuilder(ISqlSyntax sqlFragmentBuilder, IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var rowIdPropertyMap = tables
                 // if mapping does not map to a specific property (e.g. q => q.Args.Select(a => new object()))
@@ -150,7 +150,7 @@ namespace SqlDsl.Mapper
             return builder;
         }
 
-        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IAccumulator<Element> property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
+        static SqlStatementBuilder ToSqlBuilder(ISqlSyntax sqlFragmentBuilder, IAccumulator<Element> property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var builder = new SqlStatementBuilder(sqlFragmentBuilder);
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
