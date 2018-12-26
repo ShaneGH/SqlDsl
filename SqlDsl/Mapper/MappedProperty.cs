@@ -14,9 +14,9 @@ namespace SqlDsl.Mapper
         public readonly Type MappedPropertyType;
         public readonly ConstructorInfo[] PropertySegmentConstructors;
         public readonly string To;
-        public readonly IAccumulator FromParams;
+        public readonly IAccumulator<Element> FromParams;
 
-        public MappedProperty(IAccumulator fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+        public MappedProperty(IAccumulator<Element> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
         {
             To = to;
             FromParams = fromParams;
@@ -25,7 +25,9 @@ namespace SqlDsl.Mapper
         }
         
         public MappedProperty(ParameterExpression fromParamRoot, string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
-            : this (new Accumulator(fromParamRoot, from, null, null), to, mappedPropertyType, constructorArgs)
+            : this (new Accumulator<Element>(
+                new Accumulator<Element, CombinationType>(
+                    new Element(fromParamRoot, from, null, null))), to, mappedPropertyType, constructorArgs)
         {
         }
 

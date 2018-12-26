@@ -47,7 +47,7 @@ namespace SqlDsl.Mapper
                         .SelectMany(pms => pms.FromParams.GetEnumerable1())
                         .Where(x => x.ParamRoot == state.QueryObject || state.ParameterRepresentsProperty.Any(y => y.parameter == x.ParamRoot))
                         // TODO: using Accumulator.AddRoot here seems wrong
-                        .Select(x => Accumulator.AddRoot(x, state))
+                        .Select(x => Accumulator<Element>.AddRoot(x, state))
                         .Select(x => wrappedStatement.SelectColumns.TryGetColumn(x.param))
                         .RemoveNulls()
                         .SelectMany(x => x.ReferencesColumns.Select(y => y.table))
@@ -111,7 +111,7 @@ namespace SqlDsl.Mapper
                     from: x.FromParams.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias),
                     fromParams: x.FromParams
                         .GetEnumerable1()
-                        .Select(Accumulator.AddRoot(state))
+                        .Select(Accumulator<Element>.AddRoot(state))
                         .Select(p => (sc: FilterSelectColumn(wrappedStatement.UniqueAlias, p.param), aT: p.aggregatedToTable))
                         .ToArray(),
                     to: x.To, 
@@ -147,7 +147,7 @@ namespace SqlDsl.Mapper
             return (innerQueryAlias, column);
         }
 
-        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IAccumulator property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
+        static SqlStatementBuilder ToSqlBuilder(ISqlFragmentBuilder sqlFragmentBuilder, IAccumulator<Element> property, Type cellDataType, ISqlBuilder wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var builder = new SqlStatementBuilder(sqlFragmentBuilder);
             builder.SetPrimaryTable(wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
@@ -155,7 +155,7 @@ namespace SqlDsl.Mapper
             var referencedColumns = property
                 .GetEnumerable1()
                 .Where(x => !x.Param.StartsWith("@"))
-                .Select(x => (wrappedStatement.UniqueAlias, Accumulator.AddRoot(x, state).param, x.AggregatedToTable))
+                .Select(x => (wrappedStatement.UniqueAlias, Accumulator<Element>.AddRoot(x, state).param, x.AggregatedToTable))
                 .ToArray();
 
             var sql = property.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias);

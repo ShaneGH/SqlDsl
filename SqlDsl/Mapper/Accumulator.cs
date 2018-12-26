@@ -7,16 +7,13 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.Mapper
 {
-    interface IAccumulator
+    interface IAccumulator<TElement>
     {
         bool HasOneItemOnly { get; }
-        Element First  { get; }
-        IEnumerable<Element> GetEnumerable1();
-        IAccumulator MapParam(Func<Element, Element> map);
-        IAccumulator MapParamName(Func<string, string> map);
-        IAccumulator Combine(IAccumulator x, CombinationType combiner);
-        string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias);
-        string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder);
+        TElement First  { get; }
+        IEnumerable<TElement> GetEnumerable1();
+        IAccumulator<T> MapParam<T>(Func<TElement, T> map);
+        IAccumulator<TElement> Combine(IAccumulator<TElement> x, CombinationType combiner);
     }
 
     struct Element
@@ -35,12 +32,12 @@ namespace SqlDsl.Mapper
         }
     }
 
-    class Accumulators : IAccumulator
+    class Accumulators<TElement> : IAccumulator<TElement>
     {
-        readonly IAccumulator First;
-        readonly (IAccumulator, CombinationType) Next;
+        public readonly IAccumulator<TElement> First;
+        public readonly (IAccumulator<TElement>, CombinationType) Next;
 
-        public Accumulators(IAccumulator first, (IAccumulator, CombinationType) next)
+        public Accumulators(IAccumulator<TElement> first, (IAccumulator<TElement>, CombinationType) next)
         {
             First = first;
             Next = next;
@@ -48,119 +45,116 @@ namespace SqlDsl.Mapper
 
         public bool HasOneItemOnly => false;
 
-        Element IAccumulator.First => First.First;
+        TElement IAccumulator<TElement>.First => First.First;
 
-        public string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
+        public IAccumulator<TElement> Combine(IAccumulator<TElement> x, CombinationType combiner)
         {
-            // todo: put string part in ISqlFragmentBuilder
-
-            var first = First.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias);
-            var second = Next.Item1.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias);
-
-            return BuildFromString(sqlFragmentBuilder, first, second);
+            return new Accumulators<TElement>(this, (x, combiner));
         }
 
-        public string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder)
-        {
-            // todo: put string part in ISqlFragmentBuilder
-
-            var first = First.BuildFromString(state, sqlFragmentBuilder);
-            var second = Next.Item1.BuildFromString(state, sqlFragmentBuilder);
-
-            return BuildFromString(sqlFragmentBuilder, first, second);
-        }
-
-        string BuildFromString(ISqlFragmentBuilder sqlFragmentBuilder, string first, string next)
-        {
-            if (!First.HasOneItemOnly) first = $"({first})";
-            if (!Next.Item1.HasOneItemOnly) next = $"({next})";
-
-            return Accumulator.Combine(
-                sqlFragmentBuilder,
-                first, 
-                next,
-                Next.Item2);
-        }
-
-        public IAccumulator Combine(IAccumulator x, CombinationType combiner)
-        {
-            return new Accumulators(this, (x, combiner));
-        }
-
-        public IEnumerable<Element> GetEnumerable1()
+        public IEnumerable<TElement> GetEnumerable1()
         {
             return First
                 .GetEnumerable1()
                 .Concat(Next.Item1.GetEnumerable1());
         }
 
-        public IAccumulator MapParam(Func<Element, Element> map)
+        public IAccumulator<T> MapParam<T>(Func<TElement, T> map)
         {
             var first = First.MapParam(map);
             var second = Next.Item1.MapParam(map);
 
             return first.Combine(second, Next.Item2);
         }
-
-        public IAccumulator MapParamName(Func<string, string> map)
-        {
-            var first = First.MapParamName(map);
-            var second = Next.Item1.MapParamName(map);
-
-            return first.Combine(second, Next.Item2);
-        }
     }
 
-    class Accumulator: IAccumulator
+    class Accumulator<TElement>: IAccumulator<TElement>
     {   
         public bool HasOneItemOnly => !Inner.Next.Any();
         
-        public Element First => Inner.First;
-
-        readonly Accumulator<Element, CombinationType> Inner;
-
-        public Accumulator(
-            ParameterExpression firstParamRoot, string firstParam, string aggregatedToTable, string function, 
-            IEnumerable<(Element, CombinationType)> next = null)
-            : this(new Accumulator<Element, CombinationType>(new Element(firstParamRoot, firstParam, aggregatedToTable, function), next))
-        {
-        }
+        public TElement First => Inner.First;
         
-        public Accumulator(Accumulator<Element, CombinationType> acc)
+        public IEnumerable<(TElement element, CombinationType combiner)> Next => Inner.Next;
+
+        readonly Accumulator<TElement, CombinationType> Inner;
+
+        // public Accumulator(
+        //     ParameterExpression firstParamRoot, string firstParam, string aggregatedToTable, string function, 
+        //     IEnumerable<(Element, CombinationType)> next = null)
+        //     : this(new Accumulator<Element, CombinationType>(new Element(firstParamRoot, firstParam, aggregatedToTable, function), next))
+        // {
+        // }
+        
+        public Accumulator(Accumulator<TElement, CombinationType> acc)
         {
             Inner = acc;
         }
 
-        public IEnumerable<Element> GetEnumerable1()
+        public IEnumerable<TElement> GetEnumerable1()
         {
             return Inner.GetEnumerable1();
         }
 
 
-        public IAccumulator MapParam(Func<Element, Element> map)
+        public IAccumulator<T> MapParam<T>(Func<TElement, T> map)
         {
-            return new Accumulator(Inner.Map(map));
+            return new Accumulator<T>(Inner.Map(map));
         }
 
-        public IAccumulator MapParamName(Func<string, string> map)
+        public IAccumulator<TElement> Combine(IAccumulator<TElement> x, CombinationType combiner)
         {
-            return MapParam(_Map);
+            return new Accumulators<TElement>(this, (x, combiner));
+        }
+
+        // todo: move file??
+        public static Func<Element, (string param, string aggregatedToTable)> AddRoot(BuildMapState state)
+        {
+            return Execute;
+
+            (string, string) Execute(Element x)
+            {
+                // I am not 100% sure about the "root == state.QueryObject" part
+                if (x.ParamRoot == null || x.ParamRoot == state.QueryObject) return (x.Param, x.AggregatedToTable);
+
+                var propertyRoot = state.ParameterRepresentsProperty
+                    .Where(p => p.parameter == x.ParamRoot)
+                    .Select(p => p.property.JoinString("."))
+                    .FirstOrDefault();
+
+                if (propertyRoot == null)
+                    throw new InvalidOperationException($"Could not find alias for mapping parameter \"{x.ParamRoot}\". {x.Param}");
+
+                if (!string.IsNullOrEmpty(x.Param))
+                    propertyRoot += ".";
+
+                return ($"{propertyRoot}{x.Param}", x.AggregatedToTable);
+            }
+        }
+
+        public static (string param, string aggregatedToTable) AddRoot(Element value, BuildMapState state) => AddRoot(state)(value);
+    }
+
+    // todo: move file
+    static class IAccumulatorUtils
+    {
+        public static IAccumulator<Element> MapParamName(this IAccumulator<Element> acc, Func<string, string> map)
+        {
+            return acc.MapParam(_Map);
             Element _Map(Element el) => new Element(el.ParamRoot, map(el.Param), el.AggregatedToTable, el.Function);
         }
 
-        public IAccumulator Combine(IAccumulator x, CombinationType combiner)
+        public static string BuildFromString(this IAccumulator<Element> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
         {
-            return new Accumulators(this, (x, combiner));
+            return acc is Accumulator<Element> ?
+                BuildFromString(acc as Accumulator<Element>, state, sqlFragmentBuilder, wrappedQueryAlias, false) :
+                BuildFromString(acc as Accumulators<Element>, state, sqlFragmentBuilder, wrappedQueryAlias, false);
         }
 
-        public string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias)
+        public static string BuildFromString(this IAccumulator<Element> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder)
         {
-            return BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias, false);
-        }
-
-        public string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder)
-        {
-            return BuildFromString(state, sqlFragmentBuilder, null, true);
+            return acc is Accumulator<Element>
+                ? BuildFromString(acc as Accumulator<Element>, state, sqlFragmentBuilder, null, true)
+                : BuildFromString(acc as Accumulators<Element>, state, sqlFragmentBuilder, null, true);
         }
 
         public static string Combine(ISqlFragmentBuilder sqlFragmentBuilder, string l, string r, CombinationType combine)
@@ -214,15 +208,15 @@ namespace SqlDsl.Mapper
             }
         }
 
-        private string BuildFromString(BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias, bool tableIsFirstParamPart)
+        private static string BuildFromString(Accumulator<Element> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias, bool tableIsFirstParamPart)
         {
             if (tableIsFirstParamPart && wrappedQueryAlias != null)
                 throw new InvalidOperationException($"You cannot specify {nameof(wrappedQueryAlias)} and {nameof(tableIsFirstParamPart)}");
 
-            var table1 = (Inner.First.Param ?? "").StartsWith("@") ? null : wrappedQueryAlias;
+            var table1 = (acc.First.Param ?? "").StartsWith("@") ? null : wrappedQueryAlias;
 
-            return Inner.Next.Aggregate(
-                BuildColumn(table1, Inner.First),
+            return acc.Next.Aggregate(
+                BuildColumn(table1, acc.First),
                 Aggregate);
 
             string Aggregate(string x, (Element param, CombinationType type) y)
@@ -247,40 +241,35 @@ namespace SqlDsl.Mapper
                     }
                 }
 
-                var col = sqlFragmentBuilder.BuildSelectColumn(tab, AddRoot(new Element(el.ParamRoot, parameter, el.AggregatedToTable, el.Function), state).param);
+                var col = sqlFragmentBuilder.BuildSelectColumn(tab, Accumulator<Element>.AddRoot(new Element(el.ParamRoot, parameter, el.AggregatedToTable, el.Function), state).param);
                 return el.Function == null ?
                     col :
                     $"{el.Function}({col})";   // TODO: call func in sqlBuilder
             }
         }
-
-        public static Func<Element, (string param, string aggregatedToTable)> AddRoot(BuildMapState state)
+        
+        static string BuildFromString(Accumulators<Element> acc, BuildMapState state, ISqlFragmentBuilder sqlFragmentBuilder, string wrappedQueryAlias, bool tableIsFirstParamPart)
         {
-            return Execute;
+            var first = wrappedQueryAlias != null 
+                ? acc.First.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)
+                : acc.First.BuildFromString(state, sqlFragmentBuilder);
 
-            (string, string) Execute(Element x)
-            {
-                // I am not 100% sure about the "root == state.QueryObject" part
-                if (x.ParamRoot == null || x.ParamRoot == state.QueryObject) return (x.Param, x.AggregatedToTable);
+            var second = wrappedQueryAlias != null 
+                ? acc.Next.Item1.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)
+                : acc.Next.Item1.BuildFromString(state, sqlFragmentBuilder);
 
-                var propertyRoot = state.ParameterRepresentsProperty
-                    .Where(p => p.parameter == x.ParamRoot)
-                    .Select(p => p.property.JoinString("."))
-                    .FirstOrDefault();
+            if (!acc.First.HasOneItemOnly) first = $"({first})";
+            if (!acc.Next.Item1.HasOneItemOnly) second = $"({second})";
 
-                if (propertyRoot == null)
-                    throw new InvalidOperationException($"Could not find alias for mapping parameter \"{x.ParamRoot}\". {x.Param}");
-
-                if (!string.IsNullOrEmpty(x.Param))
-                    propertyRoot += ".";
-
-                return ($"{propertyRoot}{x.Param}", x.AggregatedToTable);
-            }
+            return Combine(
+                sqlFragmentBuilder,
+                first, 
+                second,
+                acc.Next.Item2);
         }
-
-        public static (string param, string aggregatedToTable) AddRoot(Element value, BuildMapState state) => AddRoot(state)(value);
     }
 
+    // todo: move file
     public enum CombinationType
     {
         Add,
@@ -299,6 +288,7 @@ namespace SqlDsl.Mapper
         Or
     }
 
+    // todo: move file
     public static class CombinationTypeUtils
     {
         public static CombinationType ToCombinationType(this ExpressionType e)
