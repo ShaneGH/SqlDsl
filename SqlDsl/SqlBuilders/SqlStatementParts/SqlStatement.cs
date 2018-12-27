@@ -44,5 +44,21 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                 null :
                 new MappingProperties(builder);
         }
+
+        /// <inheritdoc />
+        public IQueryTable TryGetTableForColum(string columnAlias)
+        {
+            var col = SelectColumns.TryGetColumn(columnAlias);
+            if (col == null) return null;
+
+            return Tables.TryGetTable(col.RowNumberColumnIndex);
+        }
+
+        /// <inheritdoc />
+        public IQueryTable GetTableForColum(string columnAlias)
+        {
+            var col = SelectColumns[columnAlias];
+            return Tables[col.RowNumberColumnIndex];
+        }
     }
 }

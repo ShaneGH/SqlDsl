@@ -32,6 +32,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// Get a column based on it's alias
         /// </summary>
         public ISelectColumn this[string alias] => GetColumn(alias);
+        
 
         /// <summary>
         /// Build a list of columns

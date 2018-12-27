@@ -31,6 +31,16 @@ namespace SqlDsl.SqlBuilders
         /// The columns in the SELECT part of the query
         /// </summary>
         ISelectColumns SelectColumns { get; }
+
+        /// <summary>
+        /// Get the table which this column belongs to or null
+        /// </summary>
+        IQueryTable TryGetTableForColum(string columnAlias);
+
+        /// <summary>
+        /// Get the table which this column belongs to
+        /// </summary>
+        IQueryTable GetTableForColum(string columnAlias);
     }
 
     /// <summary>
@@ -44,9 +54,14 @@ namespace SqlDsl.SqlBuilders
         IQueryTable this[int rowNumberColumnIndex] { get; }
         
         /// <summary>
-        /// Get a table based on it's index
+        /// Get a table based on it's alias
         /// </summary>
         IQueryTable this[string alias] { get; }
+
+        /// <summary>
+        /// Get a table based on the index of its row number column
+        /// </summary>
+        IQueryTable TryGetTable(int rowNumberColumnIndex);
     }
 
     /// <summary>

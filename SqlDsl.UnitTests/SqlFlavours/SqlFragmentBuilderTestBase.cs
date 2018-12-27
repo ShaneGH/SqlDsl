@@ -337,6 +337,21 @@ namespace SqlDsl.UnitTests.SqlFlavours
         }
 
         [Test]
+        public void TestNullIn()
+        {
+            // arrange
+            // act
+            var values = StartTest()
+                .From()
+                .Where(x => x.Byte_N.In(new byte?[1] { null }))
+                .ToArray(Executor);
+
+            // assert
+            Assert.AreEqual(1, values.Length);
+            Compare(TestDataTables.DataTypeTestNulled, values[0]);
+        }
+
+        [Test]
         public void TestOrderBy()
         {
             // arrange

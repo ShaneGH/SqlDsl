@@ -61,8 +61,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         [Test]
         public async Task OrderByDescending()
         {
-            // ##############################################
-
             // arrange
             // act
             var data = await FullyJoinedQuery()

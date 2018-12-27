@@ -16,9 +16,14 @@ namespace SqlDsl.SqlBuilders
     /// </summary>
     public abstract class SqlStatementBuilderBase : ISqlString
     {
+        static readonly (string, (string, string, string)[]) Select1 = ("1", new (string, string, string)[0]);
         static readonly ConstructorInfo[] EmptyConstructorInfo = new ConstructorInfo[0];
-
         static readonly string NullString = null;
+        
+        /// <summary>
+        /// If false, the row id columns will not have an "AS" part which combines table and column
+        /// </summary>
+        protected abstract bool AliasRowIdColumns { get; }
 
         public readonly ISqlSyntax SqlSyntax;
         
@@ -49,23 +54,70 @@ namespace SqlDsl.SqlBuilders
         public void AddSelectColumn(Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] argConstructors = null) =>
             _Select.Add(new SelectColumn(cellDataType, selectCode, alias ?? throw new ArgumentNullException(nameof(alias)), representsColumns, argConstructors ?? EmptyConstructorInfo));
 
+        /// <inheritdoc />
+        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString() => ToSqlStringInternal(null, null);
 
         /// <inheritdoc />
-        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString()
+        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString(IEnumerable<string> selectColumnAliases, IEnumerable<string> ensureTableRowIds)
         {
-            // build SELECT columns (cols and row ids)
-            var select = GetAllSelectColumns()
-                .Select(s => SqlSyntax.AddAliasColumn(s.col.SelectCode, s.col.Alias))
-                .Enumerate();
-
-            // add placeholder in case no SELECT columns were specified
-            if (!select.Any())
-                select = new [] { "1" };
-
-            return ToSqlString(select);
+            return ToSqlStringInternal(
+                selectColumnAliases ?? throw new ArgumentNullException(nameof(selectColumnAliases)), 
+                ensureTableRowIds ?? throw new ArgumentNullException(nameof(ensureTableRowIds)));
         }
 
-        protected abstract (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString(IEnumerable<string> selectColumns);
+        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlStringInternal(IEnumerable<string> selectColumnAliases, IEnumerable<string> ensureTableRowIds)
+        {
+            var rowIds = GetRowIdSelectColumns(selectColumnAliases, ensureTableRowIds).Enumerate();
+            if (!rowIds.Any())
+            {
+                // there must be at least 1 row id
+                rowIds = GetRowIdSelectColumns()
+                    .Take(1)
+                    .Enumerate();
+            }
+
+            IEnumerable<SelectColumn> selects = _Select;
+            if (selectColumnAliases != null)
+            {
+                var sca = selectColumnAliases.ToHashSet();
+                selects = selects.Where(c => sca.Contains(c.Alias));
+            }
+
+            // TODO: look at $"{rid.tableAlias}.{rid.rowIdColumnName}". What if tableAlias is null or ##root
+            var sels = rowIds
+                .Select(rid => (sql: BuildSqlForRid(rid), representsColumns: new [] { (table: rid.tableAlias, NullString, aggregatedToTable: NullString) }))
+                .Concat(selects.Select(sel => (sql: SqlSyntax.AddAliasColumn(sel.SelectCode, sel.Alias), representsColumns: sel.RepresentsColumns)))
+                .ToList();
+
+            // if there is absolutely nothing to select, prevent error by selecting 1
+            if (sels.Count == 0)
+                sels.Add(Select1);
+
+            return _ToSqlString(
+                sels.Select(c => c.sql), 
+                sels
+                    .SelectMany(s => s.representsColumns)
+                    .SelectMany(c => new [] { c.table, c.aggregatedToTable })
+                    .RemoveNulls()
+                    .Distinct());
+
+            string BuildSqlForRid((string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias) rid)
+            {
+                var select = SqlSyntax.BuildSelectColumn(rid.tableAlias, rid.rowIdColumnName);
+                if (!AliasRowIdColumns)
+                    return select;
+
+                var alias = rid.tableAlias == null
+                    ? rid.rowIdColumnName
+                    : rid.rowIdColumnName == null
+                        ? rid.tableAlias
+                        : $"{rid.tableAlias}.{rid.rowIdColumnName}";
+
+                return SqlSyntax.AddAliasColumn(select, alias);
+            }
+        }
+
+        protected abstract (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) _ToSqlString(IEnumerable<string> selectColumns, IEnumerable<string> selectTables);
 
         /// <summary>
         /// Concat DB table columns with row id columns
@@ -78,7 +130,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Get a list of row id colums, the alias of the table they are identifying, and the alias for the row id column (if any)
         /// </summary>
-        protected abstract IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns();
+        protected abstract IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns(IEnumerable<string> selectColumnAliases = null, IEnumerable<string> ensureTableRowIds = null);
 
         public class SelectColumn
         {

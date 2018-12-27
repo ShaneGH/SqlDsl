@@ -51,13 +51,8 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         IQueryTable GetTable(int rowNumberColumnIndex)
         {
-            foreach (var tab in this)
-            {
-                if (tab.RowNumberColumnIndex == rowNumberColumnIndex)
-                    return tab;
-            }
-
-            throw new InvalidOperationException($"There is no table with row number column index: {rowNumberColumnIndex}.");
+            return TryGetTable(rowNumberColumnIndex) ??
+                throw new InvalidOperationException($"There is no table with row number column index: {rowNumberColumnIndex}.");
         }
 
         /// <summary>
@@ -72,6 +67,18 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             }
 
             throw new InvalidOperationException($"There is no table with alias: {alias}.");
+        }
+
+        /// <inheritdoc />
+        public IQueryTable TryGetTable(int rowNumberColumnIndex)
+        {
+            foreach (var tab in this)
+            {
+                if (tab.RowNumberColumnIndex == rowNumberColumnIndex)
+                    return tab;
+            }
+
+            return null;
         }
     }
 }

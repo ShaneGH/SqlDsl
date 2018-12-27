@@ -658,7 +658,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         /// This is meant as a smoke test for other things
         /// </summary>
         [Test]
-        public async Task The_Gold_Standard()
+        public async Task The_Gold_Standard_WithoutValues()
         {
             // arrange
             // act
@@ -670,13 +670,45 @@ namespace SqlDsl.UnitTests.FullPathTests
                     classes = x.TheClasses.Select(c => new 
                     {
                         className = c.Name,
-                        tags = x.TheTags.Select(t => t.Name)
-                    })
+                        tags = x.TheTags.Select(t => t.Name).ToList()
+                    }).ToList()
                 })
                 .ToListAsync(Executor);
 
             // assert
-            //Assert.Fail();
+            // Assert.Fail();
+        }
+
+        /// <summary>
+        /// This is meant as a smoke test for other things
+        /// </summary>
+        [Test]
+        public async Task The_Gold_Standard_WithValues()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Where(x => x.ThePerson.Id == 1)
+                .Map(x => new
+                {
+                    person = x.ThePerson.Name,
+                    classes = x.TheClasses.Select(c => new 
+                    {
+                        className = c.Name,
+                        tags = x.TheTags.Select(t => t.Name).ToList()
+                    }).ToList()
+                })
+                .ToListAsync(Executor);
+
+            // assert
+            Assert.AreEqual(1, data.Count);
+            Assert.AreEqual(2, data[0].classes.Count);
+            
+            Assert.AreEqual(Data.Classes.Tennis.Name, data[0].classes[0].className);
+            Assert.AreEqual(new [] { Data.Tags.Sport.Name, Data.Tags.BallSport.Name }, data[0].classes[0].tags);
+            
+            Assert.AreEqual(Data.Classes.Archery.Name, data[0].classes[1].className);
+            Assert.AreEqual(new [] { Data.Tags.Sport.Name }, data[0].classes[1].tags);
         }
     }
 }

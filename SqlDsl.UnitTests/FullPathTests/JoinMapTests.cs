@@ -241,7 +241,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class Cls1
         {
-            public Cls2[] losTags;
+            public Cls2[] classesWhichAreTagged;
         }
 
         class Cls2
@@ -258,7 +258,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new Cls1
                 {
-                    losTags = q.TheTags
+                    classesWhichAreTagged = q.TheTags
                         .Select(tag => new Cls2
                         {
                             cls = q.TheClasses.One()
@@ -269,10 +269,10 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(1, data.Count);
-            Assert.AreEqual(3, data[0].losTags.Length);
-            Assert.AreEqual(Data.Classes.Tennis, data[0].losTags[0].cls);
-            Assert.AreEqual(Data.Classes.Tennis, data[0].losTags[1].cls);
-            Assert.AreEqual(Data.Classes.Archery, data[0].losTags[2].cls);
+            Assert.AreEqual(3, data[0].classesWhichAreTagged.Length);
+            Assert.AreEqual(Data.Classes.Tennis, data[0].classesWhichAreTagged[0].cls);
+            Assert.AreEqual(Data.Classes.Tennis, data[0].classesWhichAreTagged[1].cls);
+            Assert.AreEqual(Data.Classes.Archery, data[0].classesWhichAreTagged[2].cls);
         }
 
         [Test]
@@ -310,7 +310,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
-                    tags = q.TheClassTags
+                    classesWithTags = q.TheClassTags
                         .Select(tag => new 
                         {
                             cls = q.TheClasses.One().Name
@@ -321,10 +321,10 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(1, data.Count);
-            Assert.AreEqual(3, data[0].tags.Length);
-            Assert.AreEqual(Data.Classes.Tennis.Name, data[0].tags[0].cls);
-            Assert.AreEqual(Data.Classes.Tennis.Name, data[0].tags[1].cls);
-            Assert.AreEqual(Data.Classes.Archery.Name, data[0].tags[2].cls);
+            Assert.AreEqual(3, data[0].classesWithTags.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, data[0].classesWithTags[0].cls);
+            Assert.AreEqual(Data.Classes.Tennis.Name, data[0].classesWithTags[1].cls);
+            Assert.AreEqual(Data.Classes.Archery.Name, data[0].classesWithTags[2].cls);
         }
 
         [Test]

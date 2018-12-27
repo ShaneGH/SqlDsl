@@ -38,6 +38,8 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         readonly string PrimaryTable;
 
+        protected override bool AliasRowIdColumns => true;
+
         public SqlStatementBuilder(ISqlSyntax sqlFragmentBuilder, string primaryTable, string primaryTableAlias)
             : base(sqlFragmentBuilder, primaryTableAlias)
         {
@@ -205,10 +207,14 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <inheritdoc />
-        protected override (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString(IEnumerable<string> selectColumns)
+        protected override (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) _ToSqlString(IEnumerable<string> selectColumns, IEnumerable<string> selectTables)
         {
+            var allTables = selectTables.ToHashSet();
+
             // build WHERE part
             var where = Where == null ? "" : $" WHERE {Where.Value.sql}";
+            if (Where != null)
+                allTables.AddRange(Where.Value.queryObjectReferences);
 
             // build FROM part
             var primaryTable = SqlSyntax.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName);
@@ -218,6 +224,8 @@ namespace SqlDsl.SqlBuilders
                 .Select(o => o.sql + (o.direction == OrderDirection.Ascending ? "" : $" {SqlSyntax.Descending}"))
                 .ToArray();
 
+            allTables.AddRange(Ordering.SelectMany(o => o.queryObjectReferences));
+
             // build the order by part
             var orderBy = orderByText.Length == 0 ?
                 "" :
@@ -225,9 +233,17 @@ namespace SqlDsl.SqlBuilders
 
             if (orderBy.Length > 0)
                 orderBy = "ORDER BY " + orderBy;
+
+            // add tables needed to bridge joins
+            foreach (var t in allTables.ToArray())
+                allTables.AddRange(GetLineage(t, Enumerable.Empty<string>()));
+
+            var joins = _Joins
+                .Where(j => allTables.Contains(j.alias))
+                .ToArray();
                 
             // concat all setup sql from all other parts
-            var setupSql = _Joins
+            var setupSql = joins
                 .Select(j => j.setupSql)
                 .Concat(new [] 
                 {
@@ -241,7 +257,7 @@ namespace SqlDsl.SqlBuilders
             {
                 $"\nSELECT {selectColumns.JoinString(",")}",
                 $"FROM ({primaryTable.sql}) " + SqlSyntax.WrapAlias(PrimaryTableAlias),
-                $"{_Joins.Select(j => j.sql).JoinString("\n")}",
+                $"{joins.Select(j => j.sql).JoinString("\n")}",
                 orderBy
             }
             .Where(x => !string.IsNullOrEmpty(x))
@@ -250,10 +266,34 @@ namespace SqlDsl.SqlBuilders
             return (setupSql, query, where, "");
         }
 
+        // TODO: this function was copy pasted
+        IEnumerable<string> GetLineage(string table, IEnumerable<string> complete)
+        {
+            if (table == PrimaryTableAlias)
+                return table.ToEnumerable();
+
+            if (complete.Contains(table))
+                return complete;
+
+            var join = _Joins
+                .Where(j => j.alias == table)
+                .AsNullable()
+                .FirstOrDefault();
+
+            // TODO: add where and order by column tables
+
+            if (join == null)
+                throw new InvalidOperationException($"Cannot find join {table}.");
+
+            return join.Value.queryObjectReferences
+                .SelectMany(x => GetLineage(x, complete.Append(table)))
+                .Append(table);
+        }
+
         /// <summary>
-        /// Get a list of row id colums, the alias of the table they are identifying, and the alias for the row id column (if any)
+        /// Get a list of row id columns, the alias of the table they are identifying, and the alias for the row id column (if any)
         /// </summary>
-        protected override IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns()
+        protected override IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns(IEnumerable<string> selectColumnAliases = null, IEnumerable<string> ensureTableRowIds = null)
         {
             // Get row id from the SELECT
             var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? 
@@ -262,14 +302,38 @@ namespace SqlDsl.SqlBuilders
 
             yield return (SqlStatementConstants.RowIdName, PrimaryTableAlias, ptAlias);
 
+            var joins = _Joins.Select(j => j.alias);
+            if (selectColumnAliases != null)
+            {
+                // TODO: inefficient to create disposable version of SqlStatement here
+                var stat = new SqlStatement(this);
+                var sca = selectColumnAliases
+                    .Select(a => stat.SelectColumns[a].RowNumberColumnIndex)
+                    .Select(a => stat.Tables[a])
+                    .SelectMany(GetTableChain)
+                    .Select(t => t.Alias)
+                    .Concat(ensureTableRowIds.OrEmpty())
+                    .ToHashSet();
+
+                joins = joins.Where(sca.Contains);
+            }
+
             // Get row id from each join
-            foreach (var join in _Joins)
+            foreach (var join in joins)
             {
                 yield return (
                     SqlStatementConstants.RowIdName, 
-                    join.alias, 
-                    $"{join.alias}.{SqlStatementConstants.RowIdName}");
+                    join, 
+                    $"{join}.{SqlStatementConstants.RowIdName}");
             }
+        }
+            
+        static IEnumerable<IQueryTable> GetTableChain(IQueryTable table)
+        {
+            if (table.JoinedFrom == null)
+                return table.ToEnumerable();
+
+            return GetTableChain(table.JoinedFrom).Append(table);
         }
 
         #region ISqlStatementPartValues

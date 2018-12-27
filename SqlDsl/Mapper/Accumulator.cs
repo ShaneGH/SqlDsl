@@ -277,19 +277,18 @@ namespace SqlDsl.Mapper
 
             string BuildColumn(string tab, Element el)
             {
-                var parameter = el.Param;
-
+                var column = el.AddRoot(state).param;
                 if (tableIsFirstParamPart)
                 {
-                    var p = parameter.Split('.');
+                    var p = column.Split('.');
                     if (p.Length > 1)
                     {
                         tab = p.Take(p.Length - 1).JoinString(".");
-                        parameter = p[p.Length - 1];
+                        column = p[p.Length - 1];
                     }
                 }
 
-                var col = sqlFragmentBuilder.BuildSelectColumn(tab, new Element(el.ParamRoot, parameter, el.AggregatedToTable, el.Function).AddRoot(state).param);
+                var col = sqlFragmentBuilder.BuildSelectColumn(tab, column);
                 return el.Function == null ?
                     col :
                     $"{el.Function}({col})";   // TODO: call func in sqlBuilder

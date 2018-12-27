@@ -818,7 +818,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task CountAndGroup()
         {
             // arrange
@@ -847,6 +846,32 @@ namespace SqlDsl.UnitTests.FullPathTests
             }, data);
         }
 
+        [Test]
+        public void CountAndGroup_GroupIsWithinScopeOfChildJoin()
+        {
+            // arrange
+            // act
+            var data = FullyJoinedQuery<object>()
+                .Where(q => q.ThePerson.Id == Data.People.John.Id)
+                .Map(q => new
+                {
+                    classesWithTags = q.TheClassTags
+                        .Select(tag => new 
+                        {
+                            cls = q.TheClasses.Select(x => x.Id).Count()
+                        })
+                        .ToArray()
+                })
+                .ToList(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count);
+            Assert.AreEqual(3, data[0].classesWithTags.Length);
+            Assert.AreEqual(1, data[0].classesWithTags[0].cls);
+            Assert.AreEqual(1, data[0].classesWithTags[1].cls);
+            Assert.AreEqual(1, data[0].classesWithTags[2].cls);
+        }
+
         class CountAndGroupTest
         {
             public string person;
@@ -854,7 +879,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task CountAndGroup_ToProperties()
         {
             // arrange
@@ -865,22 +889,14 @@ namespace SqlDsl.UnitTests.FullPathTests
                     person = p.ThePerson.Name,
                     classes = p.TheClasses.Select(x => x.Id).Count()
                 })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
+                .ToArrayAsync(Executor, null, logger: Logger);
 
             // assert
-            CollectionAssert.AreEqual(new [] 
-            {
-                new 
-                {
-                    person = Data.People.John.Name,
-                    classes = 2
-                },
-                new 
-                {
-                    person = Data.People.Mary.Name,
-                    classes = 1
-                }
-            }, data);
+            Assert.AreEqual(2, data.Length);
+            Assert.AreEqual(Data.People.John.Name, data[0].person);
+            Assert.AreEqual(2, data[0].classes);
+            Assert.AreEqual(Data.People.Mary.Name, data[1].person);
+            Assert.AreEqual(1, data[1].classes);
         }
 
         [Test]

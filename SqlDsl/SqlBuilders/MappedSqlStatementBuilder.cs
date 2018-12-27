@@ -31,6 +31,12 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         public readonly List<(string rowIdColumnName, string resultClassProperty)> RowIdsForMappedProperties = new List<(string, string)>();
 
+        protected override bool AliasRowIdColumns => false;
+
+        bool SelectHasAggregation => Select
+            .SelectMany(s => s.RepresentsColumns)
+            .Any(x => x.aggregatedToTable != null);
+
         public MappedSqlStatementBuilder(ISqlSyntax sqlFragmentBuilder, ISqlString innerQueryBuilder, ISqlStatement innerQueryStatement, string primaryTableAlias)
             : base(sqlFragmentBuilder, primaryTableAlias)
         {
@@ -39,15 +45,42 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <inheritdoc />
-        protected override (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString(IEnumerable<string> selectColumns)
+        protected override (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) _ToSqlString(IEnumerable<string> selectColumns, IEnumerable<string> selectTables)
         {
-            // get the sql from the inner query if possible
-            var (querySetupSql, beforeWhereSql, whereSql, afterWhereSql) = InnerQueryBuilder.ToSqlString();
+            // if a table is used as part of a mapping, but none of it's fields are used, we might need
+            // to tell the inner query builder
+            var usedTables = GetUsedTables(null, null).Select(t => t.Alias);
+            var (querySetupSql, beforeWhereSql, whereSql, afterWhereSql) = InnerQueryBuilder.ToSqlString(GetSelectColumns(), usedTables);
 
             beforeWhereSql = $"SELECT {selectColumns.JoinString(",")}\nFROM ({beforeWhereSql}";
             afterWhereSql = $"{afterWhereSql}) {SqlSyntax.WrapAlias(PrimaryTableAlias)}{BuildGroupByStatement("\n")}";
 
             return (querySetupSql, beforeWhereSql, whereSql, afterWhereSql);
+        }
+
+        IEnumerable<string> GetSelectColumns()
+        {
+            // get the sql from the inner query
+            var cols = Select
+                .SelectMany(s => s.RepresentsColumns.Select(c => c.column))
+                .Where(c => !c.StartsWith("@"))
+                .ToList();
+
+            var tables = cols.Select(c => InnerQueryStatement.Tables[InnerQueryStatement.SelectColumns[c].RowNumberColumnIndex]);
+            tables = tables.SelectMany(GetTableChain);
+
+            var rids = tables.Select(t => GetAlias(t) + SqlStatementConstants.RowIdName);
+            return  cols.Concat(rids).Distinct();
+                
+            string GetAlias(IQueryTable qt) => qt.Alias == SqlStatementConstants.RootObjectAlias ? "" : $"{qt.Alias}.";
+        }
+            
+        static IEnumerable<IQueryTable> GetTableChain(IQueryTable table)
+        {
+            if (table.JoinedFrom == null)
+                return table.ToEnumerable();
+
+            return GetTableChain(table.JoinedFrom).Append(table);
         }
 
         string BuildGroupByStatement(string prefix)
@@ -70,10 +103,76 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <inheritdoc />
-        protected override IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns()
+        IEnumerable<IQueryTable> GetUsedTables(IEnumerable<string> selectColumnAliases, IEnumerable<string> ensureTableRowIds)
         {
-            // if there is an inner query, all columns will come from it
+            var cols = Select.SelectMany(s => s.RepresentsColumns);
+            if (selectColumnAliases != null)
+            {
+                var sca = selectColumnAliases.ToHashSet();
+                cols = cols.Where(c => sca.Contains(c.column));
+            }
+
+            var tables = new HashSet<IQueryTable>();
+
+            // add tables which were explicetly requested
+            foreach (var tab in ensureTableRowIds.OrEmpty())
+                tables.Add(InnerQueryStatement.Tables[tab]);
+
+            // add tables which columns are aggregated to
+            foreach (var col in cols.Where(c => c.aggregatedToTable != null))
+                tables.Add(InnerQueryStatement.Tables[col.aggregatedToTable]);
+                
+            // add tables for select columns
+            foreach (var col in cols.Where(c => !c.column.StartsWith("@") && c.aggregatedToTable == null))
+            {
+                var column = InnerQueryStatement.SelectColumns[col.column];
+                tables.Add(InnerQueryStatement.Tables[column.RowNumberColumnIndex]);
+            }
+
+            // add tables which other tables depend on
+            foreach (var tab in tables.ToList())
+                tables.AddRange(GetTableChain(tab));
+
+            // add tables used in mapping, but which may not have any select columns
+            if (!SelectHasAggregation)
+            {
+                foreach (var rid in RowIdsForMappedProperties)
+                    tables.Add(InnerQueryStatement.GetTableForColum(rid.rowIdColumnName));
+            }
+
+            var first = true;
             foreach (var table in InnerQueryStatement.Tables)
+            {
+                if (first)
+                {
+                    // ensure that the row id for the primary table is always returned
+                    first = false;
+                    yield return table;
+                }
+                else if (tables.Contains(table))
+                {
+                    yield return table;
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        protected override IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns(IEnumerable<string> selectColumnAliases = null, IEnumerable<string> ensureTableRowIds = null)
+        {
+            // making an assumption later on in this method that these
+            // values are null. If they are not null, these values will need to
+            // be addressed again
+            if (selectColumnAliases != null || ensureTableRowIds != null)
+                throw new NotImplementedException();
+
+            selectColumnAliases = Enumerable.Empty<string>();
+            ensureTableRowIds = Select
+                .SelectMany(s => s.RepresentsColumns)
+                .Select(s => s.aggregatedToTable ?? InnerQueryStatement.TryGetTableForColum(s.column)?.Alias)
+                .RemoveNulls()
+                .Distinct();
+
+            foreach (var table in GetUsedTables(selectColumnAliases, ensureTableRowIds))
             {
                 // Get row id from the SELECT
                 var alias = table.Alias == null || table.Alias == SqlStatementConstants.RootObjectAlias ? 
