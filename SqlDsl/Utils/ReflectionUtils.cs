@@ -413,76 +413,16 @@ namespace SqlDsl.Utils
             bool allowSelect = false,
             bool allowConstants = false)
         {
-            var (isPropertyChain, chains) = GetPropertyChains(e, allowOne, allowSelect, allowConstants, false);
-            return isPropertyChain ?
-                (true, chains?.First.root, chains?.First.chain) :
-                (false, null, null);
-        }
-
-        /// <summary>
-        /// If an expression is a property chain, return it's root and the property names, otherwise, return false for isPropertyChain
-        /// </summary>
-        /// <param name="allowOne">If true, calls to .One() will be ignored in the chain</param>
-        /// <param name="allowSelect">If true, calls to .Select(...) will be considered part of the the chain if the mapping is also a property chain</param>
-        public static (bool isPropertyChain, StructAccumulator<(Expression root, IEnumerable<string> chain, Expression fullExpression), ExpressionType>) GetPropertyChains(
-            Expression e, 
-            bool allowOne = false,
-            bool allowSelect = false,
-            bool allowConstants = false)
-        {
-            var (success, result) = GetPropertyChains(e, allowOne, allowSelect, allowConstants, true);
-            return success ?
-                (true, new StructAccumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>(result)) :
-                (false, null);
-        }
-
-        /// <summary>
-        /// If an expression is a property chain, return it's root and the property names, otherwise, return false for isPropertyChain
-        /// </summary>
-        /// <param name="allowOne">If true, calls to .One() will be ignored in the chain</param>
-        /// <param name="allowSelect">If true, calls to .Select(...) will be considered part of the the chain if the mapping is also a property chain</param>
-        static (bool isPropertyChain, Accumulator<(Expression root, IEnumerable<string> chain, Expression fullExpression), ExpressionType>) GetPropertyChains(
-            Expression e, 
-            bool allowOne,
-            bool allowSelect,
-            bool allowConstants,
-            bool allowBinaryOperators)
-        {
             switch (e.NodeType)
             {
                 case ExpressionType.Constant:
                     if (!allowConstants)
-                        return (false, null);
+                        return (false, null, null);
 
-                    return (true, new Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>((e, Enumerable.Empty<string>(), e)));
-
-                case ExpressionType.AndAlso:
-                case ExpressionType.OrElse:
-                case ExpressionType.Add:
-                case ExpressionType.Subtract:
-                case ExpressionType.Multiply:
-                case ExpressionType.Divide:
-                case ExpressionType.Equal:
-                case ExpressionType.NotEqual:
-                case ExpressionType.GreaterThan:
-                case ExpressionType.GreaterThanOrEqual:
-                case ExpressionType.LessThan:
-                case ExpressionType.LessThanOrEqual:
-                    if (!allowBinaryOperators)
-                        return (false, null);
-
-                    var asBinary = e as BinaryExpression;
-                    var pchain1 = GetPropertyChains(asBinary.Left, allowOne, allowSelect, allowConstants, allowBinaryOperators);
-                    var pchain2 = GetPropertyChains(asBinary.Right, allowOne, allowSelect, allowConstants, allowBinaryOperators);
-
-                    if (!pchain1.isPropertyChain || !pchain2.isPropertyChain)
-                        return (false, null);
-
-                    return (true, pchain1.Item2.Combine(pchain2.Item2, e.NodeType));
+                    return (true, e, Enumerable.Empty<string>());
                     
                 case ExpressionType.Convert:
-                    return GetPropertyChains((e as UnaryExpression).Operand, allowOne, allowSelect, allowConstants, allowBinaryOperators)
-                        .ReplaceFullExpressionIfOnlyOneItem(e);
+                    return GetPropertyChain((e as UnaryExpression).Operand, allowOne, allowSelect, allowConstants);
                     
                 case ExpressionType.MemberAccess:
                     var acc = e as MemberExpression;
@@ -492,46 +432,40 @@ namespace SqlDsl.Utils
                         {
                             // TODO: is there a better way of doing this?
                             var value = Expression.Lambda(acc).Compile().DynamicInvoke();
-                            return GetPropertyChains(
+                            return GetPropertyChain(
                                 Expression.Constant(value), 
                                 allowOne, 
                                 allowSelect, 
-                                allowConstants, 
-                                allowBinaryOperators);
+                                allowConstants);
                         }
 
-                        return (false, null);
+                        return (false, null, null);
                     }
 
-                    var (isPropertyChain1, chains1) = GetPropertyChains(acc.Expression, allowOne, allowSelect, allowConstants, allowBinaryOperators);
+                    var (isPropertyChain1, param1, chains1) = GetPropertyChain(acc.Expression, allowOne, allowSelect, allowConstants);
                     
                     return isPropertyChain1 ?
-                        (isPropertyChain1, chains1.Map(c => (c.root, c.chain.Append(acc.Member.Name), e))) :
-                        (false, null);
+                        (isPropertyChain1, param1, chains1.Append(acc.Member.Name)) :
+                        (false, null, null);
                     
                 case ExpressionType.Parameter:
-                    return (true, new Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>((e, Enumerable.Empty<string>(), e)));
+                    return (true, e, Enumerable.Empty<string>());
                     
                 case ExpressionType.Call:
                     var methodCallE = e as MethodCallExpression;
                     var (isToArray, enumerableA) = ReflectionUtils.IsToArray(methodCallE);
                     if (isToArray)
-                        return GetPropertyChains(enumerableA, allowOne, allowSelect, allowConstants, allowBinaryOperators)
-                            .ReplaceFullExpressionIfOnlyOneItem(e);
+                        return GetPropertyChain(enumerableA, allowOne, allowSelect, allowConstants);
                         
                     var (isToList, enumerableL) = ReflectionUtils.IsToList(methodCallE);
                     if (isToList)
-                        return GetPropertyChains(enumerableL, allowOne, allowSelect, allowConstants, allowBinaryOperators)
-                            .ReplaceFullExpressionIfOnlyOneItem(e);
+                        return GetPropertyChain(enumerableL, allowOne, allowSelect, allowConstants);
 
                     if (allowOne)
                     {
                         var oneExpr = ReflectionUtils.IsOne(e);
                         if (oneExpr != null)
-                        {
-                            return GetPropertyChains(oneExpr, allowOne, allowSelect, allowConstants, allowBinaryOperators)
-                                .ReplaceFullExpressionIfOnlyOneItem(e);
-                        } 
+                            return GetPropertyChain(oneExpr, allowOne, allowSelect, allowConstants);
                     }
 
                     if (allowSelect)
@@ -539,28 +473,19 @@ namespace SqlDsl.Utils
                         var (isSelect, enumerable, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(methodCallE);
                         if (isSelect)
                         {
-                            var (isPropertyChain2, chains2) = GetPropertyChains(enumerable, allowOne, allowSelect, allowConstants, allowBinaryOperators);
-                            var (isPropertyChain3, chains3) = GetPropertyChains(mapper.Body, allowOne, allowSelect, allowConstants, allowBinaryOperators);
+                            var (isPropertyChain2, root2, chains2) = GetPropertyChain(enumerable, allowOne, allowSelect, allowConstants);
+                            var (isPropertyChain3, root3, chains3) = GetPropertyChain(mapper.Body, allowOne, allowSelect, allowConstants);
                             if (!isPropertyChain2 || !isPropertyChain3)
-                                return (false, null);
+                                return (false, null, null);
 
-                            if (chains2.Next.Any())
-                                return (false, null);
-
-                            return (true, chains3.Map(ch => (chains2.First.root, chains2.First.chain.Concat(ch.chain), e)));
+                            return (true, root2, chains2.Concat(chains3));
                         } 
                     }
                     
-                    return (false, null);
+                    return (false, null, null);
                 default:
-                    return (false, null);
+                    return (false, null, null);
             }
-        }
-
-        static (bool, Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>) ReplaceFullExpressionIfOnlyOneItem(this (bool, Accumulator<(Expression, IEnumerable<string>, Expression), ExpressionType>) input, Expression expr)
-        {
-            if (!input.Item1 || input.Item2.Next.Any()) return (false, null);
-            return (true, input.Item2.Map(x => (x.Item1, x.Item2, expr)));
         }
 
         static readonly MethodInfo IEnumerableToArray = GetMethod(() => new object[0].ToArray()).GetGenericMethodDefinition();
@@ -643,6 +568,7 @@ namespace SqlDsl.Utils
             return CountPropertyTypes.Contains(t) && e.Member.Name == "Count" ? 
                 (true, e.Expression) :
                 (false, null);
+
         }
 
         static readonly MethodInfo _ToList = GetMethod(() => new object[0].ToList()).GetGenericMethodDefinition();

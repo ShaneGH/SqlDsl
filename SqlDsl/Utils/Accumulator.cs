@@ -37,55 +37,5 @@ namespace SqlDsl.Utils
             foreach (var x in Next)
                 yield return x.Item1;
         }
-
-        public Accumulator<TElement, TCombiner> Combine(Accumulator<TElement, TCombiner> x, TCombiner combinator)
-        {
-            if (x == null) return this;
-
-            return new Accumulator<TElement, TCombiner>(
-                First, 
-                Next
-                    .Append((x.First, combinator))
-                    .Concat(x.Next));
-        }
-    }
-
-    public class ClassAccumulator<TElement, TCombiner> : Accumulator<TElement, TCombiner>
-        where TCombiner: class
-    {   
-        public ClassAccumulator(Accumulator<TElement, TCombiner> basis)
-            : base(basis.First, basis.Next)
-        {
-        }
-
-        public IEnumerable<(TElement, TCombiner)> GetEnumerable2()
-        {
-            yield return (First, null);
-
-            foreach (var x in Next)
-                yield return x;
-        }
-    }
-
-    public class StructAccumulator<TElement, TCombiner> : Accumulator<TElement, TCombiner>
-        where TCombiner: struct
-    {   
-        public StructAccumulator(Accumulator<TElement, TCombiner> basis)
-            : base(basis.First, basis.Next)
-        {
-        }
-
-        public StructAccumulator(TElement first)
-            : base(first)
-        {
-        }
-
-        public IEnumerable<(TElement, TCombiner?)> GetEnumerable2()
-        {
-            yield return (First, null);
-
-            foreach (var x in Next)
-                yield return x;
-        }
     }
 }
