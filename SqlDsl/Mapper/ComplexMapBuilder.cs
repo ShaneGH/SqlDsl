@@ -77,7 +77,7 @@ namespace SqlDsl.Mapper
                     return BuildMapForBinaryCondition(state, asB.Left, asB.Right, asB.Type, asB.NodeType, toPrefix).AddT(false);
                     
                 case ExpressionType.MemberAccess:
-                    return BuildMapForMemberAccess(state, expr as MemberExpression, toPrefix).AddT(false);
+                    return BuildMapForMemberAccess(state, expr as MemberExpression, nextMap, toPrefix);
 
                 case ExpressionType.Block:
                     throw new InvalidProgramException("Unsure how to deal with the last return value");
@@ -106,8 +106,7 @@ namespace SqlDsl.Mapper
 
                     var (isCount, countExpr) = ReflectionUtils.IsCount(expr);
                     if (isCount)
-                        // .One(...) is invisible as far as nextMap is concerned
-                        return BuildMapForCount(state, countExpr, nextMap, toPrefix).AddT(false);
+                        return BuildMapForCount(state, countExpr, toPrefix).AddT(false);
                         
                     var oneExpr = ReflectionUtils.IsOne(exprMethod);
                     if (oneExpr != null)
@@ -233,8 +232,40 @@ namespace SqlDsl.Mapper
             );
         }
 
-        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMemberAccess(BuildMapState state, MemberExpression expr, string toPrefix = null)
+        static bool MemberAccessExpressionNeedsExpansion(BuildMapState state, MemberExpression expr, MapType nextMapType)
         {
+            switch (nextMapType)
+            {
+                case MapType.MemberAccess:
+                case MapType.Select:
+                case MapType.Function:
+                    return false;
+            }
+            
+            var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(expr, allowOne: false, allowConstants: false, allowSelect: true);
+            if (!isPropertyChain)
+                return false;
+            
+            if (!(root is ParameterExpression))
+                return false;
+                
+            var (param, _) = new Element(root as ParameterExpression, chain.JoinString("."), null, null)
+                .AddRoot(state);
+
+            return state.WrappedSqlStatement.Tables.TryGetTable(param) != null;
+        }
+
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool isConstant) BuildMapForMemberAccess(BuildMapState state, MemberExpression expr, MapType nextMapType, string toPrefix = null)
+        {
+            if (MemberAccessExpressionNeedsExpansion(state, expr, nextMapType))
+            {
+                var rewritten = ReflectionUtils.GetIEnumerableType(expr.Type) == null
+                    ? ReflectionUtils.ConvertToFullMemberInit(expr)
+                    : ReflectionUtils.ConvertCollectionToFullMemberInit(expr);
+
+                return BuildMap(state, rewritten, nextMapType, toPrefix, false);
+            }
+
             var result = BuildMap(state, expr.Expression, MapType.MemberAccess, toPrefix);
             var properties = result.properties.Enumerate();
 
@@ -249,7 +280,8 @@ namespace SqlDsl.Mapper
                         p.To,
                         expr.Type))
                     .Enumerate(),
-                result.tables
+                result.tables,
+                result.isConstant
             );
         }
 
@@ -337,11 +369,10 @@ namespace SqlDsl.Mapper
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForCount(
             BuildMapState state, 
             Expression enumerable, 
-            MapType nextMap,
             string toPrefix = null, 
             bool isExprTip = false)
         {
-            var (properties, tables, _) = BuildMap(state, enumerable, nextMap, toPrefix, isExprTip);
+            var (properties, tables, _) = BuildMap(state, enumerable, MapType.Function, toPrefix, isExprTip);
 
             // if count is on a table, change to count row id
             properties = properties.Select(arg => new StringBasedMappedProperty(
@@ -553,6 +584,7 @@ namespace SqlDsl.Mapper
             Select,
             MemberAccess,
             MemberInit,
+            Function,
             Other
         }
     }

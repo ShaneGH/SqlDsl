@@ -11,10 +11,10 @@ namespace SqlDsl.Mapper
     {
         static readonly IEnumerable<MappedTable> EmptyMappedTables = Enumerable.Empty<MappedTable>();
 
-        public static (MappingType resultType, IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expression)
+        public static (MappingType resultType, IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expression)
         {
             var (properties, tables) = ComplexMapBuilder.BuildMap(state, expression);
-            var ps = properties.ToArray();
+            var ps = properties.Select(p => p.Convert(state)).ToArray();
             
             return (ExpressionMappingTypeFinder.GetMappingType(ps, expression, state), ps, tables);
 
@@ -69,7 +69,7 @@ namespace SqlDsl.Mapper
                 return node;
             }
 
-            public static MappingType GetMappingType(StringBasedMappedProperty[] properties, Expression expression, BuildMapState state)
+            public static MappingType GetMappingType(QueryElementBasedMappedProperty[] properties, Expression expression, BuildMapState state)
             {
                 if (properties.Length == 0)
                     return MappingType.SimpleProp;
@@ -90,12 +90,13 @@ namespace SqlDsl.Mapper
                 
                 var fromParams = properties[0].FromParams
                     .GetEnumerable1()
-                    .Select(x => x.AddRoot(state))
+                    .Where(p => !p.IsParameter)
+                    .Select(x => x.Column.Alias)
                     .ToArray();
 
                 foreach (var table in state.WrappedSqlStatement.Tables)
                 {
-                    if (fromParams.Any(p => p.param == table.Alias))
+                    if (fromParams.Any(p => p == table.Alias))
                     {
                         return ReflectionUtils.GetIEnumerableType(expression.Type) == null ?
                             MappingType.SingleComplexProp :

@@ -93,7 +93,7 @@ namespace SqlDsl.Mapper
                     // convert xs => xs to xs => xs.Select(x => new X { x1 = x.x1, x2 = x.x2 })
                     // this is easier for mapper to understand
                     var identityMap = Expression.Lambda(
-                        AddMemberInitSelector(typeof(TMapped), mapper.Body), 
+                        ReflectionUtils.ConvertCollectionToFullMemberInit(typeof(TMapped), mapper.Body), 
                         mapper.Parameters);
 
                     return Compile<TArgs, TResult, TMapped>(sqlFragmentBuilder, query, identityMap, logger: logger);
@@ -103,7 +103,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static MappedSqlStatementBuilder ToSqlBuilder(ISqlSyntax sqlFragmentBuilder, IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, ISqlString wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
+        static MappedSqlStatementBuilder ToSqlBuilder(ISqlSyntax sqlFragmentBuilder, IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<MappedTable> tables, ISqlString wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
         {
             var rowIdPropertyMap = tables
                 // if mapping does not map to a specific property (e.g. q => q.Args.Select(a => new object()))
@@ -118,10 +118,13 @@ namespace SqlDsl.Mapper
                     from: x.FromParams.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias),
                     fromParams: x.FromParams
                         .GetEnumerable1()
-                            // .Where(p => !p.IsParameter)
-                            // .Select(p => (sc: (table: wrappedStatement.UniqueAlias, column: p.Column.Alias), aT: p.RowIdColumn.Alias))
-                            .Select(IAccumulatorUtils.AddRoot(state))
-                            .Select(p => (sc: (table: wrappedStatement.UniqueAlias, column: p.param), aT: p.aggregatedToTable))
+                        .Where(p => !p.IsParameter)
+                        .Select(p => (
+                            sc: (table: wrappedStatement.UniqueAlias, column: p.Column.Alias), 
+                            aT: p.ColumnIsAggregatedToDifferentTable
+                                ? wrappedStatement.GetTableForColum(p.RowIdColumn.Alias).Alias
+                                : null)
+                        )
                         .ToArray(),
                     to: x.To, 
                     propertySegmentConstructors: x.PropertySegmentConstructors));
@@ -152,7 +155,7 @@ namespace SqlDsl.Mapper
 
         static MappedSqlStatementBuilder ToSqlBuilder(
             ISqlSyntax sqlFragmentBuilder, 
-            IAccumulator<Element> property, 
+            IAccumulator<TheAmazingElement> property, 
             Type cellDataType, 
             ISqlString wrappedBuilder, 
             ISqlStatement wrappedStatement, 
@@ -162,8 +165,13 @@ namespace SqlDsl.Mapper
 
             var referencedColumns = property
                 .GetEnumerable1()
-                .Where(x => !x.Param.StartsWith("@"))
-                .Select(x => (wrappedStatement.UniqueAlias, x.AddRoot(state).param, x.AggregatedToTable))
+                .Where(x => !x.IsParameter)
+                .Select(x => (
+                    wrappedStatement.UniqueAlias, 
+                    x.Column.Alias,
+                    x.ColumnIsAggregatedToDifferentTable
+                        ? wrappedStatement.GetTableForColum(x.RowIdColumn.Alias).Alias
+                        : null))
                 .ToArray();
 
             var sql = property.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias);
@@ -174,26 +182,6 @@ namespace SqlDsl.Mapper
                 referencedColumns);
                 
             return builder;
-        }
-
-        /// <summary>
-        /// convert xs => xs to xs => xs.Select(x => new X { x1 = x.x1, x2 = x.x2 })
-        /// </summary>
-        static Expression AddMemberInitSelector(Type tMapped, Expression collection)
-        {
-            var enumeratedType = ReflectionUtils.GetIEnumerableType(tMapped);
-            if (enumeratedType == null)
-                throw new InvalidOperationException($"Expected type {tMapped} to implement IEnumerable<>");
-
-            var innerParam = Expression.Parameter(enumeratedType);
-            var mapperBody = ReflectionUtils.ConvertToFullMemberInit(innerParam);
-            var mapper = Expression.Lambda(mapperBody, innerParam);
-
-            return Expression.Call(
-                ReflectionUtils
-                    .GetMethod<IEnumerable<object>>(xs => xs.Select(x => x), enumeratedType, enumeratedType),
-                collection,
-                mapper);
         }
     }
 }

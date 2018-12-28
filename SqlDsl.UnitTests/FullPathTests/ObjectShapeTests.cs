@@ -233,10 +233,13 @@ namespace SqlDsl.UnitTests.FullPathTests
         [Test]
         public void Select_WhereComparrisonComparesComplexObjects_ThrowsError()
         {
+            // TODO: this test is all good, but the exception message returned could 
+            // be better
+
             // arrange
             // act
             // assert
-            Assert.ThrowsAsync(typeof(SqliteException), () =>
+            Assert.ThrowsAsync(typeof(InvalidOperationException), () =>
                 Sql.Query.Sqlite<WhereErrorQueryClass>()
                     .From(result => result.Person1)
                     .InnerJoin(result => result.Person2)

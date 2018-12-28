@@ -62,6 +62,11 @@ namespace SqlDsl.SqlBuilders
         /// Get a table based on the index of its row number column
         /// </summary>
         IQueryTable TryGetTable(int rowNumberColumnIndex);
+
+        /// <summary>
+        /// Get a table based on its alias
+        /// </summary>
+        IQueryTable TryGetTable(string alias);
     }
 
     /// <summary>

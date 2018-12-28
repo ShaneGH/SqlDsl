@@ -79,9 +79,9 @@ namespace SqlDsl.Utils
             if (t == typeof(string))
                 return null;
 
-            var toTest = strict ?
-                t.ToEnumerable() :
-                t
+            var toTest = strict
+                ? t.ToEnumerable()
+                : t
                     .GetInterfaces()
                     .Concat(t.IsInterface ? new[] { t } : new Type[0]);
 
@@ -367,6 +367,30 @@ namespace SqlDsl.Utils
                     .Where(x => !x.isReadonly)
                     .Select(m => Expression.Bind(m.Item1, Expression.PropertyOrField(original, m.Item1.Name))));
         }
+
+        /// <summary>
+        /// convert xs => xs to xs => xs.Select(x => new X { x1 = x.x1, x2 = x.x2 })
+        /// </summary>
+        public static Expression ConvertCollectionToFullMemberInit(Type tMapped, Expression collection)
+        {
+            var enumeratedType = GetIEnumerableType(tMapped);
+            if (enumeratedType == null)
+                throw new InvalidOperationException($"Expected type {tMapped} to implement IEnumerable<>");
+
+            var innerParam = Expression.Parameter(enumeratedType);
+            var mapperBody = ConvertToFullMemberInit(innerParam);
+            var mapper = Expression.Lambda(mapperBody, innerParam);
+
+            return Expression.Call(
+                GetMethod<IEnumerable<object>>(xs => xs.Select(x => x), enumeratedType, enumeratedType),
+                collection,
+                mapper);
+        }
+
+        /// <summary>
+        /// convert xs => xs to xs => xs.Select(x => new X { x1 = x.x1, x2 = x.x2 })
+        /// </summary>
+        public static Expression ConvertCollectionToFullMemberInit(Expression collection) => ConvertCollectionToFullMemberInit(collection.Type, collection);
 
         /// <summary>
         /// Convert an "a => a.bs" to "a => a.bs.Select(b => new b { b1 = a.b.b1, b2 = a.b.b2 ... })".

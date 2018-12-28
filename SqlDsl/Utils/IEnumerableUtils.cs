@@ -78,7 +78,7 @@ namespace SqlDsl.Utils
             where T: class => x == null ? Enumerable.Empty<T>() : new [] { x };
         
         /// <summary>
-        /// If x == null, return [], otherwise return [x]
+        /// Return [x]
         /// </summary>
         public static IEnumerable<T> ToEnumerableStruct<T>(this T x)
             where T: struct => new [] { x };
