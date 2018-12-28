@@ -988,6 +988,68 @@ namespace SqlDsl.UnitTests.DataParser
             Compare(expected, actual);
         }
 
+        class CountAndGroupClass
+        {
+            public string person;
+            public int classes;
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public void PropertyGraph_WithCountAndGroup_ReturnsCorrectOPG()
+        {
+            // arrange
+            // act
+            var actual = FullyJoinedQuery()
+                .Map(p => new CountAndGroupClass
+                {
+                    person = p.ThePerson.Name,
+                    classes = p.Classes.Count()
+                })
+                .BuildObjetPropertyGraph<CountAndGroupClass, JoinedQueryClass>();
+                
+            // assert
+            var expected = new ObjectPropertyGraph(
+                typeof(CountAndGroupClass),
+                new []
+                {
+                    (1, "person", new int[0], typeof(string), typeof(string)),   
+                    (2, "classes", new int[0], typeof(int), typeof(int))   
+                },
+                null, 
+                new[] { 0 });
+
+            Compare(expected, actual);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public void PropertyGraph_WithCountAndGroup_ReturnsCorrectOPG2()
+        {
+            // arrange
+            // act
+            var actual = FullyJoinedQuery()
+                .Map(p => new CountAndGroupClass
+                {
+                    person = p.ThePerson.Name,
+                    classes = p.Classes.Select(x => x.Id).Count()
+                })
+                .BuildObjetPropertyGraph<CountAndGroupClass, JoinedQueryClass>();
+                
+            // assert
+            var expected = new ObjectPropertyGraph(
+                typeof(CountAndGroupClass),
+                new []
+                {
+                    (1, "person", new int[0], typeof(string), typeof(string)),   
+                    (2, "classes", new int[0], typeof(int), typeof(int))   
+                },
+                null, 
+                new[] { 0 });
+
+            Compare(expected, actual);
+        }
+
         // See todo in ComplexMapBuilder.BuildMapForConstructor
 
         // class PreMapped 

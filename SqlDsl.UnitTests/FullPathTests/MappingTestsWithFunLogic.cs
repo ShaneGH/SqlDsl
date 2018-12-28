@@ -900,7 +900,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task CountAndGroup_2()
         {
             // arrange

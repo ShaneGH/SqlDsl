@@ -342,6 +342,16 @@ namespace SqlDsl.Mapper
             bool isExprTip = false)
         {
             var (properties, tables, _) = BuildMap(state, enumerable, nextMap, toPrefix, isExprTip);
+
+            // if count is on a table, change to count row id
+            properties = properties.Select(arg => new StringBasedMappedProperty(
+                PropertyRepresentsTable(state, arg)
+                    ? arg.FromParams.MapParamName(x => $"{x}.{SqlStatementConstants.RowIdName}")
+                    : arg.FromParams,
+                arg.To,
+                typeof(int),
+                arg.PropertySegmentConstructors));
+
             tables = tables.Enumerate();
 
             return (

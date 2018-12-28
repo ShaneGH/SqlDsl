@@ -42,15 +42,15 @@ namespace SqlDsl.Mapper
             {
                 case MapBuilder.MappingType.Map:
                 case MapBuilder.MappingType.SimpleProp:
-                    var requiredColumns = properties
-                        .SelectMany(pms => pms.FromParams.GetEnumerable1())
-                        .Where(x => x.ParamRoot == state.QueryObject || state.ParameterRepresentsProperty.Any(y => y.parameter == x.ParamRoot))
-                        // TODO: using Accumulator.AddRoot here seems wrong
-                        .Select(x => x.AddRoot(state))
-                        .Select(x => wrappedStatement.SelectColumns.TryGetColumn(x.param))
-                        .RemoveNulls()
-                        .SelectMany(x => x.ReferencesColumns.Select(y => y.table))
-                        .Concat(tables.Select(t => t.From));
+                    // var requiredColumns = properties
+                    //     .SelectMany(pms => pms.FromParams.GetEnumerable1())
+                    //     .Where(x => x.ParamRoot == state.QueryObject || state.ParameterRepresentsProperty.Any(y => y.parameter == x.ParamRoot))
+                    //     // TODO: using Accumulator.AddRoot here seems wrong
+                    //     .Select(x => x.AddRoot(state))
+                    //     .Select(x => wrappedStatement.SelectColumns.TryGetColumn(x.param))
+                    //     .RemoveNulls()
+                    //     .SelectMany(x => x.ReferencesColumns.Select(y => y.table))
+                    //     .Concat(tables.Select(t => t.From));
 
                     // var wow = properties
                     //     .Select(xx => xx.Convert(state))
