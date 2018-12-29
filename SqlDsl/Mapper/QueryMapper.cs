@@ -16,6 +16,36 @@ using System.Threading.Tasks;
 
 namespace SqlDsl.Mapper
 {
+    // class WrappedSqlStatement : ISqlStatement
+    // {
+    //     public string UniqueAlias => throw new NotImplementedException();
+
+    //     public IQueryTables Tables { get; }
+
+    //     public IMappingProperties MappingProperties => throw new NotImplementedException();
+
+    //     public ISelectColumns SelectColumns => throw new NotImplementedException();
+
+    //     public WrappedSqlStatement()
+    //     {
+    //         Tables = new WrappedQueryTables();
+    //     }
+
+    //     public IQueryTable GetTableForColum(string columnAlias)
+    //     {
+    //         throw new NotImplementedException();
+    //     }
+
+    //     public IQueryTable TryGetTableForColum(string columnAlias)
+    //     {
+    //         throw new NotImplementedException();
+    //     }
+
+    //     class WrappedQueryTables : IQueryTables
+    //     {
+    //     }
+    // }
+
     public static class QueryMapper
     {
         /// <summary>
@@ -41,38 +71,13 @@ namespace SqlDsl.Mapper
             switch (resultType)
             {
                 case MapBuilder.MappingType.Map:
-                case MapBuilder.MappingType.SimpleProp:
-                    // var requiredColumns = properties
-                    //     .SelectMany(pms => pms.FromParams.GetEnumerable1())
-                    //     .Where(x => x.ParamRoot == state.QueryObject || state.ParameterRepresentsProperty.Any(y => y.parameter == x.ParamRoot))
-                    //     // TODO: using Accumulator.AddRoot here seems wrong
-                    //     .Select(x => x.AddRoot(state))
-                    //     .Select(x => wrappedStatement.SelectColumns.TryGetColumn(x.param))
-                    //     .RemoveNulls()
-                    //     .SelectMany(x => x.ReferencesColumns.Select(y => y.table))
-                    //     .Concat(tables.Select(t => t.From));
-
-                    // var wow = properties
-                    //     .Select(xx => xx.Convert(state))
-                    //     .ToArray();
-
-                    // wrappedBuilder.FilterUnusedTables(requiredPropAliases);
-                    // wrappedStatement = new SqlStatement(wrappedBuilder);
-                    
-                    // var filteredWrappedBuilder = new FilteredSqlStatementBuilder(wrappedBuilder, requiredColumns);
-                    // wrappedStatement = new SqlStatement(filteredWrappedBuilder);
-
-                    if (resultType == MapBuilder.MappingType.Map)
-                    {
-                        var b = ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state);
-                        return b.Compile<TArgs, TMapped>(new SqlStatement(b), mutableParameters.Parameters, b.SqlSyntax, QueryParseType.ORM);
-                    }
+                    var b = ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state);
+                    return b.Compile<TArgs, TMapped>(new SqlStatement(b), mutableParameters.Parameters, b.SqlSyntax, QueryParseType.ORM);
                             
+                case MapBuilder.MappingType.SimpleProp:
                     properties = properties.Enumerate();
                     if (properties.Count() != 1)
-                    {
                         throw new InvalidOperationException($"Expected one property, but got {properties.Count()}.");
-                    }
 
                     var p = properties.First();
                     return ToSqlBuilder(sqlFragmentBuilder, p.FromParams, p.MappedPropertyType, wrappedBuilder, wrappedStatement, state)
