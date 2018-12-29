@@ -44,7 +44,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
             ISelectColumn BuildColumn(SqlStatementPartSelect col) => 
                 hasInnerQuery ?
-                    new InnerQuerySelectColumn(col.RepresentsColumns, col.Alias, col.IsRowId, col.CellDataType, col.ArgConstructors, queryParts) :
+                    new InnerQuerySelectColumn(col.RepresentsColumns, col.Alias, col.IsRowId, col.CellDataType, col.ArgConstructors, queryParts, tables) :
                     (ISelectColumn)new SelectColumn(col.RepresentsColumns, col.Alias, col.RepresentsColumns.Select(x => x.table), col.IsRowId, col.CellDataType, col.ArgConstructors, tables);
         }
 

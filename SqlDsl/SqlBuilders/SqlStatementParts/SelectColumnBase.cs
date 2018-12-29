@@ -32,13 +32,26 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
          /// <inheritdoc />
         public (string table, string column, string aggregatedToTable)[] ReferencesColumns { get; }
 
-        public SelectColumnBase((string table, string column, string aggregatedToTable)[] referencesColumns, string alias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors)
+        public IQueryTable Table { get; }
+
+        public SelectColumnBase(
+            (string table, string column, string aggregatedToTable)[] referencesColumns, 
+            string alias, 
+            bool isRowNumber, 
+            Type dataType, 
+            ConstructorInfo[] argConstructors, 
+            IQueryTables tables)
         {
             ReferencesColumns = referencesColumns;
             Alias = alias;
             IsRowNumber = isRowNumber;
             DataType = dataType;
             ArgConstructors = argConstructors;
+
+            Table = referencesColumns
+                .Where(t => t.table != null)
+                .Select(t => tables[t.table])
+                .FirstOrDefault();
         }
     }
 }

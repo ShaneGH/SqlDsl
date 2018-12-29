@@ -38,7 +38,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public SqlStatement(ISqlStatementPartValues builder)
         {
             UniqueAlias = builder.UniqueAlias;
-            Tables = new QueryTables(builder);
+            Tables = new QueryTables(builder, this);
             SelectColumns = new SelectColumns(builder, Tables);
             MappingProperties = builder.InnerStatement == null ?
                 null :

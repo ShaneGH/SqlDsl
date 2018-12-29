@@ -20,7 +20,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public override int RowNumberColumnIndex { get; }
 
         public SelectColumn((string table, string column, string aggregatedToTable)[] referencesColumns, string alias, IEnumerable<string> tableAliases, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors, IQueryTables tables)
-            : base(referencesColumns, alias, isRowNumber, dataType, argConstructors)
+            : base(referencesColumns, alias, isRowNumber, dataType, argConstructors, tables)
         {
             int col = 0;
             foreach (var ta in tableAliases)

@@ -34,13 +34,22 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public IQueryTable JoinedFrom => GetJoinedFrom();
 
-        public QueryTable(string alias, ISqlStatementPartValues queryBuilder, IQueryTables tables)
+        ISelectColumn _RowNumberColumn;
+
+        /// <inheritdoc />
+        public ISelectColumn RowNumberColumn => _RowNumberColumn ??
+            (_RowNumberColumn = ParentStatement.SelectColumns[RowNumberColumnIndex]);
+
+        readonly ISqlStatement ParentStatement;
+
+        public QueryTable(string alias, ISqlStatementPartValues queryBuilder, IQueryTables tables, ISqlStatement parentStatement)
         {
             Alias = alias ?? throw new ArgumentNullException(nameof(alias));
             QueryBuilder = queryBuilder ?? throw new ArgumentNullException(nameof(queryBuilder));
             Tables = tables ?? throw new ArgumentNullException(nameof(tables));
 
             RowNumberColumnIndex = GetRowNumberColumnIndex(queryBuilder, alias);
+            ParentStatement = parentStatement ?? throw new ArgumentNullException(nameof(parentStatement));
         }
 
         /// <summary>

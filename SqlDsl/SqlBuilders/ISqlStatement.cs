@@ -51,7 +51,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Get a table based on the index of its row number column
         /// </summary>
-        IQueryTable this[int rowNumberColumnIndex] { get; }
+        IQueryTable this[int rowNumberColumnIndex] { get; } // TODX: remove
         
         /// <summary>
         /// Get a table based on it's alias
@@ -61,7 +61,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Get a table based on the index of its row number column
         /// </summary>
-        IQueryTable TryGetTable(int rowNumberColumnIndex);
+        IQueryTable TryGetTable(int rowNumberColumnIndex); // TODX: remove
 
         /// <summary>
         /// Get a table based on its alias
@@ -77,7 +77,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Get a column based on it's index in the select statement
         /// </summary>
-        ISelectColumn this[int index] { get; }
+        ISelectColumn this[int index] { get; } // TODX: remove
         
         /// <summary>
         /// Get a column based on it's alias
@@ -119,13 +119,18 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The index of the column which provides row numbers for this table
         /// </summary>
-        int RowNumberColumnIndex { get; }
+        int RowNumberColumnIndex { get; } // TODX: remove
         
         /// <summary>
         /// If this table is in a join, will be the table that it is joined on.
         /// Otherwise it will be null
         /// </summary>
         IQueryTable JoinedFrom { get; }
+
+        /// <summary>
+        /// The primary key of this table
+        /// </summary>
+        ISelectColumn RowNumberColumn { get; }
     }
     
     /// <summary>
@@ -136,7 +141,12 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The actual columns and tables that this SELECT column represents
         /// </summary>
-        (string table, string column, string aggregatedToTable)[] ReferencesColumns { get; }
+        (string table, string column, string aggregatedToTable)[] ReferencesColumns { get; } // TODX: should only be 1 reference column
+
+        /// <summary>
+        /// The table which this column belongs to
+        /// </summary>
+        IQueryTable Table { get; }
         
         /// <summary>
         /// The alias of the column
@@ -146,7 +156,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The index of the row number column for the table which exposes this column
         /// </summary>
-        int RowNumberColumnIndex { get; }
+        int RowNumberColumnIndex { get; } // TODX: remove
         
         /// <summary>
         /// If true, this column is a row number
