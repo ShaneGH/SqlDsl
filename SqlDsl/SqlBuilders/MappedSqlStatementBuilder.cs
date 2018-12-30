@@ -103,11 +103,16 @@ namespace SqlDsl.SqlBuilders
             if (!AllNonParametersInAllProperties.Any(x => x.ColumnIsAggregatedToDifferentTable))
                 return "";
 
+            var groupByCols = AllNonParametersInAllProperties
+                .Where(c => !c.ColumnIsAggregatedToDifferentTable)
+                .Select(c => c.Column)
+                // TODO: what if the column is grouped by also
+                .Concat(Statement.SelectColumns.Where(c => c.IsRowNumber));
+
             var output = new List<string>(16);
-            foreach (var col in AllNonParametersInAllProperties
-                .Where(c => !c.ColumnIsAggregatedToDifferentTable))
+            foreach (var col in groupByCols)
             {
-                output.Add(SqlSyntax.BuildSelectColumn(InnerQueryAlias, col.Column.Alias));
+                output.Add(SqlSyntax.BuildSelectColumn(InnerQueryAlias, col.Alias));
             }
 
             if (output.Count > 0)

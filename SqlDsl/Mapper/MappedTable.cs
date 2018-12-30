@@ -11,16 +11,18 @@ namespace SqlDsl.Mapper
     {
         public readonly string From;
         public readonly string To;
+        public readonly bool TableresultsAreAggregated;
 
-        public MappedTable(string from, string to)
+        public MappedTable(string from, string to, bool tableresultsAreAggregated)
         {
             From = from;
             To = to;
+            TableresultsAreAggregated = tableresultsAreAggregated;
         }
 
         public StrongMappedTable Convert(ISqlStatement statement)
         {
-            return new StrongMappedTable(statement.Tables[From], To);
+            return new StrongMappedTable(statement.Tables[From], To, TableresultsAreAggregated);
         }
     }
     
@@ -28,11 +30,13 @@ namespace SqlDsl.Mapper
     {
         public readonly IQueryTable From;
         public readonly string To;
+        public readonly bool TableresultsAreAggregated;
 
-        public StrongMappedTable(IQueryTable from, string to)
+        public StrongMappedTable(IQueryTable from, string to, bool tableresultsAreAggregated)
         {
             From = from;
             To = to;
+            TableresultsAreAggregated = tableresultsAreAggregated;
         }
     }
 }

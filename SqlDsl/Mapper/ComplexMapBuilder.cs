@@ -125,7 +125,7 @@ namespace SqlDsl.Mapper
 
                     var (isSelect, enumerableS, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(exprMethod);
                     if (isSelect)
-                        return BuildMapForSelect(state, enumerableS, mapper, toPrefix, isExprTip).AddT(false);
+                        return BuildMapForSelect(state, enumerableS, nextMap, mapper, toPrefix, isExprTip).AddT(false);
 
                     break;
 
@@ -189,7 +189,7 @@ namespace SqlDsl.Mapper
                 .Select(ex => (type: ex.Type, map: BuildMap(state, ex, MapType.Other, toPrefix: null, isExprTip: true)))
                 .Select((map, i) => (
                     map.Item2.properties.SelectMany(p => CreateContructorArg(p, map.type, i)), 
-                    map.map.tables.Select(x => new MappedTable(x.From, CombineStrings(SqlStatementConstants.ConstructorArgs.BuildConstructorArg(i), x.To)))))
+                    map.map.tables.Select(x => new MappedTable(x.From, CombineStrings(SqlStatementConstants.ConstructorArgs.BuildConstructorArg(i), x.To), x.TableresultsAreAggregated))))
                 .AggregateTuple2();
 
             IEnumerable<StringBasedMappedProperty> CreateContructorArg(StringBasedMappedProperty arg, Type argType, int argIndex)
@@ -238,7 +238,7 @@ namespace SqlDsl.Mapper
             {
                 case MapType.MemberAccess:
                 case MapType.Select:
-                case MapType.Function:
+                case MapType.AggregateFunction:
                     return false;
             }
             
@@ -309,7 +309,7 @@ namespace SqlDsl.Mapper
                                 x.MappedPropertyType, 
                                 x.PropertySegmentConstructors).ToEnumerable();
                         }),
-                        m.map.tables.Select(x => new MappedTable(x.From, CombineStrings(m.memberName, x.To))))))
+                        m.map.tables.Select(x => new MappedTable(x.From, CombineStrings(m.memberName, x.To), x.TableresultsAreAggregated)))))
                 .AggregateTuple2();
         }
 
@@ -372,7 +372,7 @@ namespace SqlDsl.Mapper
             string toPrefix = null, 
             bool isExprTip = false)
         {
-            var (properties, tables, _) = BuildMap(state, enumerable, MapType.Function, toPrefix, isExprTip);
+            var (properties, tables, _) = BuildMap(state, enumerable, MapType.AggregateFunction, toPrefix, isExprTip);
 
             // if count is on a table, change to count row id
             properties = properties.Select(arg => new StringBasedMappedProperty(
@@ -415,7 +415,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, LambdaExpression mapper, string toPrefix, bool isExprTip)
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, MapType nextMap, LambdaExpression mapper, string toPrefix, bool isExprTip)
         {
             if (mapper.Body == mapper.Parameters[0])
             {
@@ -429,13 +429,12 @@ namespace SqlDsl.Mapper
             using (state.SwitchContext(mapper.Parameters[0]))
                 innerMap = BuildMap(state, mapper.Body, MapType.Other, isExprTip: isExprTip);
 
-            var outerMapProperties  = outerMap.properties.ToArray();
-            
             var (isSuccess, name) = CompileMemberName(enumerable);
-            var newTableMap = isSuccess ?
-                new MappedTable(name, null).ToEnumerable()
+            var newTableMap = isSuccess
+                ? new MappedTable(name, null, nextMap == MapType.AggregateFunction).ToEnumerable()
                 : EmptyMappedTables;
 
+            var outerMapProperties  = outerMap.properties.ToArray();
             if (outerMapProperties.Length != 1 || !outerMapProperties[0].FromParams.HasOneItemOnly)
                 throw new InvalidOperationException($"Mapping from \"{enumerable}\" is not supported.");
 
@@ -584,7 +583,7 @@ namespace SqlDsl.Mapper
             Select,
             MemberAccess,
             MemberInit,
-            Function,
+            AggregateFunction,
             Other
         }
     }

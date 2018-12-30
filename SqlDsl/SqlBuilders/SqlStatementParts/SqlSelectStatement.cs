@@ -58,9 +58,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                 .SelectMany(p => p.FromParams.GetEnumerable1())
                 .Where(p => !p.IsParameter)
                 .Select(p => p.RowIdColumn)
-                // concat with all tables which do not have explicit selects
+                // concat with all tables which might not have explicit selects
                 // (e.g. tables which are mapped like: q.Tab.Select(x => 5)
-                .Concat(tables.Select(t => t.From.RowNumberColumn))
+                .Concat(tables.Where(t => !t.TableresultsAreAggregated).Select(t => t.From.RowNumberColumn))
                 // ensure that the primaryTableRowId comes first
                 .Prepend(primaryTableRowId)
                 .Distinct();
