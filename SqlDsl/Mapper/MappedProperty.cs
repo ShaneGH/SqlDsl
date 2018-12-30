@@ -7,17 +7,17 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.Mapper
 {
-    class StringBasedMappedProperty : MappedProperty<Element>
+    class StringBasedMappedProperty : MappedProperty<StringBasedElement>
     {
-        public StringBasedMappedProperty(IAccumulator<Element> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+        public StringBasedMappedProperty(IAccumulator<StringBasedElement> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
             : base(fromParams, to, mappedPropertyType, constructorArgs)
         {
         }
         
         public StringBasedMappedProperty(ParameterExpression fromParamRoot, string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
-            : this (new Accumulator<Element>(
-                new Accumulator<Element, CombinationType>(
-                    new Element(fromParamRoot, from, null, null))), to, mappedPropertyType, constructorArgs)
+            : this (new Accumulator<StringBasedElement>(
+                new Accumulator<StringBasedElement, CombinationType>(
+                    new StringBasedElement(fromParamRoot, from, null, null))), to, mappedPropertyType, constructorArgs)
         {
         }
 
@@ -70,9 +70,9 @@ namespace SqlDsl.Mapper
         }
     }
     
-    class QueryElementBasedMappedProperty : MappedProperty<TheAmazingElement>
+    class QueryElementBasedMappedProperty : MappedProperty<ColumnBasedElement>
     {
-        public QueryElementBasedMappedProperty(IAccumulator<TheAmazingElement> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+        public QueryElementBasedMappedProperty(IAccumulator<ColumnBasedElement> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
             : base(fromParams, to, mappedPropertyType, constructorArgs)
         {
         }

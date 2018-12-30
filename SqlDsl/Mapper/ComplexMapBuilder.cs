@@ -249,7 +249,7 @@ namespace SqlDsl.Mapper
             if (!(root is ParameterExpression))
                 return false;
                 
-            var (param, _) = new Element(root as ParameterExpression, chain.JoinString("."), null, null)
+            var (param, _) = new StringBasedElement(root as ParameterExpression, chain.JoinString("."), null, null)
                 .AddRoot(state);
 
             return state.WrappedSqlStatement.Tables.TryGetTable(param) != null;
@@ -401,7 +401,7 @@ namespace SqlDsl.Mapper
                     property.PropertySegmentConstructors);
             }
 
-            Element Map(Element x)
+            StringBasedElement Map(StringBasedElement x)
             {
                 var param = x.Param;
                 if (tables.Any(t => t.From == param))
@@ -411,7 +411,7 @@ namespace SqlDsl.Mapper
                 //     $"{SqlStatementConstants.OpenFunctionAlias}{state.SqlBuilder.CountFunctionName}" :
                 //     $"{x.Param}.{SqlStatementConstants.OpenFunctionAlias}{state.SqlBuilder.CountFunctionName}";
                 
-                return new Element(x.ParamRoot, param, state.CurrentTable.JoinString("."), state.SqlBuilder.CountFunctionName);
+                return new StringBasedElement(x.ParamRoot, param, state.CurrentTable.JoinString("."), state.SqlBuilder.CountFunctionName);
             }
         }
 
@@ -441,7 +441,7 @@ namespace SqlDsl.Mapper
             return (
                 innerMap.properties
                     .Select(m => new StringBasedMappedProperty(
-                        m.FromParams.MapParam(x => new Element(
+                        m.FromParams.MapParam(x => new StringBasedElement(
                             x.ParamRoot ?? outerMapProperties[0].FromParams.First.ParamRoot, 
                             x.ParamRoot == null ? CombineStrings(outerMapProperties[0].FromParams.First.Param, x.Param) : x.Param,
                             x.AggregatedToTable,

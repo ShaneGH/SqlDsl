@@ -199,7 +199,7 @@ namespace SqlDsl.SqlBuilders
 
             return (mapSql, queryObjectReferences);
 
-            string param(Element x) => x.Param;
+            string param(StringBasedElement x) => x.Param;
 
             string table(string tableAndField)
             {
