@@ -354,7 +354,7 @@ namespace SqlDsl.UnitTests.DataParser
                             (4, "ClassName", new int[0], typeof(string), typeof(string))
                         }, 
                         null, 
-                        new[]{1,2}))
+                        new[]{2, 1}))
                 }, 
                 new[] { 0 });
 
@@ -395,10 +395,10 @@ namespace SqlDsl.UnitTests.DataParser
                         new[]
                         {
                             (6, "ClassName", new int[0], typeof(string), typeof(string)),
-                            (7, "TagNames", new int[]{3, 4}, typeof(IEnumerable<string>), typeof(string))
+                            (7, "TagNames", new int[]{4,2}, typeof(IEnumerable<string>), typeof(string))
                         }, 
                         null, 
-                        new[]{1,2}))
+                        new[]{3,1}))
                 }, 
                 new[] { 0 });
 
@@ -466,9 +466,9 @@ namespace SqlDsl.UnitTests.DataParser
                                     (7, "TagName", new int[0], typeof(string), typeof(string))
                                 }, 
                                 null, 
-                                new[]{3, 4}))
+                                new[]{4,2}))
                         }, 
-                        new[]{1,2}))
+                        new[]{3,1}))
                 }, 
                 new[] { 0 });
 
@@ -514,10 +514,10 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(DifficultScenarioInner),
                         new[]
                         {
-                            (4, "TagIds", new int[]{3}, typeof(long[]), typeof(long))
+                            (4, "TagIds", new int[]{1}, typeof(long[]), typeof(long))
                         }, 
                         null, 
-                        new[]{1,2}))
+                        new[]{3,2}))
                 }, 
                 new[] { 0 });
 
@@ -548,7 +548,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(DifficultScenario2),
                 new []
                 {
-                    (4, "TagIds", new int[]{1,2,3}, typeof(long[]), typeof(long))
+                    (4, "TagIds", new int[]{3,2,1}, typeof(long[]), typeof(long))
                 },
                 null,
                 new[] { 0 });
@@ -615,10 +615,10 @@ namespace SqlDsl.UnitTests.DataParser
                                         typeof(DeepJoinedClassData),
                                         new[] 
                                         {
-                                            (4, "TagIds", new int[]{3}, typeof(long[]), typeof(long))
+                                            (4, "TagIds", new int[]{1}, typeof(long[]), typeof(long))
                                         },
                                         null,
-                                        new[]{1, 2}
+                                        new[]{3, 2}
                                     ))
                                 },
                                 null
@@ -718,8 +718,8 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(DataCellTypeIsArray1Result),
                 new[]
                 {
-                    (3, "TheData", new [] {2}, typeof(byte[]), typeof(byte[])),
-                    (4, "TheClassIds", new [] {1}, typeof(long[]), typeof(long))
+                    (3, "TheData", new [] {1}, typeof(byte[]), typeof(byte[])),
+                    (4, "TheClassIds", new [] {2}, typeof(long[]), typeof(long))
                 }, 
                 null, 
                 new[] { 0 });
@@ -770,8 +770,8 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(DataCellTypeIsArray2Result),
                 new[]
                 {
-                    (3, "Data", new [] {2}, typeof(byte[][]), typeof(byte[])),
-                    (4, "ClassIds", new [] {1}, typeof(long[]), typeof(long))
+                    (3, "Data", new [] {1}, typeof(byte[][]), typeof(byte[])),
+                    (4, "ClassIds", new [] {2}, typeof(long[]), typeof(long))
                 }, 
                 null, 
                 new[] { 0 });
@@ -896,10 +896,10 @@ namespace SqlDsl.UnitTests.DataParser
                                     (4, "Name", new int[0], typeof(string), typeof(string))
                                 },
                                 null,
-                                new[]{2}
+                                new[]{1}
                             ))
                         },
-                        new[]{1}
+                        new[]{2}
                     ))
                 }, 
                 new[] { 0 });
@@ -930,7 +930,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(Inner),
                         null,
                         null,
-                        new[]{1},
+                        new[]{2},
                         complexConstructorArgs: new[] 
                         {
                             (0, typeof(Class[]), new ObjectPropertyGraph(
@@ -941,7 +941,7 @@ namespace SqlDsl.UnitTests.DataParser
                                     (4, "Name", new int[0], typeof(string), typeof(string))
                                 },
                                 null,
-                                new[]{2}
+                                new[]{1}
                             ))
                         }
                     ))
