@@ -39,17 +39,24 @@ namespace SqlDsl.Query
         /// <param name="sqlBuilder">The builder with the property populated</param>
         /// <param name="parameters">Any constant parameters in the statement</param>
         /// <param name="property">The name of the singe property</param>
-        public static CompiledQuery<TArgs, TResult> CompileSimple<TArgs, TResult>(this MappedSqlStatementBuilder sqlBuilder, IEnumerable<object> parameters, string property)
+        public static CompiledQuery<TArgs, TResult> CompileSimple<TArgs, TResult>(
+            this ISqlString sqlBuilder,
+            ISqlSelectStatement statement, 
+            IEnumerable<object> parameters, 
+            ISqlSyntax sqlSyntax, 
+            string property)
         {
-            throw new NotImplementedException();
-            // var statement = new SqlStatement(sqlBuilder);
-            // var i = statement.IndexOfColumnAlias(property);
-            // if (i == -1)
-            //     throw new InvalidOperationException($"Could not find column {property} in wrapped statement.");
+            var selectColumn = statement.SelectColumns[property];
+            var graph = new RootObjectPropertyGraph(
+                typeof(TResult), 
+                statement.SelectColumns.IndexOf(selectColumn),
+                // if Table == null, the selectColumn is a parameter
+                // in this case it is indexed by the first column (rid of primary table)
+                selectColumn.Table == null ? 0 : statement.SelectColumns.IndexOf(selectColumn.Table.RowNumberColumn),
+                selectColumn.DataType,
+                ReflectionUtils.GetIEnumerableType(selectColumn.DataType) != null);
 
-            // var col = statement.SelectColumns[i];
-            // var graph = new RootObjectPropertyGraph(typeof(TResult), i, col.RowNumberColumnIndex, col.DataType, ReflectionUtils.GetIEnumerableType(col.DataType) != null);
-            // return new CompiledQuery<TArgs, TResult>(sqlBuilder.ToSql(), parameters.ToArray(), statement.SelectColumns.Select(Alias).ToArray(), graph, sqlBuilder.SqlSyntax);
+            return new CompiledQuery<TArgs, TResult>(sqlBuilder.ToSql(), parameters.ToArray(), statement.SelectColumns.Select(Alias).ToArray(), graph, sqlSyntax);
         }
 
         static string Alias(ISelectColumn c) => c.Alias;

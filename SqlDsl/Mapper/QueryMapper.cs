@@ -22,7 +22,7 @@ namespace SqlDsl.Mapper
         /// Compile the query into something which can be executed multiple times
         /// </summary>
         public static ICompiledQuery<TArgs, TMapped> Compile<TArgs, TResult, TMapped>(
-            ISqlSyntax sqlFragmentBuilder, 
+            ISqlSyntax sqlSyntax, 
             SqlExecutor<TArgs, TResult> query, 
             LambdaExpression mapper, 
             ILogger logger)
@@ -41,19 +41,31 @@ namespace SqlDsl.Mapper
             switch (resultType)
             {
                 case MapBuilder.MappingType.Map:
+                {
+                    properties = properties.Enumerate();
                     var statement = new MappedSelectStatement(properties, tables, wrappedStatement.Tables.First().RowNumberColumn);
-                    var builder = new MappedSqlStatementBuilder(state, properties, statement, wrappedBuilder, sqlFragmentBuilder);
-                    return builder.Compile<TArgs, TMapped>(statement, mutableParameters.Parameters, sqlFragmentBuilder, QueryParseType.ORM);
-                            
+                    var builder = new MappedSqlStatementBuilder(state, properties, statement, wrappedBuilder, sqlSyntax);
+                    return builder.Compile<TArgs, TMapped>(statement, mutableParameters.Parameters, sqlSyntax, QueryParseType.ORM);
+                }
                 case MapBuilder.MappingType.SimpleProp:
+                {
                     properties = properties.Enumerate();
                     if (properties.Count() != 1)
                         throw new InvalidOperationException($"Expected one property, but got {properties.Count()}.");
 
+                    // single property will not have an alias. Add one
                     var p = properties.First();
-                    return ToSqlBuilder(sqlFragmentBuilder, p.FromParams, p.MappedPropertyType, wrappedBuilder, wrappedStatement, state)
-                        .CompileSimple<TArgs, TMapped>(mutableParameters.Parameters, SqlStatementConstants.SingleColumnAlias);
+                    properties = new QueryElementBasedMappedProperty(
+                        p.FromParams,
+                        SqlStatementConstants.SingleColumnAlias,
+                        p.MappedPropertyType,
+                        p.PropertySegmentConstructors).ToEnumerable();
 
+                    var statement = new MappedSelectStatement(properties, tables, wrappedStatement.Tables.First().RowNumberColumn);
+                    var builder = new MappedSqlStatementBuilder(state, properties, statement, wrappedBuilder, sqlSyntax);
+                    return builder
+                        .CompileSimple<TArgs, TMapped>(statement, mutableParameters.Parameters, sqlSyntax, SqlStatementConstants.SingleColumnAlias);
+                }
                 case MapBuilder.MappingType.SingleComplexProp:
                 
                     // convert x => x to x => new X { x1 = x.x1, x2 = x.x2 }
@@ -62,7 +74,7 @@ namespace SqlDsl.Mapper
                         ReflectionUtils.ConvertToFullMemberInit(mapper.Body), 
                         mapper.Parameters);
 
-                    return Compile<TArgs, TResult, TMapped>(sqlFragmentBuilder, query, init, logger: logger);
+                    return Compile<TArgs, TResult, TMapped>(sqlSyntax, query, init, logger: logger);
 
                 case MapBuilder.MappingType.MultiComplexProp:
 
@@ -72,43 +84,11 @@ namespace SqlDsl.Mapper
                         ReflectionUtils.ConvertCollectionToFullMemberInit(typeof(TMapped), mapper.Body), 
                         mapper.Parameters);
 
-                    return Compile<TArgs, TResult, TMapped>(sqlFragmentBuilder, query, identityMap, logger: logger);
+                    return Compile<TArgs, TResult, TMapped>(sqlSyntax, query, identityMap, logger: logger);
 
                 default:
                     throw new NotSupportedException(resultType.ToString());
             }
-        }
-
-        static MappedSqlStatementBuilder ToSqlBuilder(
-            ISqlSyntax sqlFragmentBuilder, 
-            IAccumulator<TheAmazingElement> property, 
-            Type cellDataType, 
-            ISqlString wrappedBuilder, 
-            ISqlStatement wrappedStatement, 
-            BuildMapState state)
-        {
-            throw new NotImplementedException();
-            // var builder = new MappedSqlStatementBuilder(sqlFragmentBuilder, wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
-
-            // var referencedColumns = property
-            //     .GetEnumerable1()
-            //     .Where(x => !x.IsParameter)
-            //     .Select(x => (
-            //         wrappedStatement.UniqueAlias, 
-            //         x.Column.Alias,
-            //         x.ColumnIsAggregatedToDifferentTable
-            //             ? wrappedStatement.GetTableForColum(x.RowIdColumn.Alias).Alias
-            //             : null))
-            //     .ToArray();
-
-            // var sql = property.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias);
-            // builder.AddSelectColumn(
-            //     cellDataType,
-            //     sql,
-            //     SqlStatementConstants.SingleColumnAlias,
-            //     referencedColumns);
-                
-            // return builder;
         }
     }
 }
