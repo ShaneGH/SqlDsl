@@ -272,7 +272,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Get a list of row id columns, the alias of the table they are identifying, and the alias for the row id column (if any)
         /// </summary>
-        protected override IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns(IEnumerable<string> selectColumnAliases = null, IEnumerable<string> ensureTableRowIds = null)
+        protected override IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns(IEnumerable<string> selectColumnAliases = null)
         {
             // Get row id from the SELECT
             var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? 
@@ -290,7 +290,6 @@ namespace SqlDsl.SqlBuilders
                     .Select(a => stat.SelectColumns[a].Table)
                     .SelectMany(GetTableChain)
                     .Select(t => t.Alias)
-                    .Concat(ensureTableRowIds.OrEmpty())
                     .ToHashSet();
 
                 joins = joins.Where(sca.Contains);

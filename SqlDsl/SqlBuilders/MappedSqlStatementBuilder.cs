@@ -44,30 +44,29 @@ namespace SqlDsl.SqlBuilders
             InnerQueryAlias = SqlStatementConstants.InnerQueryAlias;
         }
 
-        [Obsolete("Need to remove this from interface")]
-        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString(IEnumerable<string> selectColumnAliases, IEnumerable<string> ensureTableRowIds)
-        {
-            throw new NotImplementedException();
-        }
-
         /// <inheritdoc />
-        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString()
+        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString(IEnumerable<string> selectColumnAliases = null)
         {
             // if a table is used as part of a mapping, but none of it's fields are used, we might need
             // to tell the inner query builder
             var usedColumns = GetUsedColumns().Select(t => t.Alias);
             var usedTables = GetUsedTables().Select(t => t.Alias);
-            var (querySetupSql, beforeWhereSql, whereSql, afterWhereSql) = InnerSqlString.ToSqlString(usedColumns, usedTables);
+            var (querySetupSql, beforeWhereSql, whereSql, afterWhereSql) = InnerSqlString.ToSqlString(usedColumns);
 
-            beforeWhereSql = $"SELECT {GetSelectColumns().JoinString(",")}\nFROM ({beforeWhereSql}";
+            beforeWhereSql = $"SELECT {GetSelectColumns(selectColumnAliases).JoinString(",")}\nFROM ({beforeWhereSql}";
             afterWhereSql = $"{afterWhereSql}) {SqlSyntax.WrapAlias(InnerQueryAlias)}{BuildGroupByStatement("\n")}";
 
             return (querySetupSql, beforeWhereSql, whereSql, afterWhereSql);
         }
 
-        IEnumerable<string> GetSelectColumns()
+        IEnumerable<string> GetSelectColumns(IEnumerable<string> selectColumnAliases)
         {
-            return Statement.SelectColumns.Select(GetSelectColumn);
+            var selCols = selectColumnAliases?.ToHashSet();
+            var cols = selectColumnAliases != null
+                ? Statement.SelectColumns.Where(x => selCols.Contains(x.Alias))
+                : Statement.SelectColumns as IEnumerable<ISelectColumn>;
+
+            return cols.Select(GetSelectColumn);
         }
 
         string GetSelectColumn(ISelectColumn c)

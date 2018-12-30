@@ -50,19 +50,9 @@ namespace SqlDsl.SqlBuilders
             _Select.Add(new SelectColumn(cellDataType, selectCode, alias ?? throw new ArgumentNullException(nameof(alias)), representsColumns, argConstructors ?? EmptyConstructorInfo));
 
         /// <inheritdoc />
-        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString() => ToSqlStringInternal(null, null);
-
-        /// <inheritdoc />
-        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString(IEnumerable<string> selectColumnAliases, IEnumerable<string> ensureTableRowIds)
+        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString(IEnumerable<string> selectColumnAliases = null)
         {
-            return ToSqlStringInternal(
-                selectColumnAliases ?? throw new ArgumentNullException(nameof(selectColumnAliases)), 
-                ensureTableRowIds ?? throw new ArgumentNullException(nameof(ensureTableRowIds)));
-        }
-
-        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlStringInternal(IEnumerable<string> selectColumnAliases, IEnumerable<string> ensureTableRowIds)
-        {
-            var rowIds = GetRowIdSelectColumns(selectColumnAliases, ensureTableRowIds).Enumerate();
+            var rowIds = GetRowIdSelectColumns(selectColumnAliases).Enumerate();
             if (!rowIds.Any())
             {
                 // there must be at least 1 row id
@@ -122,7 +112,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Get a list of row id colums, the alias of the table they are identifying, and the alias for the row id column (if any)
         /// </summary>
-        protected abstract IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns(IEnumerable<string> selectColumnAliases = null, IEnumerable<string> ensureTableRowIds = null);
+        protected abstract IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns(IEnumerable<string> selectColumnAliases = null);
 
         public class SelectColumn
         {

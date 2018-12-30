@@ -13,11 +13,6 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Generate sql. Setup sql will be executd before querySql, but in the same sql script
         /// </summary>
-        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString();
-        
-        /// <summary>
-        /// Generate sql. Setup sql will be executd before querySql, but in the same sql script
-        /// </summary>
-        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString(IEnumerable<string> selectColumnAliases, IEnumerable<string> ensureTableRowIds);
+        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString(IEnumerable<string> selectColumnAliases = null);
     }
 }
