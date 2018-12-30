@@ -24,11 +24,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         }
 
         /// <summary>
-        /// Get a column based on it's index in the select statement
-        /// </summary>
-        public ISelectColumn this[int index] => GetColumn(index);
-
-        /// <summary>
         /// Get a column based on it's alias
         /// </summary>
         public ISelectColumn this[string alias] => GetColumn(alias);
@@ -51,23 +46,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public IEnumerator<ISelectColumn> GetEnumerator() => Columns.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => Columns.GetEnumerator();
-
-        /// <summary>
-        /// Get a column based on it's index in the select statement
-        /// </summary>
-        ISelectColumn GetColumn(int index)
-        {
-            var i = index;
-            foreach (var col in this)
-            {
-                if (i == 0)
-                    return col;
-
-                i--;
-            }
-
-            throw new InvalidOperationException($"There is no column at index: {index}.");
-        }
 
         /// <summary>
         /// Get a column based on it's alias

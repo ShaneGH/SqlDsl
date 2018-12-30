@@ -46,7 +46,7 @@ namespace SqlDsl.Mapper
         /// <summary>
         /// If true, the colum and row id columns come from different tables
         /// </summary>
-        public bool ColumnIsAggregatedToDifferentTable => Column.RowNumberColumnIndex != RowIdColumn.RowNumberColumnIndex;
+        public bool ColumnIsAggregatedToDifferentTable => Column.Table != RowIdColumn.Table;
 
         public TheAmazingElement(ISelectColumn column, ISelectColumn rowIdColumn, string function)
         {
@@ -180,7 +180,7 @@ namespace SqlDsl.Mapper
 
                 var col = state.WrappedSqlStatement.SelectColumns[fullName];
                 var tab = state.WrappedSqlStatement.Tables[overrideTable ?? GetTableName(fullName)];
-                var rid = state.WrappedSqlStatement.SelectColumns[tab.RowNumberColumnIndex];
+                var rid = tab.RowNumberColumn;
 
                 return new TheAmazingElement(col, rid, el.Function);
             }

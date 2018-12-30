@@ -25,12 +25,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         
          /// <inheritdoc />
         public ConstructorInfo[] ArgConstructors { get; }
-        
-         /// <inheritdoc />
-        public abstract int RowNumberColumnIndex { get; }
-
-         /// <inheritdoc />
-        public (string table, string column, string aggregatedToTable)[] ReferencesColumns { get; }
 
         public IQueryTable Table { get; }
 
@@ -42,7 +36,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             ConstructorInfo[] argConstructors, 
             IQueryTables tables)
         {
-            ReferencesColumns = referencesColumns;
             Alias = alias;
             IsRowNumber = isRowNumber;
             DataType = dataType;

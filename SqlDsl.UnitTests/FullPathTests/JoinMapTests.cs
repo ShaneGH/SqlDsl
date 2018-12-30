@@ -304,7 +304,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         [Test]
         public void Join2Levels_UsesDataFromAbove_2()
         {
-            // arrange
+            // arrange  
             // act
             var data = FullyJoinedQuery()
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)

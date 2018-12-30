@@ -46,6 +46,18 @@ namespace SqlDsl.UnitTests.DataParser
                     .On((q, t) => q.ClassTags.One().TagId == t.Id) as SqlSelect<object, JoinedQueryClass>;
         }
 
+        void CompareAndDisplayAllObjsOnFailure(ObjectPropertyGraph expected, ObjectPropertyGraph actual)
+        {
+            try
+            {
+                Compare(expected, actual);
+            }
+            catch (AssertionException)
+            {
+                Assert.Fail($"Objects are not equal:\n\nexpected:\n{expected}\n\nactual:\n{actual}\n");
+            }
+        }
+
         void Compare(ObjectPropertyGraph expected, ObjectPropertyGraph actual)
         {
             if (expected == null && actual == null) return;
@@ -350,7 +362,7 @@ namespace SqlDsl.UnitTests.DataParser
         }
 
         [Test]
-        public void PropertyGraph_WithMapping3_CreatesCorrectObjectPropertyGraph()
+        public void PropertyGraph_The_Gold_Standard()
         {
             // arrange
             // act
@@ -390,7 +402,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }, 
                 new[] { 0 });
 
-            Compare(expected, actual);
+            CompareAndDisplayAllObjsOnFailure(expected, actual);
         }
 
         class Tag2

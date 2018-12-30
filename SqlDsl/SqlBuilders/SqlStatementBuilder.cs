@@ -308,8 +308,7 @@ namespace SqlDsl.SqlBuilders
                 // TODO: inefficient to create disposable version of SqlStatement here
                 var stat = new SqlStatement(this);
                 var sca = selectColumnAliases
-                    .Select(a => stat.SelectColumns[a].RowNumberColumnIndex)
-                    .Select(a => stat.Tables[a])
+                    .Select(a => stat.SelectColumns[a].Table)
                     .SelectMany(GetTableChain)
                     .Select(t => t.Alias)
                     .Concat(ensureTableRowIds.OrEmpty())

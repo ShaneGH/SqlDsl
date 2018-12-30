@@ -11,12 +11,13 @@ namespace SqlDsl.Mapper
     {
         static readonly IEnumerable<MappedTable> EmptyMappedTables = Enumerable.Empty<MappedTable>();
 
-        public static (MappingType resultType, IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expression)
+        public static (MappingType resultType, IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expression)
         {
             var (properties, tables) = ComplexMapBuilder.BuildMap(state, expression);
             var ps = properties.Select(p => p.Convert(state)).ToArray();
+            var ts = tables.Select(p => p.Convert(state.WrappedSqlStatement)).ToArray();
             
-            return (ExpressionMappingTypeFinder.GetMappingType(ps, expression, state), ps, tables);
+            return (ExpressionMappingTypeFinder.GetMappingType(ps, expression, state), ps, ts);
 
             /*
             if (mappedChains.Any(c => c.result.FromParams.GetEnumerable1().Any(x => x.isAggregate)))

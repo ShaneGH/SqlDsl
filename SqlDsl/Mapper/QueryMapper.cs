@@ -16,36 +16,6 @@ using System.Threading.Tasks;
 
 namespace SqlDsl.Mapper
 {
-    // class WrappedSqlStatement : ISqlStatement
-    // {
-    //     public string UniqueAlias => throw new NotImplementedException();
-
-    //     public IQueryTables Tables { get; }
-
-    //     public IMappingProperties MappingProperties => throw new NotImplementedException();
-
-    //     public ISelectColumns SelectColumns => throw new NotImplementedException();
-
-    //     public WrappedSqlStatement()
-    //     {
-    //         Tables = new WrappedQueryTables();
-    //     }
-
-    //     public IQueryTable GetTableForColum(string columnAlias)
-    //     {
-    //         throw new NotImplementedException();
-    //     }
-
-    //     public IQueryTable TryGetTableForColum(string columnAlias)
-    //     {
-    //         throw new NotImplementedException();
-    //     }
-
-    //     class WrappedQueryTables : IQueryTables
-    //     {
-    //     }
-    // }
-
     public static class QueryMapper
     {
         /// <summary>
@@ -71,8 +41,16 @@ namespace SqlDsl.Mapper
             switch (resultType)
             {
                 case MapBuilder.MappingType.Map:
-                    var b = ToSqlBuilder(sqlFragmentBuilder, properties, tables, wrappedBuilder, wrappedStatement, state);
-                    return b.Compile<TArgs, TMapped>(new SqlStatement(b), mutableParameters.Parameters, b.SqlSyntax, QueryParseType.ORM);
+                    var rowIdPropertyMap = tables
+                        // if mapping does not map to a specific property (e.g. q => q.Args.Select(a => new object()))
+                        // To will be null
+                        .Where(t => t.To != null)
+                        .Select(t => (rowIdColumnName: t.From.RowNumberColumn.Alias, resultClassProperty: t.To))
+                        .Enumerate();
+
+                    var statement = new SqlSelectStatement(properties, tables, new MappingProperties(wrappedStatement, rowIdPropertyMap), wrappedStatement.Tables.First().RowNumberColumn);
+                    var builder = new MappedSqlStatementBuilder(state, properties, statement, wrappedBuilder, wrappedStatement.UniqueAlias, sqlFragmentBuilder);
+                    return builder.Compile<TArgs, TMapped>(statement, mutableParameters.Parameters, sqlFragmentBuilder, QueryParseType.ORM);
                             
                 case MapBuilder.MappingType.SimpleProp:
                     properties = properties.Enumerate();
@@ -108,56 +86,6 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static MappedSqlStatementBuilder ToSqlBuilder(ISqlSyntax sqlFragmentBuilder, IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<MappedTable> tables, ISqlString wrappedBuilder, ISqlStatement wrappedStatement, BuildMapState state)
-        {
-            var rowIdPropertyMap = tables
-                // if mapping does not map to a specific property (e.g. q => q.Args.Select(a => new object()))
-                // To will be null
-                .Where(t => t.To != null)
-                .Select(t => (rowIdColumnName: $"{t.From}.{SqlStatementConstants.RowIdName}", resultClassProperty: t.To))
-                .Enumerate();
-
-            var mappedValues = properties
-                .Select(x => (
-                    type: x.MappedPropertyType, 
-                    from: x.FromParams.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias),
-                    fromParams: x.FromParams
-                        .GetEnumerable1()
-                        .Where(p => !p.IsParameter)
-                        .Select(p => (
-                            sc: (table: wrappedStatement.UniqueAlias, column: p.Column.Alias), 
-                            aT: p.ColumnIsAggregatedToDifferentTable
-                                ? wrappedStatement.GetTableForColum(p.RowIdColumn.Alias).Alias
-                                : null)
-                        )
-                        .ToArray(),
-                    to: x.To, 
-                    propertySegmentConstructors: x.PropertySegmentConstructors));
-
-            var allProperties = mappedValues.SelectMany(x => x.fromParams);
-
-            var builder = new MappedSqlStatementBuilder(sqlFragmentBuilder, wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
-
-            foreach (var col in mappedValues)
-            {
-                // note: if AddSelectColumn is throwing an argument null exception
-                // on alias, it probably means that a different ToSqlBuilder overload should be called
-                
-                var table = (col.from ?? "").StartsWith("@") ? null : wrappedStatement.UniqueAlias;
-                builder.AddSelectColumn(
-                    col.type,
-                    col.from,
-                    col.to,
-                    col.fromParams.Select(p => (p.sc.table, p.sc.column, p.aT)).ToArray(),
-                    argConstructors: col.propertySegmentConstructors);
-            }
-
-            foreach (var col in rowIdPropertyMap)
-                builder.RowIdsForMappedProperties.Add((col.rowIdColumnName, col.resultClassProperty));
-                
-            return builder;
-        }
-
         static MappedSqlStatementBuilder ToSqlBuilder(
             ISqlSyntax sqlFragmentBuilder, 
             IAccumulator<TheAmazingElement> property, 
@@ -166,27 +94,28 @@ namespace SqlDsl.Mapper
             ISqlStatement wrappedStatement, 
             BuildMapState state)
         {
-            var builder = new MappedSqlStatementBuilder(sqlFragmentBuilder, wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
+            throw new NotImplementedException();
+            // var builder = new MappedSqlStatementBuilder(sqlFragmentBuilder, wrappedBuilder, wrappedStatement, wrappedStatement.UniqueAlias);
 
-            var referencedColumns = property
-                .GetEnumerable1()
-                .Where(x => !x.IsParameter)
-                .Select(x => (
-                    wrappedStatement.UniqueAlias, 
-                    x.Column.Alias,
-                    x.ColumnIsAggregatedToDifferentTable
-                        ? wrappedStatement.GetTableForColum(x.RowIdColumn.Alias).Alias
-                        : null))
-                .ToArray();
+            // var referencedColumns = property
+            //     .GetEnumerable1()
+            //     .Where(x => !x.IsParameter)
+            //     .Select(x => (
+            //         wrappedStatement.UniqueAlias, 
+            //         x.Column.Alias,
+            //         x.ColumnIsAggregatedToDifferentTable
+            //             ? wrappedStatement.GetTableForColum(x.RowIdColumn.Alias).Alias
+            //             : null))
+            //     .ToArray();
 
-            var sql = property.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias);
-            builder.AddSelectColumn(
-                cellDataType,
-                sql,
-                SqlStatementConstants.SingleColumnAlias,
-                referencedColumns);
+            // var sql = property.BuildFromString(state, sqlFragmentBuilder, wrappedStatement.UniqueAlias);
+            // builder.AddSelectColumn(
+            //     cellDataType,
+            //     sql,
+            //     SqlStatementConstants.SingleColumnAlias,
+            //     referencedColumns);
                 
-            return builder;
+            // return builder;
         }
     }
 }

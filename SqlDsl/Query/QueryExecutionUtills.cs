@@ -10,7 +10,7 @@ using System.Reflection;
 
 namespace SqlDsl.Query
 {
-    public static class QueryExecutionUtils
+    static class QueryExecutionUtils
     {        
         /// <summary>
         /// Compile a sqlBuilder into a query which can be executed multiple times
@@ -20,7 +20,7 @@ namespace SqlDsl.Query
         /// <param name="queryParseType">Define the way results are to be parsed</param>
         public static CompiledQuery<TArgs, TResult> Compile<TArgs, TResult> (
             this ISqlString sqlBuilder, 
-            ISqlStatement statement, 
+            ISqlSelectStatement statement, 
             IEnumerable<object> parameters,
             ISqlSyntax sqlSyntax, 
             QueryParseType queryParseType)
@@ -41,14 +41,15 @@ namespace SqlDsl.Query
         /// <param name="property">The name of the singe property</param>
         public static CompiledQuery<TArgs, TResult> CompileSimple<TArgs, TResult>(this MappedSqlStatementBuilder sqlBuilder, IEnumerable<object> parameters, string property)
         {
-            var statement = new SqlStatement(sqlBuilder);
-            var i = statement.IndexOfColumnAlias(property);
-            if (i == -1)
-                throw new InvalidOperationException($"Could not find column {property} in wrapped statement.");
+            throw new NotImplementedException();
+            // var statement = new SqlStatement(sqlBuilder);
+            // var i = statement.IndexOfColumnAlias(property);
+            // if (i == -1)
+            //     throw new InvalidOperationException($"Could not find column {property} in wrapped statement.");
 
-            var col = statement.SelectColumns[i];
-            var graph = new RootObjectPropertyGraph(typeof(TResult), i, col.RowNumberColumnIndex, col.DataType, ReflectionUtils.GetIEnumerableType(col.DataType) != null);
-            return new CompiledQuery<TArgs, TResult>(sqlBuilder.ToSql(), parameters.ToArray(), statement.SelectColumns.Select(Alias).ToArray(), graph, sqlBuilder.SqlSyntax);
+            // var col = statement.SelectColumns[i];
+            // var graph = new RootObjectPropertyGraph(typeof(TResult), i, col.RowNumberColumnIndex, col.DataType, ReflectionUtils.GetIEnumerableType(col.DataType) != null);
+            // return new CompiledQuery<TArgs, TResult>(sqlBuilder.ToSql(), parameters.ToArray(), statement.SelectColumns.Select(Alias).ToArray(), graph, sqlBuilder.SqlSyntax);
         }
 
         static string Alias(ISelectColumn c) => c.Alias;
@@ -58,7 +59,7 @@ namespace SqlDsl.Query
         /// </summary>
         /// <param name="sqlBuilder">The builder with all properties populated</param>
         /// <param name="queryParseType">Define the way results are to be parsed</param>
-        public static RootObjectPropertyGraph BuildObjetPropertyGraph(this ISqlStatement sqlBuilder, Type objectType, QueryParseType queryParseType) 
+        public static RootObjectPropertyGraph BuildObjetPropertyGraph(this ISqlSelectStatement sqlBuilder, Type objectType, QueryParseType queryParseType) 
         {
             // row id's for each mapped table
             var mappedTableProperties = (sqlBuilder.MappingProperties
@@ -73,9 +74,9 @@ namespace SqlDsl.Query
                 
             return ObjectPropertyGraphBuilder.Build(objectType, mappedTableProperties, rowIdColumns, queryParseType);
 
-            (string name, int[] rowIdColumnMap) GetMappedTable((string columnGroupPrefix, int rowNumberColumnIndex) map) => (
+            (string name, int[] rowIdColumnMap) GetMappedTable((string columnGroupPrefix, ISelectColumn rowNumberColumn) map) => (
                 map.columnGroupPrefix,
-                sqlBuilder.GetRowNumberColumnIndexes(map.rowNumberColumnIndex).ToArray());
+                sqlBuilder.GetRowNumberColumnIndexes(map.rowNumberColumn.Alias).ToArray());
 
             (string name, int[] rowIdColumnMap, Type dataCellType, ConstructorInfo[] isConstructorArg) GetMappedColumn(ISelectColumn column) => (
                 column.Alias,

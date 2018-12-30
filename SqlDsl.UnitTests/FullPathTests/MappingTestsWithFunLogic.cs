@@ -305,7 +305,12 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await FullyJoinedQuery<object>()
-                .Map(p => p.ThePersonClasses.Select(pc => new PreMapped(pc.PersonId) { ClassId = pc.ClassId }).ToList())
+                .Map(p => p.ThePersonClasses
+                    .Select(pc => new PreMapped(pc.PersonId)
+                    { 
+                        ClassId = pc.ClassId
+                    })
+                    .ToList())
                 .ToListAsync(Executor, null, logger: Logger);
 
             // assert

@@ -9,7 +9,7 @@ namespace SqlDsl.SqlBuilders
     /// <summary>
     /// Describes a sql statement
     /// </summary>
-    public interface ISqlStatement
+    public interface ISqlStatement : ISqlSelectStatement
     {
         /// <summary>
         /// A unique alias for this statement. Uniqueness must be guaranteed within a single statement only
@@ -22,17 +22,6 @@ namespace SqlDsl.SqlBuilders
         IQueryTables Tables { get; }
 
         /// <summary>
-        /// If the statement is a mapped statement, i.e. it has an inner wrapped query, this property will show the details of this.
-        /// Otherwise It will be null.
-        /// </summary>
-        IMappingProperties MappingProperties { get; }
-
-        /// <summary>
-        /// The columns in the SELECT part of the query
-        /// </summary>
-        ISelectColumns SelectColumns { get; }
-
-        /// <summary>
         /// Get the table which this column belongs to or null
         /// </summary>
         IQueryTable TryGetTableForColum(string columnAlias);
@@ -42,26 +31,34 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         IQueryTable GetTableForColum(string columnAlias);
     }
+    
+    /// <summary>
+    /// Describes a sql statement
+    /// </summary>
+    public interface ISqlSelectStatement
+    {
+
+        /// <summary>
+        /// If the statement is a mapped statement, i.e. it has an inner wrapped query, this property will show the details of this.
+        /// Otherwise It will be null.
+        /// </summary>
+        IMappingProperties MappingProperties { get; }
+
+        /// <summary>
+        /// The columns in the SELECT part of the query
+        /// </summary>
+        ISelectColumns SelectColumns { get; }
+    }
 
     /// <summary>
     /// A list of tables in the query.false (FROM and JOIN)
     /// </summary>
     public interface IQueryTables : IEnumerable<IQueryTable>
-    {
-        /// <summary>
-        /// Get a table based on the index of its row number column
-        /// </summary>
-        IQueryTable this[int rowNumberColumnIndex] { get; } // TODX: remove
-        
+    {        
         /// <summary>
         /// Get a table based on it's alias
         /// </summary>
         IQueryTable this[string alias] { get; }
-
-        /// <summary>
-        /// Get a table based on the index of its row number column
-        /// </summary>
-        IQueryTable TryGetTable(int rowNumberColumnIndex); // TODX: remove
 
         /// <summary>
         /// Get a table based on its alias
@@ -73,12 +70,7 @@ namespace SqlDsl.SqlBuilders
     /// A list of columns in the SELECT statement
     /// </summary>
     public interface ISelectColumns : IEnumerable<ISelectColumn>
-    {
-        /// <summary>
-        /// Get a column based on it's index in the select statement
-        /// </summary>
-        ISelectColumn this[int index] { get; } // TODX: remove
-        
+    {        
         /// <summary>
         /// Get a column based on it's alias
         /// </summary>
@@ -103,7 +95,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// A list of column name prefixes which are bound to a specific table, along with an index to reference that table
         /// </summary>
-        IEnumerable<(string columnGroupPrefix, int rowNumberColumnIndex)> ColumnGroupRowNumberColumIndex { get; }
+        IEnumerable<(string columnGroupPrefix, ISelectColumn rowNumberColumn)> ColumnGroupRowNumberColumIndex { get; }
     }
 
     /// <summary>
@@ -115,11 +107,6 @@ namespace SqlDsl.SqlBuilders
         /// The table alias
         /// </summary>
         string Alias { get; }
-        
-        /// <summary>
-        /// The index of the column which provides row numbers for this table
-        /// </summary>
-        int RowNumberColumnIndex { get; } // TODX: remove
         
         /// <summary>
         /// If this table is in a join, will be the table that it is joined on.
@@ -139,11 +126,6 @@ namespace SqlDsl.SqlBuilders
     public interface ISelectColumn
     {
         /// <summary>
-        /// The actual columns and tables that this SELECT column represents
-        /// </summary>
-        (string table, string column, string aggregatedToTable)[] ReferencesColumns { get; } // TODX: should only be 1 reference column
-
-        /// <summary>
         /// The table which this column belongs to
         /// </summary>
         IQueryTable Table { get; }
@@ -152,11 +134,6 @@ namespace SqlDsl.SqlBuilders
         /// The alias of the column
         /// </summary>
         string Alias { get; }
-        
-        /// <summary>
-        /// The index of the row number column for the table which exposes this column
-        /// </summary>
-        int RowNumberColumnIndex { get; } // TODX: remove
         
         /// <summary>
         /// If true, this column is a row number

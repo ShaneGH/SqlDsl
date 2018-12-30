@@ -22,12 +22,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         }
 
         /// <summary>
-        /// Get a table based on the index of its row number column
-        /// </summary>
-        public IQueryTable this[int rowNumberColumnIndex] => TryGetTable(rowNumberColumnIndex) ??
-            throw new InvalidOperationException($"There is no table with row number column index: {rowNumberColumnIndex}.");
-
-        /// <summary>
         /// Get a table based on it's index
         /// </summary>
         public IQueryTable this[string alias] => TryGetTable(alias) ??
@@ -46,18 +40,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
             foreach (var j in queryBuilder.JoinTables)
                 yield return new QueryTable(j.Alias, queryBuilder, tables, sqlStatement);
-        }
-
-        /// <inheritdoc />
-        public IQueryTable TryGetTable(int rowNumberColumnIndex)
-        {
-            foreach (var tab in this)
-            {
-                if (tab.RowNumberColumnIndex == rowNumberColumnIndex)
-                    return tab;
-            }
-
-            return null;
         }
 
         /// <inheritdoc />

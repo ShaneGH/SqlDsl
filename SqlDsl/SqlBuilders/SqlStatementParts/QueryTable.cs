@@ -24,11 +24,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public string Alias { get; }
 
         /// <summary>
-        /// The index of the column which provides row numbers for this table
-        /// </summary>
-        public int RowNumberColumnIndex { get; }
-
-        /// <summary>
         /// If this table is in a join, will be the table that it is joined on.
         /// Otherwise it will be null
         /// </summary>
@@ -38,7 +33,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
         /// <inheritdoc />
         public ISelectColumn RowNumberColumn => _RowNumberColumn ??
-            (_RowNumberColumn = ParentStatement.SelectColumns[RowNumberColumnIndex]);
+            (_RowNumberColumn = GetRowNumberColumn());
 
         readonly ISqlStatement ParentStatement;
 
@@ -48,7 +43,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             QueryBuilder = queryBuilder ?? throw new ArgumentNullException(nameof(queryBuilder));
             Tables = tables ?? throw new ArgumentNullException(nameof(tables));
 
-            RowNumberColumnIndex = GetRowNumberColumnIndex(queryBuilder, alias);
             ParentStatement = parentStatement ?? throw new ArgumentNullException(nameof(parentStatement));
         }
 
@@ -73,33 +67,28 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         }
 
         /// <summary>
-        /// The index of the column which provides row numbers for this table
+        /// The column which provides row numbers for this table
         /// </summary>
-        static int GetRowNumberColumnIndex(ISqlStatementPartValues queryBuilder, string alias)
+        ISelectColumn GetRowNumberColumn()
         {
-            if (queryBuilder.PrimaryTableAlias == alias)
-                return 0;
+            var possibleAliases = new List<string>(2);
 
-            var index = queryBuilder.JoinTables
-                .Select(GetAlias)
-                .Select(CombineWithIndex)
-                .Where(FilterByAlias)
-                .Select(GetIndex)
-                .FirstOrDefault();
+            // TODO: only one of these conditions is important
+            // discover which one
+            if (Alias == null || Alias == SqlStatementConstants.RootObjectAlias)
+            {
+                possibleAliases.Add($"{SqlStatementConstants.RootObjectAlias}.{SqlStatementConstants.RowIdName}");
+                possibleAliases.Add(SqlStatementConstants.RowIdName);
+            }
+            else
+            {
+                possibleAliases.Add($"{Alias}.{SqlStatementConstants.RowIdName}");
+            }
 
-            // 0 will always be default value, because of "i + 1" clause in CombineWithIndex
-            if (index == 0)
-                throw new InvalidOperationException($"Could not find join table for alias: {alias}");
-
-            return index;
-
-            string GetAlias(SqlStatementPartJoin val) => val.Alias;
-
-            (int, T) CombineWithIndex<T>(T val, int i) => (i + 1, val);
-
-            bool FilterByAlias((int, string) val) => val.Item2 == alias;
-
-            int GetIndex<T>((int, T) val) => val.Item1;
+            return possibleAliases
+                .Select(ParentStatement.SelectColumns.TryGetColumn)
+                .RemoveNulls()
+                .FirstOrDefault() ?? throw new InvalidOperationException($"Cannot find row id column for table: {Alias}");
         }
     }
 }

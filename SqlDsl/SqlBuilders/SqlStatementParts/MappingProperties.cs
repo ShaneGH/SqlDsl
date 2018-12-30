@@ -17,35 +17,36 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// <summary>
         /// The other (mapped from) query
         /// </summary>
-        public ISqlStatement InnerStatement => InnerQuery.InnerStatement;
+        public ISqlStatement InnerStatement { get; }
         
-        /// <summary>
-        /// The inner query
-        /// </summary>
-        readonly ISqlStatementPartValues InnerQuery;
+        readonly IEnumerable<(string rowIdColumnName, string resultClassProperty)> RowIdsForMappedProperties;
         
         /// <summary>
         /// A list of column name prefixes which are bound to a specific table, along with an index to reference that table
         /// </summary>
-        public IEnumerable<(string columnGroupPrefix, int rowNumberColumnIndex)> ColumnGroupRowNumberColumIndex => GetColumnGroupRowNumberColumIndex();
+        public IEnumerable<(string columnGroupPrefix, ISelectColumn rowNumberColumn)> ColumnGroupRowNumberColumIndex => GetColumnGroupRowNumberColumIndex();
 
         public MappingProperties(ISqlStatementPartValues mappedStatement)
+            : this(mappedStatement?.InnerStatement, mappedStatement?.RowIdsForMappedProperties)
         {
-            InnerQuery = mappedStatement ?? throw new ArgumentNullException(nameof(mappedStatement));
-            if (InnerQuery.InnerStatement == null)
-                throw new InvalidOperationException("Invalid mapped statement.");
+        }
+
+        public MappingProperties(ISqlStatement innerStatement, IEnumerable<(string rowIdColumnName, string resultClassProperty)> rowIdsForMappedProperties)
+        {
+            InnerStatement = innerStatement ?? throw new ArgumentNullException(nameof(innerStatement));
+            RowIdsForMappedProperties = rowIdsForMappedProperties ?? throw new ArgumentNullException(nameof(rowIdsForMappedProperties));
         }
 
         /// <summary>
         /// Get a list of column name prefixes which are bound to a specific table, along with an index to reference that table
         /// </summary>
-        IEnumerable<(string columnGroupPrefix, int rowNumberColumnIndex)> GetColumnGroupRowNumberColumIndex()
+        IEnumerable<(string columnGroupPrefix, ISelectColumn rowNumberColumn)> GetColumnGroupRowNumberColumIndex()
         {
             // if this function is not returning the correct data or RowIdColumnNumbers of ObjectPropertyGraph are invalid
             // check mapped tables in QueryMapper.BuildMapForSelect(...)
 
-            return InnerQuery.RowIdsForMappedProperties
-                .Select(x => (x.resultClassProperty, InnerStatement.SelectColumns[x.rowIdColumnName].RowNumberColumnIndex));
+            return RowIdsForMappedProperties
+                .Select(x => (x.resultClassProperty, InnerStatement.SelectColumns[x.rowIdColumnName].Table.RowNumberColumn));
         }
     }
 }
