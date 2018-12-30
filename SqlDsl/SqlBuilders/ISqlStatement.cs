@@ -121,6 +121,11 @@ namespace SqlDsl.SqlBuilders
         /// If true, this column is a row number
         /// </summary>
         bool IsRowNumber { get; }
+        
+        /// <summary>
+        /// If true, this column is is aggregated by a function (e.g. COUNT())
+        /// </summary>
+        bool IsAggregated { get; }
 
         /// <summary>
         /// The data type of the cell

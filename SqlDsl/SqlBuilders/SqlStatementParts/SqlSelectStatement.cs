@@ -115,6 +115,8 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
         public ConstructorInfo[] ArgConstructors { get; }
 
+        public bool IsAggregated { get; }
+
         public SqlSelectColumn(QueryElementBasedMappedProperty prop)
             : this(
                 TryGetQueryTable(prop.FromParams
@@ -123,21 +125,28 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                     .Select(GetColumn)),
                 prop.To,
                 false,
+                IsAggregatedColumn(prop.FromParams),
                 prop.MappedPropertyType,
                 prop.PropertySegmentConstructors)
         {
         }
 
-        public SqlSelectColumn(IQueryTable table, string alias, bool isRowNumber, Type dataType, ConstructorInfo[] argConstructors)
+        public SqlSelectColumn(IQueryTable table, string alias, bool isRowNumber, bool isAggregated, Type dataType, ConstructorInfo[] argConstructors)
         {
             Alias = alias ?? throw new ArgumentNullException(nameof(alias));
             ArgConstructors = argConstructors ?? throw new ArgumentNullException(nameof(argConstructors));
             DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
             Table = table;
             IsRowNumber = isRowNumber;
+            IsAggregated = isAggregated;
         }
 
-        public static IQueryTable TryGetQueryTable(IEnumerable<ISelectColumn> columns)
+        static bool IsAggregatedColumn(IAccumulator<TheAmazingElement> prop)
+        {
+            return prop.GetEnumerable1().All(p => p.IsParameter || p.ColumnIsAggregatedToDifferentTable);
+        }
+
+        static IQueryTable TryGetQueryTable(IEnumerable<ISelectColumn> columns)
         {
             return columns
                 .Select(GetTable)

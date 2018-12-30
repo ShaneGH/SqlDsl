@@ -74,11 +74,11 @@ namespace SqlDsl.Query
 
             (string name, int[] rowIdColumnMap) GetMappedTable((string columnGroupPrefix, ISelectColumn rowNumberColumn) map) => (
                 map.columnGroupPrefix,
-                sqlBuilder.GetRowNumberColumnIndexes(map.rowNumberColumn.Alias).ToArray());
+                sqlBuilder.GetRowNumberColumnIndexes(map.rowNumberColumn.Alias, false).ToArray());
 
             (string name, int[] rowIdColumnMap, Type dataCellType, ConstructorInfo[] isConstructorArg) GetMappedColumn(ISelectColumn column) => (
                 column.Alias,
-                sqlBuilder.GetRowNumberColumnIndexes(column.Alias).ToArray(),
+                sqlBuilder.GetRowNumberColumnIndexes(column.Alias, column.IsAggregated).ToArray(),
                 column.DataType,
                 column.ArgConstructors);
         }

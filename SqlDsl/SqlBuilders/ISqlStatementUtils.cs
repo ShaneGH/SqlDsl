@@ -19,8 +19,7 @@ namespace SqlDsl.SqlBuilders
                 : col.Table.GetRowNumberColumns();
         }
         
-        // TODO: make last argument non optional
-        public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlSelectStatement sqlStatement, string columnAlias, bool columnIsAggregate = false)
+        public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlSelectStatement sqlStatement, string columnAlias, bool columnIsAggregate)
         {
             var result = sqlStatement
                 .GetRowNumberColumns(columnAlias)
@@ -43,7 +42,7 @@ namespace SqlDsl.SqlBuilders
 
             for (var j = i - 1; j >= 0; j--)
             {
-                if (r[i] != -1)
+                if (r[i] == -1)
                     throw new InvalidOperationException($"Could not find row id column for column: {columnAlias}");
             }
 

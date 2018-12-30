@@ -28,19 +28,15 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public ISelectColumn this[string alias] => GetColumn(alias);
         
-
         /// <summary>
         /// Build a list of columns
         /// </summary>
         static IEnumerable<ISelectColumn> BuildColumns(ISqlStatementPartValues queryParts, IQueryTables tables)
         {
-            var hasInnerQuery = queryParts.InnerStatement != null;
             return queryParts.SelectColumns.Select(BuildColumn);
 
             ISelectColumn BuildColumn(SqlStatementPartSelect col) => 
-                hasInnerQuery ?
-                    new InnerQuerySelectColumn(col.RepresentsColumns, col.Alias, col.IsRowId, col.CellDataType, col.ArgConstructors, queryParts, tables) :
-                    (ISelectColumn)new SelectColumn(col.RepresentsColumns, col.Alias, col.RepresentsColumns.Select(x => x.table), col.IsRowId, col.CellDataType, col.ArgConstructors, tables);
+                new SelectColumn(col.RepresentsColumns, col.Alias, col.IsRowId, col.CellDataType, col.ArgConstructors, tables);
         }
 
         public IEnumerator<ISelectColumn> GetEnumerator() => Columns.GetEnumerator();
