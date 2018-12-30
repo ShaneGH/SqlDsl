@@ -30,13 +30,13 @@ namespace SqlDsl.Mapper
     {
         public readonly IQueryTable From;
         public readonly string To;
-        public readonly bool TableresultsAreAggregated;
+        public readonly bool TableResultsAreAggregated;
 
         public StrongMappedTable(IQueryTable from, string to, bool tableresultsAreAggregated)
         {
             From = from;
             To = to;
-            TableresultsAreAggregated = tableresultsAreAggregated;
+            TableResultsAreAggregated = tableresultsAreAggregated;
         }
     }
 }

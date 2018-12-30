@@ -879,8 +879,8 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class CountAndGroupTest
         {
-            public string person;
-            public int classes;
+            public string thePerson;
+            public int theClasses;
         }
 
         [Test]
@@ -891,17 +891,17 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await FullyJoinedQuery<object>()
                 .Map(p => new CountAndGroupTest
                 {
-                    person = p.ThePerson.Name,
-                    classes = p.TheClasses.Select(x => x.Id).Count()
+                    thePerson = p.ThePerson.Name,
+                    theClasses = p.TheClasses.Select(x => x.Id).Count()
                 })
                 .ToArrayAsync(Executor, null, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Length);
-            Assert.AreEqual(Data.People.John.Name, data[0].person);
-            Assert.AreEqual(2, data[0].classes);
-            Assert.AreEqual(Data.People.Mary.Name, data[1].person);
-            Assert.AreEqual(1, data[1].classes);
+            Assert.AreEqual(Data.People.John.Name, data[0].thePerson);
+            Assert.AreEqual(2, data[0].theClasses);
+            Assert.AreEqual(Data.People.Mary.Name, data[1].thePerson);
+            Assert.AreEqual(1, data[1].theClasses);
         }
 
         [Test]

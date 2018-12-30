@@ -37,12 +37,10 @@ namespace SqlDsl.SqlBuilders
     /// </summary>
     public interface ISqlSelectStatement
     {
-
         /// <summary>
-        /// If the statement is a mapped statement, i.e. it has an inner wrapped query, this property will show the details of this.
-        /// Otherwise It will be null.
+        /// A list of property names on the mapper output along with the row number which index them.
         /// </summary>
-        IMappingProperties MappingProperties { get; }
+        IEnumerable<(string mappedPropertyName, ISelectColumn rowNumberColumn)> MappedPropertiesToRowNumbers { get; }
 
         /// <summary>
         /// The columns in the SELECT part of the query
@@ -80,22 +78,6 @@ namespace SqlDsl.SqlBuilders
         /// Get a column based on it's alias, or null if it doesn't exist
         /// </summary>
         ISelectColumn TryGetColumn(string alias);
-    }
-
-    /// <summary>
-    /// Extra values on a statement which describe the mapping of another query
-    /// </summary>
-    public interface IMappingProperties
-    {
-        /// <summary>
-        /// The other (mapped from) query
-        /// </summary>
-        ISqlStatement InnerStatement { get; }
-        
-        /// <summary>
-        /// A list of column name prefixes which are bound to a specific table, along with an index to reference that table
-        /// </summary>
-        IEnumerable<(string columnGroupPrefix, ISelectColumn rowNumberColumn)> ColumnGroupRowNumberColumIndex { get; }
     }
 
     /// <summary>

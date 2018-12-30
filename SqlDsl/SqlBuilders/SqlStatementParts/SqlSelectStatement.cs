@@ -15,14 +15,29 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     /// </summary>
     class SqlSelectStatement : ISqlSelectStatement
     {
-        public IMappingProperties MappingProperties { get; }
+        /// <inheritdoc />
+        public IEnumerable<(string mappedPropertyName, ISelectColumn rowNumberColumn)> MappedPropertiesToRowNumbers { get; }
 
+        /// <inheritdoc />
         public ISelectColumns SelectColumns { get; }
 
-        public SqlSelectStatement(IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables, IMappingProperties mappingProperties, ISelectColumn primaryTableRowId)
+        public SqlSelectStatement(IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables, ISelectColumn primaryTableRowId)
         {
             SelectColumns = new SqlSelectColumns(properties, tables, primaryTableRowId);
-            MappingProperties = mappingProperties ?? throw new ArgumentNullException(nameof(mappingProperties));
+            MappedPropertiesToRowNumbers = GetMappedPropertiesToRowNumbers(tables).Enumerate();
+        }
+
+        /// <summary>
+        /// Get a list of column name prefixes which are bound to a specific table, along with an index to reference that table
+        /// </summary>
+        static IEnumerable<(string mappedPropertyName, ISelectColumn rowNumberColumn)> GetMappedPropertiesToRowNumbers(IEnumerable<StrongMappedTable> tables)
+        {
+            return tables
+                // if mapping does not map to a specific property (e.g. q => q.Args.Select(a => new object()))
+                // To will be null
+                .Where(t => t.To != null && !t.TableResultsAreAggregated)
+                .Select(t => (resultClassProperty: t.To, t.From.RowNumberColumn))
+                .Enumerate();
         }
     }
 
@@ -60,7 +75,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                 .Select(p => p.RowIdColumn)
                 // concat with all tables which might not have explicit selects
                 // (e.g. tables which are mapped like: q.Tab.Select(x => 5)
-                .Concat(tables.Where(t => !t.TableresultsAreAggregated).Select(t => t.From.RowNumberColumn))
+                .Concat(tables.Where(t => !t.TableResultsAreAggregated).Select(t => t.From.RowNumberColumn))
                 // ensure that the primaryTableRowId comes first
                 .Prepend(primaryTableRowId)
                 .Distinct();

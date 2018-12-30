@@ -41,14 +41,7 @@ namespace SqlDsl.Mapper
             switch (resultType)
             {
                 case MapBuilder.MappingType.Map:
-                    var rowIdPropertyMap = tables
-                        // if mapping does not map to a specific property (e.g. q => q.Args.Select(a => new object()))
-                        // To will be null
-                        .Where(t => t.To != null)
-                        .Select(t => (rowIdColumnName: t.From.RowNumberColumn.Alias, resultClassProperty: t.To))
-                        .Enumerate();
-
-                    var statement = new SqlSelectStatement(properties, tables, new MappingProperties(wrappedStatement, rowIdPropertyMap), wrappedStatement.Tables.First().RowNumberColumn);
+                    var statement = new SqlSelectStatement(properties, tables, wrappedStatement.Tables.First().RowNumberColumn);
                     var builder = new MappedSqlStatementBuilder(state, properties, statement, wrappedBuilder, wrappedStatement.UniqueAlias, sqlFragmentBuilder);
                     return builder.Compile<TArgs, TMapped>(statement, mutableParameters.Parameters, sqlFragmentBuilder, QueryParseType.ORM);
                             

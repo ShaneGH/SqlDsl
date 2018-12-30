@@ -62,10 +62,8 @@ namespace SqlDsl.Query
         public static RootObjectPropertyGraph BuildObjetPropertyGraph(this ISqlSelectStatement sqlBuilder, Type objectType, QueryParseType queryParseType) 
         {
             // row id's for each mapped table
-            var mappedTableProperties = (sqlBuilder.MappingProperties
-                ?.ColumnGroupRowNumberColumIndex
-                .Select(GetMappedTable))
-                .OrEmpty();
+            var mappedTableProperties = sqlBuilder.MappedPropertiesToRowNumbers
+                .Select(GetMappedTable);
 
             // map each column to a chain of row id column numbers
             var rowIdColumns = sqlBuilder
