@@ -11,9 +11,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         string PrimaryTableAlias { get; }
         IEnumerable<SqlStatementPartJoin> JoinTables { get; }
         IEnumerable<SqlStatementPartSelect> SelectColumns { get; }
-        ISqlStatement InnerStatement { get; }
-        ISqlSyntax SqlSyntax { get; }
-        IEnumerable<(string rowIdColumnName, string resultClassProperty)> RowIdsForMappedProperties { get; }
     }
     
     public struct SqlStatementPartJoin

@@ -38,8 +38,6 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         readonly string PrimaryTable;
 
-        protected override bool AliasRowIdColumns => true;
-
         public SqlStatementBuilder(ISqlSyntax sqlFragmentBuilder, string primaryTable, string primaryTableAlias)
             : base(sqlFragmentBuilder, primaryTableAlias)
         {
@@ -343,13 +341,7 @@ namespace SqlDsl.SqlBuilders
 
         IEnumerable<SqlStatementPartJoin> ISqlStatementPartValues.JoinTables => _Joins.Select(BuildJoinTable);
 
-        ISqlStatement ISqlStatementPartValues.InnerStatement => null;
-
-        ISqlSyntax ISqlStatementPartValues.SqlSyntax => SqlSyntax;
-
         IEnumerable<SqlStatementPartSelect> ISqlStatementPartValues.SelectColumns => GetAllSelectColumns().Select(BuildSelectCol);
-
-        IEnumerable<(string rowIdColumnName, string resultClassProperty)> ISqlStatementPartValues.RowIdsForMappedProperties => Enumerable.Empty<(string, string)>();
 
         static readonly Func<(string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences), SqlStatementPartJoin> BuildJoinTable = join =>
             new SqlStatementPartJoin(join.alias, join.queryObjectReferences);

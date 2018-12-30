@@ -19,11 +19,6 @@ namespace SqlDsl.SqlBuilders
         static readonly (string, (string, string, string)[]) Select1 = ("1", new (string, string, string)[0]);
         static readonly ConstructorInfo[] EmptyConstructorInfo = new ConstructorInfo[0];
         static readonly string NullString = null;
-        
-        /// <summary>
-        /// If false, the row id columns will not have an "AS" part which combines table and column
-        /// </summary>
-        protected abstract bool AliasRowIdColumns { get; }
 
         public readonly ISqlSyntax SqlSyntax;
         
@@ -104,9 +99,6 @@ namespace SqlDsl.SqlBuilders
             string BuildSqlForRid((string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias) rid)
             {
                 var select = SqlSyntax.BuildSelectColumn(rid.tableAlias, rid.rowIdColumnName);
-                if (!AliasRowIdColumns)
-                    return select;
-
                 var alias = rid.tableAlias == null
                     ? rid.rowIdColumnName
                     : rid.rowIdColumnName == null
