@@ -1,19 +1,8 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
-using Newtonsoft.Json;
 using NUnit.Framework;
-using SqlDsl.Utils;
 using SqlDsl.UnitTests.FullPathTests.Environment;
-using SqlDsl.Sqlite;
-using NUnit.Framework.Interfaces;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
@@ -263,6 +252,20 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From(nameof(Person), result => result.ThePerson)
                 .Where((result, args) => result.ThePerson.Id.In(args))
                 .ToArrayAsync(Executor, new long[0], logger: Logger);
+
+            // assert
+            Assert.AreEqual(0, data.Count());
+        }
+
+        [Test]
+        public async Task Select1SimpleObject_WithWhereEmptyIn3()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<QueryClass>()
+                .From(nameof(Person), result => result.ThePerson)
+                .Where(result => result.ThePerson.Id.In(new long[0]))
+                .ToArrayAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(0, data.Count());

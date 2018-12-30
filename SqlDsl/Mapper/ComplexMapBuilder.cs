@@ -79,12 +79,6 @@ namespace SqlDsl.Mapper
                 case ExpressionType.MemberAccess:
                     return BuildMapForMemberAccess(state, expr as MemberExpression, nextMap, toPrefix);
 
-                case ExpressionType.Block:
-                    throw new InvalidProgramException("Unsure how to deal with the last return value");
-                    // return (expr as BlockExpression).Expressions
-                    //     .Select(ex => BuildMap(state, ex, MapType.Other, toPrefix))
-                    //     .AggregateTuple2();
-
                 case ExpressionType.New:
                     return BuildMapForConstructor(state, expr as NewExpression, nextMap, toPrefix: toPrefix).AddT(false);
 
@@ -92,6 +86,7 @@ namespace SqlDsl.Mapper
                     return BuildMapForMemberInit(state, expr as MemberInitExpression, toPrefix).AddT(false);
 
                 case ExpressionType.NewArrayInit:
+                case ExpressionType.NewArrayBounds:
                     return BuildMapForNewArray(state, expr as NewArrayExpression, toPrefix).AddT(false);
 
                 case ExpressionType.ListInit:
