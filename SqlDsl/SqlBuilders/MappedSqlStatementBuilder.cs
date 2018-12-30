@@ -31,15 +31,17 @@ namespace SqlDsl.SqlBuilders
             IEnumerable<QueryElementBasedMappedProperty> selectProperties, 
             ISqlSelectStatement statement, 
             ISqlString innerSqlString,
-            string innerQueryAlias, 
             ISqlSyntax sqlSyntax)
         {
             State = state ?? throw new ArgumentNullException(nameof(state));
             SelectProperties = selectProperties?.ToDictionary(x => x.To);
             Statement = statement ?? throw new ArgumentNullException(nameof(statement));
             InnerSqlString = innerSqlString ?? throw new ArgumentNullException(nameof(innerSqlString));
-            InnerQueryAlias = innerQueryAlias ?? throw new ArgumentNullException(nameof(innerQueryAlias));
             SqlSyntax = sqlSyntax ?? throw new ArgumentNullException(nameof(innerSqlString));
+
+            // this paradigm can be extended if there are more than 1
+            // alias needed per query
+            InnerQueryAlias = SqlStatementConstants.InnerQueryAlias;
         }
 
         [Obsolete("Need to remove this from interface")]

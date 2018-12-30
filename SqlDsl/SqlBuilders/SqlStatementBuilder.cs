@@ -15,16 +15,11 @@ namespace SqlDsl.SqlBuilders
     /// A class to build sql statements
     /// </summary>
     public class SqlStatementBuilder : SqlStatementBuilderBase, SqlStatementParts.ISqlStatementPartValues
-    {
-        static int _InnerQueryAlias = 0;
-        static readonly object InnerQueryLock = new object();
-        
+    {        
         /// <summary>
         /// The WHERE statement, if necessary
         /// </summary>
         (string setupSql, string sql, IEnumerable<string> queryObjectReferences)? Where = null;
-
-        public readonly string UniqueAlias = BuildInnerQueryAlias();
 
         readonly List<(string sql, IEnumerable<string> queryObjectReferences, OrderDirection direction)> Ordering = new List<(string, IEnumerable<string>, OrderDirection)>();
 
@@ -42,20 +37,6 @@ namespace SqlDsl.SqlBuilders
             : base(sqlFragmentBuilder, primaryTableAlias)
         {
             PrimaryTable = primaryTable ?? throw new ArgumentNullException(nameof(primaryTable));
-        }
-        
-        /// <summary>
-        /// Get a new 4 digit code for alias. Aliass' must be unique in the scope of a query only
-        /// </summary>
-        static string BuildInnerQueryAlias()
-        {
-            lock (InnerQueryLock)
-            {
-                if (_InnerQueryAlias >= 10000)
-                    _InnerQueryAlias = 0;
-
-                return $"iq{++_InnerQueryAlias}";
-            }
         }
 
         public void AddOrderBy(ParameterExpression queryRootParam, ParameterExpression argsParam, Expression orderBy, OrderDirection direction, ParamBuilder parameters)
@@ -334,8 +315,6 @@ namespace SqlDsl.SqlBuilders
         }
 
         #region ISqlStatementPartValues
-
-        string ISqlStatementPartValues.UniqueAlias => UniqueAlias;
 
         string ISqlStatementPartValues.PrimaryTableAlias => PrimaryTableAlias;
 

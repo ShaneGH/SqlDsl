@@ -7,7 +7,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 {
     public interface ISqlStatementPartValues
     {
-        string UniqueAlias { get; }
         string PrimaryTableAlias { get; }
         IEnumerable<SqlStatementPartJoin> JoinTables { get; }
         IEnumerable<SqlStatementPartSelect> SelectColumns { get; }

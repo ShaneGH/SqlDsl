@@ -36,9 +36,9 @@ namespace SqlDsl.SqlBuilders
         public const string SingleColumnAlias = "#c";
         
         /// <summary>
-        /// A string to prefix parameters which represent a sql function call
+        /// The alias of a wrapped query
         /// </summary>
-        //public const string OpenFunctionAlias = "##func#";
+        public const string InnerQueryAlias = "##wq";
 
         public static class ConstructorArgs
         {

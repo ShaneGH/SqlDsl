@@ -12,11 +12,6 @@ namespace SqlDsl.SqlBuilders
     public interface ISqlStatement : ISqlSelectStatement
     {
         /// <summary>
-        /// A unique alias for this statement. Uniqueness must be guaranteed within a single statement only
-        /// </summary>
-        string UniqueAlias { get; }
-
-        /// <summary>
         /// The tables involved in the statement
         /// </summary>
         IQueryTables Tables { get; }

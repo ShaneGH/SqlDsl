@@ -15,9 +15,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     public class SqlStatement : ISqlStatement
     {
         /// <inheritdoc />
-        public string UniqueAlias { get; }
-
-        /// <inheritdoc />
         public IQueryTables Tables { get; }
 
         /// <inheritdoc />
@@ -30,7 +27,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
         public SqlStatement(ISqlStatementPartValues builder)
         {
-            UniqueAlias = builder.UniqueAlias;
             Tables = new QueryTables(builder, this);
             SelectColumns = new SelectColumns(builder, Tables);
         }

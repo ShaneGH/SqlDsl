@@ -42,7 +42,7 @@ namespace SqlDsl.Mapper
             {
                 case MapBuilder.MappingType.Map:
                     var statement = new SqlSelectStatement(properties, tables, wrappedStatement.Tables.First().RowNumberColumn);
-                    var builder = new MappedSqlStatementBuilder(state, properties, statement, wrappedBuilder, wrappedStatement.UniqueAlias, sqlFragmentBuilder);
+                    var builder = new MappedSqlStatementBuilder(state, properties, statement, wrappedBuilder, sqlFragmentBuilder);
                     return builder.Compile<TArgs, TMapped>(statement, mutableParameters.Parameters, sqlFragmentBuilder, QueryParseType.ORM);
                             
                 case MapBuilder.MappingType.SimpleProp:
