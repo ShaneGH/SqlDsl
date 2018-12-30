@@ -187,7 +187,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(Person),
                         new[]
                         {
-                            (0, "##rowid", new int[0], null, null),
+                            (0, "#rowid", new int[0], null, null),
                             (4, "Id", new int[0], typeof(long), typeof(long)),
                             (5, "Name", new int[0], typeof(string), typeof(string)),
                             (6, "Gender", new int[0], typeof(Gender), typeof(Gender)),
@@ -199,7 +199,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(PersonClass),
                         new[]
                         {
-                            (1, "##rowid", new int[0], null, null),
+                            (1, "#rowid", new int[0], null, null),
                             (2, "PersonId", new int[0], typeof(long), typeof(long)),
                             (3, "ClassId", new int[0], typeof(long), typeof(long))
                         }, 
@@ -230,7 +230,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(Person),
                         new[]
                         {
-                            (0, "##rowid", new int[0], null, null),
+                            (0, "#rowid", new int[0], null, null),
                             (13, "Id", new int[0], typeof(long), typeof(long)),
                             (14, "Name", new int[0], typeof(string), typeof(string)),
                             (15, "Gender", new int[0], typeof(Gender), typeof(Gender)),
@@ -242,7 +242,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(PersonClass),
                         new[]
                         {
-                            (1, "##rowid", new int[0], null, null),
+                            (1, "#rowid", new int[0], null, null),
                             (5, "PersonId", new int[0], typeof(long), typeof(long)),
                             (6, "ClassId", new int[0], typeof(long), typeof(long))
                         }, 
@@ -252,7 +252,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(Class),
                         new[]
                         {
-                            (2, "##rowid", new int[0], null, null),
+                            (2, "#rowid", new int[0], null, null),
                             (7, "Id", new int[0], typeof(long), typeof(long)),
                             (8, "Name", new int[0], typeof(string), typeof(string))
                         }, 
@@ -262,7 +262,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(ClassTag),
                         new[]
                         {
-                            (3, "##rowid", new int[0], null, null),
+                            (3, "#rowid", new int[0], null, null),
                             (9, "ClassId", new int[0], typeof(long), typeof(long)),
                             (10, "TagId", new int[0], typeof(long), typeof(long))
                         }, 
@@ -272,7 +272,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(Tag),
                         new[]
                         {
-                            (4, "##rowid", new int[0], null, null),
+                            (4, "#rowid", new int[0], null, null),
                             (11, "Id", new int[0], typeof(long), typeof(long)),
                             (12, "Name", new int[0], typeof(string), typeof(string))
                         }, 
@@ -653,7 +653,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(Person),
                         new[]
                         {
-                            (0, "##rowid", new int[0], null, null),
+                            (0, "#rowid", new int[0], null, null),
                             (4, "Id", new int[0], typeof(long), typeof(long)),
                             (5, "Name", new int[0], typeof(string), typeof(string)),
                             (6, "Gender", new int[0], typeof(Gender), typeof(Gender)),
@@ -665,7 +665,7 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(PersonClass),
                         new[]
                         {
-                            (1, "##rowid", new int[0], null, null),
+                            (1, "#rowid", new int[0], null, null),
                             (2, "PersonId", new int[0], typeof(long), typeof(long)),
                             (3, "ClassId", new int[0], typeof(long), typeof(long))
                         }, 
@@ -806,7 +806,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(SemiPerson),
                 new[]
                 {
-                    (0, "##rowid", new int[0], (Type)null, (Type)null)
+                    (0, "#rowid", new int[0], (Type)null, (Type)null)
                 }, 
                 null, 
                 new[] { 0 },
@@ -1007,7 +1007,6 @@ namespace SqlDsl.UnitTests.DataParser
         }
 
         [Test]
-        [Ignore("TODO")]
         public void PropertyGraph_WithCountAndGroup_ReturnsCorrectOPG()
         {
             // arrange
@@ -1035,7 +1034,6 @@ namespace SqlDsl.UnitTests.DataParser
         }
 
         [Test]
-        [Ignore("TODO")]
         public void PropertyGraph_WithCountAndGroup_ReturnsCorrectOPG2()
         {
             // arrange

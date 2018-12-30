@@ -17,18 +17,18 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The column name for table row ids
         /// </summary>
-        public const string RowIdName = "##rowid";
+        public const string RowIdName = "#rowid";
         
         /// <summary>
         /// A column prefix to use internally if the resulting columns should actually not have a prefix
         /// (prevents naming clashes)
         /// </summary>
-        public const string RootObjectAlias = "##root";
+        public const string RootObjectAlias = "#root";
         
         /// <summary>
         /// A string to prefix parameters which will be split into multiple values for an IN statement
         /// </summary>
-        public const string ParamArrayFlag = "##array";
+        public const string ParamArrayFlag = "#array";
         
         /// <summary>
         /// The alias of a column in a select statement which only returns one column
@@ -38,14 +38,14 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The alias of a wrapped query
         /// </summary>
-        public const string InnerQueryAlias = "##wq";
+        public const string InnerQueryAlias = "#wq";
 
         public static class ConstructorArgs
         {
             /// <summary>
             /// A string to prefix columns names, whose data will be used as a constructor arg
             /// </summary>
-            const string ConstructorArgPrefixAlias = "##ca";
+            const string ConstructorArgPrefixAlias = "#ca";
 
             static readonly Regex LooseConstructorArgRegex = new Regex($"{Regex.Escape(ConstructorArgPrefixAlias)}\\d+", RegexOptions.Compiled);
             public static int CountConstructorArgs(string value) => LooseConstructorArgRegex.Matches(value).Count;

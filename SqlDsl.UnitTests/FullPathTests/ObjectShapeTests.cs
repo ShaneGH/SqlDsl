@@ -588,7 +588,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task SelectWithoutColumns_MapsCorrectly()
         {
             // arrange
@@ -613,6 +612,32 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(new[]{1}, data[1].classes);
             CollectionAssert.AreEqual(new[]{2, 2}, data[1].tags);
         }
+
+        // [Test]
+        // public async Task SelectWithColumnsAndAddition_MapsCorrectly()
+        // {
+        //     // arrange
+        //     // act
+        //     var data = await FullyJoinedQuery()
+        //         .Map(x => new
+        //         {
+        //             personName = x.ThePerson.Name,
+        //             classes = x.TheClasses.Select(c => c.Id + 1),
+        //             tags = x.TheTags.Select(t => t.Id + 2)
+        //         })
+        //         .ToListAsync(Executor);
+
+        //     // assert
+        //     Assert.AreEqual(2, data.Count());
+
+        //     Assert.AreEqual(Data.People.John.Name, data[0].personName);
+        //     CollectionAssert.AreEqual(new[]{1, 1}, data[0].classes);
+        //     CollectionAssert.AreEqual(new[]{2, 2, 2}, data[0].tags);
+            
+        //     Assert.AreEqual(Data.People.Mary.Name, data[1].personName);
+        //     CollectionAssert.AreEqual(new[]{1}, data[1].classes);
+        //     CollectionAssert.AreEqual(new[]{2, 2}, data[1].tags);
+        // }
 
         [Test]
         public async Task FullyJoinedQuery_WhereTableNotInSelect_MapsCorrectly()
@@ -679,7 +704,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .ToListAsync(Executor);
 
             // assert
-            // Assert.Fail();
+            //Assert.Fail();
         }
 
         /// <summary>

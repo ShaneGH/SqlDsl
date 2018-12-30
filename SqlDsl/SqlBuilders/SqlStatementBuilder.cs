@@ -227,7 +227,7 @@ namespace SqlDsl.SqlBuilders
                 selects = selects.Where(c => sca.Contains(c.Alias));
             }
 
-            // TODO: look at $"{rid.tableAlias}.{rid.rowIdColumnName}". What if tableAlias is null or ##root
+            // TODO: look at $"{rid.tableAlias}.{rid.rowIdColumnName}". What if tableAlias is null or #root
             var sels = rowIds
                 .Select(rid => (sql: BuildSqlForRid(rid), representsColumns: new [] { (table: rid.tableAlias, NullString, aggregatedToTable: NullString) }))
                 .Concat(selects.Select(sel => (sql: SqlSyntax.AddAliasColumn(sel.SelectCode, sel.Alias), representsColumns: sel.RepresentsColumns)))
