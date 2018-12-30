@@ -13,7 +13,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     /// <summary>
     /// A minimal select statement
     /// </summary>
-    class SqlSelectStatement : ISqlSelectStatement
+    class MappedSelectStatement : ISqlSelectStatement
     {
         /// <inheritdoc />
         public IEnumerable<(string mappedPropertyName, ISelectColumn rowNumberColumn)> MappedPropertiesToRowNumbers { get; }
@@ -21,7 +21,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// <inheritdoc />
         public ISelectColumns SelectColumns { get; }
 
-        public SqlSelectStatement(IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables, ISelectColumn primaryTableRowId)
+        public MappedSelectStatement(IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables, ISelectColumn primaryTableRowId)
         {
             SelectColumns = new SqlSelectColumns(properties, tables, primaryTableRowId);
             MappedPropertiesToRowNumbers = GetMappedPropertiesToRowNumbers(tables).Enumerate();

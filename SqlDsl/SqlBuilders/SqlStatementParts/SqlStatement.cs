@@ -30,21 +30,5 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             Tables = new QueryTables(builder, this);
             SelectColumns = new SelectColumns(builder, Tables);
         }
-
-        /// <inheritdoc />
-        public IQueryTable TryGetTableForColum(string columnAlias)
-        {
-            var col = SelectColumns.TryGetColumn(columnAlias);
-            if (col == null) return null;
-
-            return col.Table;
-        }
-
-        /// <inheritdoc />
-        public IQueryTable GetTableForColum(string columnAlias)
-        {
-            var col = SelectColumns[columnAlias];
-            return col.Table;
-        }
     }
 }

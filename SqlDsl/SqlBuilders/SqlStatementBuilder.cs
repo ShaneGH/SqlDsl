@@ -38,11 +38,6 @@ namespace SqlDsl.SqlBuilders
         readonly List<SelectColumn> _Select = new List<SelectColumn>();
 
         /// <summary>
-        /// A list of columns in the SELECT statement
-        /// </summary>
-        public IEnumerable<SelectColumn> Select => _Select.Skip(0);
-
-        /// <summary>
         /// The WHERE statement, if necessary
         /// </summary>
         (string setupSql, string sql, IEnumerable<string> queryObjectReferences)? Where = null;

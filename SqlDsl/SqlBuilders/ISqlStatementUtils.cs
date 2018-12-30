@@ -61,20 +61,6 @@ namespace SqlDsl.SqlBuilders
                 return input;
             }
         }
-
-        public static int IndexOfColumnAlias(this ISqlSelectStatement sqlStatement, string columnAlias)
-        {
-            var i = 0;
-            foreach (var col in sqlStatement.SelectColumns)
-            {
-                if (col.Alias == columnAlias)
-                    return i;
-
-                i++;
-            }
-
-            return -1;
-        }
         
         public static IEnumerable<ISelectColumn> GetRowNumberColumns(this IQueryTable table)
         {
@@ -86,11 +72,6 @@ namespace SqlDsl.SqlBuilders
             }
 
             return op.Skip(0);
-        }
-        
-        public static bool JoinIsValid(this ISqlStatement sqlStatement, string from, string to)
-        {
-            return sqlStatement.Tables[to].JoinedFrom?.Alias == from;
         }
         
         public static bool ContainsTable(this ISqlStatement sqlStatement, string tableAlias)

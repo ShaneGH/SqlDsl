@@ -41,7 +41,7 @@ namespace SqlDsl.Mapper
             switch (resultType)
             {
                 case MapBuilder.MappingType.Map:
-                    var statement = new SqlSelectStatement(properties, tables, wrappedStatement.Tables.First().RowNumberColumn);
+                    var statement = new MappedSelectStatement(properties, tables, wrappedStatement.Tables.First().RowNumberColumn);
                     var builder = new MappedSqlStatementBuilder(state, properties, statement, wrappedBuilder, sqlFragmentBuilder);
                     return builder.Compile<TArgs, TMapped>(statement, mutableParameters.Parameters, sqlFragmentBuilder, QueryParseType.ORM);
                             

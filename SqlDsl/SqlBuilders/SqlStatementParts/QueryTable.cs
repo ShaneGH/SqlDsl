@@ -71,24 +71,11 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         ISelectColumn GetRowNumberColumn()
         {
-            var possibleAliases = new List<string>(2);
+            var alias = Alias == SqlStatementConstants.RootObjectAlias
+                ? SqlStatementConstants.RowIdName
+                : $"{Alias}.{SqlStatementConstants.RowIdName}";
 
-            // TODO: only one of these conditions is important
-            // discover which one
-            if (Alias == null || Alias == SqlStatementConstants.RootObjectAlias)
-            {
-                possibleAliases.Add($"{SqlStatementConstants.RootObjectAlias}.{SqlStatementConstants.RowIdName}");
-                possibleAliases.Add(SqlStatementConstants.RowIdName);
-            }
-            else
-            {
-                possibleAliases.Add($"{Alias}.{SqlStatementConstants.RowIdName}");
-            }
-
-            return possibleAliases
-                .Select(ParentStatement.SelectColumns.TryGetColumn)
-                .RemoveNulls()
-                .FirstOrDefault() ?? throw new InvalidOperationException($"Cannot find row id column for table: {Alias}");
+            return ParentStatement.SelectColumns[alias];
         }
     }
 }

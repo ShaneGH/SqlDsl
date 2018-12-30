@@ -15,16 +15,6 @@ namespace SqlDsl.SqlBuilders
         /// The tables involved in the statement
         /// </summary>
         IQueryTables Tables { get; }
-
-        /// <summary>
-        /// Get the table which this column belongs to or null
-        /// </summary>
-        IQueryTable TryGetTableForColum(string columnAlias);
-
-        /// <summary>
-        /// Get the table which this column belongs to
-        /// </summary>
-        IQueryTable GetTableForColum(string columnAlias);
     }
     
     /// <summary>
@@ -127,7 +117,7 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         Type DataType { get; }
         
-         /// <summary>
+        /// <summary>
         /// The constructors that this column will be passed into. A column can have more than one constructor if constructors are nested
         /// </summary>
         ConstructorInfo[] ArgConstructors { get; }
