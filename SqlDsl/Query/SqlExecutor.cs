@@ -18,16 +18,18 @@ namespace SqlDsl.Query
     /// Build and execute sql queries
     /// </summary>
     public abstract class SqlExecutor<TArgs, TResult> : ISqlExecutor<TArgs, TResult>
-    {
+    {      
+        static readonly (string, string, Type) DefaultPrimaryTableMember = (SqlStatementConstants.RootObjectAlias, typeof(TResult).Name, typeof(TResult));
+
         /// <summary>
-        /// The name of the table in the SELECT statement
+        /// The name of the member on the TResult which the primary table is appended to
         /// </summary>
-        protected abstract string PrimaryTableName { get; }
+        public abstract (string memberName, string tableName, Type type)? PrimaryTableDetauls { get; }
         
         /// <summary>
         /// The name of the member on the TResult which the primary table is appended to
         /// </summary>
-        public abstract (string name, Type type)? PrimaryTableMember { get; }
+        public (string memberName, string tableName, Type type) PrimaryTableMember => PrimaryTableDetauls ?? DefaultPrimaryTableMember;
         
         /// <summary>
         /// The joins applied to the query
@@ -96,19 +98,17 @@ namespace SqlDsl.Query
         /// <param name="filterSelectCols">If specified, only add the given columns to the SELECT statement</param>
         public (SqlStatementBuilder builder, ParamBuilder paramaters) ToSqlStatement()
         {
-            var (primaryTableMemberName, primaryTableMemberType) = 
-                PrimaryTableMember ?? 
-                throw new InvalidOperationException("You must set the FROM table before calling ToSql");
+            var (memberName, tableName, primaryTableMemberType) = PrimaryTableMember;
             
             // Set the SELECT table
-            var builder = new SqlStatementBuilder(SqlSyntax, PrimaryTableName, primaryTableMemberName);
+            var builder = new SqlStatementBuilder(SqlSyntax, tableName, memberName);
 
             // get all columns from SELECT and JOINs
             var selectColumns = Joins
                 .SelectMany((x, i) => ColumnsOf(x.JoinExpression.joinParam.Type)
                     .Select(y => (table: x.JoinedTableProperty.name, column: y)))
                 .Concat(ColumnsOf(primaryTableMemberType)
-                    .Select(y => (table: primaryTableMemberName, column: y)));
+                    .Select(y => (table: memberName, column: y)));
 
             // add each join
             var param = new ParamBuilder();

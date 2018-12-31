@@ -88,7 +88,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .ToIEnumerable(Executor)
                 .ToList();
 
@@ -123,7 +122,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey == TestDataTables.DataTypeTestNotNulled.PrimaryKey)
                 .ToIEnumerable(Executor)
                 .ToList();
@@ -140,7 +138,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.Float_N == null)
                 .ToIEnumerable(Executor)
                 .ToList();
@@ -156,7 +153,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey != TestDataTables.DataTypeTestNotNulled.PrimaryKey)
                 .ToIEnumerable(Executor)
                 .ToList();
@@ -173,7 +169,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.Float_N != null)
                 .ToIEnumerable(Executor)
                 .ToList();
@@ -189,7 +184,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.TestEnum == TestEnum.Option1 && x.PrimaryKey == TestDataTables.DataTypeTestNotNulled.PrimaryKey)
                 .ToIEnumerable(Executor)
                 .ToList();
@@ -205,7 +199,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey == TestDataTables.DataTypeTestNotNulled.PrimaryKey && x.DateTime == TestDataTables.DataTypeTestNotNulled.DateTime)
                 .ToIEnumerable(Executor)
                 .ToList();
@@ -221,7 +214,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey == TestDataTables.DataTypeTestNotNulled.PrimaryKey || x.PrimaryKey == 33333)
                 .ToIEnumerable(Executor)
                 .ToList();
@@ -239,7 +231,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
 
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey < pk)
                 .ToIEnumerable(Executor)
                 .ToList();
@@ -255,7 +246,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey <= TestDataTables.DataTypeTestNotNulled.PrimaryKey)
                 .ToIEnumerable(Executor)
                 .ToList();
@@ -273,7 +263,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
 
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey > pk)
                 .ToIEnumerable(Executor)
                 .ToList();
@@ -289,7 +278,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey >= TestDataTables.DataTypeTestNulled.PrimaryKey)
                 .ToList(Executor);
 
@@ -304,7 +292,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey.In(new int[1] { TestDataTables.DataTypeTestNulled.PrimaryKey }))
                 .ToArray(Executor);
 
@@ -321,7 +308,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
                 // arrange
                 // act
                 var values = StartTest()
-                    .From()
                     .Where(x => x.PrimaryKey.In(new int [0]))
                     .ToArray(Executor);
 
@@ -342,7 +328,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.Byte_N.In(new byte?[1] { null }))
                 .ToArray(Executor);
 
@@ -357,7 +342,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .OrderBy(x => x.PrimaryKey)
                 .ToList(Executor);
 
@@ -373,7 +357,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .OrderByDesc(x => x.PrimaryKey)
                 .ToList(Executor);
 
@@ -389,7 +372,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey + 123 == TestDataTables.DataTypeTestNulled.PrimaryKey + 123)
                 .ToList(Executor);
 
@@ -404,7 +386,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey - 123 == TestDataTables.DataTypeTestNulled.PrimaryKey - 123)
                 .ToList(Executor);
 
@@ -419,7 +400,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey * 123 == TestDataTables.DataTypeTestNulled.PrimaryKey * 123)
                 .ToList(Executor);
 
@@ -434,7 +414,6 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .From()
                 .Where(x => x.PrimaryKey / 2 == TestDataTables.DataTypeTestNulled.PrimaryKey / 2)
                 .ToList(Executor);
 

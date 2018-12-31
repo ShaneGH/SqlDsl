@@ -76,7 +76,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<Person>()
-                .From()
                 .Map(p => new SimpleMapClass
                 { 
                     TheName = p.Name,
@@ -107,7 +106,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<Person>()
-                .From()
                 .Map(p => new MapComplexObjectType1
                 { 
                     ThePerson = p

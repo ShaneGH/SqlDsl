@@ -361,7 +361,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<Person>()
-                .From()
                 .Map(x => new Person(x.Id, x.Name, x.Gender, x.IsMember))
                 .ToIEnumerableAsync(Executor);
 
@@ -387,7 +386,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<Person>()
-                .From()
                 .Map(x => new ObjectWithConstructorArgs2Test(x))
                 .ToIEnumerableAsync(Executor);
 
@@ -429,7 +427,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<PersonsData>()
-                .From()
                 .Map(x => new ObjectWithConstructorArgs4Test(x.Data))
                 .ToIEnumerableAsync(Executor);
 
@@ -455,7 +452,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<PersonsData>()
-                .From()
                 .Map(x => new ObjectWithConstructorArgs5Test(x.Data.ToList()))
                 .ToIEnumerableAsync(Executor);
 
@@ -479,7 +475,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<Person>()
-                .From()
                 .Map(x => new ObjectWithConstructorArgs6Test
                 {
                     PersonWithName = new Person(0, x.Name, 0, false),

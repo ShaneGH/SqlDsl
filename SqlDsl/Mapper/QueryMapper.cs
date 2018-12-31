@@ -30,11 +30,8 @@ namespace SqlDsl.Mapper
             var (wrappedBuilder, parameters) = query.ToSqlStatement();
             var wrappedStatement = new SqlStatement(wrappedBuilder);
 
-            if (query.PrimaryTableMember == null)
-                throw new InvalidOperationException("The query must have at least one select table.");
-
             var argsParam = mapper.Parameters.Count > 1 ? mapper.Parameters[1] : null;
-            var state = new BuildMapState(query.PrimaryTableMember.Value.name, parameters, mapper.Parameters[0], argsParam, wrappedStatement, query.SqlSyntax);
+            var state = new BuildMapState(query.PrimaryTableMember.memberName, parameters, mapper.Parameters[0], argsParam, wrappedStatement, query.SqlSyntax);
             var (resultType, properties, tables) = MapBuilder.BuildMapFromRoot(state, mapper.Body);
 
             switch (resultType)

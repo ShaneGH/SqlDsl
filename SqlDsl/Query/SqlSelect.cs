@@ -17,22 +17,14 @@ namespace SqlDsl.Query
     /// Class to kick off a sql statement
     /// </summary>
     public class SqlSelect<TArgs, TResult> : Query<TArgs, TResult>, IOrderer<TArgs, TResult>, ISqlSelect<TArgs, TResult>
-    {
-        /// <summary>
-        /// The name of the table in the SELECT statement
-        /// </summary>
-        string _PrimaryTableName;
-        
-        /// <inheritdoc />
-        protected override string PrimaryTableName => _PrimaryTableName;
-        
+    {        
         /// <summary>
         /// The name of the member on the TResult which the primary table is appended to
         /// </summary>
-        (string name, Type type)? _PrimaryTableMember;
+        (string name, string tableName, Type type)? __PrimaryTableMember;
         
         /// <inheritdoc />
-        public override (string name, Type type)? PrimaryTableMember => _PrimaryTableMember;
+        public override (string memberName, string tableName, Type type)? PrimaryTableDetauls => __PrimaryTableMember;
 
         public SqlSelect(ISqlSyntax sqlSyntax)
             : base(sqlSyntax)
@@ -42,8 +34,11 @@ namespace SqlDsl.Query
         /// <inheritdoc />
         public IQuery<TArgs, TResult> From<TTable>(string tableName, Expression<Func<TResult, TTable>> tableProperty)
         {
-            _PrimaryTableName = tableName ?? throw new ArgumentNullException(nameof(tableName));
-            _PrimaryTableMember = CheckMemberExpression(tableProperty.Body, tableProperty.Parameters[0]);
+            var (memberName, type) = CheckMemberExpression(tableProperty.Body, tableProperty.Parameters[0]);
+            __PrimaryTableMember = (
+                memberName,
+                tableName ?? throw new ArgumentNullException(nameof(tableName)),
+                type);
 
             return this;
         }
@@ -55,9 +50,5 @@ namespace SqlDsl.Query
         /// <inheritdoc />
         public IQuery<TArgs, TResult> From(string tableName) =>
             From<TResult>(tableName, x => x);
-
-        /// <inheritdoc />
-        public IQuery<TArgs, TResult> From() =>
-            From(typeof(TResult).Name);
     }
 }

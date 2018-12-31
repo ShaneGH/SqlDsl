@@ -36,7 +36,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<Purchase>()
-                .From()
                 .Where(p => p.Id == Data.Purchases.JohnPurchasedHimselfShoes.Id)
                 .ToListAsync(Executor, logger: Logger);
 

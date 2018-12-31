@@ -164,7 +164,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<PersonClass>()
-                .From()
                 .OrderByDesc(x => x.PersonId + x.ClassId)
                 .ToArrayAsync(Executor, logger: Logger);
 
@@ -183,7 +182,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<int, PersonClass>()
-                .From()
                 .OrderByDesc((x, a) => a)
                 .ToArrayAsync(Executor, 7, logger: Logger);
 

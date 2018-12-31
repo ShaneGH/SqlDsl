@@ -797,7 +797,6 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = Sql.Query.Sqlite<Person>()
-                .From()
                 .Map(x => new SemiPerson(x, x.Gender))
                 .BuildObjetPropertyGraph<SemiPerson, Person>(true);
 

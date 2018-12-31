@@ -8,7 +8,7 @@ namespace SqlDsl.Dsl
     /// <summary>
     /// Interface to help with query building DSL
     /// </summary>
-    public interface ISqlSelect<TResult>
+    public interface ISqlSelect<TResult> : IFilter<TResult>
     {
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table]
@@ -27,19 +27,12 @@ namespace SqlDsl.Dsl
         /// Set the [Table] in SELECT FROM [Table] to be TResult.
         /// </summary>
         IQuery<TResult> From(string tableName);
-
-        // TODO: remove From() method. Replace with Where(), Map() etc..
-        
-        /// <summary>
-        /// Set the [Table] in SELECT FROM [Table] to be TResult. Uses the class name of TResult as the sql table name
-        /// </summary>
-        IQuery<TResult> From();
     }
     
     /// <summary>
     /// Interface to help with query building DSL
     /// </summary>
-    public interface ISqlSelect<TArgs, TResult>
+    public interface ISqlSelect<TArgs, TResult> : IFilter<TArgs, TResult>
     {
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table]
@@ -58,10 +51,5 @@ namespace SqlDsl.Dsl
         /// Set the [Table] in SELECT FROM [Table] to be TResult.
         /// </summary>
         IQuery<TArgs, TResult> From(string tableName);
-        
-        /// <summary>
-        /// Set the [Table] in SELECT FROM [Table] to be TResult. Uses the class name of TResult as the sql table name
-        /// </summary>
-        IQuery<TArgs, TResult> From();
     }
 }

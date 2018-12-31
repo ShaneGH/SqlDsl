@@ -524,7 +524,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<Person>()
-                .From()
                 .Map(p => p.Id + 1 == Data.People.John.Id + 1)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -585,7 +584,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<Person>()
-                .From()
                 .Where(p => p.Id + 1 == Data.People.John.Id + 1)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -734,7 +732,6 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             var actual = await Sql.Query.Sqlite<Person>()
-                .From()
                 .Where(where)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -824,7 +821,6 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             var actual = await Sql.Query.Sqlite<Person>()
-                .From()
                 .OrderBy(ob)
                 .ToListAsync(Executor, logger: Logger);
 

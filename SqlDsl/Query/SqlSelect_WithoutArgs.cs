@@ -46,9 +46,6 @@ namespace SqlDsl.Query
         IQuery<TResult> ISqlSelect<TResult>.From(string tableName) =>
             (SqlSelect<TResult>)base.From(tableName);
 
-        IQuery<TResult> ISqlSelect<TResult>.From() =>
-            (SqlSelect<TResult>)base.From();
-
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
             new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(tableName, joinProperty));
 

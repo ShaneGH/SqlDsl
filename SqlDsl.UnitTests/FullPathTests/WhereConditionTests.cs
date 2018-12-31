@@ -21,7 +21,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<Person>()
-                .From()
                 .Where(x => x.Id == Data.People.Mary.Id)
                 .ToListAsync(Executor, logger: Logger);
 
