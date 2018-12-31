@@ -44,20 +44,20 @@ namespace SqlDsl.Mapper
 
         public static (string param, string aggregatedToTable) AddRoot(this StringBasedElement value, BuildMapState state) => AddRoot(state)(value);
 
-        public static IAccumulator<ColumnBasedElement> Convert(this IAccumulator<StringBasedElement> acc, BuildMapState state)
+        public static IAccumulator<SelectColumnBasedElement> Convert(this IAccumulator<StringBasedElement> acc, BuildMapState state)
         {
             return acc.MapParam(Map);
 
-            ColumnBasedElement Map(StringBasedElement el)
+            SelectColumnBasedElement Map(StringBasedElement el)
             {
                 var (fullName, overrideTable) = el.AddRoot(state);
-                if (fullName.StartsWith("@")) return new ColumnBasedElement(fullName, el.Function);
+                if (fullName.StartsWith("@")) return new SelectColumnBasedElement(fullName, el.Function);
 
                 var col = state.WrappedSqlStatement.SelectColumns[fullName];
                 var tab = state.WrappedSqlStatement.Tables[overrideTable ?? GetTableName(fullName)];
                 var rid = tab.RowNumberColumn;
 
-                return new ColumnBasedElement(col, rid, el.Function);
+                return new SelectColumnBasedElement(col, rid, el.Function);
             }
         }
 
@@ -83,9 +83,9 @@ namespace SqlDsl.Mapper
                     return BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias, wrappedQueryAlias == null);
                 case Accumulators<StringBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
-                case Accumulator<ColumnBasedElement> a:
+                case Accumulator<SelectColumnBasedElement> a:
                     return BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
-                case Accumulators<ColumnBasedElement> a:
+                case Accumulators<SelectColumnBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
                 default:
                     throw new NotSupportedException($"IAccumulator<{typeof(TElement)}>");
@@ -182,20 +182,20 @@ namespace SqlDsl.Mapper
             }
         }
 
-        private static string BuildFromString(Accumulator<ColumnBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        private static string BuildFromString(Accumulator<SelectColumnBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
         {
             return acc.Next.Aggregate(
                 BuildColumn(acc.First),
                 Aggregate);
 
-            string Aggregate(string x, (ColumnBasedElement param, CombinationType type) y)
+            string Aggregate(string x, (SelectColumnBasedElement param, CombinationType type) y)
             {
                 var yValue = BuildColumn(y.param);
 
                 return Combine(sqlFragmentBuilder, x, yValue, y.type);
             }
 
-            string BuildColumn(ColumnBasedElement el)
+            string BuildColumn(SelectColumnBasedElement el)
             {
                 var col = sqlFragmentBuilder.BuildSelectColumn(
                     el.IsParameter ? null : wrappedQueryAlias, 

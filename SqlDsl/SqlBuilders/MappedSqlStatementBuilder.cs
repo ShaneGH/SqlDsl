@@ -23,8 +23,8 @@ namespace SqlDsl.SqlBuilders
         readonly string InnerQueryAlias;
         readonly ISqlSyntax SqlSyntax;
 
-        IEnumerable<ColumnBasedElement> AllItemsInAllProperties => SelectProperties.SelectMany(cs => cs.Value.FromParams.GetEnumerable1());
-        IEnumerable<ColumnBasedElement> AllNonParametersInAllProperties => AllItemsInAllProperties.Where(p => !p.IsParameter);
+        IEnumerable<SelectColumnBasedElement> AllItemsInAllProperties => SelectProperties.SelectMany(cs => cs.Value.FromParams.GetEnumerable1());
+        IEnumerable<SelectColumnBasedElement> AllNonParametersInAllProperties => AllItemsInAllProperties.Where(p => !p.IsParameter);
 
         public MappedSqlStatementBuilder(
             BuildMapState state, 

@@ -3,7 +3,7 @@ using SqlDsl.SqlBuilders;
 
 namespace SqlDsl.Mapper
 {
-    struct ColumnBasedElement
+    struct SelectColumnBasedElement
     {
         public bool IsParameter => _ParameterName != null;
         readonly string _ParameterName;
@@ -19,7 +19,7 @@ namespace SqlDsl.Mapper
         /// </summary>
         public bool ColumnIsAggregatedToDifferentTable => Column.Table != RowIdColumn.Table;
 
-        public ColumnBasedElement(ISelectColumn column, ISelectColumn rowIdColumn, string function)
+        public SelectColumnBasedElement(ISelectColumn column, ISelectColumn rowIdColumn, string function)
         {
             _Column = column ?? throw new ArgumentNullException(nameof(column));
             _RowIdColumn = rowIdColumn ?? throw new ArgumentNullException(nameof(rowIdColumn));
@@ -28,7 +28,7 @@ namespace SqlDsl.Mapper
             _ParameterName = null;
         }
 
-        public ColumnBasedElement(string parameterName, string function)
+        public SelectColumnBasedElement(string parameterName, string function)
         {
             _ParameterName = parameterName ?? throw new ArgumentNullException(nameof(parameterName));
             Function = function;

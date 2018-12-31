@@ -70,9 +70,9 @@ namespace SqlDsl.Mapper
         }
     }
     
-    class QueryElementBasedMappedProperty : MappedProperty<ColumnBasedElement>
+    class QueryElementBasedMappedProperty : MappedProperty<SelectColumnBasedElement>
     {
-        public QueryElementBasedMappedProperty(IAccumulator<ColumnBasedElement> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+        public QueryElementBasedMappedProperty(IAccumulator<SelectColumnBasedElement> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
             : base(fromParams, to, mappedPropertyType, constructorArgs)
         {
         }

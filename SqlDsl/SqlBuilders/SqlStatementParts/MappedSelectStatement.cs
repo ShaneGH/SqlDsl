@@ -155,7 +155,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             IsAggregated = isAggregated;
         }
 
-        static bool IsAggregatedColumn(IAccumulator<ColumnBasedElement> prop)
+        static bool IsAggregatedColumn(IAccumulator<SelectColumnBasedElement> prop)
         {
             return prop.GetEnumerable1().All(p => p.IsParameter || p.ColumnIsAggregatedToDifferentTable);
         }
@@ -169,7 +169,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                 .FirstOrDefault(), null);
         }
 
-        static readonly Func<ColumnBasedElement, ISelectColumn> GetColumn = x => x.Column;
+        static readonly Func<SelectColumnBasedElement, ISelectColumn> GetColumn = x => x.Column;
 
         static readonly Func<ISelectColumn, IQueryTable> GetTable = x => x.Table;
 
