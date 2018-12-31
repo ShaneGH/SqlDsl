@@ -75,7 +75,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             var rids = ridsForEachColumn
                 .Select(x => x.Item2)
                 .RemoveNulls()
-                .Concat(tables.Where(t => !t.TableResultsAreAggregated).Select(t => t.From.RowNumberColumn))
+                .Concat(tables
+                    .Where(t => !t.TableResultsAreAggregated)
+                    .Select(t => t.From.RowNumberColumn))
                 .Prepend(primaryTableRowId)
                 .Distinct();
 

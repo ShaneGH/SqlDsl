@@ -14,10 +14,10 @@ namespace SqlDsl.Mapper
         {
         }
         
-        public StringBasedMappedProperty(ParameterExpression fromParamRoot, string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null)
+        public StringBasedMappedProperty(ParameterExpression fromParamRoot, string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null, string aggregatedToTable = null)
             : this (new Accumulator<StringBasedElement>(
                 new Accumulator<StringBasedElement, CombinationType>(
-                    new StringBasedElement(fromParamRoot, from, null, null))), to, mappedPropertyType, constructorArgs)
+                    new StringBasedElement(fromParamRoot, from, aggregatedToTable, null))), to, mappedPropertyType, constructorArgs)
         {
         }
 

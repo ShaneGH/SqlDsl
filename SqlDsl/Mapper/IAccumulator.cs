@@ -53,12 +53,7 @@ namespace SqlDsl.Mapper
             {
                 var (fullName, overrideTable) = el.AddRoot(state);
                 if (fullName.StartsWith("@"))
-                {
-                    if (primaryTable == null)
-                        primaryTable = state.WrappedSqlStatement.Tables[state.PrimarySelectTable];
-
-                    return new SelectColumnBasedElement(fullName, primaryTable.RowNumberColumn, el.Function, false);
-                }
+                    return MapParameter(el, fullName, overrideTable);
 
                 var tableName = GetTableName(fullName);
                 var col = state.WrappedSqlStatement.SelectColumns[fullName];
@@ -66,6 +61,24 @@ namespace SqlDsl.Mapper
                 var rid = tab.RowNumberColumn;
 
                 return new SelectColumnBasedElement(col, rid, el.Function, overrideTable != null && overrideTable != tableName);
+            }
+
+            SelectColumnBasedElement MapParameter(StringBasedElement el, string fullName, string overrideTable)
+            {
+                IQueryTable aggregatedToTable;
+                if (overrideTable != null)
+                {
+                    aggregatedToTable = state.WrappedSqlStatement.Tables[overrideTable];
+                }
+                else
+                {
+                    if (primaryTable == null)
+                        primaryTable = state.WrappedSqlStatement.Tables[state.PrimarySelectTable];
+
+                    aggregatedToTable = primaryTable;
+                }
+
+                return new SelectColumnBasedElement(fullName, aggregatedToTable.RowNumberColumn, el.Function, false);
             }
         }
 
