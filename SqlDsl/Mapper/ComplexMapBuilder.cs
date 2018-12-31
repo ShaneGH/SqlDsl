@@ -37,7 +37,7 @@ namespace SqlDsl.Mapper
                                 typeof(object)))
                         .Compile()();
 
-                var paramName = state.Parameters.AddParam(result);
+                var paramName = state.Parameters.AddParam(result, expr.Type);
 
                 return (
                     new StringBasedMappedProperty(null, paramName, toPrefix, expr.Type).ToEnumerable(),

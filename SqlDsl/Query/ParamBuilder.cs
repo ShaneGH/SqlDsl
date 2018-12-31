@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.RegularExpressions;
+using SqlDsl.SqlBuilders;
 
 namespace SqlDsl.Query
 {
@@ -11,27 +13,36 @@ namespace SqlDsl.Query
     /// </summary>
     public class ParamBuilder
     {
-        private readonly IList<object> Params;
+        static readonly Regex ParamNumberRegex = new Regex(@"^@p(\d+)((" + Regex.Escape(SqlStatementConstants.ParamArrayFlag) + ")?)$");
+        readonly IList<(object, Type)> Params = new List<(object, Type)>();
 
-        public IEnumerable<object> Parameters => Params.Skip(0);
+        public IEnumerable<object> Parameters => Params.Select(p => p.Item1);
 
-        public ParamBuilder(IList<object> param)
-        {
-            Params = param;
-        }
-        
-        public ParamBuilder()
-            : this(new List<object>())
-        {
-        }
-
-        public string AddParam(object value)
+        public string AddParam(object value, Type paramType)
         {
             lock (Params)
             {
-                Params.Add(value);
+                Params.Add((value, paramType));
                 return $"@p{Params.Count - 1}";
             }
+        }
+
+        static int GetParameterIndex(string parameterName)
+        {
+            var match = ParamNumberRegex.Match(parameterName);
+            if (!match.Success)
+                throw new InvalidOperationException($"Could not find parameter {parameterName}");
+
+            return int.Parse(match.Groups[1].Captures[0].Value);
+        }
+
+        public Type GetParameterType(string parameterName)
+        {
+            var i = GetParameterIndex(parameterName);
+            if (Params.Count <= i)
+                throw new InvalidOperationException($"Could not find type for parameter {parameterName}");
+
+            return Params[i].Item2;
         }
     }
 }

@@ -28,14 +28,13 @@ namespace SqlDsl.Mapper
             ILogger logger)
         {
             var (wrappedBuilder, parameters) = query.ToSqlStatement();
-            var mutableParameters = new ParamBuilder(parameters.ToList());
             var wrappedStatement = new SqlStatement(wrappedBuilder);
 
             if (query.PrimaryTableMember == null)
                 throw new InvalidOperationException("The query must have at least one select table.");
 
             var argsParam = mapper.Parameters.Count > 1 ? mapper.Parameters[1] : null;
-            var state = new BuildMapState(query.PrimaryTableMember.Value.name, mutableParameters, mapper.Parameters[0], argsParam, wrappedStatement, query.SqlSyntax);
+            var state = new BuildMapState(query.PrimaryTableMember.Value.name, parameters, mapper.Parameters[0], argsParam, wrappedStatement, query.SqlSyntax);
             var (resultType, properties, tables) = MapBuilder.BuildMapFromRoot(state, mapper.Body);
 
             switch (resultType)
@@ -45,7 +44,7 @@ namespace SqlDsl.Mapper
                     properties = properties.Enumerate();
                     var statement = new MappedSelectStatement(properties, tables, wrappedStatement.Tables.First().RowNumberColumn);
                     var builder = new MappedSqlStatementBuilder(state, properties, statement, wrappedBuilder, sqlSyntax);
-                    return builder.Compile<TArgs, TMapped>(statement, mutableParameters.Parameters, sqlSyntax, QueryParseType.ORM);
+                    return builder.Compile<TArgs, TMapped>(statement, parameters.Parameters, sqlSyntax, QueryParseType.ORM);
                 }
                 case MapBuilder.MappingType.SimpleProp:
                 {
@@ -64,7 +63,7 @@ namespace SqlDsl.Mapper
                     var statement = new MappedSelectStatement(properties, tables, wrappedStatement.Tables.First().RowNumberColumn);
                     var builder = new MappedSqlStatementBuilder(state, properties, statement, wrappedBuilder, sqlSyntax);
                     return builder
-                        .CompileSimple<TArgs, TMapped>(statement, mutableParameters.Parameters, sqlSyntax, SqlStatementConstants.SingleColumnAlias);
+                        .CompileSimple<TArgs, TMapped>(statement, parameters.Parameters, sqlSyntax, SqlStatementConstants.SingleColumnAlias);
                 }
                 case MapBuilder.MappingType.SingleComplexProp:
                 

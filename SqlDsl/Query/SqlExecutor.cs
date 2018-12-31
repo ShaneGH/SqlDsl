@@ -80,7 +80,7 @@ namespace SqlDsl.Query
             var timer = new Timer(true);
             var (builder, paramaters) = ToSqlStatement();
             var compiled = builder
-                .Compile<TArgs, TResult>(new SqlStatement(builder), paramaters, builder.SqlSyntax, QueryParseType.DoNotDuplicate);
+                .Compile<TArgs, TResult>(new SqlStatement(builder), paramaters.Parameters, builder.SqlSyntax, QueryParseType.DoNotDuplicate);
 
             if (logger.CanLogInfo(LogMessages.CompiledQuery))
                 logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);
@@ -94,7 +94,7 @@ namespace SqlDsl.Query
         /// Create a populated sql builder along with any constants specified in the query
         /// </summary>
         /// <param name="filterSelectCols">If specified, only add the given columns to the SELECT statement</param>
-        public (SqlStatementBuilder builder, IEnumerable<object> paramaters) ToSqlStatement()
+        public (SqlStatementBuilder builder, ParamBuilder paramaters) ToSqlStatement()
         {
             var (primaryTableMemberName, primaryTableMemberType) = 
                 PrimaryTableMember ?? 
@@ -140,7 +140,7 @@ namespace SqlDsl.Query
             foreach (var (queryRoot, args, orderExpression, direction) in Ordering)
                 builder.AddOrderBy(queryRoot, args, orderExpression, direction, param);
 
-            return (builder, param.Parameters);
+            return (builder, param);
         }
 
         /// <summary>
