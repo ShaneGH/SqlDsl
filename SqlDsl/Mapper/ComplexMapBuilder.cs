@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
@@ -84,6 +85,9 @@ namespace SqlDsl.Mapper
 
                 case ExpressionType.MemberInit:
                     return BuildMapForMemberInit(state, expr as MemberInitExpression, toPrefix).AddT(false);
+
+                case ExpressionType.ArrayLength:
+                    return BuildMapForCount(state, (expr as UnaryExpression).Operand, toPrefix).AddT(false);
 
                 case ExpressionType.NewArrayInit:
                 case ExpressionType.NewArrayBounds:
@@ -250,8 +254,21 @@ namespace SqlDsl.Mapper
             return state.WrappedSqlStatement.Tables.TryGetTable(param) != null;
         }
 
+        static readonly HashSet<(Type, string)> CountProperties = new HashSet<(Type, string)>
+        {
+            (typeof(HashSet<>), "Count"),
+            (typeof(List<>), "Count"),
+            (typeof(IList<>), "Count"),
+            (typeof(ICollection<>), "Count"),
+            (typeof(IReadOnlyCollection<>), "Count")
+        };
+
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool isConstant) BuildMapForMemberAccess(BuildMapState state, MemberExpression expr, MapType nextMapType, string toPrefix = null)
         {
+            var (isCount, enumerable) = ReflectionUtils.IsCount(expr);
+            if (isCount)
+                return BuildMapForCount(state, enumerable, toPrefix).AddT(false);
+
             if (MemberAccessExpressionNeedsExpansion(state, expr, nextMapType))
             {
                 var rewritten = ReflectionUtils.GetIEnumerableType(expr.Type) == null
