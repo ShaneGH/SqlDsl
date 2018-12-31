@@ -98,6 +98,11 @@ namespace SqlDsl.SqlBuilders
         IQueryTable Table { get; }
         
         /// <summary>
+        /// The row which acts as a primary key for this column
+        /// </summary>
+        ISelectColumn RowNumberColumn { get; }
+        
+        /// <summary>
         /// The alias of the column
         /// </summary>
         string Alias { get; }

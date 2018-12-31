@@ -32,6 +32,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// <inheritdoc />
         public bool IsAggregated => false;
 
+        /// <inheritdoc />
+        public ISelectColumn RowNumberColumn => Table?.RowNumberColumn;
+
         public SelectColumn(
             (string table, string column, string aggregatedToTable)[] referencesColumns, 
             string alias, 

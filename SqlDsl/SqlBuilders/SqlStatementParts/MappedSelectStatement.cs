@@ -105,17 +105,26 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
     class SqlSelectColumn : ISelectColumn
     {
+        /// <inheritdoc />
         public IQueryTable Table { get; }
 
+        /// <inheritdoc />
         public string Alias { get; }
 
+        /// <inheritdoc />
         public bool IsRowNumber  { get; }
 
+        /// <inheritdoc />
         public Type DataType { get; }
 
+        /// <inheritdoc />
         public ConstructorInfo[] ArgConstructors { get; }
 
+        /// <inheritdoc />
         public bool IsAggregated { get; }
+
+        /// <inheritdoc />
+        public ISelectColumn RowNumberColumn { get; }
 
         public SqlSelectColumn(QueryElementBasedMappedProperty prop)
             : this(
@@ -131,7 +140,12 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         {
         }
 
-        public SqlSelectColumn(IQueryTable table, string alias, bool isRowNumber, bool isAggregated, Type dataType, ConstructorInfo[] argConstructors)
+        public SqlSelectColumn((IQueryTable table, ISelectColumn rowNumberColumn) tableAndColumn, string alias, bool isRowNumber, bool isAggregated, Type dataType, ConstructorInfo[] argConstructors)
+            : this(tableAndColumn.table, tableAndColumn.rowNumberColumn, alias, isRowNumber, isAggregated, dataType, argConstructors)
+        {
+        }
+
+        public SqlSelectColumn(IQueryTable table, ISelectColumn rowNumberColumn, string alias, bool isRowNumber, bool isAggregated, Type dataType, ConstructorInfo[] argConstructors)
         {
             Alias = alias ?? throw new ArgumentNullException(nameof(alias));
             ArgConstructors = argConstructors ?? throw new ArgumentNullException(nameof(argConstructors));
@@ -146,13 +160,13 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             return prop.GetEnumerable1().All(p => p.IsParameter || p.ColumnIsAggregatedToDifferentTable);
         }
 
-        static IQueryTable TryGetQueryTable(IEnumerable<ISelectColumn> columns)
+        static (IQueryTable, ISelectColumn) TryGetQueryTable(IEnumerable<ISelectColumn> columns)
         {
-            return columns
+            return (columns
                 .Select(GetTable)
                 .RemoveNulls()
                 .OrderByDescending(Identity, OrderTablesByPrecedence)
-                .FirstOrDefault();
+                .FirstOrDefault(), null);
         }
 
         static readonly Func<ColumnBasedElement, ISelectColumn> GetColumn = x => x.Column;
