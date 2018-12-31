@@ -46,18 +46,26 @@ namespace SqlDsl.Mapper
 
         public static IAccumulator<SelectColumnBasedElement> Convert(this IAccumulator<StringBasedElement> acc, BuildMapState state)
         {
+            IQueryTable primaryTable = null;
             return acc.MapParam(Map);
 
             SelectColumnBasedElement Map(StringBasedElement el)
             {
                 var (fullName, overrideTable) = el.AddRoot(state);
-                if (fullName.StartsWith("@")) return new SelectColumnBasedElement(fullName, el.Function);
+                if (fullName.StartsWith("@"))
+                {
+                    if (primaryTable == null)
+                        primaryTable = state.WrappedSqlStatement.Tables[state.PrimarySelectTable];
 
+                    return new SelectColumnBasedElement(fullName, primaryTable.RowNumberColumn, el.Function, false);
+                }
+
+                var tableName = GetTableName(fullName);
                 var col = state.WrappedSqlStatement.SelectColumns[fullName];
-                var tab = state.WrappedSqlStatement.Tables[overrideTable ?? GetTableName(fullName)];
+                var tab = state.WrappedSqlStatement.Tables[overrideTable ?? tableName];
                 var rid = tab.RowNumberColumn;
 
-                return new SelectColumnBasedElement(col, rid, el.Function);
+                return new SelectColumnBasedElement(col, rid, el.Function, overrideTable != null && overrideTable != tableName);
             }
         }
 

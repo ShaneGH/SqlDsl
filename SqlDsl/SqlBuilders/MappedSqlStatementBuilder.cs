@@ -50,7 +50,6 @@ namespace SqlDsl.SqlBuilders
             // if a table is used as part of a mapping, but none of it's fields are used, we might need
             // to tell the inner query builder
             var usedColumns = GetUsedColumns().Select(t => t.Alias);
-            var usedTables = GetUsedTables().Select(t => t.Alias);
             var (querySetupSql, beforeWhereSql, whereSql, afterWhereSql) = InnerSqlString.ToSqlString(usedColumns);
 
             beforeWhereSql = $"SELECT {GetSelectColumns(selectColumnAliases).JoinString(",")}\nFROM ({beforeWhereSql}";
@@ -82,14 +81,6 @@ namespace SqlDsl.SqlBuilders
                 el.To);
         }
 
-        IEnumerable<IQueryTable> GetUsedTables()
-        {
-            return AllNonParametersInAllProperties
-                .SelectMany(c => new [] { c.Column.Table, c.RowIdColumn.Table })
-                .RemoveNulls()
-                .Distinct();
-        }
-
         IEnumerable<ISelectColumn> GetUsedColumns()
         {
             return AllNonParametersInAllProperties
@@ -101,11 +92,11 @@ namespace SqlDsl.SqlBuilders
 
         string BuildGroupByStatement(string prefix)
         {
-            if (!AllNonParametersInAllProperties.Any(x => x.ColumnIsAggregatedToDifferentTable))
+            if (!AllNonParametersInAllProperties.Any(x => x.IsAggregated))
                 return "";
 
             var groupByCols = AllNonParametersInAllProperties
-                .Where(c => !c.ColumnIsAggregatedToDifferentTable)
+                .Where(c => !c.IsAggregated)
                 .Select(c => c.Column)
                 // TODO: what if the column is grouped by also
                 .Concat(Statement.SelectColumns.Where(c => c.IsRowNumber));

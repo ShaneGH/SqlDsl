@@ -13,24 +13,22 @@ namespace SqlDsl.SqlBuilders
         public static IEnumerable<ISelectColumn> GetRowNumberColumns(this ISqlSelectStatement sqlStatement, string columnAlias)
         {
             // if the piece is a parameter, Table will be null
-            var col = sqlStatement.SelectColumns[columnAlias].Table?.RowNumberColumn;
+            var col = sqlStatement.SelectColumns[columnAlias].RowNumberColumn;
             return col == null 
                 ? Enumerable.Empty<ISelectColumn>() 
-                : col.Table.GetRowNumberColumns();
+                : col.IsRowNumberForTable.GetRowNumberColumns();
         }
         
-        public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlSelectStatement sqlStatement, string columnAlias, bool columnIsAggregate)
+        public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlSelectStatement sqlStatement, string columnAlias)
         {
             var result = sqlStatement
                 .GetRowNumberColumns(columnAlias)
                 .Select(c => sqlStatement.SelectColumns.IndexOf(c));
 
-            return columnIsAggregate
-                ? FixAggregateRowNumberColumnIndexes(result, columnAlias)
-                : ValidateNonAggregateRowNumberColumnIndexes(result, columnAlias);
+            return RemoveTrailingMinusOnes(result, columnAlias);
         }
         
-        static IEnumerable<int>  FixAggregateRowNumberColumnIndexes(IEnumerable<int> result, string columnAlias)
+        static IEnumerable<int>  RemoveTrailingMinusOnes(IEnumerable<int> result, string columnAlias)
         {
             int i;
             var r = result.ToArray();
@@ -47,19 +45,6 @@ namespace SqlDsl.SqlBuilders
             }
 
             return i == r.Length - 1 ? r : r.Take(i + 1);
-        }
-
-        static IEnumerable<int>  ValidateNonAggregateRowNumberColumnIndexes(IEnumerable<int> result, string columnAlias)
-        {
-            return result.Select(Validate);
-
-            int Validate(int input)
-            {
-                if (input == -1)
-                    throw new InvalidOperationException($"Could not find row id column for column: {columnAlias}");
-
-                return input;
-            }
         }
         
         public static IEnumerable<ISelectColumn> GetRowNumberColumns(this IQueryTable table)

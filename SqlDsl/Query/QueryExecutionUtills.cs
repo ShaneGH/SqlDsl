@@ -50,14 +50,26 @@ namespace SqlDsl.Query
             var graph = new RootObjectPropertyGraph(
                 typeof(TResult), 
                 statement.SelectColumns.IndexOf(selectColumn),
-                // if Table == null, the selectColumn is a parameter
+                // if RowNumberColumn == null, the selectColumn is a parameter
                 // in this case it is indexed by the first column (rid of primary table)
-                selectColumn.Table == null ? 0 : statement.SelectColumns.IndexOf(selectColumn.Table.RowNumberColumn),
+                selectColumn.RowNumberColumn == null 
+                    ? 0 
+                    : EnsureNotMinusOne(
+                        statement.SelectColumns.IndexOf(selectColumn.RowNumberColumn), 
+                        selectColumn.RowNumberColumn),
                 selectColumn.DataType,
                 ReflectionUtils.GetIEnumerableType(selectColumn.DataType) != null);
 
             return new CompiledQuery<TArgs, TResult>(sqlBuilder.ToSql(), parameters.ToArray(), statement.SelectColumns.Select(Alias).ToArray(), graph, sqlSyntax);
         }
+
+        static int EnsureNotMinusOne(int input, ISelectColumn col)
+        {
+            if (input == -1)
+                throw new InvalidOperationException($"Cannot find index for column: {col.Alias}.");
+
+            return input;
+        }    
 
         static string Alias(ISelectColumn c) => c.Alias;
         
@@ -81,11 +93,11 @@ namespace SqlDsl.Query
 
             (string name, int[] rowIdColumnMap) GetMappedTable((string columnGroupPrefix, ISelectColumn rowNumberColumn) map) => (
                 map.columnGroupPrefix,
-                sqlBuilder.GetRowNumberColumnIndexes(map.rowNumberColumn.Alias, false).ToArray());
+                sqlBuilder.GetRowNumberColumnIndexes(map.rowNumberColumn.Alias).ToArray());
 
             (string name, int[] rowIdColumnMap, Type dataCellType, ConstructorInfo[] isConstructorArg) GetMappedColumn(ISelectColumn column) => (
                 column.Alias,
-                sqlBuilder.GetRowNumberColumnIndexes(column.Alias, column.IsAggregated).ToArray(),
+                sqlBuilder.GetRowNumberColumnIndexes(column.Alias).ToArray(),
                 column.DataType,
                 column.ArgConstructors);
         }

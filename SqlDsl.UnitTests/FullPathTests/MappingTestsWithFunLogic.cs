@@ -634,6 +634,28 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(new [] {Data.Classes.Tennis.Id * 2}, data[1].classes);
         }
 
+        [Test]
+        public async Task MapWithAddition_AcrossBounds()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery<object>()
+                .Map(p => new
+                {
+                    name = p.ThePerson.Name,
+                    classes= p.TheClasses.Select(c => c.Id + p.ThePerson.Id)
+                })
+                .ToListAsync(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count);
+            Assert.AreEqual(Data.People.John.Name, data[0].name);
+            CollectionAssert.AreEqual(new[] { 4, 5 }, data[0].classes);
+            
+            Assert.AreEqual(Data.People.Mary.Name, data[1].name);
+            CollectionAssert.AreEqual(new[] { 5 }, data[1].classes);
+        }
+
         void Map_SimpleBinaryConditionWorker<TOutput>(ExpressionType type, object equality, object result)
         {
             // arrange

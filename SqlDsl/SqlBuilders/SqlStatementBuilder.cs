@@ -368,7 +368,7 @@ namespace SqlDsl.SqlBuilders
                 // TODO: inefficient to create disposable version of SqlStatement here
                 var stat = new SqlStatement(this);
                 var sca = selectColumnAliases
-                    .Select(a => stat.SelectColumns[a].Table)
+                    .Select(a => stat.SelectColumns[a].RowNumberColumn.IsRowNumberForTable)
                     .SelectMany(GetTableChain)
                     .Select(t => t.Alias)
                     .ToHashSet();

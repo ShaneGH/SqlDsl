@@ -71,6 +71,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         ISelectColumn GetRowNumberColumn()
         {
+            if (ParentStatement.SelectColumns == null)
+                throw new InvalidOperationException("Column accessed before ParentStatment initialized.");
+
             var alias = Alias == SqlStatementConstants.RootObjectAlias
                 ? SqlStatementConstants.RowIdName
                 : $"{Alias}.{SqlStatementConstants.RowIdName}";

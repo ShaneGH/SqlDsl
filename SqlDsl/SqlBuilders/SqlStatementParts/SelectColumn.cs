@@ -16,9 +16,12 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     {
         /// <inheritdoc />
         public string Alias { get; }
+        readonly (string table, string column, string aggregatedToTable)[] ReferencesColumns;
+        readonly IQueryTables Tables;
+        IQueryTable _Table;
 
         /// <inheritdoc />
-        public bool IsRowNumber { get; }
+        public IQueryTable IsRowNumberForTable => Table.RowNumberColumn == this ? Table : null;
 
         /// <inheritdoc />
         public Type DataType { get; }
@@ -27,13 +30,12 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public ConstructorInfo[] ArgConstructors { get; }
 
         /// <inheritdoc />
-        public IQueryTable Table { get; }
+        public ISelectColumn RowNumberColumn => Table.RowNumberColumn;
 
         /// <inheritdoc />
-        public bool IsAggregated => false;
+        public bool IsRowNumber => IsRowNumberForTable != null;
 
-        /// <inheritdoc />
-        public ISelectColumn RowNumberColumn => Table?.RowNumberColumn;
+        IQueryTable Table => _Table ?? (_Table = GetRowIdSelectTable());
 
         public SelectColumn(
             (string table, string column, string aggregatedToTable)[] referencesColumns, 
@@ -44,14 +46,19 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             IQueryTables tables)
         {
             Alias = alias;
-            IsRowNumber = isRowNumber;
             DataType = dataType;
             ArgConstructors = argConstructors;
+            Tables = tables ?? throw new ArgumentNullException(nameof(tables));
+            ReferencesColumns = referencesColumns ?? throw new ArgumentNullException(nameof(referencesColumns));
+        }
 
-            Table = referencesColumns
+        IQueryTable GetRowIdSelectTable()
+        {
+            return ReferencesColumns
                 .Where(t => t.table != null)
-                .Select(t => tables[t.table])
-                .FirstOrDefault();
+                .Select(t => Tables[t.table])
+                .FirstOrDefault() ??
+                throw new InvalidOperationException($"Cannot find table for column {Alias}");
         }
     }
 }

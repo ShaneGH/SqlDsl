@@ -91,12 +91,7 @@ namespace SqlDsl.SqlBuilders
     /// A column in the SELECT statement
     /// </summary>
     public interface ISelectColumn
-    {
-        /// <summary>
-        /// The table which this column belongs to
-        /// </summary>
-        IQueryTable Table { get; }
-        
+    {        
         /// <summary>
         /// The row which acts as a primary key for this column
         /// </summary>
@@ -108,14 +103,14 @@ namespace SqlDsl.SqlBuilders
         string Alias { get; }
         
         /// <summary>
+        /// If not null, this column is a row number for the given table
+        /// </summary>
+        IQueryTable IsRowNumberForTable { get; }
+        
+        /// <summary>
         /// If true, this column is a row number
         /// </summary>
         bool IsRowNumber { get; }
-        
-        /// <summary>
-        /// If true, this column is is aggregated by a function (e.g. COUNT())
-        /// </summary>
-        bool IsAggregated { get; }
 
         /// <summary>
         /// The data type of the cell

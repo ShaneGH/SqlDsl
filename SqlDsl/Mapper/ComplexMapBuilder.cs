@@ -438,7 +438,9 @@ namespace SqlDsl.Mapper
                     .Select(m => new StringBasedMappedProperty(
                         m.FromParams.MapParam(x => new StringBasedElement(
                             x.ParamRoot ?? outerMapProperties[0].FromParams.First.ParamRoot, 
-                            x.ParamRoot == null ? CombineStrings(outerMapProperties[0].FromParams.First.Param, x.Param) : x.Param,
+                            x.ParamRoot != null || (x.Param?.StartsWith("@") ?? false)
+                                ? x.Param
+                                : CombineStrings(outerMapProperties[0].FromParams.First.Param, x.Param),
                             x.AggregatedToTable,
                             x.Function)),
                         CombineStrings(outerMapProperties[0].To, m.To), 

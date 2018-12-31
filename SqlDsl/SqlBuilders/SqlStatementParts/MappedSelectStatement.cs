@@ -68,23 +68,22 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
         static IEnumerable<ISelectColumn> BuildColumns(IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables, ISelectColumn primaryTableRowId)
         {
-            var rids = properties
-                // get all PK columns from all columns from all select parts
-                .SelectMany(p => p.FromParams.GetEnumerable1())
-                .Where(p => !p.IsParameter)
-                .Select(p => p.RowIdColumn)
-                // concat with all tables which might not have explicit selects
-                // (e.g. tables which are mapped like: q.Tab.Select(x => 5)
+            var ridsForEachColumn = properties
+                .Select(TryCombineWithRowNumberColumn)
+                .ToArray();
+
+            var rids = ridsForEachColumn
+                .Select(x => x.Item2)
+                .RemoveNulls()
                 .Concat(tables.Where(t => !t.TableResultsAreAggregated).Select(t => t.From.RowNumberColumn))
-                // ensure that the primaryTableRowId comes first
                 .Prepend(primaryTableRowId)
                 .Distinct();
 
             foreach (var rid in FillOutRIDSelectColumns(rids))
                 yield return rid;
                 
-            foreach (var prop in properties)
-                yield return new SqlSelectColumn(prop);
+            foreach (var prop in ridsForEachColumn)
+                yield return new SqlSelectColumn(prop.Item1, prop.Item2 ?? primaryTableRowId);
         }
 
         static IEnumerable<ISelectColumn> FillOutRIDSelectColumns(IEnumerable<ISelectColumn> cols)
@@ -95,87 +94,77 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
             void AddParentRowIdIfAvailable(ISelectColumn col)
             {
-                if (col.Table?.JoinedFrom != null)
-                    cs.Add(col.Table.JoinedFrom.RowNumberColumn);
+                if (col?.IsRowNumberForTable?.JoinedFrom != null)
+                    cs.Add(col.IsRowNumberForTable.JoinedFrom.RowNumberColumn);
             }
 
             return cs.Distinct();
         }
-    }
 
-    class SqlSelectColumn : ISelectColumn
-    {
-        /// <inheritdoc />
-        public IQueryTable Table { get; }
-
-        /// <inheritdoc />
-        public string Alias { get; }
-
-        /// <inheritdoc />
-        public bool IsRowNumber  { get; }
-
-        /// <inheritdoc />
-        public Type DataType { get; }
-
-        /// <inheritdoc />
-        public ConstructorInfo[] ArgConstructors { get; }
-
-        /// <inheritdoc />
-        public bool IsAggregated { get; }
-
-        /// <inheritdoc />
-        public ISelectColumn RowNumberColumn { get; }
-
-        public SqlSelectColumn(QueryElementBasedMappedProperty prop)
-            : this(
-                TryGetQueryTable(prop.FromParams
-                    .GetEnumerable1()
-                    .Where(p => !p.IsParameter)
-                    .Select(GetColumn)),
-                prop.To,
-                false,
-                IsAggregatedColumn(prop.FromParams),
-                prop.MappedPropertyType,
-                prop.PropertySegmentConstructors)
+        static readonly Func<QueryElementBasedMappedProperty, (QueryElementBasedMappedProperty, ISelectColumn)> TryCombineWithRowNumberColumn = singleSelectPart =>
         {
-        }
+            return (singleSelectPart, TryGetRowNumberColumn(singleSelectPart));
+        };
 
-        public SqlSelectColumn((IQueryTable table, ISelectColumn rowNumberColumn) tableAndColumn, string alias, bool isRowNumber, bool isAggregated, Type dataType, ConstructorInfo[] argConstructors)
-            : this(tableAndColumn.table, tableAndColumn.rowNumberColumn, alias, isRowNumber, isAggregated, dataType, argConstructors)
+        static readonly Func<QueryElementBasedMappedProperty, ISelectColumn> TryGetRowNumberColumn = singleSelectPart =>
         {
-        }
-
-        public SqlSelectColumn(IQueryTable table, ISelectColumn rowNumberColumn, string alias, bool isRowNumber, bool isAggregated, Type dataType, ConstructorInfo[] argConstructors)
-        {
-            Alias = alias ?? throw new ArgumentNullException(nameof(alias));
-            ArgConstructors = argConstructors ?? throw new ArgumentNullException(nameof(argConstructors));
-            DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
-            Table = table;
-            IsRowNumber = isRowNumber;
-            IsAggregated = isAggregated;
-        }
-
-        static bool IsAggregatedColumn(IAccumulator<SelectColumnBasedElement> prop)
-        {
-            return prop.GetEnumerable1().All(p => p.IsParameter || p.ColumnIsAggregatedToDifferentTable);
-        }
-
-        static (IQueryTable, ISelectColumn) TryGetQueryTable(IEnumerable<ISelectColumn> columns)
-        {
-            return (columns
-                .Select(GetTable)
+            return singleSelectPart.FromParams
+                .GetEnumerable1()
+                .Select(GetRowIdColumn)
+                .Select(TryGetTable)
                 .RemoveNulls()
                 .OrderByDescending(Identity, OrderTablesByPrecedence)
-                .FirstOrDefault(), null);
-        }
+                .Select(TryGetRowNumberColumnFromTable)
+                .FirstOrDefault();
+        };
 
-        static readonly Func<SelectColumnBasedElement, ISelectColumn> GetColumn = x => x.Column;
+        static readonly Func<SelectColumnBasedElement, ISelectColumn> GetRowIdColumn = x => x.RowIdColumn;
 
-        static readonly Func<ISelectColumn, IQueryTable> GetTable = x => x.Table;
+        static readonly Func<IQueryTable, ISelectColumn> TryGetRowNumberColumnFromTable = x => x.RowNumberColumn;
+
+        static readonly Func<ISelectColumn, IQueryTable> TryGetTable = x => x.IsRowNumberForTable;
 
         static readonly Func<IQueryTable, IQueryTable> Identity = x => x;
 
         static readonly IComparer<IQueryTable> OrderTablesByPrecedence = new TablePrecedenceOrderer();
+
+        class SqlSelectColumn : ISelectColumn
+        {
+            /// <inheritdoc />
+            public string Alias { get; }
+
+            /// <inheritdoc />
+            public Type DataType { get; }
+
+            /// <inheritdoc />
+            public ConstructorInfo[] ArgConstructors { get; }
+
+            /// <inheritdoc />
+            public ISelectColumn RowNumberColumn { get; }
+
+            /// <inheritdoc />
+            public IQueryTable IsRowNumberForTable => null;
+
+            /// <inheritdoc />
+            public bool IsRowNumber => false;
+
+            public SqlSelectColumn(QueryElementBasedMappedProperty prop, ISelectColumn rowIdSelectColumn)
+                : this(
+                    prop.To,
+                    prop.MappedPropertyType,
+                    prop.PropertySegmentConstructors,
+                    rowIdSelectColumn)
+            {
+            }
+
+            public SqlSelectColumn(string alias, Type dataType, ConstructorInfo[] argConstructors, ISelectColumn rowNumberColumn)
+            {
+                Alias = alias ?? throw new ArgumentNullException(nameof(alias));
+                ArgConstructors = argConstructors ?? throw new ArgumentNullException(nameof(argConstructors));
+                DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
+                RowNumberColumn = rowNumberColumn ?? throw new ArgumentNullException(nameof(rowNumberColumn));
+            }
+        }
 
         class TablePrecedenceOrderer : IComparer<IQueryTable>
         {
