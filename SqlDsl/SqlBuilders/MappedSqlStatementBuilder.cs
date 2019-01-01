@@ -104,9 +104,7 @@ namespace SqlDsl.SqlBuilders
 
             var output = new List<string>(16);
             foreach (var col in groupByCols)
-            {
                 output.Add(SqlSyntax.BuildSelectColumn(InnerQueryAlias, col.Alias));
-            }
 
             if (output.Count > 0)
                 prefix += "GROUP BY ";

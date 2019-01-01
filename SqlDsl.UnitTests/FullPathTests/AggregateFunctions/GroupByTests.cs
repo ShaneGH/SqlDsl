@@ -136,5 +136,115 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             Assert.AreEqual(Data.People.John.Name, data[0].person);
             Assert.AreEqual(new [] { new { tags = 2 }, new { tags = 1 } }, data[0].classes);
         }
+
+        [Test]
+        public void CountAndGroup_TwoAggregateFunctionsOnOneTable()
+        {
+            // arrange
+            // act
+            var result = FullyJoinedQuery<object>()
+                .Map(x => new
+                {
+                    name = x.ThePerson.Name,
+                    classesSum = x.TheClasses.Sum(y => y.Id),
+                    classesCount = x.TheClasses.Count
+                })
+                .ToList(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, result.Count);
+
+            var john = result[0];
+            Assert.AreEqual(Data.People.John.Name, john.name);
+            Assert.AreEqual(2, john.classesCount);
+            Assert.AreEqual(7, john.classesSum);
+
+            var mary = result[1];
+            Assert.AreEqual(Data.People.Mary.Name, mary.name);
+            Assert.AreEqual(1, mary.classesCount);
+            Assert.AreEqual(3, mary.classesSum);
+        }
+
+        [Test]
+        public void CountAndGroup_TwoAggregateFunctionsOnOneColumn()
+        {
+            // arrange
+            // act
+            var result = FullyJoinedQuery<object>()
+                .Map(x => new
+                {
+                    name = x.ThePerson.Name,
+                    classesAverage = x.TheClasses.Sum(y => y.Id) / x.TheClasses.Count
+                })
+                .ToList(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, result.Count);
+
+            var john = result[0];
+            Assert.AreEqual(Data.People.John.Name, john.name);
+            Assert.AreEqual(3, john.classesAverage);
+
+            var mary = result[1];
+            Assert.AreEqual(Data.People.Mary.Name, mary.name);
+            Assert.AreEqual(3, mary.classesAverage);
+        }
+
+        [Test]
+        [Ignore("TODO: at least throw an exception in this case")]
+        public void CountAndGroup_UseTableInGroupAndNonGroup()
+        {
+            // arrange
+            // act
+            var result = FullyJoinedQuery<object>()
+                .Map(x => new
+                {
+                    name = x.ThePerson.Name,
+                    classes = x.TheClasses.Select(c => c.Name).ToArray(),
+                    classesCount = x.TheClasses.Count
+                })
+                .ToList(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, result.Count);
+
+            var john = result[0];
+            Assert.AreEqual(Data.People.John.Name, john.name);
+            Assert.AreEqual(john.classes.Length, john.classesCount);
+            CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Name, Data.Classes.Archery.Name }, john.classes);
+
+            var mary = result[1];
+            Assert.AreEqual(Data.People.Mary.Name, mary.name);
+            Assert.AreEqual(mary.classes.Length, mary.classesCount);
+            CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Name, }, mary.classes);
+        }
+
+        [Test]
+        [Ignore("TODO: at least throw an exception in this case")]
+        public void CountAndGroup_UseTableInGroupAndNonGroupInSameSelectColumn()
+        {
+            // arrange
+            // act
+            var result = FullyJoinedQuery<object>()
+                .Map(x => new
+                {
+                    name = x.ThePerson.Name,
+                    classes = x.TheClasses
+                        .Select(c => c.Id + x.TheClasses.Count)
+                        .ToArray()
+                })
+                .ToList(Executor, null, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, result.Count);
+
+            var john = result[0];
+            Assert.AreEqual(Data.People.John.Name, john.name);
+            CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Id + 2, Data.Classes.Archery.Id + 2 }, john.classes);
+
+            var mary = result[1];
+            Assert.AreEqual(Data.People.Mary.Name, mary.name);
+            CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Id + 1 }, mary.classes);
+        }
     }
 }
