@@ -1069,7 +1069,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("TODO")]
         public async Task SumAndGroup_WithAdd()
         {
             // arrange
@@ -1088,12 +1087,41 @@ namespace SqlDsl.UnitTests.FullPathTests
                 new 
                 {
                     person = Data.People.John.Name,
-                    classes = 14
+                    classes = 14L
                 },
                 new 
                 {
                     person = Data.People.Mary.Name,
-                    classes = 6
+                    classes = 6L
+                }
+            }, data);
+        }
+
+        [Test]
+        public async Task SumAndGroup_WithAdd2()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQueryLists<object>()
+                .Map(p => new 
+                {
+                    person = p.ThePerson.Name,
+                    classes = p.TheClasses.Sum(c => c.Id + p.ThePersonClasses.One().ClassId)
+                })
+                .ToIEnumerableAsync(Executor, null, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new [] 
+            {
+                new 
+                {
+                    person = Data.People.John.Name,
+                    classes = 14L
+                },
+                new 
+                {
+                    person = Data.People.Mary.Name,
+                    classes = 6L
                 }
             }, data);
         }

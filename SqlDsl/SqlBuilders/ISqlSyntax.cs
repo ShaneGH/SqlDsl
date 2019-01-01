@@ -21,6 +21,11 @@ namespace SqlDsl.SqlBuilders
         string CountFunctionName { get; }
 
         /// <summary>
+        /// The text for SUM in the sql flavour
+        /// </summary>
+        string SumFunctionName { get; }
+
+        /// <summary>
         /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
         /// </summary>
         (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias);

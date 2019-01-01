@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -31,12 +32,7 @@ namespace SqlDsl.Mapper
             {
                 var result = requiresArgs ?
                     QueryArgAccessor.Create(state.ArgsObject, expr) :
-                    Expression
-                        .Lambda<Func<object>>(
-                            ReflectionUtils.Convert(
-                                expr,
-                                typeof(object)))
-                        .Compile()();
+                    ReflectionUtils.ExecuteExpression(expr);
 
                 var paramName = state.Parameters.AddParam(result, expr.Type);
 
@@ -106,6 +102,12 @@ namespace SqlDsl.Mapper
                     var (isCount, countExpr) = ReflectionUtils.IsCount(expr);
                     if (isCount)
                         return BuildMapForCount(state, countExpr, toPrefix).AddT(false);
+
+                    var (isSum, sumExpr, sumMapper) = ReflectionUtils.IsSum(exprMethod);
+                    if (isSum)
+                        return sumMapper == null
+                            ? BuildMapForSum(state, sumExpr, toPrefix).AddT(false)
+                            : BuildMapForSum(state, sumExpr, sumMapper, toPrefix).AddT(false);
                         
                     var oneExpr = ReflectionUtils.IsOne(exprMethod);
                     if (oneExpr != null)
@@ -254,15 +256,6 @@ namespace SqlDsl.Mapper
             return state.WrappedSqlStatement.Tables.TryGetTable(param) != null;
         }
 
-        static readonly HashSet<(Type, string)> CountProperties = new HashSet<(Type, string)>
-        {
-            (typeof(HashSet<>), "Count"),
-            (typeof(List<>), "Count"),
-            (typeof(IList<>), "Count"),
-            (typeof(ICollection<>), "Count"),
-            (typeof(IReadOnlyCollection<>), "Count")
-        };
-
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool isConstant) BuildMapForMemberAccess(BuildMapState state, MemberExpression expr, MapType nextMapType, string toPrefix = null)
         {
             var (isCount, enumerable) = ReflectionUtils.IsCount(expr);
@@ -381,10 +374,42 @@ namespace SqlDsl.Mapper
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForCount(
             BuildMapState state, 
             Expression enumerable, 
-            string toPrefix = null, 
-            bool isExprTip = false)
+            string toPrefix = null) => BuildMapForAggregate(state, enumerable, true, state.SqlBuilder.CountFunctionName, toPrefix);
+        
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSum(
+            BuildMapState state, 
+            Expression enumerable, 
+            string toPrefix = null) => BuildMapForAggregate(state, enumerable, false, state.SqlBuilder.SumFunctionName, toPrefix);
+        
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSum(
+            BuildMapState state, 
+            Expression enumerable, 
+            LambdaExpression sumMapper, 
+            string toPrefix = null) 
         {
-            var (properties, tables, _) = BuildMap(state, enumerable, MapType.AggregateFunction, toPrefix, isExprTip);
+            var enumeratedType = ReflectionUtils.GetIEnumerableType(enumerable.Type);
+            if (enumeratedType == null)
+                throw BuildMappingError(enumerable);
+
+            // convert xs.Sum(x => x.val)
+            // to
+            // convert xs.Select(x => x.val).Sum()
+            enumerable = Expression.Call(
+                CodingConstants.GenericSelectMethod.MakeGenericMethod(enumeratedType, sumMapper.Body.Type),
+                enumerable,
+                sumMapper);
+
+            return BuildMapForSum(state, enumerable, toPrefix);
+        }
+            
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForAggregate(
+            BuildMapState state, 
+            Expression enumerable,
+            bool canSubstituteRowNumberForTable,
+            string functionName,
+            string toPrefix = null)
+        {
+            var (properties, tables, _) = BuildMap(state, enumerable, MapType.AggregateFunction, toPrefix);
 
             // if count is on a table, change to count row id
             properties = properties.Select(arg => new StringBasedMappedProperty(
@@ -403,9 +428,6 @@ namespace SqlDsl.Mapper
 
             StringBasedMappedProperty WrapWithFunc(StringBasedMappedProperty property)
             {
-                if (!property.FromParams.HasOneItemOnly)
-                    throw BuildMappingError(enumerable);
-
                 return new StringBasedMappedProperty(
                     property.FromParams.MapParam(Map),
                     property.To,
@@ -417,13 +439,14 @@ namespace SqlDsl.Mapper
             {
                 var param = x.Param;
                 if (tables.Any(t => t.From == param))
-                    param = $"{param}.{SqlStatementConstants.RowIdName}";
-
-                // param = string.IsNullOrEmpty(param) ?
-                //     $"{SqlStatementConstants.OpenFunctionAlias}{state.SqlBuilder.CountFunctionName}" :
-                //     $"{x.Param}.{SqlStatementConstants.OpenFunctionAlias}{state.SqlBuilder.CountFunctionName}";
+                {
+                    if (canSubstituteRowNumberForTable)
+                        param = $"{param}.{SqlStatementConstants.RowIdName}";
+                    else
+                        throw BuildMappingError($". Cannot apply {functionName} function to table {param}.");
+                }
                 
-                return new StringBasedElement(x.ParamRoot, param, state.CurrentTable.JoinString("."), state.SqlBuilder.CountFunctionName);
+                return new StringBasedElement(x.ParamRoot, param, state.CurrentTable.JoinString("."), functionName);
             }
         }
 
@@ -581,7 +604,9 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static InvalidOperationException BuildMappingError(Expression mapping) => new InvalidOperationException($"Unsupported mapping expression \"{mapping}\".");
+        static InvalidOperationException BuildMappingError(Expression mapping) => BuildMappingError($" \"{mapping}\".");
+
+        static InvalidOperationException BuildMappingError(string message) => new InvalidOperationException($"Unsupported mapping expression{message}.");
 
         static (bool isSuccess, string name) CompileMemberName(Expression expr)
         {

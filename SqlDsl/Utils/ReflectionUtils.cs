@@ -577,7 +577,9 @@ namespace SqlDsl.Utils
             typeof(IList<>),
             typeof(List<>),
             typeof(ISet<>),
-            typeof(HashSet<>)
+            typeof(HashSet<>),
+            typeof(IReadOnlyCollection<>),
+            typeof(IReadOnlyList<>)
         };
         
         static (bool isCount, Expression enumerable) IsCount(MemberExpression e)
@@ -589,10 +591,88 @@ namespace SqlDsl.Utils
                 return (true, e.Expression);
 
             var t = e.Expression.Type.IsGenericType ? e.Expression.Type.GetGenericTypeDefinition() : e.Expression.Type;
-            return CountPropertyTypes.Contains(t) && e.Member.Name == "Count" ? 
-                (true, e.Expression) :
-                (false, null);
+            if (CountPropertyTypes.Contains(t) && e.Member.Name == "Count") 
+                return (true, e.Expression);
 
+            // // TODO: is this something that I want to support globally?
+            // if (CountPropertyTypes.Any(c => c.IsAssignableFrom(t)))
+            //     return (true, e.Expression);
+
+            return (false, null);
+        }
+
+        static readonly HashSet<MethodInfo> SumMethods = new HashSet<MethodInfo>
+        {
+            GetMethod(() => new int[0].Sum()),
+            GetMethod(() => new long[0].Sum()),
+            GetMethod(() => new float[0].Sum()),
+            GetMethod(() => new decimal[0].Sum()),
+            GetMethod(() => new double[0].Sum()),
+            GetMethod(() => new int?[0].Sum()),
+            GetMethod(() => new long?[0].Sum()),
+            GetMethod(() => new float?[0].Sum()),
+            GetMethod(() => new decimal?[0].Sum()),
+            GetMethod(() => new double?[0].Sum())
+        };
+
+        static readonly HashSet<MethodInfo> MapSumMethods = new HashSet<MethodInfo>
+        {            
+            GetMethod(() => new object[0].Sum(x => 1)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Sum(c => 1L)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Sum(x => 1F)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Sum(x => 1M)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Sum(x => 1D)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Sum(x => (int?)1)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Sum(c => (long?)1L)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Sum(x => (float?)1F)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Sum(x => (decimal?)1M)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Sum(x => (double?)1D)).GetGenericMethodDefinition(),
+        };
+
+        /// <summary>
+        /// Determine whether an expression is a Sum().
+        /// </summary>
+        /// <returns>isSum: success or failure,
+        /// enumerable: the enumerable it adds
+        /// </returns>
+        public static (bool isSum, Expression enumerable, LambdaExpression mapper) IsSum(MethodCallExpression e)
+        {
+            var method = e.Method.IsGenericMethod
+                ? e.Method.GetGenericMethodDefinition()
+                : e.Method;
+
+            if (SumMethods.Contains(method))
+                return (true, e.Arguments[0], null);
+
+            if (MapSumMethods.Contains(method))
+            {
+                if (e.Arguments[1] is LambdaExpression)
+                    return (true, e.Arguments[0], e.Arguments[1] as LambdaExpression);
+
+                if (!IsConstant(e.Arguments[1]))
+                    return (false, null, null);
+
+                var val = ExecuteExpression(e.Arguments[1]);
+                if (!(val is LambdaExpression))
+                    return (false, null, null);
+                
+                return (true, e.Arguments[0], val as LambdaExpression);
+            }
+
+            return (false, null, null);
+        }
+
+        /// <summary>
+        /// Execute a paramaterless expression like a lambda
+        /// </summary>
+        public static object ExecuteExpression(Expression e)
+        {
+            return Expression
+                .Lambda<Func<object>>(
+                    ReflectionUtils.Convert(
+                        e,
+                        typeof(object)))
+                .Compile()();
         }
 
         static readonly MethodInfo _ToList = GetMethod(() => new object[0].ToList()).GetGenericMethodDefinition();

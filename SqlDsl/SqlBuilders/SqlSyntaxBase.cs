@@ -14,10 +14,13 @@ namespace SqlDsl.SqlBuilders
     public abstract class SqlSyntaxBase : ISqlSyntax
     {
         /// <inheritdoc />
-        public string Descending => "DESC";
+        public virtual string Descending => "DESC";
         
         /// <inheritdoc />
-        public string CountFunctionName => "COUNT";
+        public virtual string CountFunctionName => "COUNT";
+        
+        /// <inheritdoc />
+        public virtual string SumFunctionName => "SUM";
 
         /// <inheritdoc />
         public virtual string BuildAlias(string lhs, string alias) => $"{lhs} AS {alias}";
