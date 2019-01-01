@@ -26,6 +26,11 @@ namespace SqlDsl.SqlBuilders
         string SumFunctionName { get; }
 
         /// <summary>
+        /// The text for AVG in the sql flavour
+        /// </summary>
+        string AverageFunctionName { get; }
+
+        /// <summary>
         /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
         /// </summary>
         (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias);

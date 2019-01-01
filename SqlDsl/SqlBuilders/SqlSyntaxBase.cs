@@ -21,6 +21,9 @@ namespace SqlDsl.SqlBuilders
         
         /// <inheritdoc />
         public virtual string SumFunctionName => "SUM";
+        
+        /// <inheritdoc />
+        public virtual string AverageFunctionName => "AVG";
 
         /// <inheritdoc />
         public virtual string BuildAlias(string lhs, string alias) => $"{lhs} AS {alias}";

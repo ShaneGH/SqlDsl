@@ -108,6 +108,12 @@ namespace SqlDsl.Mapper
                         return sumMapper == null
                             ? BuildMapForSum(state, sumExpr, toPrefix).AddT(false)
                             : BuildMapForSum(state, sumExpr, sumMapper, toPrefix).AddT(false);
+
+                    var (isAverage, averageExpr, averageMapper) = ReflectionUtils.IsAverage(exprMethod);
+                    if (isAverage)
+                        return averageMapper == null
+                            ? BuildMapForAverage(state, averageExpr, toPrefix).AddT(false)
+                            : BuildMapForAverage(state, averageExpr, averageMapper, toPrefix).AddT(false);
                         
                     var oneExpr = ReflectionUtils.IsOne(exprMethod);
                     if (oneExpr != null)
@@ -400,6 +406,32 @@ namespace SqlDsl.Mapper
                 sumMapper);
 
             return BuildMapForSum(state, enumerable, toPrefix);
+        }
+        
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForAverage(
+            BuildMapState state, 
+            Expression enumerable, 
+            string toPrefix = null) => BuildMapForAggregate(state, enumerable, false, state.SqlBuilder.AverageFunctionName, toPrefix);
+        
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForAverage(
+            BuildMapState state, 
+            Expression enumerable, 
+            LambdaExpression averageMapper, 
+            string toPrefix = null) 
+        {
+            var enumeratedType = ReflectionUtils.GetIEnumerableType(enumerable.Type);
+            if (enumeratedType == null)
+                throw BuildMappingError(enumerable);
+
+            // convert xs.Average(x => x.val)
+            // to
+            // convert xs.Select(x => x.val).Average()
+            enumerable = Expression.Call(
+                CodingConstants.GenericSelectMethod.MakeGenericMethod(enumeratedType, averageMapper.Body.Type),
+                enumerable,
+                averageMapper);
+
+            return BuildMapForAverage(state, enumerable, toPrefix);
         }
             
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForAggregate(

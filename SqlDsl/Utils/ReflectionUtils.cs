@@ -635,16 +635,56 @@ namespace SqlDsl.Utils
         /// <returns>isSum: success or failure,
         /// enumerable: the enumerable it adds
         /// </returns>
-        public static (bool isSum, Expression enumerable, LambdaExpression mapper) IsSum(MethodCallExpression e)
+        public static (bool isSum, Expression enumerable, LambdaExpression mapper) IsSum(MethodCallExpression e) =>
+            IdNumberAggregator(e, SumMethods, MapSumMethods);
+
+        static readonly HashSet<MethodInfo> AverageMethods = new HashSet<MethodInfo>
+        {
+            GetMethod(() => new int[0].Average()),
+            GetMethod(() => new long[0].Average()),
+            GetMethod(() => new float[0].Average()),
+            GetMethod(() => new decimal[0].Average()),
+            GetMethod(() => new double[0].Average()),
+            GetMethod(() => new int?[0].Average()),
+            GetMethod(() => new long?[0].Average()),
+            GetMethod(() => new float?[0].Average()),
+            GetMethod(() => new decimal?[0].Average()),
+            GetMethod(() => new double?[0].Average())
+        };
+
+        static readonly HashSet<MethodInfo> MapAverageMethods = new HashSet<MethodInfo>
+        {            
+            GetMethod(() => new object[0].Average(x => 1)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Average(c => 1L)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Average(x => 1F)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Average(x => 1M)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Average(x => 1D)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Average(x => (int?)1)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Average(c => (long?)1L)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Average(x => (float?)1F)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Average(x => (decimal?)1M)).GetGenericMethodDefinition(),
+            GetMethod(() => new object[0].Average(x => (double?)1D)).GetGenericMethodDefinition(),
+        };
+
+        /// <summary>
+        /// Determine whether an expression is a Average().
+        /// </summary>
+        /// <returns>isAverage: success or failure,
+        /// enumerable: the enumerable it adds
+        /// </returns>
+        public static (bool isSum, Expression enumerable, LambdaExpression mapper) IsAverage(MethodCallExpression e) =>
+            IdNumberAggregator(e, AverageMethods, MapAverageMethods);
+
+        static (bool isAgg, Expression enumerable, LambdaExpression mapper) IdNumberAggregator(MethodCallExpression e, HashSet<MethodInfo> pureMethods, HashSet<MethodInfo> mappedMethods)
         {
             var method = e.Method.IsGenericMethod
                 ? e.Method.GetGenericMethodDefinition()
                 : e.Method;
 
-            if (SumMethods.Contains(method))
+            if (pureMethods.Contains(method))
                 return (true, e.Arguments[0], null);
 
-            if (MapSumMethods.Contains(method))
+            if (mappedMethods.Contains(method))
             {
                 if (e.Arguments[1] is LambdaExpression)
                     return (true, e.Arguments[0], e.Arguments[1] as LambdaExpression);
