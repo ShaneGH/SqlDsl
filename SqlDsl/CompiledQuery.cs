@@ -27,7 +27,7 @@ namespace SqlDsl
             ISqlSyntax sqlFragmentBuilder)
         {
             SqlParts = sql;
-            Parameters = RewriteParameters(sql.Assemble(), parameters);
+            Parameters = RewriteParameters(sql.Assemble().sql, parameters);
             SelectColumns = selectColumns;
             PropertyGraph = propertyGraph;
             SqlFragmentBuilder = sqlFragmentBuilder;
@@ -63,7 +63,7 @@ namespace SqlDsl
         // <inheritdoc />
         public async Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null)
         {                    
-            var sql = BuildSql(args);
+            var (sql, teardown) = BuildSqlC(args);
             if (logger.CanLogInfo(LogMessages.ExecutingQuery))
                 logger.LogInfo($"Executing sql:{Environment.NewLine}{sql}", LogMessages.ExecutingQuery);
 
@@ -82,6 +82,9 @@ namespace SqlDsl
 
                 results = results.Enumerate();
             }
+
+            if (!string.IsNullOrWhiteSpace(teardown))
+                await executor.ExecuteCommandAsync(teardown, CodingConstants.Empty.StringObject);
 
             if (logger.CanLogInfo(LogMessages.ExecutedQuery))
                 logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
@@ -127,7 +130,7 @@ namespace SqlDsl
             return output;
         }
 
-        public string BuildSql(TArgs args)
+        public (string sql, string teardownSql) BuildSqlC(TArgs args)
         {
             return SqlParts.Assemble(x => RewriteSql(args, x));
         }
@@ -162,7 +165,7 @@ namespace SqlDsl
         // <inheritdoc />
         public IEnumerable<TResult> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null)
         {                    
-            var sql = BuildSql(args);
+            var (sql, teardown) = BuildSqlC(args);
             if (logger.CanLogInfo(LogMessages.ExecutingQuery))
                 logger.LogInfo($"Executing sql:{Environment.NewLine}{sql}", LogMessages.ExecutingQuery);
 
@@ -173,6 +176,9 @@ namespace SqlDsl
             // execute and get all rows
             using (var reader = executor.ExecuteDebug(sql, BuildParameters(args), SelectColumns))
                 results = reader.GetRows().Enumerate();
+
+            if (!string.IsNullOrWhiteSpace(teardown))
+                executor.ExecuteCommand(teardown, CodingConstants.Empty.StringObject);
             
             if (logger.CanLogInfo(LogMessages.ExecutedQuery))
                 logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
@@ -269,7 +275,7 @@ namespace SqlDsl
         /// <summary>
         /// Debug only and test only. Do not use this property in an application.
         /// </summary>
-        internal string Sql => (Worker as CompiledQuery<object, TResult>)?.BuildSql(null);
+        internal string Sql => (Worker as CompiledQuery<object, TResult>)?.BuildSqlC(null).sql;
 
         readonly ICompiledQuery<object, TResult> Worker;
 

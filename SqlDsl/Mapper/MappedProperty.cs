@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 using SqlDsl.Utils.Diagnostics;
 
@@ -59,7 +60,7 @@ namespace SqlDsl.Mapper
 
         class DebugOnlySqlFragmentBuilder : SqlBuilders.SqlSyntaxBase
         {
-            public override (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias)
+            public override SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias)
             {
                 throw new NotImplementedException();
             }

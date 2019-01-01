@@ -17,6 +17,16 @@ namespace SqlDsl
         /// Execute a sql query and return a reader to read results
         /// </summary>
         IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters);
+        
+        /// <summary>
+        /// Execute a sql command with no return value
+        /// </summary>
+        Task ExecuteCommandAsync(string sql, IEnumerable<(string name, object value)> paramaters);
+        
+        /// <summary>
+        /// Execute a sql command with no return value
+        /// </summary>
+        void ExecuteCommand(string sql, IEnumerable<(string name, object value)> paramaters);
     }
 
     public static class IExecutorUtils

@@ -8,5 +8,12 @@ namespace SqlDsl.Utils
         public static readonly MethodInfo GenericSelectMethod = ReflectionUtils
             .GetMethod(() => new int[0].Select(x => x))
             .GetGenericMethodDefinition();
+        
+        public class Empty
+        {
+            public static readonly (string, object)[] StringObject = Enumerable
+                .Empty<(string, object)>()
+                .ToArray();
+        }
     }
 }

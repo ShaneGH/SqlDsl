@@ -70,6 +70,18 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         {
             throw new NotImplementedException("Use async method with columnNames");
         }
+
+        public Task ExecuteCommandAsync(string sql, IEnumerable<(string name, object value)> paramaters)
+        {
+            AddSqlStatement(sql, paramaters, new string[0]);
+            return Executor.ExecuteCommandAsync(sql, paramaters);
+        }
+
+        public void ExecuteCommand(string sql, IEnumerable<(string name, object value)> paramaters)
+        {
+            AddSqlStatement(sql, paramaters, new string[0]);
+            Executor.ExecuteCommand(sql, paramaters);
+        }
     }
 
     class TestReader : IReader

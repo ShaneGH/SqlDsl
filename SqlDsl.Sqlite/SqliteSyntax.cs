@@ -10,12 +10,14 @@ namespace SqlDsl.Sqlite
         /// <summary>
         /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
         /// </summary>
-        public override (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias)
+        public override SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias)
         {
             var id = "tmp" + GetUniqueId();
-            return (
+            return new SelectTableSqlWithRowId(
                 $"CREATE TEMP TABLE {id} AS SELECT * FROM {WrapTable(tableName)};",
-                $"SELECT rowid AS {WrapAlias(rowIdAlias)}, * FROM {WrapTable(id)}");
+                $"SELECT rowid AS {WrapAlias(rowIdAlias)}, * FROM {WrapTable(id)}",
+                $"DROP TABLE {id};",
+                false);
         }
 
         /// <summary>

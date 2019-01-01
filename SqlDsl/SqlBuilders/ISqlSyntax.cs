@@ -9,7 +9,7 @@ using System.Reflection;
 namespace SqlDsl.SqlBuilders
 {
     public interface ISqlSyntax
-    {
+    {        
         /// <summary>
         /// The text for DESCENDING in the sql flavour
         /// </summary>
@@ -41,9 +41,11 @@ namespace SqlDsl.SqlBuilders
         string MinFunctionName { get; }
 
         /// <summary>
-        /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
+        /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}.
+        /// if teardownSqlCanBeInlined == true, the teardown sql will be executed in the same query as the select
+        /// otherwise it will be executed immediately after the select
         /// </summary>
-        (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias);
+        SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias);
 
         /// <summary>
         /// Wrap a table name in parenthesis which protects against illegal characters: []
@@ -135,4 +137,50 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         string BuildDivideCondition(string lhs, string rhs);
     }
+
+    /// <summary>
+    /// A class to describe a SELECT table
+    /// </summary>
+    public class SelectTableSqlWithRowId
+    {
+        /// <summary>
+        /// If the table needs to execute a separate query outside the body of the main query, this value should be set.
+        /// For example, a temp table may need to be created
+        /// </summary>
+        public readonly string SetupSql;
+
+        /// <summary>
+        /// The sql which points to the table
+        /// </summary>
+        public readonly string Sql;
+        
+        /// <summary>
+        /// If any resources were created in SetupSql, these can be desposed of with a query here
+        /// </summary>
+        public readonly string TeardownSql;
+        
+        /// <summary>
+        /// If the TeardownSql can be executed as part of the main query, this value
+        /// should be true. If a separate qurey should be executed, this should be false
+        /// </summary>
+        public readonly bool TeardownSqlCanBeInlined;
+
+        public SelectTableSqlWithRowId(string setupSql, string sql, string teardownSql, bool teardownSqlCanBeInlined)
+        {
+            SetupSql = setupSql;
+            Sql = sql ?? throw new ArgumentNullException(nameof(sql));
+            TeardownSql = teardownSql;
+            TeardownSqlCanBeInlined = teardownSqlCanBeInlined;
+        }
+
+        public SelectTableSqlWithRowId(string setupSql, string sql)
+            : this(setupSql, sql, null, true)
+        {
+        }
+
+        public SelectTableSqlWithRowId(string sql)
+            : this(null, sql)
+        {
+        }
+    } 
 }

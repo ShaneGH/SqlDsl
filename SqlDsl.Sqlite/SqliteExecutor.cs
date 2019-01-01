@@ -21,17 +21,21 @@ namespace SqlDsl.Sqlite
             Connection = connection ?? throw new ArgumentNullException(nameof(connection));
         }
 
-        /// <summary>
-        /// Execute a sqlite query and return a reader to read results
-        /// </summary>
+        /// <inheritdoc />
         public async Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>
             new SqliteReader(await CreateCommand(sql, paramaters).ExecuteReaderAsync().ConfigureAwait(false));
 
-        /// <summary>
-        /// Execute a sqlite query and return a reader to read results
-        /// </summary>
+        /// <inheritdoc />
         public IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters) =>
             new SqliteReader(CreateCommand(sql, paramaters).ExecuteReader());
+
+        /// <inheritdoc />
+        public Task ExecuteCommandAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>
+            CreateCommand(sql, paramaters).ExecuteNonQueryAsync();
+
+        /// <inheritdoc />
+        public void ExecuteCommand(string sql, IEnumerable<(string name, object value)> paramaters) =>
+            CreateCommand(sql, paramaters).ExecuteNonQuery();
 
         /// <summary>
         /// Create a sql command with the given sql and parameters

@@ -17,21 +17,23 @@ namespace SqlDsl.Query
         readonly string BeforeWhereSql;
         readonly string WhereSql;
         readonly string AfterWhereSql;
+        readonly string TeardownSql;
 
-        public QueryParts(string beforeWhereSql, string whereSql, string afterWhereSql)
+        public QueryParts(string beforeWhereSql, string whereSql, string afterWhereSql, string teardownSql)
         {
             BeforeWhereSql = beforeWhereSql;
             WhereSql = whereSql;
             AfterWhereSql = afterWhereSql;
+            TeardownSql = teardownSql;
         }
 
-        public string Assemble(Func<string, string> map = null)
+        public (string sql, string teardownSql) Assemble(Func<string, string> map = null)
         {
             if (map == null) map = Identity;
 
-            return map(BeforeWhereSql) +
+            return (map(BeforeWhereSql) +
                 map(WhereSql) +
-                map(AfterWhereSql);
+                map(AfterWhereSql), TeardownSql);
         }
     }
 }

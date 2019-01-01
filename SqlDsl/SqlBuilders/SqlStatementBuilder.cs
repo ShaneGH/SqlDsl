@@ -40,14 +40,14 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The WHERE statement, if necessary
         /// </summary>
-        (string setupSql, string sql, IEnumerable<string> queryObjectReferences)? Where = null;
+        (string sql, IEnumerable<string> queryObjectReferences)? Where = null;
 
         readonly List<(string sql, IEnumerable<string> queryObjectReferences, OrderDirection direction)> Ordering = new List<(string, IEnumerable<string>, OrderDirection)>();
 
         /// <summary>
         /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join
         /// </summary>
-        readonly List<(string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences)> _Joins = new List<(string, string, string, IEnumerable<string>)>();
+        readonly List<(string alias, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences)> _Joins = new List<(string, SelectTableSqlWithRowId, IEnumerable<string>)>();
 
         public SqlStatementBuilder(ISqlSyntax sqlFragmentBuilder, string primaryTable, string primaryTableAlias)
         {
@@ -114,9 +114,7 @@ namespace SqlDsl.SqlBuilders
 
             _Joins.Add((
                 joinTableAlias, 
-                join.sql, 
-                // combine all setup sql statements
-                join.setupSql,
+                join,
                 queryObjectReferences.Where(r => r != joinTableAlias)));
 
             Expression AddJoinProperty(Expression rootExpression, string property)
@@ -137,7 +135,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Build JOIN sql
         /// </summary>
-        (string setupSql, string sql) BuildJoin(JoinType joinType, string joinTable, string equalityStatement, string joinTableAlias = null)
+        SelectTableSqlWithRowId BuildJoin(JoinType joinType, string joinTable, string equalityStatement, string joinTableAlias = null)
         {
             joinTableAlias = joinTableAlias == null ? "" : $" {SqlSyntax.WrapAlias(joinTableAlias)}";
 
@@ -155,10 +153,12 @@ namespace SqlDsl.SqlBuilders
                     throw new NotImplementedException($"Cannot use join type {joinType}");
             }
 
-            var sql = SqlSyntax.GetSelectTableSqlWithRowId(joinTable, SqlStatementConstants.RowIdName);
-            return (
-                sql.setupSql,
-                $"{join} JOIN ({sql.sql}){joinTableAlias} ON {equalityStatement}"
+            var sqlTable = SqlSyntax.GetSelectTableSqlWithRowId(joinTable, SqlStatementConstants.RowIdName);
+            return new SelectTableSqlWithRowId(
+                sqlTable.SetupSql,
+                $"{join} JOIN ({sqlTable.Sql}){joinTableAlias} ON {equalityStatement}",
+                sqlTable.TeardownSql,
+                sqlTable.TeardownSqlCanBeInlined
             );
         }
 
@@ -172,7 +172,7 @@ namespace SqlDsl.SqlBuilders
         public void SetWhere(ParameterExpression queryRoot, ParameterExpression args, Expression equality, ParamBuilder parameters)
         {
             var (whereSql, queryObjectReferences) = BuildCondition(queryRoot, args, equality, parameters, "WHERE");
-            Where = ("", whereSql, queryObjectReferences);
+            Where = (whereSql, queryObjectReferences);
         }
 
         (string sql, IEnumerable<string> queryObjectReferences) BuildCondition(
@@ -209,7 +209,7 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <inheritdoc />
-        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) ToSqlString(IEnumerable<string> selectColumnAliases = null)
+        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql, string queryTeardownSql, bool teardownSqlCanBeInlined) ToSqlString(IEnumerable<string> selectColumnAliases = null)
         {
             var rowIds = GetRowIdSelectColumns(selectColumnAliases).Enumerate();
             if (!rowIds.Any())
@@ -259,7 +259,7 @@ namespace SqlDsl.SqlBuilders
         }        
 
         /// <inheritdoc />
-        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql) _ToSqlString(IEnumerable<string> selectColumns, IEnumerable<string> selectTables)
+        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql, string teardownSql, bool teardownSqlCanBeInlined) _ToSqlString(IEnumerable<string> selectColumns, IEnumerable<string> selectTables)
         {
             var allTables = selectTables.ToHashSet();
 
@@ -296,26 +296,34 @@ namespace SqlDsl.SqlBuilders
                 
             // concat all setup sql from all other parts
             var setupSql = joins
-                .Select(j => j.setupSql)
-                .Concat(new [] 
-                {
-                    Where?.setupSql,
-                    primaryTable.setupSql
-                })
+                .Select(j => j.table.SetupSql)
+                .Append(primaryTable.SetupSql)
                 .RemoveNulls()
                 .JoinString("\n");
+                
+            // concat all teardown sql from all other parts
+            var teardownSql = joins
+                .Select(j => j.table.TeardownSql)
+                .Append(primaryTable.TeardownSql)
+                .RemoveNulls()
+                .JoinString("\n");
+
+            var newQueryForTeardown = joins
+                .Select(j => j.table.TeardownSqlCanBeInlined)
+                .Append(primaryTable.TeardownSqlCanBeInlined)
+                .Any(x => !x);
 
             var query = new[]
             {
                 $"\nSELECT {selectColumns.JoinString(",")}",
-                $"FROM ({primaryTable.sql}) " + SqlSyntax.WrapAlias(PrimaryTableAlias),
-                $"{joins.Select(j => j.sql).JoinString("\n")}",
+                $"FROM ({primaryTable.Sql}) " + SqlSyntax.WrapAlias(PrimaryTableAlias),
+                $"{joins.Select(j => j.table.Sql).JoinString("\n")}",
                 orderBy
             }
             .Where(x => !string.IsNullOrEmpty(x))
             .JoinString("\n");
 
-            return (setupSql, query, where, "");
+            return (setupSql, query, where, "", teardownSql, !newQueryForTeardown);
         }
 
         // TODO: this function was copy pasted
@@ -402,7 +410,7 @@ namespace SqlDsl.SqlBuilders
 
         IEnumerable<SqlStatementPartSelect> ISqlStatementPartValues.SelectColumns => GetAllSelectColumns().Select(BuildSelectCol);
 
-        static readonly Func<(string alias, string sql, string setupSql, IEnumerable<string> queryObjectReferences), SqlStatementPartJoin> BuildJoinTable = join =>
+        static readonly Func<(string alias, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences), SqlStatementPartJoin> BuildJoinTable = join =>
             new SqlStatementPartJoin(join.alias, join.queryObjectReferences);
 
         static readonly Func<(bool, SelectColumn), SqlStatementPartSelect> BuildSelectCol = select =>

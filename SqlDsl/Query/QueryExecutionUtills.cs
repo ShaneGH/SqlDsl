@@ -108,11 +108,18 @@ namespace SqlDsl.Query
         /// <param name="builder">The sql builder to use in order to render sql</param>
         public static QueryParts ToSql(this ISqlString builder)
         {
-            var sql = builder.ToSqlString();
+            var (querySetupSql, beforeWhereSql, whereSql, afterWhereSql, queryTeardownSql, teardownSqlCanBeInlined) = builder.ToSqlString();
+            if (teardownSqlCanBeInlined)
+            {
+                afterWhereSql += $";\n\n{queryTeardownSql}";
+                queryTeardownSql = null;
+            }
+
             return new QueryParts(
-                $"{sql.querySetupSql}\n\n{sql.beforeWhereSql}",
-                sql.whereSql,
-                sql.afterWhereSql);
+                $"{querySetupSql}\n\n{beforeWhereSql}",
+                whereSql,
+                afterWhereSql,
+                queryTeardownSql);
         }  
     }
 }
