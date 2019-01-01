@@ -22,7 +22,7 @@ namespace SqlDsl.UnitTests.FullPathTests
     [TestFixture]
     public class MappingTestsWithFunLogic : FullPathTestBase
     {
-        class JoinedQueryClassLists
+        class JoinedQueryClass
         {
             public Person ThePerson { get; set; }
             public List<PersonClass> ThePersonClasses { get; set; }
@@ -30,56 +30,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             public List<ClassTag> TheClassTags { get; set; }
             public List<Tag> TheTags { get; set; }
         }
-        
-        class JoinedQueryClassArrays
-        {
-            public Person ThePerson { get; set; }
-            public PersonClass[] ThePersonClasses { get; set; }
-            public Class[] TheClasses { get; set; }
-            public ClassTag[] TheClassTags { get; set; }
-            public Tag[] TheTags { get; set; }
-        }
-        
-        class JoinedQueryClassHashSets
-        {
-            public Person ThePerson { get; set; }
-            public HashSet<PersonClass> ThePersonClasses { get; set; }
-            public HashSet<Class> TheClasses { get; set; }
-            public HashSet<ClassTag> TheClassTags { get; set; }
-            public HashSet<Tag> TheTags { get; set; }
-        }
 
-        static Dsl.IQuery<TArg, JoinedQueryClassLists> FullyJoinedQueryLists<TArg>()
+        static Dsl.IQuery<TArg, JoinedQueryClass> FullyJoinedQuery<TArg>()
         {
-            return Sql.Query.Sqlite<TArg, JoinedQueryClassLists>()
-                .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
-                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.TheClasses)
-                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
-                    .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.TheTags)
-                    .On((q, t) => q.TheClassTags.One().TagId == t.Id);
-        }
-
-        static Dsl.IQuery<TArg, JoinedQueryClassArrays> FullyJoinedQueryArrays<TArg>()
-        {
-            return Sql.Query.Sqlite<TArg, JoinedQueryClassArrays>()
-                .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
-                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.TheClasses)
-                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
-                    .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.TheTags)
-                    .On((q, t) => q.TheClassTags.One().TagId == t.Id);
-        }
-
-        static Dsl.IQuery<TArg, JoinedQueryClassHashSets> FullyJoinedQueryHashSets<TArg>()
-        {
-            return Sql.Query.Sqlite<TArg, JoinedQueryClassHashSets>()
+            return Sql.Query.Sqlite<TArg, JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
@@ -114,7 +68,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            await FullyJoinedQueryLists<object>()
+            await FullyJoinedQuery<object>()
                 .Map(x => new Cls1
                 {
                     thename = x.ThePerson.Name,
@@ -146,7 +100,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var tt= await FullyJoinedQueryLists<object>()
+            var tt= await FullyJoinedQuery<object>()
                 .Map(x => new
                 {
                     name = x.ThePerson.Name,
@@ -195,7 +149,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePerson)
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
                 
@@ -210,7 +164,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePerson.Name)
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
@@ -225,7 +179,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Where(q => q.ThePersonClasses.One().ClassId == Data.Classes.Tennis.Id)
                 .Map(p => p.ThePersonClasses.One())
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
@@ -241,7 +195,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePersonClasses)
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
@@ -314,7 +268,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePersonClasses.Select(pc => new PreMapped { ClassId = pc.ClassId }))
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
@@ -332,7 +286,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePersonClasses.Select(pc => new PreMapped(pc.PersonId)).ToList())
                 .ToListAsync(Executor, null, logger: Logger);
 
@@ -350,7 +304,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePersonClasses
                     .Select(pc => new PreMapped(pc.PersonId)
                     { 
@@ -454,7 +408,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Where(q => q.ThePersonClasses.One().ClassId == Data.Classes.Tennis.Id)
                 .Map(p => p.ThePersonClasses.One().ClassId)
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
@@ -470,7 +424,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Where(q => q.ThePersonClasses.One().ClassId == Data.Classes.Tennis.Id)
                 .Map(p => p.ThePersonClasses.Select(x => x.ClassId).One())
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
@@ -486,7 +440,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePersonClasses.Select(pc => pc.ClassId))
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
@@ -504,7 +458,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => 77)
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
@@ -519,7 +473,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<int>()
+            var data = await FullyJoinedQuery<int>()
                 .Map((p, a) => a)
                 .ToIEnumerableAsync(Executor, 77, logger: Logger);
 
@@ -539,7 +493,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<AnInt>()
+            var data = await FullyJoinedQuery<AnInt>()
                 .Map((p, a) => a.IntValue)
                 .ToIEnumerableAsync(Executor, new AnInt { IntValue = 77 }, logger: Logger);
 
@@ -554,7 +508,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => new Person { Id = 77 })
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
@@ -582,7 +536,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => p.ThePerson.Id + 1)
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
@@ -597,7 +551,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => 1 + p.ThePerson.Id)
                 .ToIEnumerableAsync(Executor, null, logger: Logger);
 
@@ -614,7 +568,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var one = 1;
 
             // act
-            var data = await FullyJoinedQueryLists<int>()
+            var data = await FullyJoinedQuery<int>()
                 .Map((p, a) => p.ThePerson.Id + one + a)
                 .ToIEnumerableAsync(Executor, 10, logger: Logger);
 
@@ -642,7 +596,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<JoinedQueryClassLists>()
+            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id + 1 == pc.PersonId + 1)
@@ -659,7 +613,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => new
                 {
                     pid = p.ThePerson.Id + 1,
@@ -683,7 +637,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQuery<object>()
                 .Map(p => new
                 {
                     name = p.ThePerson.Name,
@@ -703,10 +657,10 @@ namespace SqlDsl.UnitTests.FullPathTests
         void Map_SimpleBinaryConditionWorker<TOutput>(ExpressionType type, object equality, object result)
         {
             // arrange
-            var exprInput = Expression.Parameter(typeof(JoinedQueryClassLists));
+            var exprInput = Expression.Parameter(typeof(JoinedQueryClass));
 
             // p => p.ThePerson.Id + result
-            var mapper = Expression.Lambda<Func<JoinedQueryClassLists, TOutput>>(
+            var mapper = Expression.Lambda<Func<JoinedQueryClass, TOutput>>(
                 Expression.MakeBinary(
                     type, 
                     Expression.Property(
@@ -718,7 +672,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     exprInput);
 
             // act
-            var data = FullyJoinedQueryLists<object>()
+            var data = FullyJoinedQuery<object>()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(mapper)
                 .ToIEnumerable(Executor, null, logger: Logger);
@@ -802,11 +756,11 @@ namespace SqlDsl.UnitTests.FullPathTests
         public async Task Join_BinaryCondition(ExpressionType type, object result)
         {
             // arrange
-            var exprInput1 = Expression.Parameter(typeof(JoinedQueryClassLists));
+            var exprInput1 = Expression.Parameter(typeof(JoinedQueryClass));
             var exprInput2 = Expression.Parameter(typeof(PersonClass));
 
             // (q, pc) => q.ThePerson.Id + 2 == result
-            var join = Expression.Lambda<Func<JoinedQueryClassLists, PersonClass, bool>>(
+            var join = Expression.Lambda<Func<JoinedQueryClass, PersonClass, bool>>(
                 Expression.Equal(
                     Expression.MakeBinary(
                         type,
@@ -821,7 +775,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 exprInput2);
                 
             // act
-            var data = await Sql.Query.Sqlite<JoinedQueryClassLists>()
+            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses).On(join)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
@@ -884,246 +838,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         [Ignore("This case")]
         public void RightJoinReturnsNull()
         {
-        }
-
-        [Test]
-        public async Task CountAndGroup()
-        {
-            // arrange
-            // act
-            var data = await FullyJoinedQueryLists<object>()
-                .Map(p => new 
-                {
-                    person = p.ThePerson.Name,
-                    classes = p.TheClasses.Select(x => x.Id).Count()
-                })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
-
-            // assert
-            CollectionAssert.AreEqual(new [] 
-            {
-                new 
-                {
-                    person = Data.People.John.Name,
-                    classes = 2
-                },
-                new 
-                {
-                    person = Data.People.Mary.Name,
-                    classes = 1
-                }
-            }, data);
-        }
-
-        [Test]
-        public async Task CountAndGroup_WithListCount()
-        {
-            // arrange
-            // act
-            var data = await FullyJoinedQueryLists<object>()
-                .Map(p => new 
-                {
-                    classes = p.TheClasses.Count
-                })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
-
-            // assert
-            CollectionAssert.AreEqual(new [] { new { classes = 2 }, new { classes = 1 } }, data);
-        }
-
-        [Test]
-        public async Task CountAndGroup_WithHashCount()
-        {
-            // arrange
-            // act
-            var data = await FullyJoinedQueryHashSets<object>()
-                .Map(p => new 
-                {
-                    classes = p.TheClasses.Count
-                })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
-
-            // assert
-            CollectionAssert.AreEqual(new [] { new { classes = 2 }, new { classes = 1 } }, data);
-        }
-
-        [Test]
-        public async Task CountAndGroup_WithArrayLength()
-        {
-            // arrange
-            // act
-            var data = await FullyJoinedQueryArrays<object>()
-                .Map(p => new 
-                {
-                    classes = p.TheClasses.Length
-                })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
-
-            // assert
-            CollectionAssert.AreEqual(new [] { new { classes = 2 }, new { classes = 1 } }, data);
-        }
-
-        [Test]
-        public void CountAndGroup_GroupIsWithinScopeOfChildJoin()
-        {
-            // arrange
-            // act
-            var data = FullyJoinedQueryLists<object>()
-                .Where(q => q.ThePerson.Id == Data.People.John.Id)
-                .Map(q => new
-                {
-                    classesWithTags = q.TheClassTags
-                        .Select(tag => new 
-                        {
-                            cls = q.TheClasses.Select(x => x.Id).Count()
-                        })
-                        .ToArray()
-                })
-                .ToList(Executor, null, logger: Logger);
-
-            // assert
-            Assert.AreEqual(1, data.Count);
-            Assert.AreEqual(3, data[0].classesWithTags.Length);
-            Assert.AreEqual(1, data[0].classesWithTags[0].cls);
-            Assert.AreEqual(1, data[0].classesWithTags[1].cls);
-            Assert.AreEqual(1, data[0].classesWithTags[2].cls);
-        }
-
-        class CountAndGroupTest
-        {
-            public string thePerson;
-            public int theClasses;
-        }
-
-        [Test]
-        public async Task CountAndGroup_ToProperties()
-        {
-            // arrange
-            // act
-            var data = await FullyJoinedQueryLists<object>()
-                .Map(p => new CountAndGroupTest
-                {
-                    thePerson = p.ThePerson.Name,
-                    theClasses = p.TheClasses.Select(x => x.Id).Count()
-                })
-                .ToArrayAsync(Executor, null, logger: Logger);
-
-            // assert
-            Assert.AreEqual(2, data.Length);
-            Assert.AreEqual(Data.People.John.Name, data[0].thePerson);
-            Assert.AreEqual(2, data[0].theClasses);
-            Assert.AreEqual(Data.People.Mary.Name, data[1].thePerson);
-            Assert.AreEqual(1, data[1].theClasses);
-        }
-
-        [Test]
-        public async Task CountAndGroup_2()
-        {
-            // arrange
-            // act
-            var data = await FullyJoinedQueryLists<object>()
-                .Map(p => new 
-                {
-                    person = p.ThePerson.Name,
-                    classes = p.TheClasses.Count()
-                })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
-
-            // assert
-            CollectionAssert.AreEqual(new [] 
-            {
-                new 
-                {
-                    person = Data.People.John.Name,
-                    classes = 2
-                },
-                new 
-                {
-                    person = Data.People.Mary.Name,
-                    classes = 1
-                }
-            }, data);
-        }
-
-        [Test]
-        public async Task CountAndGroup_GroupByTableWithNoOtherColumns()
-        {
-            // arrange
-            // act
-            var data = await FullyJoinedQueryLists<object>()
-                .Where(x => x.ThePerson.Id == Data.People.John.Id)
-                .Map(p => new 
-                {
-                    person = p.ThePerson.Name,
-                    classes = p.TheClasses.Select(x => new
-                    {
-                        tags = p.TheTags.Count()
-                    }).ToArray()
-                })
-                .ToArrayAsync(Executor, null, logger: Logger);
-
-            // assert
-            Assert.AreEqual(1, data.Length);
-            Assert.AreEqual(Data.People.John.Name, data[0].person);
-            Assert.AreEqual(new [] { new { tags = 2 }, new { tags = 1 } }, data[0].classes);
-        }
-
-        [Test]
-        public async Task SumAndGroup_WithAdd()
-        {
-            // arrange
-            // act
-            var data = await FullyJoinedQueryLists<object>()
-                .Map(p => new 
-                {
-                    person = p.ThePerson.Name,
-                    classes = p.TheClasses.Select(c => c.Id + p.ThePersonClasses.One().ClassId).Sum()
-                })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
-
-            // assert
-            CollectionAssert.AreEqual(new [] 
-            {
-                new 
-                {
-                    person = Data.People.John.Name,
-                    classes = 14L
-                },
-                new 
-                {
-                    person = Data.People.Mary.Name,
-                    classes = 6L
-                }
-            }, data);
-        }
-
-        [Test]
-        public async Task SumAndGroup_WithAdd2()
-        {
-            // arrange
-            // act
-            var data = await FullyJoinedQueryLists<object>()
-                .Map(p => new 
-                {
-                    person = p.ThePerson.Name,
-                    classes = p.TheClasses.Sum(c => c.Id + p.ThePersonClasses.One().ClassId)
-                })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
-
-            // assert
-            CollectionAssert.AreEqual(new [] 
-            {
-                new 
-                {
-                    person = Data.People.John.Name,
-                    classes = 14L
-                },
-                new 
-                {
-                    person = Data.People.Mary.Name,
-                    classes = 6L
-                }
-            }, data);
         }
     }
 }
