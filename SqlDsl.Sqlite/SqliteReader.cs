@@ -60,5 +60,7 @@ namespace SqlDsl.Sqlite
                 
             return (true, vals);
         }
+
+        public void Dispose() => DataReader.Dispose();
     }
 }

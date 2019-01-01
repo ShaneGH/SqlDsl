@@ -85,6 +85,11 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             Index = index;
         }
 
+        public void Dispose()
+        {
+            Reader.Dispose();
+        }
+
         public (bool hasRow, object[] row) GetRow()
         {
             var row = Reader.GetRow();

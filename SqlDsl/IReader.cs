@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,7 +8,7 @@ namespace SqlDsl
     /// <summary>
     /// An object which can read results from an executed query
     /// </summary>
-    public interface IReader
+    public interface IReader : IDisposable
     {
         /// <summary>
         /// Read the next row in the query

@@ -69,13 +69,19 @@ namespace SqlDsl
 
             var timer = new Timer(true);
 
+            IEnumerable<object[]> results;
+
             // execute and get all rows
-            var reader = await executor
+            using (var reader = await executor
                 .ExecuteDebugAsync(sql, BuildParameters(args), SelectColumns)
-                .ConfigureAwait(false);
-            var results = await reader
-                .GetRowsAsync()
-                .ConfigureAwait(false);
+                .ConfigureAwait(false))
+            {
+                results = await reader
+                    .GetRowsAsync()
+                    .ConfigureAwait(false);
+
+                results = results.Enumerate();
+            }
 
             if (logger.CanLogInfo(LogMessages.ExecutedQuery))
                 logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
@@ -161,11 +167,13 @@ namespace SqlDsl
                 logger.LogInfo($"Executing sql:{Environment.NewLine}{sql}", LogMessages.ExecutingQuery);
 
             var timer = new Timer(true);
+            
+            IEnumerable<object[]> results;
 
             // execute and get all rows
-            var reader = executor.ExecuteDebug(sql, BuildParameters(args), SelectColumns);
-            var results = reader.GetRows();
-
+            using (var reader = executor.ExecuteDebug(sql, BuildParameters(args), SelectColumns))
+                results = reader.GetRows().Enumerate();
+            
             if (logger.CanLogInfo(LogMessages.ExecutedQuery))
                 logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
 
