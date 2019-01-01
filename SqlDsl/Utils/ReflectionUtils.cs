@@ -601,33 +601,10 @@ namespace SqlDsl.Utils
             return (false, null);
         }
 
-        static readonly HashSet<MethodInfo> SumMethods = new HashSet<MethodInfo>
-        {
-            GetMethod(() => new int[0].Sum()),
-            GetMethod(() => new long[0].Sum()),
-            GetMethod(() => new float[0].Sum()),
-            GetMethod(() => new decimal[0].Sum()),
-            GetMethod(() => new double[0].Sum()),
-            GetMethod(() => new int?[0].Sum()),
-            GetMethod(() => new long?[0].Sum()),
-            GetMethod(() => new float?[0].Sum()),
-            GetMethod(() => new decimal?[0].Sum()),
-            GetMethod(() => new double?[0].Sum())
-        };
-
-        static readonly HashSet<MethodInfo> MapSumMethods = new HashSet<MethodInfo>
-        {            
-            GetMethod(() => new object[0].Sum(x => 1)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Sum(c => 1L)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Sum(x => 1F)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Sum(x => 1M)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Sum(x => 1D)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Sum(x => (int?)1)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Sum(c => (long?)1L)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Sum(x => (float?)1F)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Sum(x => (decimal?)1M)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Sum(x => (double?)1D)).GetGenericMethodDefinition(),
-        };
+        static NumberAggregatorTest SumTest = new NumberAggregatorTest("Sum");
+        static NumberAggregatorTest AverageTest = new NumberAggregatorTest("Average");
+        static NumberAggregatorTest MaxTest = new NumberAggregatorTest("Max");
+        static NumberAggregatorTest MinTest = new NumberAggregatorTest("Min");
 
         /// <summary>
         /// Determine whether an expression is a Sum().
@@ -636,35 +613,8 @@ namespace SqlDsl.Utils
         /// enumerable: the enumerable it adds
         /// </returns>
         public static (bool isSum, Expression enumerable, LambdaExpression mapper) IsSum(MethodCallExpression e) =>
-            IdNumberAggregator(e, SumMethods, MapSumMethods);
+            SumTest.IsNumberAggregator(e);
 
-        static readonly HashSet<MethodInfo> AverageMethods = new HashSet<MethodInfo>
-        {
-            GetMethod(() => new int[0].Average()),
-            GetMethod(() => new long[0].Average()),
-            GetMethod(() => new float[0].Average()),
-            GetMethod(() => new decimal[0].Average()),
-            GetMethod(() => new double[0].Average()),
-            GetMethod(() => new int?[0].Average()),
-            GetMethod(() => new long?[0].Average()),
-            GetMethod(() => new float?[0].Average()),
-            GetMethod(() => new decimal?[0].Average()),
-            GetMethod(() => new double?[0].Average())
-        };
-
-        static readonly HashSet<MethodInfo> MapAverageMethods = new HashSet<MethodInfo>
-        {            
-            GetMethod(() => new object[0].Average(x => 1)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Average(c => 1L)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Average(x => 1F)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Average(x => 1M)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Average(x => 1D)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Average(x => (int?)1)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Average(c => (long?)1L)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Average(x => (float?)1F)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Average(x => (decimal?)1M)).GetGenericMethodDefinition(),
-            GetMethod(() => new object[0].Average(x => (double?)1D)).GetGenericMethodDefinition(),
-        };
 
         /// <summary>
         /// Determine whether an expression is a Average().
@@ -672,35 +622,28 @@ namespace SqlDsl.Utils
         /// <returns>isAverage: success or failure,
         /// enumerable: the enumerable it adds
         /// </returns>
-        public static (bool isSum, Expression enumerable, LambdaExpression mapper) IsAverage(MethodCallExpression e) =>
-            IdNumberAggregator(e, AverageMethods, MapAverageMethods);
+        public static (bool isAverage, Expression enumerable, LambdaExpression mapper) IsAverage(MethodCallExpression e) =>
+            AverageTest.IsNumberAggregator(e);
 
-        static (bool isAgg, Expression enumerable, LambdaExpression mapper) IdNumberAggregator(MethodCallExpression e, HashSet<MethodInfo> pureMethods, HashSet<MethodInfo> mappedMethods)
-        {
-            var method = e.Method.IsGenericMethod
-                ? e.Method.GetGenericMethodDefinition()
-                : e.Method;
 
-            if (pureMethods.Contains(method))
-                return (true, e.Arguments[0], null);
+        /// <summary>
+        /// Determine whether an expression is a Max().
+        /// </summary>
+        /// <returns>isMax: success or failure,
+        /// enumerable: the enumerable it adds
+        /// </returns>
+        public static (bool isMax, Expression enumerable, LambdaExpression mapper) IsMax(MethodCallExpression e) =>
+            MaxTest.IsNumberAggregator(e);
 
-            if (mappedMethods.Contains(method))
-            {
-                if (e.Arguments[1] is LambdaExpression)
-                    return (true, e.Arguments[0], e.Arguments[1] as LambdaExpression);
 
-                if (!IsConstant(e.Arguments[1]))
-                    return (false, null, null);
-
-                var val = ExecuteExpression(e.Arguments[1]);
-                if (!(val is LambdaExpression))
-                    return (false, null, null);
-                
-                return (true, e.Arguments[0], val as LambdaExpression);
-            }
-
-            return (false, null, null);
-        }
+        /// <summary>
+        /// Determine whether an expression is a Min().
+        /// </summary>
+        /// <returns>isMin: success or failure,
+        /// enumerable: the enumerable it adds
+        /// </returns>
+        public static (bool isMin, Expression enumerable, LambdaExpression mapper) IsMin(MethodCallExpression e) =>
+            MinTest.IsNumberAggregator(e);
 
         /// <summary>
         /// Execute a paramaterless expression like a lambda

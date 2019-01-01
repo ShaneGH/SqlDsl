@@ -15,37 +15,37 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Concat 2 query parts in a defined way (e.g. l + r)
         /// </summary>
-        public static string Concat(this ISqlSyntax builder, string l, string r, CombinationType concatType)
+        public static string Concat(this ISqlSyntax builder, string l, string r, BinarySqlOperator concatType)
         {
             switch (concatType)
             {
-                case CombinationType.And:
+                case BinarySqlOperator.And:
                     return builder.BuildAndCondition(l, r);
-                case CombinationType.Or:
+                case BinarySqlOperator.Or:
                     return builder.BuildOrCondition(l, r);
-                case CombinationType.Add:
+                case BinarySqlOperator.Add:
                     return builder.BuildAddCondition(l, r);
-                case CombinationType.Subtract:
+                case BinarySqlOperator.Subtract:
                     return builder.BuildSubtractCondition(l, r);
-                case CombinationType.Multiply:
+                case BinarySqlOperator.Multiply:
                     return builder.BuildMultiplyCondition(l, r);
-                case CombinationType.Divide:
+                case BinarySqlOperator.Divide:
                     return builder.BuildDivideCondition(l, r);
-                case CombinationType.In:
+                case BinarySqlOperator.In:
                     return builder.BuildInCondition(l, r);
-                case CombinationType.Comma:
+                case BinarySqlOperator.Comma:
                     return builder.BuildCommaCondition(l, r);
-                case CombinationType.Equal:
+                case BinarySqlOperator.Equal:
                     return builder.BuildEqualityCondition(l, r);
-                case CombinationType.NotEqual:
+                case BinarySqlOperator.NotEqual:
                     return builder.BuildNonEqualityCondition(l, r);
-                case CombinationType.GreaterThan:
+                case BinarySqlOperator.GreaterThan:
                     return builder.BuildGreaterThanCondition(l, r);
-                case CombinationType.GreaterThanOrEqual:
+                case BinarySqlOperator.GreaterThanOrEqual:
                     return builder.BuildGreaterThanEqualToCondition(l, r);
-                case CombinationType.LessThan:
+                case BinarySqlOperator.LessThan:
                     return builder.BuildLessThanCondition(l, r);
-                case CombinationType.LessThanOrEqual:
+                case BinarySqlOperator.LessThanOrEqual:
                     return builder.BuildLessThanEqualToCondition(l, r);
                 default:
                     throw new NotSupportedException($"Cannot combine query parts using concatType: {concatType}.");

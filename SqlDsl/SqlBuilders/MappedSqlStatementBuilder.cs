@@ -23,7 +23,7 @@ namespace SqlDsl.SqlBuilders
         readonly string InnerQueryAlias;
         readonly ISqlSyntax SqlSyntax;
 
-        IEnumerable<SelectColumnBasedElement> AllItemsInAllProperties => SelectProperties.SelectMany(cs => cs.Value.FromParams.GetEnumerable1());
+        IEnumerable<SelectColumnBasedElement> AllItemsInAllProperties => SelectProperties.SelectMany(cs => cs.Value.FromParams.GetEnumerable());
         IEnumerable<SelectColumnBasedElement> AllNonParametersInAllProperties => AllItemsInAllProperties.Where(p => !p.IsParameter);
 
         public MappedSqlStatementBuilder(
@@ -92,12 +92,13 @@ namespace SqlDsl.SqlBuilders
 
         string BuildGroupByStatement(string prefix)
         {
-            if (!AllNonParametersInAllProperties.Any(x => x.IsAggregated))
+            if (SelectProperties.All(x => x.Value.FromParams.AggregationType == AggregationType.NotAggregated))
                 return "";
 
-            var groupByCols = AllNonParametersInAllProperties
-                .Where(c => !c.IsAggregated)
-                .Select(c => c.Column)
+            var groupByCols = SelectProperties
+                .SelectMany(sp => sp.Value.FromParams.GetAggregatedEnumerable())
+                .Where(x => !x.isAggregated)
+                .Select(c => c.element.Column)
                 // TODO: what if the column is grouped by also
                 .Concat(Statement.SelectColumns.Where(c => c.IsRowNumber));
 

@@ -1,9 +1,12 @@
 using System;
+using System.Diagnostics;
 using SqlDsl.SqlBuilders;
+using SqlDsl.Utils.Diagnostics;
 
 namespace SqlDsl.Mapper
 {
-    struct SelectColumnBasedElement
+    [DebuggerDisplay("{GetDebuggerDisplay()}")]
+    struct SelectColumnBasedElement : IDebuggerDisplay
     {
         public bool IsParameter => _ParameterName != null;
         readonly string _ParameterName;
@@ -11,25 +14,19 @@ namespace SqlDsl.Mapper
         readonly ISelectColumn _Column;
         public ISelectColumn Column => EnsureCol(_Column);
         public ISelectColumn RowIdColumn { get; }
-        public readonly string Function;
-        public readonly bool IsAggregated;
 
-        public SelectColumnBasedElement(ISelectColumn column, ISelectColumn rowIdColumn, string function, bool isAggregated)
+        public SelectColumnBasedElement(ISelectColumn column, ISelectColumn rowIdColumn)
         {
             _Column = column ?? throw new ArgumentNullException(nameof(column));
             RowIdColumn = rowIdColumn ?? throw new ArgumentNullException(nameof(rowIdColumn));
-            Function = function;
-            IsAggregated = isAggregated;
             
             _ParameterName = null;
         }
 
-        public SelectColumnBasedElement(string parameterName, ISelectColumn rowIdColumn, string function, bool isAggregated)
+        public SelectColumnBasedElement(string parameterName, ISelectColumn rowIdColumn)
         {
             _ParameterName = parameterName ?? throw new ArgumentNullException(nameof(parameterName));
             RowIdColumn = rowIdColumn ?? throw new ArgumentNullException(nameof(rowIdColumn));
-            Function = function;
-            IsAggregated = isAggregated;
             
             _Column = null;
         }
@@ -37,5 +34,13 @@ namespace SqlDsl.Mapper
         static T EnsureCol<T>(T value) where T: class => value ?? throw new InvalidOperationException("This value is only available if IsParameter == false");
         
         static T EnsureParam<T>(T value) where T: class => value ?? throw new InvalidOperationException("This value is only available if IsParameter == true");
+
+        public string GetDebuggerDisplay()
+        {
+            if (IsParameter)
+                return ParameterName;
+
+            return Column.Alias;
+        }
     }
 }

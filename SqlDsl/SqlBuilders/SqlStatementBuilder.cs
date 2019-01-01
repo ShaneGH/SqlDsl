@@ -192,7 +192,7 @@ namespace SqlDsl.SqlBuilders
 
             var mapSql = map[0].FromParams.BuildFromString(state, SqlSyntax);
             var queryObjectReferences = map[0].FromParams
-                .GetEnumerable1()
+                .GetEnumerable()
                 .Select(param)
                 .Select(table)
                 .RemoveNulls();

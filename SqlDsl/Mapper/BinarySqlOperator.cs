@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 
 namespace SqlDsl.Mapper
 {
-    public enum CombinationType
+    public enum BinarySqlOperator
     {
         Add,
         Subtract,
@@ -22,36 +22,36 @@ namespace SqlDsl.Mapper
     }
 
     // todo: move file
-    public static class CombinationTypeUtils
+    public static class BinarySqlOperatorUtils
     {
-        public static CombinationType ToCombinationType(this ExpressionType e)
+        public static BinarySqlOperator ToCombinationType(this ExpressionType e)
         {
             switch (e)
             {
                 case ExpressionType.AndAlso:
-                    return CombinationType.And;
+                    return BinarySqlOperator.And;
                 case ExpressionType.OrElse:
-                    return CombinationType.Or;
+                    return BinarySqlOperator.Or;
                 case ExpressionType.Add:
-                    return CombinationType.Add;
+                    return BinarySqlOperator.Add;
                 case ExpressionType.Subtract:
-                    return CombinationType.Subtract;
+                    return BinarySqlOperator.Subtract;
                 case ExpressionType.Multiply:
-                    return CombinationType.Multiply;
+                    return BinarySqlOperator.Multiply;
                 case ExpressionType.Divide:
-                    return CombinationType.Divide;
+                    return BinarySqlOperator.Divide;
                 case ExpressionType.Equal:
-                    return CombinationType.Equal;
+                    return BinarySqlOperator.Equal;
                 case ExpressionType.NotEqual:
-                    return CombinationType.NotEqual;
+                    return BinarySqlOperator.NotEqual;
                 case ExpressionType.GreaterThan:
-                    return CombinationType.GreaterThan;
+                    return BinarySqlOperator.GreaterThan;
                 case ExpressionType.GreaterThanOrEqual:
-                    return CombinationType.GreaterThanOrEqual;
+                    return BinarySqlOperator.GreaterThanOrEqual;
                 case ExpressionType.LessThan:
-                    return CombinationType.LessThan;
+                    return BinarySqlOperator.LessThan;
                 case ExpressionType.LessThanOrEqual:
-                    return CombinationType.LessThanOrEqual;
+                    return BinarySqlOperator.LessThanOrEqual;
                 default:
                     throw new NotSupportedException(e.ToString());
             }

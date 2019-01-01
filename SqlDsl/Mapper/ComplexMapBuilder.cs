@@ -114,6 +114,18 @@ namespace SqlDsl.Mapper
                         return averageMapper == null
                             ? BuildMapForAverage(state, averageExpr, toPrefix).AddT(false)
                             : BuildMapForAverage(state, averageExpr, averageMapper, toPrefix).AddT(false);
+
+                    var (isMax, maxExpr, maxMapper) = ReflectionUtils.IsMax(exprMethod);
+                    if (isMax)
+                        return maxMapper == null
+                            ? BuildMapForMax(state, maxExpr, toPrefix).AddT(false)
+                            : BuildMapForMax(state, maxExpr, maxMapper, toPrefix).AddT(false);
+
+                    var (isMin, minExpr, minMapper) = ReflectionUtils.IsMin(exprMethod);
+                    if (isMin)
+                        return minMapper == null
+                            ? BuildMapForMin(state, minExpr, toPrefix).AddT(false)
+                            : BuildMapForMin(state, minExpr, minMapper, toPrefix).AddT(false);
                         
                     var oneExpr = ReflectionUtils.IsOne(exprMethod);
                     if (oneExpr != null)
@@ -216,7 +228,7 @@ namespace SqlDsl.Mapper
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForBinaryCondition(BuildMapState state, Expression left, Expression right, Type combinedType, ExpressionType combiner, string toPrefix = null) =>
             BuildMapForBinaryCondition(state, left, right, combinedType, combiner.ToCombinationType(), toPrefix);
 
-        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForBinaryCondition(BuildMapState state, Expression left, Expression right, Type combinedType, CombinationType combiner, string toPrefix = null)
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForBinaryCondition(BuildMapState state, Expression left, Expression right, Type combinedType, BinarySqlOperator combiner, string toPrefix = null)
         {
             var l = BuildMap(state, left, MapType.Other, toPrefix);
             var r = BuildMap(state, right, MapType.Other, toPrefix);
@@ -256,7 +268,7 @@ namespace SqlDsl.Mapper
             if (!(root is ParameterExpression))
                 return false;
                 
-            var (param, _) = new StringBasedElement(root as ParameterExpression, chain.JoinString("."), null, null)
+            var (param, _) = new StringBasedElement(root as ParameterExpression, chain.JoinString("."), null)
                 .AddRoot(state);
 
             return state.WrappedSqlStatement.Tables.TryGetTable(param) != null;
@@ -346,7 +358,7 @@ namespace SqlDsl.Mapper
             var lProp = lP.First();
 
             // TODO: can I relax this condition?
-            if (rProp.FromParams.GetEnumerable1()
+            if (rProp.FromParams.GetEnumerable()
                 .Any(x => x.Param != null && !x.Param.StartsWith("@")))
             {
                 throw new InvalidOperationException($"The values in an \"IN (...)\" clause must be a real parameter value. " + 
@@ -367,7 +379,7 @@ namespace SqlDsl.Mapper
             }
 
             var inPart = new StringBasedMappedProperty(
-                lProp.FromParams.Combine(rProp.FromParams, CombinationType.In),
+                lProp.FromParams.Combine(rProp.FromParams, BinarySqlOperator.In),
                 toPrefix,
                 typeof(bool),
                 lProp.PropertySegmentConstructors.Concat(rProp.PropertySegmentConstructors).ToArray());
@@ -380,73 +392,84 @@ namespace SqlDsl.Mapper
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForCount(
             BuildMapState state, 
             Expression enumerable, 
-            string toPrefix = null) => BuildMapForAggregate(state, enumerable, true, state.SqlBuilder.CountFunctionName, toPrefix);
+            string toPrefix = null) => BuildMapForAggregate(state, enumerable, true, UnarySqlOperator.CountFunction, toPrefix);
         
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSum(
             BuildMapState state, 
             Expression enumerable, 
-            string toPrefix = null) => BuildMapForAggregate(state, enumerable, false, state.SqlBuilder.SumFunctionName, toPrefix);
+            string toPrefix = null) => BuildMapForAggregate(state, enumerable, false, UnarySqlOperator.SumFunction, toPrefix);
         
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSum(
             BuildMapState state, 
             Expression enumerable, 
             LambdaExpression sumMapper, 
-            string toPrefix = null) 
-        {
-            var enumeratedType = ReflectionUtils.GetIEnumerableType(enumerable.Type);
-            if (enumeratedType == null)
-                throw BuildMappingError(enumerable);
-
-            // convert xs.Sum(x => x.val)
-            // to
-            // convert xs.Select(x => x.val).Sum()
-            enumerable = Expression.Call(
-                CodingConstants.GenericSelectMethod.MakeGenericMethod(enumeratedType, sumMapper.Body.Type),
-                enumerable,
-                sumMapper);
-
-            return BuildMapForSum(state, enumerable, toPrefix);
-        }
+            string toPrefix = null) => BuildMapForSum(state, AddSelectToFunmerable(enumerable, sumMapper), toPrefix);
         
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForAverage(
             BuildMapState state, 
             Expression enumerable, 
-            string toPrefix = null) => BuildMapForAggregate(state, enumerable, false, state.SqlBuilder.AverageFunctionName, toPrefix);
+            string toPrefix = null) => BuildMapForAggregate(state, enumerable, false, UnarySqlOperator.AverageFunction, toPrefix);
         
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForAverage(
             BuildMapState state, 
             Expression enumerable, 
             LambdaExpression averageMapper, 
-            string toPrefix = null) 
+            string toPrefix = null) => BuildMapForAverage(state, AddSelectToFunmerable(enumerable, averageMapper), toPrefix);
+        
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMax(
+            BuildMapState state, 
+            Expression enumerable, 
+            string toPrefix = null) => BuildMapForAggregate(state, enumerable, false, UnarySqlOperator.MaxFunction, toPrefix);
+        
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMax(
+            BuildMapState state, 
+            Expression enumerable, 
+            LambdaExpression averageMapper, 
+            string toPrefix = null) => BuildMapForMax(state, AddSelectToFunmerable(enumerable, averageMapper), toPrefix);
+        
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMin(
+            BuildMapState state, 
+            Expression enumerable, 
+            string toPrefix = null) => BuildMapForAggregate(state, enumerable, false, UnarySqlOperator.MinFunction, toPrefix);
+        
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMin(
+            BuildMapState state, 
+            Expression enumerable, 
+            LambdaExpression averageMapper, 
+            string toPrefix = null) => BuildMapForMin(state, AddSelectToFunmerable(enumerable, averageMapper), toPrefix);
+        
+        /// <summary>
+        /// convert xs
+        /// to
+        /// convert xs.Select(x => x.val)
+        /// </summary>
+        static Expression AddSelectToFunmerable(Expression enumerable, LambdaExpression mapper) 
         {
             var enumeratedType = ReflectionUtils.GetIEnumerableType(enumerable.Type);
             if (enumeratedType == null)
                 throw BuildMappingError(enumerable);
 
-            // convert xs.Average(x => x.val)
-            // to
-            // convert xs.Select(x => x.val).Average()
-            enumerable = Expression.Call(
-                CodingConstants.GenericSelectMethod.MakeGenericMethod(enumeratedType, averageMapper.Body.Type),
+            return Expression.Call(
+                CodingConstants.GenericSelectMethod.MakeGenericMethod(enumeratedType, mapper.Body.Type),
                 enumerable,
-                averageMapper);
-
-            return BuildMapForAverage(state, enumerable, toPrefix);
+                mapper);
         }
             
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForAggregate(
             BuildMapState state, 
             Expression enumerable,
             bool canSubstituteRowNumberForTable,
-            string functionName,
+            UnarySqlOperator function,
             string toPrefix = null)
         {
             var (properties, tables, _) = BuildMap(state, enumerable, MapType.AggregateFunction, toPrefix);
 
-            // if count is on a table, change to count row id
+            // if aggregate is on a table, change to aggregate row id
             properties = properties.Select(arg => new StringBasedMappedProperty(
                 PropertyRepresentsTable(state, arg)
-                    ? arg.FromParams.MapParamName(x => $"{x}.{SqlStatementConstants.RowIdName}")
+                    ? canSubstituteRowNumberForTable
+                        ? arg.FromParams.MapParamName(x => $"{x}.{SqlStatementConstants.RowIdName}")
+                        : ThrowMappingError<IAccumulator<StringBasedElement>>($". Cannot apply {function.ToString()} function to table \"{enumerable}\".")
                     : arg.FromParams,
                 arg.To,
                 typeof(int),
@@ -461,24 +484,10 @@ namespace SqlDsl.Mapper
             StringBasedMappedProperty WrapWithFunc(StringBasedMappedProperty property)
             {
                 return new StringBasedMappedProperty(
-                    property.FromParams.MapParam(Map),
+                    new UnaryAccumulator<StringBasedElement>(property.FromParams, function),
                     property.To,
                     property.MappedPropertyType,
                     property.PropertySegmentConstructors);
-            }
-
-            StringBasedElement Map(StringBasedElement x)
-            {
-                var param = x.Param;
-                if (tables.Any(t => t.From == param))
-                {
-                    if (canSubstituteRowNumberForTable)
-                        param = $"{param}.{SqlStatementConstants.RowIdName}";
-                    else
-                        throw BuildMappingError($". Cannot apply {functionName} function to table {param}.");
-                }
-                
-                return new StringBasedElement(x.ParamRoot, param, state.CurrentTable.JoinString("."), functionName);
             }
         }
 
@@ -513,8 +522,7 @@ namespace SqlDsl.Mapper
                             x.ParamRoot != null || (x.Param?.StartsWith("@") ?? false)
                                 ? x.Param
                                 : CombineStrings(outerMapProperties[0].FromParams.First.Param, x.Param),
-                            x.AggregatedToTable,
-                            x.Function)),
+                            x.AggregatedToTable)),
                         CombineStrings(outerMapProperties[0].To, m.To), 
                         m.MappedPropertyType, 
                         m.PropertySegmentConstructors)),
@@ -571,7 +579,7 @@ namespace SqlDsl.Mapper
                 if (xProps.Length != 1 || yProps.Length != 1)
                     throw new InvalidOperationException($"Unsupported mapping expression \"{elements.JoinString(", ")}\".");
 
-                var prop = xProps[0].FromParams.Combine(yProps[0].FromParams, CombinationType.Comma);
+                var prop = xProps[0].FromParams.Combine(yProps[0].FromParams, BinarySqlOperator.Comma);
                 return (
                     new StringBasedMappedProperty(
                         prop,
@@ -639,6 +647,8 @@ namespace SqlDsl.Mapper
         static InvalidOperationException BuildMappingError(Expression mapping) => BuildMappingError($" \"{mapping}\".");
 
         static InvalidOperationException BuildMappingError(string message) => new InvalidOperationException($"Unsupported mapping expression{message}.");
+
+        static T ThrowMappingError<T>(string message) => throw BuildMappingError(message);
 
         static (bool isSuccess, string name) CompileMemberName(Expression expr)
         {

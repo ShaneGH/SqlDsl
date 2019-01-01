@@ -90,7 +90,7 @@ namespace SqlDsl.Mapper
                 }
                 
                 var fromParams = properties[0].FromParams
-                    .GetEnumerable1()
+                    .GetEnumerable()
                     .Where(p => !p.IsParameter)
                     .Select(x => x.Column.Alias)
                     .ToArray();

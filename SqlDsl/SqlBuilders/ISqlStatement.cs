@@ -105,7 +105,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// If not null, this column is a row number for the given table
         /// </summary>
-        IQueryTable IsRowNumberForTable { get; }
+        IQueryTable IsRowNumberForTable { get; }    // TODO: sub interface for this property
         
         /// <summary>
         /// If true, this column is a row number

@@ -31,6 +31,16 @@ namespace SqlDsl.SqlBuilders
         string AverageFunctionName { get; }
 
         /// <summary>
+        /// The text for MAX in the sql flavour
+        /// </summary>
+        string MaxFunctionName { get; }
+
+        /// <summary>
+        /// The text for MIN in the sql flavour
+        /// </summary>
+        string MinFunctionName { get; }
+
+        /// <summary>
         /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
         /// </summary>
         (string setupSql, string sql) GetSelectTableSqlWithRowId(string tableName, string rowIdAlias);

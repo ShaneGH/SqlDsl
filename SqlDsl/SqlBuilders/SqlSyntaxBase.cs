@@ -24,6 +24,12 @@ namespace SqlDsl.SqlBuilders
         
         /// <inheritdoc />
         public virtual string AverageFunctionName => "AVG";
+        
+        /// <inheritdoc />
+        public virtual string MaxFunctionName => "MAX";
+        
+        /// <inheritdoc />
+        public virtual string MinFunctionName => "MIN";
 
         /// <inheritdoc />
         public virtual string BuildAlias(string lhs, string alias) => $"{lhs} AS {alias}";

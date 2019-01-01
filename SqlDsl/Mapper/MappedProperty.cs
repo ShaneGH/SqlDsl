@@ -1,9 +1,11 @@
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using SqlDsl.Utils;
+using SqlDsl.Utils.Diagnostics;
 
 namespace SqlDsl.Mapper
 {
@@ -16,8 +18,8 @@ namespace SqlDsl.Mapper
         
         public StringBasedMappedProperty(ParameterExpression fromParamRoot, string from, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs = null, string aggregatedToTable = null)
             : this (new Accumulator<StringBasedElement>(
-                new Accumulator<StringBasedElement, CombinationType>(
-                    new StringBasedElement(fromParamRoot, from, aggregatedToTable, null))), to, mappedPropertyType, constructorArgs)
+                new Accumulator<StringBasedElement, BinarySqlOperator>(
+                    new StringBasedElement(fromParamRoot, from, aggregatedToTable))), to, mappedPropertyType, constructorArgs)
         {
         }
 
@@ -78,7 +80,9 @@ namespace SqlDsl.Mapper
         }
     }
 
-    class MappedProperty<TElement>
+
+    [DebuggerDisplay("{GetDebuggerDisplay()}")]
+    class MappedProperty<TElement> : IDebuggerDisplay
     {
         static readonly ConstructorInfo[] EmptyConstructorArgs = new ConstructorInfo[0];
 
@@ -93,6 +97,11 @@ namespace SqlDsl.Mapper
             FromParams = fromParams;
             MappedPropertyType = mappedPropertyType;
             PropertySegmentConstructors = constructorArgs ?? EmptyConstructorArgs;
+        }
+        
+        public string GetDebuggerDisplay()
+        {
+            return $"{FromParams.GetDebuggerDisplay()} => {To}";
         }
     }
 }

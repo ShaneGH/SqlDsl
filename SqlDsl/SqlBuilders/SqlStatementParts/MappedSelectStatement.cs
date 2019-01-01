@@ -111,7 +111,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         static readonly Func<QueryElementBasedMappedProperty, ISelectColumn> TryGetRowNumberColumn = singleSelectPart =>
         {
             return singleSelectPart.FromParams
-                .GetEnumerable1()
+                .GetAggregatedEnumerable()
+                .Where(FilterOutAggregated)
+                .Select(SelectElement)
                 .Select(GetRowIdColumn)
                 .Select(TryGetTable)
                 .RemoveNulls()
@@ -119,6 +121,10 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                 .Select(TryGetRowNumberColumnFromTable)
                 .FirstOrDefault();
         };
+
+        static readonly Func<(bool isAggregated, SelectColumnBasedElement), bool> FilterOutAggregated = x => !x.isAggregated;
+
+        static readonly Func<(bool, SelectColumnBasedElement element), SelectColumnBasedElement> SelectElement = x => x.element;
 
         static readonly Func<SelectColumnBasedElement, ISelectColumn> GetRowIdColumn = x => x.RowIdColumn;
 
