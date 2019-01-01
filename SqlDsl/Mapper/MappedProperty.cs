@@ -32,45 +32,6 @@ namespace SqlDsl.Mapper
                 MappedPropertyType,
                 PropertySegmentConstructors);
         }
-
-        public string GetDebugView(BuildMapState state) => new[]
-        {
-            $"Type: {MappedPropertyType}",
-            $"CArgs: {PropertySegmentConstructors.JoinString(", ")}",
-            $"From: {TryGetFromString(state)}",
-            $"To: {To}"
-        }
-        .RemoveNullOrEmpty()
-        .JoinString("\n");
-
-        /// <summary>
-        /// Debug only
-        /// </summary>
-        string TryGetFromString(BuildMapState state)
-        {
-            try
-            {
-                return FromParams.BuildFromString(state, new DebugOnlySqlFragmentBuilder());
-            }
-            catch (Exception e)
-            {
-                return $"Cannot build from string: {e}";
-            }
-        }
-
-        class DebugOnlySqlFragmentBuilder : SqlBuilders.SqlSyntaxBase
-        {
-            public override SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override string WrapAlias(string alias) => $"[{alias}]";
-
-            public override string WrapColumn(string column) => $"[{column}]";
-
-            public override string WrapTable(string table) => $"[{table}]";
-        }
     }
     
     class QueryElementBasedMappedProperty : MappedProperty<SelectColumnBasedElement>
