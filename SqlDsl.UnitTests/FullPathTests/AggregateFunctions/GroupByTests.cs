@@ -246,5 +246,18 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             Assert.AreEqual(Data.People.Mary.Name, mary.name);
             CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Id + 1 }, mary.classes);
         }
+
+        [Test]
+        public void CountAndGroup_WithSimpleQuery()
+        {
+            // arrange
+            // act
+            var result = FullyJoinedQuery<object>()
+                .Map(x => x.TheClasses.Count)
+                .ToList(Executor, null, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new[]{ 2, 1 }, result);
+        }
     }
 }
