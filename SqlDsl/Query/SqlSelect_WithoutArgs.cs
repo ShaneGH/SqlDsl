@@ -23,17 +23,17 @@ namespace SqlDsl.Query
         {
         }
 
-        Task<IEnumerable<TResult>> ISqlExecutor<TResult>.ToIEnumerableAsync(IExecutor executor, ILogger logger) => ToIEnumerableAsync(executor, null, logger: logger);
+        Task<IEnumerable<TResult>> ICompiledQuery<TResult>.ToIEnumerableAsync(IExecutor executor, ILogger logger) => ToIEnumerableAsync(executor, null, logger: logger);
 
-        IEnumerable<TResult> ISqlExecutor<TResult>.ToIEnumerable(IExecutor executor, ILogger logger) => ToIEnumerable(executor, null, logger: logger);
+        IEnumerable<TResult> ICompiledQuery<TResult>.ToIEnumerable(IExecutor executor, ILogger logger) => ToIEnumerable(executor, null, logger: logger);
 
-        Task<List<TResult>> ISqlExecutor<TResult>.ToListAsync(IExecutor executor, ILogger logger) => ToListAsync(executor, null, logger: logger);
+        Task<List<TResult>> ICompiledQuery<TResult>.ToListAsync(IExecutor executor, ILogger logger) => ToListAsync(executor, null, logger: logger);
 
-        List<TResult> ISqlExecutor<TResult>.ToList(IExecutor executor, ILogger logger) => ToList(executor, null, logger: logger);
+        List<TResult> ICompiledQuery<TResult>.ToList(IExecutor executor, ILogger logger) => ToList(executor, null, logger: logger);
 
-        Task<TResult[]> ISqlExecutor<TResult>.ToArrayAsync(IExecutor executor, ILogger logger) => ToArrayAsync(executor, null, logger: logger);
+        Task<TResult[]> ICompiledQuery<TResult>.ToArrayAsync(IExecutor executor, ILogger logger) => ToArrayAsync(executor, null, logger: logger);
 
-        TResult[] ISqlExecutor<TResult>.ToArray(IExecutor executor, ILogger logger) => ToArray(executor, null, logger: logger);
+        TResult[] ICompiledQuery<TResult>.ToArray(IExecutor executor, ILogger logger) => ToArray(executor, null, logger: logger);
 
         ICompiledQuery<TResult> ISqlExecutor<TResult>.Compile(ILogger logger) => new CompiledQuery<TResult>(base.Compile(logger: logger));
 
