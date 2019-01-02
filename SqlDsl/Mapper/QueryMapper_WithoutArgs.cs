@@ -63,5 +63,53 @@ namespace SqlDsl.Mapper
         {
             return Worker.ToArray(executor, null, logger: logger);
         }
+
+        /// <inheritdoc />
+        public Task<TMapped> FirstAsync(IExecutor executor, ILogger logger = null)
+        {
+            return Worker.FirstAsync(executor, null, logger: logger);
+        }
+
+        /// <inheritdoc />
+        public TMapped First(IExecutor executor, ILogger logger = null)
+        {
+            return Worker.First(executor, null, logger: logger);
+        }
+
+        /// <inheritdoc />
+        public Task<TMapped> FirstOrDefaultAsync(IExecutor executor, ILogger logger = null)
+        {
+            return Worker.FirstOrDefaultAsync(executor, null, logger: logger);
+        }
+
+        /// <inheritdoc />
+        public TMapped FirstOrDefault(IExecutor executor, ILogger logger = null)
+        {
+            return Worker.FirstOrDefault(executor, null, logger: logger);
+        }
+
+        /// <inheritdoc />
+        public Task<TMapped> SingleAsync(IExecutor executor, ILogger logger = null)
+        {
+            return Worker.SingleAsync(executor, null, logger: logger);
+        }
+
+        /// <inheritdoc />
+        public TMapped Single(IExecutor executor, ILogger logger = null)
+        {
+            return Worker.Single(executor, null, logger: logger);
+        }
+
+        /// <inheritdoc />
+        public Task<TMapped> SingleOrDefaultAsync(IExecutor executor, ILogger logger = null)
+        {
+            return Worker.SingleOrDefaultAsync(executor, null, logger: logger);
+        }
+
+        /// <inheritdoc />
+        public TMapped SingleOrDefault(IExecutor executor, ILogger logger = null)
+        {
+            return Worker.SingleOrDefault(executor, null, logger: logger);
+        }
     }
 }

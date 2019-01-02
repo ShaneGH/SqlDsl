@@ -55,5 +55,37 @@ namespace SqlDsl.Mapper
         /// <inheritdoc />
         public Task<List<TMapped>> ToListAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
             Compile(logger: logger).ToListAsync(executor, args, logger: logger);
+
+        /// <inheritdoc />
+        public TMapped First(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).First(executor, args, logger: logger);
+
+        /// <inheritdoc />
+        public Task<TMapped> FirstAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).FirstAsync(executor, args, logger: logger);
+
+        /// <inheritdoc />
+        public TMapped FirstOrDefault(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).FirstOrDefault(executor, args, logger: logger);
+
+        /// <inheritdoc />
+        public Task<TMapped> FirstOrDefaultAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).FirstOrDefaultAsync(executor, args, logger: logger);
+
+        /// <inheritdoc />
+        public TMapped Single(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).Single(executor, args, logger: logger);
+
+        /// <inheritdoc />
+        public Task<TMapped> SingleAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).SingleAsync(executor, args, logger: logger);
+
+        /// <inheritdoc />
+        public TMapped SingleOrDefault(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).SingleOrDefault(executor, args, logger: logger);
+
+        /// <inheritdoc />
+        public Task<TMapped> SingleOrDefaultAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger: logger).SingleOrDefaultAsync(executor, args, logger: logger);
     }
 }

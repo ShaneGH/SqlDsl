@@ -44,6 +44,46 @@ namespace SqlDsl
         /// Execute the compiled query
         /// </summary>
         TResult[] ToArray(IExecutor executor, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        TResult First(IExecutor executor, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        Task<TResult> FirstAsync(IExecutor executor, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        TResult FirstOrDefault(IExecutor executor, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        Task<TResult> FirstOrDefaultAsync(IExecutor executor, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        TResult Single(IExecutor executor, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        Task<TResult> SingleAsync(IExecutor executor, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        TResult SingleOrDefault(IExecutor executor, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        Task<TResult> SingleOrDefaultAsync(IExecutor executor, ILogger logger = null);
     }
 
     /// <summary>
@@ -80,5 +120,45 @@ namespace SqlDsl
         /// Execute the compiled query
         /// </summary>
         TResult[] ToArray(IExecutor executor, TArgs args, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        TResult First(IExecutor executor, TArgs args, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        Task<TResult> FirstAsync(IExecutor executor, TArgs args, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        TResult FirstOrDefault(IExecutor executor, TArgs args, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        Task<TResult> FirstOrDefaultAsync(IExecutor executor, TArgs args, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        TResult Single(IExecutor executor, TArgs args, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        Task<TResult> SingleAsync(IExecutor executor, TArgs args, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        TResult SingleOrDefault(IExecutor executor, TArgs args, ILogger logger = null);
+        
+        /// <summary>
+        /// Execute the compiled query
+        /// </summary>
+        Task<TResult> SingleOrDefaultAsync(IExecutor executor, TArgs args, ILogger logger = null);
     }
 }

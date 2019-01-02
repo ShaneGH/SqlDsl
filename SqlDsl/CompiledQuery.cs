@@ -60,10 +60,9 @@ namespace SqlDsl
                 .SelectMany((p, i) => GetParamValue(p, args, i));
         }
 
-        // <inheritdoc />
-        public async Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null)
+        async Task<IEnumerable<object[]>> LoadDataAsync(IExecutor executor, TArgs args, ILogger logger)
         {                    
-            var (sql, teardown) = BuildSqlC(args);
+            var (sql, teardown) = BuildSql(args);
             if (logger.CanLogInfo(LogMessages.ExecutingQuery))
                 logger.LogInfo($"Executing sql:{Environment.NewLine}{sql}", LogMessages.ExecutingQuery);
 
@@ -89,7 +88,31 @@ namespace SqlDsl
             if (logger.CanLogInfo(LogMessages.ExecutedQuery))
                 logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
 
-            return results.Parse<TResult>(PropertyGraph, logger);
+            return results;
+        }
+
+        IEnumerable<object[]> LoadData(IExecutor executor, TArgs args, ILogger logger)
+        {
+            var (sql, teardown) = BuildSql(args);
+            if (logger.CanLogInfo(LogMessages.ExecutingQuery))
+                logger.LogInfo($"Executing sql:{Environment.NewLine}{sql}", LogMessages.ExecutingQuery);
+
+            var timer = new Timer(true);
+            
+            IEnumerable<object[]> results;
+
+            // execute and get all rows
+            // TODO: is it possible to limit the data returned if First or Single are called?
+            using (var reader = executor.ExecuteDebug(sql, BuildParameters(args), SelectColumns))
+                results = reader.GetRows().Enumerate();
+
+            if (!string.IsNullOrWhiteSpace(teardown))
+                executor.ExecuteCommand(teardown, CodingConstants.Empty.StringObject);
+            
+            if (logger.CanLogInfo(LogMessages.ExecutedQuery))
+                logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
+
+            return results;
         }
 
         static readonly Regex InParamRegex = new Regex(
@@ -130,7 +153,7 @@ namespace SqlDsl
             return output;
         }
 
-        public (string sql, string teardownSql) BuildSqlC(TArgs args)
+        public (string sql, string teardownSql) BuildSql(TArgs args)
         {
             return SqlParts.Assemble(x => RewriteSql(args, x));
         }
@@ -162,44 +185,24 @@ namespace SqlDsl
             return sql;
         }
 
-        // <inheritdoc />
-        public IEnumerable<TResult> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null)
-        {                    
-            var (sql, teardown) = BuildSqlC(args);
-            if (logger.CanLogInfo(LogMessages.ExecutingQuery))
-                logger.LogInfo($"Executing sql:{Environment.NewLine}{sql}", LogMessages.ExecutingQuery);
-
-            var timer = new Timer(true);
-            
-            IEnumerable<object[]> results;
-
-            // execute and get all rows
-            using (var reader = executor.ExecuteDebug(sql, BuildParameters(args), SelectColumns))
-                results = reader.GetRows().Enumerate();
-
-            if (!string.IsNullOrWhiteSpace(teardown))
-                executor.ExecuteCommand(teardown, CodingConstants.Empty.StringObject);
-            
-            if (logger.CanLogInfo(LogMessages.ExecutedQuery))
-                logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
-
-            return results.Parse<TResult>(PropertyGraph, logger);
-        }
-
-        // <inheritdoc />
-        public async Task<List<TResult>> ToListAsync(IExecutor executor, TArgs args, ILogger logger = null)
+        /// <inheritdoc />
+        public IEnumerable<TResult> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null) 
         {
-            var timer = new Timer(true);
-            var enumerable = await ToIEnumerableAsync(executor, args, logger).ConfigureAwait(false);
-            var result = enumerable.ToList();
-            
-            if (logger.CanLogInfo(LogMessages.ParsedQuery))
-                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
-
-            return result;
+            return LoadData(executor, args, logger)
+                .Parse<TResult>(PropertyGraph, logger)
+                .Enumerate();
         }
 
-        // <inheritdoc />
+        /// <inheritdoc />
+        public async Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var results = await LoadDataAsync(executor, args, logger).ConfigureAwait(false);
+            return results
+                .Parse<TResult>(PropertyGraph, logger)
+                .Enumerate();
+        }
+
+        /// <inheritdoc />
         public List<TResult> ToList(IExecutor executor, TArgs args, ILogger logger = null)
         {
             var timer = new Timer(true);
@@ -212,7 +215,33 @@ namespace SqlDsl
             return result;
         }
 
-        // <inheritdoc />
+        /// <inheritdoc />
+        public async Task<List<TResult>> ToListAsync(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var enumerable = await ToIEnumerableAsync(executor, args, logger).ConfigureAwait(false);
+            var result = enumerable.ToList();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+
+            return result;
+        }
+        
+        /// <inheritdoc />
+        public TResult[] ToArray(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var enumerable = ToIEnumerable(executor, args, logger);
+            var result = enumerable.ToArray();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+
+            return result;
+        }
+
+        /// <inheritdoc />
         public async Task<TResult[]> ToArrayAsync(IExecutor executor, TArgs args, ILogger logger = null)
         {
             var timer = new Timer(true);
@@ -224,11 +253,112 @@ namespace SqlDsl
 
             return result;
         }
-        public TResult[] ToArray(IExecutor executor, TArgs args, ILogger logger = null)
+        
+        /// <inheritdoc />
+        public TResult First(IExecutor executor, TArgs args, ILogger logger = null)
         {
             var timer = new Timer(true);
-            var enumerable = ToIEnumerable(executor, args, logger);
-            var result = enumerable.ToArray();
+            var result = LoadData(executor, args, logger)
+                .Parse<TResult>(PropertyGraph, logger)
+                .First();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+
+            return result;
+        }
+        
+        /// <inheritdoc />
+        public async Task<TResult> FirstAsync(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var result = (await LoadDataAsync(executor, args, logger))
+                .Parse<TResult>(PropertyGraph, logger)
+                .First();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+
+            return result;
+        }
+        
+        /// <inheritdoc />
+        public TResult FirstOrDefault(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var result = LoadData(executor, args, logger)
+                .Parse<TResult>(PropertyGraph, logger)
+                .FirstOrDefault();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+
+            return result;
+        }
+        
+        /// <inheritdoc />
+        public async Task<TResult> FirstOrDefaultAsync(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var result = (await LoadDataAsync(executor, args, logger))
+                .Parse<TResult>(PropertyGraph, logger)
+                .FirstOrDefault();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+
+            return result;
+        }
+        
+        /// <inheritdoc />
+        public TResult Single(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var result = LoadData(executor, args, logger)
+                .Parse<TResult>(PropertyGraph, logger)
+                .Single();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+
+            return result;
+        }
+        
+        /// <inheritdoc />
+        public async Task<TResult> SingleAsync(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var result = (await LoadDataAsync(executor, args, logger))
+                .Parse<TResult>(PropertyGraph, logger)
+                .Single();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+
+            return result;
+        }
+        
+        /// <inheritdoc />
+        public TResult SingleOrDefault(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var result = LoadData(executor, args, logger)
+                .Parse<TResult>(PropertyGraph, logger)
+                .SingleOrDefault();
+            
+            if (logger.CanLogInfo(LogMessages.ParsedQuery))
+                logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
+
+            return result;
+        }
+        
+        /// <inheritdoc />
+        public async Task<TResult> SingleOrDefaultAsync(IExecutor executor, TArgs args, ILogger logger = null)
+        {
+            var timer = new Timer(true);
+            var result = (await LoadDataAsync(executor, args, logger))
+                .Parse<TResult>(PropertyGraph, logger)
+                .SingleOrDefault();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
                 logger.LogInfo($"Data parsed in {timer.SplitString()}", LogMessages.ParsedQuery);
@@ -275,7 +405,7 @@ namespace SqlDsl
         /// <summary>
         /// Debug only and test only. Do not use this property in an application.
         /// </summary>
-        internal string Sql => (Worker as CompiledQuery<object, TResult>)?.BuildSqlC(null).sql;
+        internal string Sql => (Worker as CompiledQuery<object, TResult>)?.BuildSql(null).sql;
 
         readonly ICompiledQuery<object, TResult> Worker;
 
@@ -284,22 +414,46 @@ namespace SqlDsl
             Worker = worker ?? throw new ArgumentNullException(nameof(worker));
         }
 
-        // <inheritdoc />
+        /// <inheritdoc />
         public Task<IEnumerable<TResult>> ToIEnumerableAsync(IExecutor executor, ILogger logger = null) => Worker.ToIEnumerableAsync(executor, null, logger: logger);
 
-        // <inheritdoc />
+        /// <inheritdoc />
         public IEnumerable<TResult> ToIEnumerable(IExecutor executor, ILogger logger = null) => Worker.ToIEnumerable(executor, null, logger: logger);
 
-        // <inheritdoc />
+        /// <inheritdoc />
         public async Task<List<TResult>> ToListAsync(IExecutor executor, ILogger logger = null) => (await ToIEnumerableAsync(executor, logger).ConfigureAwait(false)).ToList();
 
-        // <inheritdoc />
+        /// <inheritdoc />
         public List<TResult> ToList(IExecutor executor, ILogger logger = null) => ToIEnumerable(executor, logger).ToList();
 
-        // <inheritdoc />
+        /// <inheritdoc />
         public async Task<TResult[]> ToArrayAsync(IExecutor executor, ILogger logger = null) => (await ToIEnumerableAsync(executor, logger).ConfigureAwait(false)).ToArray();
 
-        // <inheritdoc />
+        /// <inheritdoc />
         public TResult[] ToArray(IExecutor executor, ILogger logger = null) => ToIEnumerable(executor, logger).ToArray();
+
+        /// <inheritdoc />
+        public Task<TResult> FirstAsync(IExecutor executor, ILogger logger = null) => Worker.FirstAsync(executor, null, logger);
+
+        /// <inheritdoc />
+        public TResult First(IExecutor executor, ILogger logger = null) => Worker.First(executor, null, logger);
+
+        /// <inheritdoc />
+        public Task<TResult> FirstOrDefaultAsync(IExecutor executor, ILogger logger = null) => Worker.FirstOrDefaultAsync(executor, null, logger);
+
+        /// <inheritdoc />
+        public TResult FirstOrDefault(IExecutor executor, ILogger logger = null) => Worker.FirstOrDefault(executor, null, logger);
+
+        /// <inheritdoc />
+        public Task<TResult> SingleAsync(IExecutor executor, ILogger logger = null) => Worker.SingleAsync(executor, null, logger);
+
+        /// <inheritdoc />
+        public TResult Single(IExecutor executor, ILogger logger = null) => Worker.Single(executor, null, logger);
+
+        /// <inheritdoc />
+        public Task<TResult> SingleOrDefaultAsync(IExecutor executor, ILogger logger = null) => Worker.SingleOrDefaultAsync(executor, null, logger);
+
+        /// <inheritdoc />
+        public TResult SingleOrDefault(IExecutor executor, ILogger logger = null) => Worker.SingleOrDefault(executor, null, logger);
     }
 }

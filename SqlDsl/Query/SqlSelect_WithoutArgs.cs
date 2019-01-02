@@ -35,6 +35,22 @@ namespace SqlDsl.Query
 
         TResult[] ICompiledQuery<TResult>.ToArray(IExecutor executor, ILogger logger) => ToArray(executor, null, logger: logger);
 
+        Task<TResult> ICompiledQuery<TResult>.FirstAsync(IExecutor executor, ILogger logger) => FirstAsync(executor, null, logger: logger);
+
+        TResult ICompiledQuery<TResult>.First(IExecutor executor, ILogger logger) => First(executor, null, logger: logger);
+
+        Task<TResult> ICompiledQuery<TResult>.FirstOrDefaultAsync(IExecutor executor, ILogger logger) => FirstOrDefaultAsync(executor, null, logger: logger);
+
+        TResult ICompiledQuery<TResult>.FirstOrDefault(IExecutor executor, ILogger logger) => FirstOrDefault(executor, null, logger: logger);
+
+        Task<TResult> ICompiledQuery<TResult>.SingleAsync(IExecutor executor, ILogger logger) => SingleAsync(executor, null, logger: logger);
+
+        TResult ICompiledQuery<TResult>.Single(IExecutor executor, ILogger logger) => Single(executor, null, logger: logger);
+
+        Task<TResult> ICompiledQuery<TResult>.SingleOrDefaultAsync(IExecutor executor, ILogger logger) => SingleOrDefaultAsync(executor, null, logger: logger);
+
+        TResult ICompiledQuery<TResult>.SingleOrDefault(IExecutor executor, ILogger logger) => SingleOrDefault(executor, null, logger: logger);
+
         ICompiledQuery<TResult> ISqlExecutor<TResult>.Compile(ILogger logger) => new CompiledQuery<TResult>(base.Compile(logger: logger));
 
         IQuery<TResult> ISqlSelect<TResult>.From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty) =>

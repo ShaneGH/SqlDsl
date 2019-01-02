@@ -74,6 +74,38 @@ namespace SqlDsl.Query
         public TResult[] ToArray(IExecutor executor, TArgs args, ILogger logger = null) =>
             Compile(logger).ToArray(executor, args, logger);
 
+        /// <inheritdoc />
+        public TResult First(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).First(executor, args, logger);
+
+        /// <inheritdoc />
+        public Task<TResult> FirstAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).FirstAsync(executor, args, logger);
+
+        /// <inheritdoc />
+        public TResult FirstOrDefault(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).FirstOrDefault(executor, args, logger);
+
+        /// <inheritdoc />
+        public Task<TResult> FirstOrDefaultAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).FirstOrDefaultAsync(executor, args, logger);
+
+        /// <inheritdoc />
+        public TResult Single(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).Single(executor, args, logger);
+
+        /// <inheritdoc />
+        public Task<TResult> SingleAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).SingleAsync(executor, args, logger);
+
+        /// <inheritdoc />
+        public TResult SingleOrDefault(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).SingleOrDefault(executor, args, logger);
+
+        /// <inheritdoc />
+        public Task<TResult> SingleOrDefaultAsync(IExecutor executor, TArgs args, ILogger logger = null) =>
+            Compile(logger).SingleOrDefaultAsync(executor, args, logger);
+
         /// <summary>
         /// Compile the query into something which can be executed multiple times
         /// </summary>
