@@ -42,7 +42,6 @@ namespace SqlDsl.Mapper
         }
     }
 
-
     [DebuggerDisplay("{GetDebuggerDisplay()}")]
     class MappedProperty<TElement> : IDebuggerDisplay
     {

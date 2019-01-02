@@ -679,6 +679,56 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, data.Count);
         }
 
+        [Test]
+        public async Task BackwardsQuery()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<(IEnumerable<Person> thePerson, IEnumerable<PersonClass> thePersonClass, Class theClass)>()
+                .From(x => x.theClass)
+                .LeftJoin(q => q.thePersonClass)
+                    .On((q, pc) => q.theClass.Id == pc.ClassId)
+                .LeftJoin(q => q.thePerson)
+                    .On((q, c) => q.thePersonClass.One().PersonId == c.Id)
+                .Map(x => new
+                {
+                    person = x.thePerson.Select(p => p.Name),
+                    cls = x.theClass.Name
+                })
+                .ToListAsync(Executor);
+
+            // assert
+            Assert.AreEqual(2, data.Count);
+        }
+
+        [Test]
+        public async Task QueryWithJoinsInWrongOrder_ExecutesSuccessfully()
+        {
+            // arrange
+            // act
+            // assert
+            await Sql.Query.Sqlite<JoinedQueryClass>()
+                .From(x => x.ThePerson)
+                .LeftJoin<Tag>(q => q.TheTags)
+                    .On((q, t) => q.TheClassTags.One().TagId == t.Id)
+                .LeftJoin<Class>(q => q.TheClasses)
+                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
+                .LeftJoin<ClassTag>(q => q.TheClassTags)
+                    .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
+                .LeftJoin<PersonClass>(q => q.ThePersonClasses)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                .Map(x => new
+                {
+                    person = x.ThePerson.Name,
+                    classes = x.TheClasses.Select(c => new 
+                    {
+                        className = c.Name,
+                        tags = x.TheTags.Select(t => t.Name).ToList()
+                    }).ToList()
+                })
+                .ToListAsync(Executor);
+        }
+
         /// <summary>
         /// This is meant as a smoke test for other things
         /// </summary>

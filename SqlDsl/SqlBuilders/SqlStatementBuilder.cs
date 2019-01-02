@@ -404,7 +404,7 @@ namespace SqlDsl.SqlBuilders
             // TODO: add where and order by column tables
 
             if (join == null)
-                throw new InvalidOperationException($"Cannot find join {table}.");
+                throw new InvalidOperationException($"Cannot find join for {table}.");
 
             return join.Value.queryObjectReferences
                 .SelectMany(x => GetLineage(x, complete.Append(table)))
