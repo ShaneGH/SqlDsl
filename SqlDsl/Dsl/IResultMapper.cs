@@ -8,7 +8,7 @@ namespace SqlDsl.Dsl
     /// <summary>
     /// Interface to help with query building DSL
     /// </summary>
-    public interface IResultMapper<TResult> : ISqlExecutor<TResult>, IOrderer<TResult>
+    public interface IResultMapper<TResult> : IPager<TResult>, IOrderer<TResult>
     {
         /// <summary>
         /// Map the result TResult to another type of object. Use this method to cherry pick the columns you want to return
@@ -16,13 +16,13 @@ namespace SqlDsl.Dsl
         /// <param name="mapper">
         /// An expression to build a mapped object
         /// </param>
-        ISqlExecutor<TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper);
+        IPager<TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper);
     }
     
     /// <summary>
     /// Interface to help with query building DSL
     /// </summary>
-    public interface IResultMapper<TArgs, TResult> : ISqlExecutor<TArgs, TResult>, IOrderer<TArgs, TResult>
+    public interface IResultMapper<TArgs, TResult> : IPager<TArgs, TResult>, IOrderer<TArgs, TResult>
     {
         /// <summary>
         /// Map the result TResult to another type of object. Use this method to cherry pick the columns you want to return
@@ -30,7 +30,7 @@ namespace SqlDsl.Dsl
         /// <param name="mapper">
         /// An expression to build a mapped object
         /// </param>
-        ISqlExecutor<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper);
+        IPager<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper);
         
         /// <summary>
         /// Map the result TResult to another type of object. Use this method to cherry pick the columns you want to return
@@ -38,6 +38,6 @@ namespace SqlDsl.Dsl
         /// <param name="mapper">
         /// An expression to build a mapped object
         /// </param>
-        ISqlExecutor<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TArgs, TMapped>> mapper);
+        IPager<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TArgs, TMapped>> mapper);
     }
 }

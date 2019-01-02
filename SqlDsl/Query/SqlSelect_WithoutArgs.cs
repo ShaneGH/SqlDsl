@@ -23,6 +23,10 @@ namespace SqlDsl.Query
         {
         }
 
+        IPager2<TResult> IPager<TResult>.Skip(int result) => (SqlSelect<TResult>)base.Skip(result);
+
+        ISqlExecutor<TResult> IPager2<TResult>.Take(int result) => (SqlSelect<TResult>)base.Take(result);
+
         Task<IEnumerable<TResult>> ICompiledQuery<TResult>.ToIEnumerableAsync(IExecutor executor, ILogger logger) => ToIEnumerableAsync(executor, null, logger: logger);
 
         IEnumerable<TResult> ICompiledQuery<TResult>.ToIEnumerable(IExecutor executor, ILogger logger) => ToIEnumerable(executor, null, logger: logger);
@@ -86,7 +90,7 @@ namespace SqlDsl.Query
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoin<TJoin>(Expression<Func<TResult, TJoin>> joinProperty) =>
             new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(joinProperty));
 
-        ISqlExecutor<TMapped> IResultMapper<TResult>.Map<TMapped>(Expression<Func<TResult, TMapped>> mapper) =>
+        IPager<TMapped> IResultMapper<TResult>.Map<TMapped>(Expression<Func<TResult, TMapped>> mapper) =>
             new QueryMapper<TMapped>(base.Map(mapper));
 
         IResultMapper<TResult> IFilter<TResult>.Where(Expression<Func<TResult, bool>> filter) =>

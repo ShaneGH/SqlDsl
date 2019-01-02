@@ -16,7 +16,7 @@ namespace SqlDsl.Query
     /// <summary>
     /// Map a query into something else
     /// </summary>
-    public abstract class ResultMapper<TArgs, TResult> : SqlExecutor<TArgs, TResult>, IResultMapper<TArgs, TResult>
+    public abstract class ResultMapper<TArgs, TResult> : Pager<TArgs, TResult>, IResultMapper<TArgs, TResult>
     {
         public ResultMapper(ISqlSyntax sqlSyntax)
             : base(sqlSyntax)
@@ -24,11 +24,11 @@ namespace SqlDsl.Query
         }
 
         /// <inheritdoc />
-        public ISqlExecutor<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TArgs, TMapped>> mapper) =>
+        public IPager<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TArgs, TMapped>> mapper) =>
             new QueryMapper<TArgs, TResult, TMapped>(this, mapper);
 
         /// <inheritdoc />
-        public ISqlExecutor<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper)
+        public IPager<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper)
         {
             var addedArgs = Expression.Lambda<Func<TResult, TArgs, TMapped>>(
                 mapper.Body,

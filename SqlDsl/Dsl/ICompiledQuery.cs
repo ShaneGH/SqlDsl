@@ -9,7 +9,7 @@ using SqlDsl.Query;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 
-namespace SqlDsl
+namespace SqlDsl.Dsl
 {
     /// <summary>
     /// A query compiled for reuse

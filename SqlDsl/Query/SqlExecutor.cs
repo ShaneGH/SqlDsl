@@ -37,6 +37,11 @@ namespace SqlDsl.Query
         public abstract IEnumerable<Join> Joins { get; }
         
         /// <summary>
+        /// The paging for to the query
+        /// </summary>
+        protected abstract (int? skip, int? take) Paging { get; }
+        
+        /// <summary>
         /// The WHERE part of the query
         /// </summary>
         protected abstract (ParameterExpression queryRoot, ParameterExpression args, Expression where)? WhereClause { get; }
@@ -167,6 +172,10 @@ namespace SqlDsl.Query
             // add a where clause if specified
             if (WhereClause != null)
                 builder.SetWhere(WhereClause.Value.queryRoot, WhereClause.Value.args, WhereClause.Value.where, param);
+
+            // add a where clause if specified
+            if (Paging.skip != null || Paging.take != null)
+                builder.SetPaging(Paging.skip, Paging.take, param);
 
             // add order by if specified
             foreach (var (queryRoot, args, orderExpression, direction) in Ordering)

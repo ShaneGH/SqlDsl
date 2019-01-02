@@ -13,13 +13,28 @@ namespace SqlDsl.Mapper
     /// <summary>
     /// Wrapper for ISqlBuilder&lt;object, TMapped> which ignores args
     /// </summary>
-    public class QueryMapper<TMapped> : ISqlExecutor<TMapped>
+    public class QueryMapper<TMapped> : IPager<TMapped>
     {
-        readonly ISqlExecutor<object, TMapped> Worker;
+        readonly IPager<object, TMapped> Worker;
+        (int? skip, int? take) Paging;
         
-        public QueryMapper(ISqlExecutor<object, TMapped> worker)
+        public QueryMapper(IPager<object, TMapped> worker)
         {
             Worker = worker ?? throw new ArgumentNullException(nameof(worker));
+        }
+
+        /// <inheritdoc />
+        public IPager2<TMapped> Skip(int result)
+        {
+            Paging = (result, Paging.take);
+            return this;
+        }
+
+        /// <inheritdoc />
+        public ISqlExecutor<TMapped> Take(int result)
+        {
+            Paging = (Paging.skip, result);
+            return this;
         }
 
         /// <inheritdoc />

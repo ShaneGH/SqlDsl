@@ -1130,7 +1130,7 @@ namespace SqlDsl.UnitTests.DataParser
 
     public static class RootObjectPropertyGraphTestUtils
     {
-        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.ISqlExecutor<object, TResult> builder)
+        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.IPager<object, TResult> builder)
         {
             var compiled = (CompiledQuery<object, TResult>)((QueryMapper<object, TMappedFrom, TResult>)builder)
                 .Compile();
@@ -1138,7 +1138,7 @@ namespace SqlDsl.UnitTests.DataParser
             return compiled.PropertyGraph;
         }
         
-        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.ISqlExecutor<TResult> builder, bool printQuery = true)
+        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.IPager<TResult> builder, bool printQuery = true)
         {
             var mapper = (QueryMapper<TResult>)builder;
             var compiled = (CompiledQuery<TResult>)mapper

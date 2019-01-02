@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SqlDsl.DataParser;
+using SqlDsl.Dsl;
 using SqlDsl.Query;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;

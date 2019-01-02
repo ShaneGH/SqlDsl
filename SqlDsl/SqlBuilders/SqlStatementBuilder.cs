@@ -42,6 +42,11 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         (string sql, IEnumerable<string> queryObjectReferences)? Where = null;
 
+        /// <summary>
+        /// A paging clause which can be added to a WHERE clause
+        /// </summary>
+        string Paging = null;
+
         readonly List<(string sql, IEnumerable<string> queryObjectReferences, OrderDirection direction)> Ordering = new List<(string, IEnumerable<string>, OrderDirection)>();
 
         /// <summary>
@@ -175,6 +180,34 @@ namespace SqlDsl.SqlBuilders
             Where = (whereSql, queryObjectReferences);
         }
 
+        public void SetPaging(int? skip, int? take, ParamBuilder parameters)
+        {
+            var rowName = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias
+                ? SqlStatementConstants.RowIdName
+                : $"{PrimaryTableAlias}.{SqlStatementConstants.RowIdName}";
+
+            rowName = SqlSyntax.WrapAlias(rowName);
+
+            var paging = skip == null
+                ? null
+                : SqlSyntax.BuildGreaterThanCondition(rowName, parameters.AddParam(skip.Value, typeof(int)));
+
+            if (take != null)
+            {
+                var takeString = SqlSyntax.BuildLessThanEqualToCondition(
+                    rowName, 
+                    parameters.AddParam((skip ?? 0) + take.Value, typeof(int)));
+
+                paging = paging == null
+                    ? takeString
+                    : SqlSyntax.BuildAndCondition(
+                        paging,
+                        takeString);
+            }
+
+            Paging = paging;
+        }
+
         (string sql, IEnumerable<string> queryObjectReferences) BuildCondition(
             ParameterExpression queryRootParam, 
             ParameterExpression queryArgsParam,
@@ -256,6 +289,24 @@ namespace SqlDsl.SqlBuilders
 
                 return SqlSyntax.AddAliasColumn(select, alias);
             }
+        }
+        
+        string BuildWhereSql()
+        {
+            var where = Paging == null
+                ? null
+                : $"({Paging})";
+
+            if (Where != null)
+            {
+                where = where != null
+                    ? SqlSyntax.BuildAndCondition(where, Where.Value.sql)
+                    : Where.Value.sql;
+            }
+
+            return where == null
+                ? ""
+                : $" WHERE {where}";
         }        
 
         /// <inheritdoc />
@@ -264,7 +315,7 @@ namespace SqlDsl.SqlBuilders
             var allTables = selectTables.ToHashSet();
 
             // build WHERE part
-            var where = Where == null ? "" : $" WHERE {Where.Value.sql}";
+            var where = BuildWhereSql();
             if (Where != null)
                 allTables.AddRange(Where.Value.queryObjectReferences);
 
