@@ -24,7 +24,7 @@ namespace SqlDsl.Query
         (string name, string tableName, Type type)? __PrimaryTableMember;
         
         /// <inheritdoc />
-        public override (string memberName, string tableName, Type type)? PrimaryTableDetauls => __PrimaryTableMember;
+        public override (string memberName, string tableName, Type type)? PrimaryTableDetails => __PrimaryTableMember;
 
         public SqlSelect(ISqlSyntax sqlSyntax)
             : base(sqlSyntax)

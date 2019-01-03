@@ -22,14 +22,19 @@ namespace SqlDsl.Query
         static readonly (string, string, Type) DefaultPrimaryTableMember = (SqlStatementConstants.RootObjectAlias, typeof(TResult).Name, typeof(TResult));
 
         /// <summary>
+        /// A cache of column names for a given type
+        /// </summary>
+        static readonly ConcurrentDictionary<Type, IEnumerable<(string name, Type dataType)>> Columns = new ConcurrentDictionary<Type, IEnumerable<(string, Type)>>();
+
+        /// <summary>
         /// The name of the member on the TResult which the primary table is appended to
         /// </summary>
-        public abstract (string memberName, string tableName, Type type)? PrimaryTableDetauls { get; }
+        public abstract (string memberName, string tableName, Type type)? PrimaryTableDetails { get; }
         
         /// <summary>
         /// The name of the member on the TResult which the primary table is appended to
         /// </summary>
-        public (string memberName, string tableName, Type type) PrimaryTableMember => PrimaryTableDetauls ?? DefaultPrimaryTableMember;
+        public (string memberName, string tableName, Type type) PrimaryTableMember => PrimaryTableDetails ?? DefaultPrimaryTableMember;
         
         /// <summary>
         /// The joins applied to the query
@@ -183,11 +188,6 @@ namespace SqlDsl.Query
 
             return (builder, param);
         }
-
-        /// <summary>
-        /// A cache of column names for a given type
-        /// </summary>
-        static readonly ConcurrentDictionary<Type, IEnumerable<(string name, Type dataType)>> Columns = new ConcurrentDictionary<Type, IEnumerable<(string, Type)>>();
         
         /// <summary>
         /// Get all of the column names for a given type
