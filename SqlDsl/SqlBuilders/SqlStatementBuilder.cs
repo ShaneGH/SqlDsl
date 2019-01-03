@@ -14,7 +14,7 @@ namespace SqlDsl.SqlBuilders
     /// <summary>
     /// A class to build sql statements
     /// </summary>
-    public class SqlStatementBuilder : ISqlString, ISqlStatementPartValues
+    public class SqlStatementBuilder : ISqlString
     {
         static readonly (string, (string, string, string)[]) Select1 = ("1", new (string, string, string)[0]);
         static readonly ConstructorInfo[] EmptyConstructorInfo = new ConstructorInfo[0];
@@ -53,6 +53,16 @@ namespace SqlDsl.SqlBuilders
         /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join
         /// </summary>
         readonly List<(string alias, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences)> _Joins = new List<(string, SelectTableSqlWithRowId, IEnumerable<string>)>();
+
+        /// <summary>
+        /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join
+        /// </summary>
+        public IEnumerable<(string alias, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences)> Joins => _Joins.Skip(0);
+
+        /// <summary>
+        /// A list of columns in the SELECT statement
+        /// </summary>
+        public IEnumerable<(bool isRowId, SelectColumn col)> AllSelectColumns => GetAllSelectColumns();
 
         public SqlStatementBuilder(ISqlSyntax sqlFragmentBuilder, string primaryTable, string primaryTableAlias)
         {
@@ -452,22 +462,6 @@ namespace SqlDsl.SqlBuilders
 
             return GetTableChain(table.JoinedFrom).Append(table);
         }
-
-        #region ISqlStatementPartValues
-
-        string ISqlStatementPartValues.PrimaryTableAlias => PrimaryTableAlias;
-
-        IEnumerable<SqlStatementPartJoin> ISqlStatementPartValues.JoinTables => _Joins.Select(BuildJoinTable);
-
-        IEnumerable<SqlStatementPartSelect> ISqlStatementPartValues.SelectColumns => GetAllSelectColumns().Select(BuildSelectCol);
-
-        static readonly Func<(string alias, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences), SqlStatementPartJoin> BuildJoinTable = join =>
-            new SqlStatementPartJoin(join.alias, join.queryObjectReferences);
-
-        static readonly Func<(bool, SelectColumn), SqlStatementPartSelect> BuildSelectCol = select =>
-            new SqlStatementPartSelect(select.Item1, select.Item2.CellDataType, select.Item2.Alias, select.Item2.RepresentsColumns, select.Item2.ArgConstructors);
-
-        #endregion
 
         public class SelectColumn
         {

@@ -16,7 +16,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     {
         readonly IEnumerable<ISelectColumn> Columns;
 
-        public SelectColumns(ISqlStatementPartValues queryBuilder, IQueryTables tables)
+        public SelectColumns(SqlStatementBuilder queryBuilder, IQueryTables tables)
         {
             // TODO: this constructor is called a lot. Why??
 
@@ -31,12 +31,12 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// <summary>
         /// Build a list of columns
         /// </summary>
-        static IEnumerable<ISelectColumn> BuildColumns(ISqlStatementPartValues queryParts, IQueryTables tables)
+        static IEnumerable<ISelectColumn> BuildColumns(SqlStatementBuilder queryParts, IQueryTables tables)
         {
-            return queryParts.SelectColumns.Select(BuildColumn);
+            return queryParts.AllSelectColumns.Select(BuildColumn);
 
-            ISelectColumn BuildColumn(SqlStatementPartSelect col) => 
-                new SelectColumn(col.RepresentsColumns, col.Alias, col.IsRowId, col.CellDataType, col.ArgConstructors, tables);
+            ISelectColumn BuildColumn((bool isRowId, SqlStatementBuilder.SelectColumn col) col) => 
+                new SelectColumn(col.col.RepresentsColumns, col.Item2.Alias, col.isRowId, col.col.CellDataType, col.col.ArgConstructors, tables);
         }
 
         public IEnumerator<ISelectColumn> GetEnumerator() => Columns.GetEnumerator();

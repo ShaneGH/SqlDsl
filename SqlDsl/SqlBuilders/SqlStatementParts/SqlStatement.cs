@@ -25,7 +25,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
         static readonly IEnumerable<(string, ISelectColumn)> MappedPropertiesToRowNumbers = Enumerable.Empty<(string, ISelectColumn)>();
 
-        public SqlStatement(ISqlStatementPartValues builder)
+        public SqlStatement(SqlStatementBuilder builder)
         {
             Tables = new QueryTables(builder, this);
             SelectColumns = new SelectColumns(builder, Tables);

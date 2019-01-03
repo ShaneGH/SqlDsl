@@ -14,7 +14,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     /// </summary>
     class QueryTable : IQueryTable
     {
-        readonly ISqlStatementPartValues QueryBuilder;
+        readonly SqlStatementBuilder QueryBuilder;
 
         readonly IQueryTables Tables;
 
@@ -37,7 +37,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
         readonly ISqlStatement ParentStatement;
 
-        public QueryTable(string alias, ISqlStatementPartValues queryBuilder, IQueryTables tables, ISqlStatement parentStatement)
+        public QueryTable(string alias, SqlStatementBuilder queryBuilder, IQueryTables tables, ISqlStatement parentStatement)
         {
             Alias = alias ?? throw new ArgumentNullException(nameof(alias));
             QueryBuilder = queryBuilder ?? throw new ArgumentNullException(nameof(queryBuilder));
@@ -55,10 +55,10 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             if (QueryBuilder.PrimaryTableAlias == Alias)
                 return null;
 
-            var table = QueryBuilder.JoinTables
-                .Where(j => j.Alias == Alias)
+            var table = QueryBuilder.Joins
+                .Where(j => j.alias == Alias)
                 // TODO: Will fail when a table is joined to multiple other tables
-                .Select(x => x.QueryObjectReferences.Single()).FirstOrDefault();
+                .Select(x => x.queryObjectReferences.Single()).FirstOrDefault();
 
             if (table == null)
                 throw new InvalidOperationException($"Cannot find join table with alias: {Alias}");
