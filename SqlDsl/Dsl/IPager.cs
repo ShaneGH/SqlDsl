@@ -40,7 +40,7 @@ namespace SqlDsl.Dsl
         /// <summary>
         /// Skip the specified number of results
         /// </summary>
-        IPager2<TArgs, TResult> Skip(Func<TArgs, int> result);
+        IPager2<TArgs, TResult> Skip(Expression<Func<TArgs, int>> result);
     }
     
     /// <summary>
@@ -56,6 +56,6 @@ namespace SqlDsl.Dsl
         /// <summary>
         /// Take the specified number of results
         /// </summary>
-        ISqlExecutor<TArgs, TResult> Take(Func<TArgs, int> result);
+        ISqlExecutor<TArgs, TResult> Take(Expression<Func<TArgs, int>> result);
     }
 }

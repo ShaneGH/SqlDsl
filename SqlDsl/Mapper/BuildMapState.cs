@@ -14,12 +14,12 @@ namespace SqlDsl.Mapper
         public readonly ParameterExpression ArgsObject;
         public readonly List<(ParameterExpression parameter, IEnumerable<string> property)> ParameterRepresentsProperty = new List<(ParameterExpression, IEnumerable<string>)>();
         public readonly ISqlStatement WrappedSqlStatement;
-        public readonly string PrimarySelectTable;
+        public readonly string PrimarySelectTableAlias;
         public readonly ISqlSyntax SqlBuilder;
         public IEnumerable<string> CurrentTable { get; private set; }
 
         public BuildMapState(
-            string primarySelectTable, 
+            string primarySelectTableAlias, 
             ParamBuilder parameters, 
             ParameterExpression queryObject, 
             ParameterExpression argsObject, 
@@ -30,9 +30,9 @@ namespace SqlDsl.Mapper
             QueryObject = queryObject;
             ArgsObject = argsObject;
             WrappedSqlStatement = wrappedSqlStatement;
-            PrimarySelectTable = primarySelectTable;
+            PrimarySelectTableAlias = primarySelectTableAlias;
             SqlBuilder = sqlBuilder;
-            CurrentTable = PrimarySelectTable.Split('.');
+            CurrentTable = PrimarySelectTableAlias.Split('.');
         }
 
         public IDisposable SwitchContext(ParameterExpression newContext)

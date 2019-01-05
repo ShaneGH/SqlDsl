@@ -39,6 +39,9 @@ namespace SqlDsl.Utils
         /// </summary>
         public static Expression ReplaceParameter(Expression expr, ParameterExpression parameter, Expression replacement)
         {
+            if (parameter == replacement)
+                return expr;
+                
             using (Instance)
             {
                 Instance.Init(parameter, replacement);

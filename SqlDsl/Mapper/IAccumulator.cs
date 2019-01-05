@@ -81,7 +81,7 @@ namespace SqlDsl.Mapper
                 else
                 {
                     if (primaryTable == null)
-                        primaryTable = state.WrappedSqlStatement.Tables[state.PrimarySelectTable];
+                        primaryTable = state.WrappedSqlStatement.Tables[state.PrimarySelectTableAlias];
 
                     aggregatedToTable = primaryTable;
                 }

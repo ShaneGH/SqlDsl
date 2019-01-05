@@ -57,10 +57,8 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             CollectionAssert.AreEqual(new[] 
-            { 
-                // results here are not correct
-                // (second is probably correct)
-                Data.ClassTags.TennisBallSport,
+            {
+                Data.ClassTags.ArcherySport,
                 Data.ClassTags.TennisSport,
             }, data);
         }
@@ -91,7 +89,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(x => x.ClassId != 999)
                 .Skip(1).Take(2)
                 .ToArray(Executor, logger: Logger);
-
+                
             // assert
             CollectionAssert.AreEqual(new[] 
             { 

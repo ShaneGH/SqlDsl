@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace SqlDsl.Utils
@@ -14,6 +15,12 @@ namespace SqlDsl.Utils
             public static readonly (string, object)[] StringObject = Enumerable
                 .Empty<(string, object)>()
                 .ToArray();
+        }
+        
+        public class Expressions
+        {
+            public static readonly MethodCallExpression SqlRowNumber = Expression.Call(
+                ReflectionUtils.GetMethod(() => Sql.RowNumber()));
         }
     }
 }

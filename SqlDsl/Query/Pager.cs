@@ -18,34 +18,32 @@ namespace SqlDsl.Query
     /// </summary>
     public abstract class Pager<TArgs, TResult> : SqlExecutor<TArgs, TResult>, IPager<TArgs, TResult>
     {
-        (int? skip, int? take) _Paging;
-        protected override (int? skip, int? take) Paging => _Paging;
+        (Expression<Func<TArgs, int>> skip, Expression<Func<TArgs, int>> take) _Paging;
+        protected override (Expression<Func<TArgs, int>> skip, Expression<Func<TArgs, int>> take) Paging => _Paging;
 
         public Pager(ISqlSyntax sqlSyntax)
             : base(sqlSyntax)
         {
         }
 
-        public IPager2<TArgs, TResult> Skip(int result)
+        /// <inheritdoc />
+        public IPager2<TArgs, TResult> Skip(int result) => Skip(_ => result);
+
+        /// <inheritdoc />
+        public ISqlExecutor<TArgs, TResult> Take(int result) => Take(_ => result);
+
+        /// <inheritdoc />
+        public IPager2<TArgs, TResult> Skip(Expression<Func<TArgs, int>> result)
         {
             _Paging = (result, Paging.take);
             return this;
         }
 
-        public ISqlExecutor<TArgs, TResult> Take(int result)
+        /// <inheritdoc />
+        public ISqlExecutor<TArgs, TResult> Take(Expression<Func<TArgs, int>> result)
         {
             _Paging = (Paging.skip, result);
             return this;
-        }
-
-        public IPager2<TArgs, TResult> Skip(Func<TArgs, int> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISqlExecutor<TArgs, TResult> Take(Func<TArgs, int> result)
-        {
-            throw new NotImplementedException();
         }
     }
 }

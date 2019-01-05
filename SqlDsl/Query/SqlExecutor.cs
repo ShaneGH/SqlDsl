@@ -44,7 +44,7 @@ namespace SqlDsl.Query
         /// <summary>
         /// The paging for to the query
         /// </summary>
-        protected abstract (int? skip, int? take) Paging { get; }
+        protected abstract (Expression<Func<TArgs, int>> skip, Expression<Func<TArgs, int>> take) Paging { get; }
         
         /// <summary>
         /// The WHERE part of the query
@@ -175,18 +175,58 @@ namespace SqlDsl.Query
             }
 
             // add a where clause if specified
-            if (WhereClause != null)
-                builder.SetWhere(WhereClause.Value.queryRoot, WhereClause.Value.args, WhereClause.Value.where, param);
-
-            // add a where clause if specified
-            if (Paging.skip != null || Paging.take != null)
-                builder.SetPaging(Paging.skip, Paging.take, param);
+            SetWhereClauseWithPaging(builder, param);
 
             // add order by if specified
             foreach (var (queryRoot, args, orderExpression, direction) in Ordering)
                 builder.AddOrderBy(queryRoot, args, orderExpression, direction, param);
 
             return (builder, param);
+        }
+
+        void SetWhereClauseWithPaging(SqlStatementBuilder builder, ParamBuilder param)
+        {
+            var argsParam = WhereClause != null
+                ? WhereClause.Value.args
+                : Paging.skip != null
+                    ? Paging.skip.Parameters[0]
+                    : Paging.take != null
+                        ? Paging.take.Parameters[0]
+                        : null;
+
+            if (argsParam == null)
+                return;
+
+            var queryObjectParam = WhereClause?.queryRoot ?? ParameterExpression.Parameter(typeof(TResult));
+
+            Expression skipWithParametersReplaced = null;
+            Expression skip = null;
+            if (Paging.skip != null)
+            {
+                skipWithParametersReplaced = ParameterReplacer.ReplaceParameter(Paging.skip.Body, Paging.skip.Parameters[0], argsParam);
+                skip = Expression.LessThan(skipWithParametersReplaced, CodingConstants.Expressions.SqlRowNumber);
+            }
+
+            Expression take = null;
+            if (Paging.take != null)
+            {
+                take = ParameterReplacer.ReplaceParameter(Paging.take.Body, Paging.take.Parameters[0], argsParam);
+                if (skipWithParametersReplaced != null)
+                    take = Expression.Add(skipWithParametersReplaced, take);
+
+                take = Expression.LessThanOrEqual(CodingConstants.Expressions.SqlRowNumber, take);
+            }
+
+            var where = new[]
+            {
+                skip, 
+                take,
+                WhereClause?.where 
+            }
+            .RemoveNulls()
+            .Aggregate((x, y) => Expression.AndAlso(x, y));
+
+            builder.SetWhere(queryObjectParam, argsParam, where, param);
         }
         
         /// <summary>

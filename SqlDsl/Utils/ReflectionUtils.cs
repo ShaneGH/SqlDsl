@@ -225,6 +225,14 @@ namespace SqlDsl.Utils
         static readonly MethodInfo _Contains = GetMethod(() => Enumerable.Contains<object>(null, null)).GetGenericMethodDefinition();
 
         /// <summary>
+        /// If the input expression represents a call to Sql.RowNumber()
+        /// </summary>
+        public static bool IsRowNumber(MethodCallExpression e)
+        {
+            return e.Method == CodingConstants.Expressions.SqlRowNumber.Method;
+        }
+
+        /// <summary>
         /// If the input expression represents a call to Sql.In([inner expr]), Enumerable.Contains([inner expr])
         /// or return [success, lhs (val), rhs (collection)]; otherwise return (false, null, null)
         /// </summary>
@@ -287,6 +295,8 @@ namespace SqlDsl.Utils
 
                 case ExpressionType.Call:
                     var call = expr as MethodCallExpression;
+                    if (call.Method == CodingConstants.Expressions.SqlRowNumber.Method)
+                        return (false, false);
                     
                     var ra2 = false;
                     if (call.Object != null)

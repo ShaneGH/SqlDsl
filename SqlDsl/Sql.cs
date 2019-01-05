@@ -29,6 +29,14 @@ namespace SqlDsl
         {
             throw new InvalidOperationException("This method is not meant to be called. It should be used in expressions only");
         }
+
+        /// <summary>
+        /// When used in a query expression, represents the row number of the primary table. Can be used for paging
+        /// </summary>
+        internal static int RowNumber()
+        {
+            throw new InvalidOperationException("This method is not meant to be called. It should be used in expressions only");   
+        }
     }
 
     public class QueryBuilder { }

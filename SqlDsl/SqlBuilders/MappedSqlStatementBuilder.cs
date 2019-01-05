@@ -34,7 +34,7 @@ namespace SqlDsl.SqlBuilders
             ISqlSyntax sqlSyntax)
         {
             State = state ?? throw new ArgumentNullException(nameof(state));
-            SelectProperties = selectProperties?.ToDictionary(x => x.To);
+            SelectProperties = selectProperties?.ToDictionary(x => x.To) ?? throw new ArgumentNullException(nameof(selectProperties));
             Statement = statement ?? throw new ArgumentNullException(nameof(statement));
             InnerSqlString = innerSqlString ?? throw new ArgumentNullException(nameof(innerSqlString));
             SqlSyntax = sqlSyntax ?? throw new ArgumentNullException(nameof(innerSqlString));

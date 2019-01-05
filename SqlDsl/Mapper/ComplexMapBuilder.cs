@@ -95,6 +95,10 @@ namespace SqlDsl.Mapper
                 case ExpressionType.Call:
                     var exprMethod = expr as MethodCallExpression;
 
+                    var isRowNumber = ReflectionUtils.IsRowNumber(exprMethod);
+                    if (isRowNumber)
+                        return BuildMapForRowNumber(state).AddT(false);
+
                     var (isIn, inLhs, inRhs) = ReflectionUtils.IsIn(exprMethod);
                     if (isIn)
                         return BuildMapForIn(state, inLhs, inRhs, toPrefix, isExprTip).AddT(false);
@@ -334,6 +338,21 @@ namespace SqlDsl.Mapper
                         }),
                         m.map.tables.Select(x => new MappedTable(x.From, CombineStrings(m.memberName, x.To), x.TableresultsAreAggregated)))))
                 .AggregateTuple2();
+        }
+
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForRowNumber(BuildMapState state)
+        {
+            var rowNumber = $"{state.PrimarySelectTableAlias}.{SqlStatementConstants.RowIdName}";
+
+            return (
+                new StringBasedMappedProperty(
+                    new Accumulator<StringBasedElement>(
+                        new Accumulator<StringBasedElement, BinarySqlOperator>(
+                            new StringBasedElement(null, rowNumber, state.PrimarySelectTableAlias))),
+                    null,
+                    typeof(int)).ToEnumerable(),
+                EmptyMappedTables
+            );
         }
 
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForIn(

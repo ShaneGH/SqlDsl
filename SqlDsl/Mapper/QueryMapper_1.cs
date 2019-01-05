@@ -13,7 +13,7 @@ namespace SqlDsl.Mapper
     {
         readonly SqlExecutor<TArgs, TResult> Query;
         readonly Expression<Func<TResult, TArgs, TMapped>> Mapper;
-        (int? skip, int? take) Paging;
+        (Expression<Func<TArgs, int>> skip, Expression<Func<TArgs, int>> take) Paging;
         
         public QueryMapper(SqlExecutor<TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
         {
@@ -34,27 +34,23 @@ namespace SqlDsl.Mapper
         }
 
         /// <inheritdoc />
-        public IPager2<TArgs, TMapped> Skip(int result)
+        public IPager2<TArgs, TMapped> Skip(int result) => Skip(_ => result);
+
+        /// <inheritdoc />
+        public ISqlExecutor<TArgs, TMapped> Take(int result) => Take(_ => result);
+
+        /// <inheritdoc />
+        public IPager2<TArgs, TMapped> Skip(Expression<Func<TArgs, int>> result)
         {
             Paging = (result, Paging.take);
             return this;
         }
 
         /// <inheritdoc />
-        public ISqlExecutor<TArgs, TMapped> Take(int result)
+        public ISqlExecutor<TArgs, TMapped> Take(Expression<Func<TArgs, int>> result)
         {
             Paging = (Paging.skip, result);
             return this;
-        }
-
-        public IPager2<TArgs, TMapped> Skip(Func<TArgs, int> result)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISqlExecutor<TArgs, TMapped> Take(Func<TArgs, int> result)
-        {
-            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
