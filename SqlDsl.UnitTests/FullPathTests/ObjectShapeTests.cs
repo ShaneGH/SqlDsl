@@ -709,13 +709,13 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             await Sql.Query.Sqlite<JoinedQueryClass>()
                 .From(x => x.ThePerson)
-                .LeftJoin<Tag>(q => q.TheTags)
+                .InnerJoin<Tag>(q => q.TheTags)
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id)
-                .LeftJoin<Class>(q => q.TheClasses)
+                .InnerJoin<Class>(q => q.TheClasses)
                     .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .LeftJoin<ClassTag>(q => q.TheClassTags)
+                .InnerJoin<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .LeftJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .Map(x => new
                 {

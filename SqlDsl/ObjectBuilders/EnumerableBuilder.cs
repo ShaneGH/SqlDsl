@@ -85,14 +85,12 @@ namespace SqlDsl.ObjectBuilders
                 yield break;
             }
 
-            var key = values.PropertyGraph.SimpleConstructorArgs.Length == 0 ?
-                values.PropertyGraph.SimpleProps[0].rowNumberColumnIds :
-                values.PropertyGraph.SimpleConstructorArgs[0].rowNumberColumnIds;
+            var key = values.PropertyGraph.SimpleConstructorArgs.Length == 0
+                ? values.PropertyGraph.SimpleProps[0].rowNumberColumnIds
+                : values.PropertyGraph.SimpleConstructorArgs[0].rowNumberColumnIds;
 
             // run a "Distinct" on the rowNumbers
-            var dataRowsForProp = values.Objects
-                .GroupBy(d => values.PropertyGraph.GetUniqueIdForSimpleProp(d, key))
-                .Select(Enumerable.First);
+            var dataRowsForProp = values.PropertyGraph.GetDataRowsForSimpleProperty(values.Objects, key);
 
             foreach (var row in dataRowsForProp)
             {

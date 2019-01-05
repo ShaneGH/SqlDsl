@@ -43,7 +43,7 @@ namespace SqlDsl.ObjectBuilders
         }
 
         /// <summary>
-        /// Convert a conversion function into something which thrpw exceptions on nulls and DbNulls
+        /// Convert a conversion function into something which throws exceptions on nulls and DbNulls
         /// </summary>
         static Func<object, ILogger, T> ForNonNullable<T>(Func<object, ILogger, T> basedOn)
             where T: struct

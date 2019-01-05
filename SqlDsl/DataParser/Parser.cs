@@ -73,11 +73,7 @@ namespace SqlDsl.DataParser
         /// <param name="objects">A raw block of data, which has not been grouped into objects</param>
         static IEnumerable<ReusableObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<object[]> rows, ILogger logger)
         {
-            // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
-            var objectsData = rows.GroupBy(r => 
-                propertyGraph.RowIdColumnNumbers.Select(i => r[i]).ToArray(), 
-                ArrayComparer<object>.Instance);
-
+            var objectsData = propertyGraph.GroupAndFilterData(rows);
             return CreateObject(propertyGraph, objectGraphCache, objectsData, logger);
         }
 

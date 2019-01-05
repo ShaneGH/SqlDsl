@@ -126,10 +126,9 @@ namespace SqlDsl.ObjectBuilders
             // use a setter to set each simple property
             foreach (var prop in vals.GetSimpleProps().OrEmpty())
             {
-                if (!propSetters.ContainsKey(prop.name))
+                if (!propSetters.TryGetValue(prop.name, out (PropertySetter<T> setter, Type propertyType) setter))
                     continue;
 
-                var setter = propSetters[prop.name];
                 switch (prop.isEnumerableDataCell)
                 {
                     case true:
@@ -143,10 +142,13 @@ namespace SqlDsl.ObjectBuilders
 
             foreach (var prop in vals.GetComplexProps())
             {
-                if (!propSetters.ContainsKey(prop.name))
+                if (!propSetters.TryGetValue(prop.name, out (PropertySetter<T> setter, Type propertyType) setter))
+                {
+                    foreach (var v in prop.value)
+                        v.Dispose();
+                        
                     continue;
-                    
-                var setter = propSetters[prop.name];
+                }
                     
                 // test if the property is a T or IEnumerable<T>
                 var singlePropertyType = 

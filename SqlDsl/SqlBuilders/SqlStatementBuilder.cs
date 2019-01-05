@@ -282,7 +282,7 @@ namespace SqlDsl.SqlBuilders
             var primaryTable = SqlSyntax.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName);
                 
             var orderByText = Ordering
-                // TODO: test in indivisual sql languages
+                // TODO: test in individual sql languages
                 .Select(o => o.sql + (o.direction == OrderDirection.Ascending ? "" : $" {SqlSyntax.Descending}"))
                 .ToArray();
 

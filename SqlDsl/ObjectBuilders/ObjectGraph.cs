@@ -33,7 +33,7 @@ namespace SqlDsl.ObjectBuilders
         /// </summary>
         public virtual IEnumerable<(string name, IEnumerable<TChildGraph> value)> GetComplexProps() =>
             PropertyGraph.ComplexProps
-                .Select(p => (p.name,  CreateObject(p.value, Objects)));
+                .Select(p => (p.name, CreateObject(p.value, Objects)));
 
         /// <summary>
         /// Simple constructor args such as int, string, List&lt;int>, List&lt;string> etc...
@@ -63,10 +63,7 @@ namespace SqlDsl.ObjectBuilders
 
         (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, IEnumerable<int> rowNumberColumnIds, Type dataCellType)
         {
-            // run a "Distinct" on the rowNumbers
-            var dataRowsForProp = Objects
-                .GroupBy(d => PropertyGraph.GetUniqueIdForSimpleProp(d, rowNumberColumnIds))
-                .Select(Enumerable.First);
+            var dataRowsForProp = PropertyGraph.GetDataRowsForSimpleProperty(Objects, rowNumberColumnIds);
 
             var data = dataRowsForProp
                 .Select(o => o[index])
@@ -81,10 +78,7 @@ namespace SqlDsl.ObjectBuilders
 
         IEnumerable<TChildGraph> CreateObject(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> rows)
         {
-            // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
-            var objectsData = rows.GroupBy(r => 
-                propertyGraph.RowIdColumnNumbers.Select(i => r[i]).ToArray(), 
-                ArrayComparer<object>.Instance);
+            var objectsData = propertyGraph.GroupAndFilterData(rows);
 
             foreach (var obj in objectsData)
                 yield return BuildChildGraph(propertyGraph, obj);

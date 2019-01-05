@@ -190,8 +190,7 @@ namespace SqlDsl
         public IEnumerable<TResult> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null) 
         {
             return LoadData(executor, args, logger)
-                .Parse<TResult>(PropertyGraph, logger)
-                .Enumerate();
+                .Parse<TResult>(PropertyGraph, logger);
         }
 
         /// <inheritdoc />
@@ -199,8 +198,7 @@ namespace SqlDsl
         {
             var results = await LoadDataAsync(executor, args, logger).ConfigureAwait(false);
             return results
-                .Parse<TResult>(PropertyGraph, logger)
-                .Enumerate();
+                .Parse<TResult>(PropertyGraph, logger);
         }
 
         /// <inheritdoc />

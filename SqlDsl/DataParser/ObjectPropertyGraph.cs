@@ -1,4 +1,5 @@
 using SqlDsl.Utils;
+using SqlDsl.Utils.EqualityComparers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -103,16 +104,42 @@ namespace SqlDsl.DataParser
         }
 
         /// <summary>
+        /// Group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable).
+        /// Also, remove invalid data which might have been returned as part of an outer join
+        /// </summary>
+        public IEnumerable<IGrouping<object[], object[]>> GroupAndFilterData(IEnumerable<object[]> rows)
+        {
+            return rows
+                .GroupBy(r => 
+                    this.RowIdColumnNumbers.Select(i => r[i]).ToArray(), 
+                    ArrayComparer<object>.Instance)
+                .Where(g => g.Key.All(k => k != null && k != DBNull.Value));
+        }
+
+        /// <summary>
         /// Get the unique id of a row, in the context of a simple prop of this object
         /// </summary>
-        public string GetUniqueIdForSimpleProp(object[] row, IEnumerable<int> simplePropRowNumberColumnIds)
+        string GetUniqueIdForSimpleProp(object[] row, IEnumerable<int> simplePropRowNumberColumnIds)
         {
             // TODO: this method is used a lot.
             // Can results be cached or more efficient method used?
             return RowIdColumnNumbers
-                .Concat(simplePropRowNumberColumnIds.OrEmpty())   
+                .Concat(simplePropRowNumberColumnIds.OrEmpty())
                 .Select(r => row[r].ToString())
                 .JoinString(";");
+        }
+
+        /// <summary>
+        /// Get the rows for a simple property, given it's row number column ids
+        /// </summary>
+        public IEnumerable<object[]> GetDataRowsForSimpleProperty(IEnumerable<object[]> rows, IEnumerable<int> simplePropRowNumberColumnIds)
+        {
+            // run a "Distinct" on the rowNumbers
+            return rows
+                // remove empty data created by OUTER JOINs
+                .Where(r => simplePropRowNumberColumnIds.All(x => r[x] != null && r[x] != DBNull.Value))
+                .GroupBy(d => GetUniqueIdForSimpleProp(d, simplePropRowNumberColumnIds))
+                .Select(Enumerable.First);
         }
 
         public override string ToString()

@@ -79,16 +79,16 @@ namespace SqlDsl.Query
             new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(joinProperty));
 
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
-            new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(tableName, joinProperty));
+            new JoinBuilder_WithoutArgs<TJoin>(base.LeftJoin(tableName, joinProperty));
 
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
-            new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(joinProperty));
+            new JoinBuilder_WithoutArgs<TJoin>(base.LeftJoin(joinProperty));
 
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinProperty) =>
-            new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(tableName, joinProperty));
+            new JoinBuilder_WithoutArgs<TJoin>(base.LeftJoin(tableName, joinProperty));
 
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoin<TJoin>(Expression<Func<TResult, TJoin>> joinProperty) =>
-            new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(joinProperty));
+            new JoinBuilder_WithoutArgs<TJoin>(base.LeftJoin(joinProperty));
 
         IPager<TMapped> IResultMapper<TResult>.Map<TMapped>(Expression<Func<TResult, TMapped>> mapper) =>
             new QueryMapper<TMapped>(base.Map(mapper));
