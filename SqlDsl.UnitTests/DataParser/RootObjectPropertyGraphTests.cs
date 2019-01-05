@@ -1132,7 +1132,7 @@ namespace SqlDsl.UnitTests.DataParser
     {
         public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.IPager<object, TResult> builder)
         {
-            var compiled = (CompiledQuery<object, TResult>)((QueryMapper<object, TMappedFrom, TResult>)builder)
+            var compiled = (CompiledQuery<object, TResult>)((PagedMapper<object, TMappedFrom, TResult>)builder)
                 .Compile();
 
             return compiled.PropertyGraph;

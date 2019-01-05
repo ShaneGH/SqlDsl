@@ -9,11 +9,10 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.Mapper
 {
-    public class QueryMapper<TArgs, TResult, TMapped> : IPager<TArgs, TMapped>
+    public class QueryMapper<TArgs, TResult, TMapped> : ISqlExecutor<TArgs, TMapped>
     {
         readonly SqlExecutor<TArgs, TResult> Query;
         readonly Expression<Func<TResult, TArgs, TMapped>> Mapper;
-        (Expression<Func<TArgs, int>> skip, Expression<Func<TArgs, int>> take) Paging;
         
         public QueryMapper(SqlExecutor<TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
         {
@@ -31,26 +30,6 @@ namespace SqlDsl.Mapper
                 logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);
 
             return result;
-        }
-
-        /// <inheritdoc />
-        public IPager2<TArgs, TMapped> Skip(int result) => Skip(_ => result);
-
-        /// <inheritdoc />
-        public ISqlExecutor<TArgs, TMapped> Take(int result) => Take(_ => result);
-
-        /// <inheritdoc />
-        public IPager2<TArgs, TMapped> Skip(Expression<Func<TArgs, int>> result)
-        {
-            Paging = (result, Paging.take);
-            return this;
-        }
-
-        /// <inheritdoc />
-        public ISqlExecutor<TArgs, TMapped> Take(Expression<Func<TArgs, int>> result)
-        {
-            Paging = (Paging.skip, result);
-            return this;
         }
 
         /// <inheritdoc />

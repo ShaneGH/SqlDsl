@@ -25,7 +25,9 @@ namespace SqlDsl.Query
 
         /// <inheritdoc />
         public IPager<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TArgs, TMapped>> mapper) =>
-            new QueryMapper<TArgs, TResult, TMapped>(this, mapper);
+            new PagedMapper<TArgs, TResult, TMapped>(
+                new QueryMapper<TArgs, TResult, TMapped>(this, mapper),
+                this);
 
         /// <inheritdoc />
         public IPager<TArgs, TMapped> Map<TMapped>(Expression<Func<TResult, TMapped>> mapper)
