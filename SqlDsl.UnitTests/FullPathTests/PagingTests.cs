@@ -159,5 +159,47 @@ namespace SqlDsl.UnitTests.FullPathTests
                 new { person = Data.People.Mary.Name, classes = 1 },
             }, data);
         }
+
+        [Test]
+        public void Where_WithRowNumber_PagesResults()
+        {
+            // arrange
+            // act
+            var data = FullyJoinedQuery()
+                .Where(x => Sql.RowNumber() == 2)
+                .Map(x => new
+                {
+                    person = x.ThePerson.Name,
+                    classes = x.TheClasses.Count
+                })
+                .ToArray(Executor, null, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new[] 
+            { 
+                new { person = Data.People.Mary.Name, classes = 1 },
+            }, data);
+        }
+
+        [Test]
+        public void Map_WithRowNumber_PagesResults()
+        {
+            // arrange
+            // act
+            var data = FullyJoinedQuery()
+                .Map(x => new
+                {
+                    person = x.ThePerson,
+                    rowNumber = Sql.RowNumber()
+                })
+                .ToArray(Executor, null, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new[] 
+            { 
+                new { person = Data.People.John, rowNumber = 1 },
+                new { person = Data.People.Mary, rowNumber = 2 },
+            }, data);
+        }
     }
 }
