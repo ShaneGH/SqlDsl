@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -191,60 +192,56 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         }
 
         [Test]
-        [Ignore("TODO: at least throw an exception in this case")]
         public void CountAndGroup_UseTableInGroupAndNonGroup()
         {
             // arrange
             // act
-            var result = FullyJoinedQuery<object>()
-                .Map(x => new
-                {
-                    name = x.ThePerson.Name,
-                    classes = x.TheClasses.Select(c => c.Name).ToArray(),
-                    classesCount = x.TheClasses.Count
-                })
-                .ToList(Executor, null, logger: Logger);
-
             // assert
-            Assert.AreEqual(2, result.Count);
+            Assert.Throws(typeof(InvalidOperationException), 
+                () => FullyJoinedQuery<object>()
+                    .Map(x => new
+                    {
+                        name = x.ThePerson.Name,
+                        classes = x.TheClasses.Select(c => c.Name).ToArray(),
+                        classesCount = x.TheClasses.Count
+                    })
+                    .ToList(Executor, null, logger: Logger));
 
-            var john = result[0];
-            Assert.AreEqual(Data.People.John.Name, john.name);
-            Assert.AreEqual(john.classes.Length, john.classesCount);
-            CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Name, Data.Classes.Archery.Name }, john.classes);
-
-            var mary = result[1];
-            Assert.AreEqual(Data.People.Mary.Name, mary.name);
-            Assert.AreEqual(mary.classes.Length, mary.classesCount);
-            CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Name, }, mary.classes);
         }
 
         [Test]
-        [Ignore("TODO: at least throw an exception in this case")]
         public void CountAndGroup_UseTableInGroupAndNonGroupInSameSelectColumn()
         {
             // arrange
             // act
-            var result = FullyJoinedQuery<object>()
-                .Map(x => new
-                {
-                    name = x.ThePerson.Name,
-                    classes = x.TheClasses
-                        .Select(c => c.Id + x.TheClasses.Count)
-                        .ToArray()
-                })
-                .ToList(Executor, null, logger: Logger);
-
             // assert
-            Assert.AreEqual(2, result.Count);
+            Assert.Throws(typeof(InvalidOperationException), 
+                () => FullyJoinedQuery<object>()
+                    .Map(x => new
+                    {
+                        name = x.ThePerson.Name,
+                        classes = x.TheClasses
+                            .Select(c => c.Id + x.TheClasses.Count)
+                            .ToArray()
+                    })
+                    .ToList(Executor, null, logger: Logger));
+        }
 
-            var john = result[0];
-            Assert.AreEqual(Data.People.John.Name, john.name);
-            CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Id + 2, Data.Classes.Archery.Id + 2 }, john.classes);
-
-            var mary = result[1];
-            Assert.AreEqual(Data.People.Mary.Name, mary.name);
-            CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Id + 1 }, mary.classes);
+        [Test]
+        public void CountAndGroup_UseGroupedColumnAndNonGroupedDecendantColumn()
+        {
+            // arrange
+            // act
+            // assert
+            Assert.Throws(typeof(InvalidOperationException), 
+                () => FullyJoinedQuery<object>()
+                    .Map(x => new
+                    {
+                        name = x.ThePerson.Name,
+                        classesCount = x.TheClasses.Count,
+                        tags = x.TheTags.Select(c => c.Name).ToArray()
+                    })
+                    .ToList(Executor, null, logger: Logger));
         }
 
         [Test]

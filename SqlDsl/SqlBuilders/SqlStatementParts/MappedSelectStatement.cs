@@ -1,6 +1,7 @@
 using SqlDsl.Mapper;
 using SqlDsl.Query;
 using SqlDsl.Utils;
+using SqlDsl.Utils.EqualityComparers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -117,7 +118,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                 .Select(GetRowIdColumn)
                 .Select(TryGetTable)
                 .RemoveNulls()
-                .OrderByDescending(Identity, OrderTablesByPrecedence)
+                .OrderByDescending(Identity, TablePrecedenceOrderer.Instance)
                 .Select(TryGetRowNumberColumnFromTable)
                 .FirstOrDefault();
         };
@@ -133,8 +134,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         static readonly Func<ISelectColumn, IQueryTable> TryGetTable = x => x.IsRowNumberForTable;
 
         static readonly Func<IQueryTable, IQueryTable> Identity = x => x;
-
-        static readonly IComparer<IQueryTable> OrderTablesByPrecedence = new TablePrecedenceOrderer();
 
         class SqlSelectColumn : ISelectColumn
         {
@@ -171,39 +170,6 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                 ArgConstructors = argConstructors ?? throw new ArgumentNullException(nameof(argConstructors));
                 DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
                 RowNumberColumn = rowNumberColumn ?? throw new ArgumentNullException(nameof(rowNumberColumn));
-            }
-        }
-
-        class TablePrecedenceOrderer : IComparer<IQueryTable>
-        {
-            public int Compare(IQueryTable x, IQueryTable y)
-            {
-                return CompareRec(x, y) 
-                    ?? throw new InvalidOperationException($"Cannot find table precendence between {x.Alias} and {y.Alias}");
-            }
-
-            int? CompareRec(IQueryTable x, IQueryTable y)
-            {
-                if (x == null || y == null)
-                    throw new NotSupportedException();
-
-                if (x == y) return 0;
-
-                if (x.JoinedFrom != null)
-                {
-                    var i = CompareRec(x.JoinedFrom, y);
-                    if (i != null)
-                        return i == 0 ? 1 : i;
-                }
-                
-                if (y.JoinedFrom != null)
-                {
-                    var i = CompareRec(x, y.JoinedFrom);
-                    if (i != null)
-                        return i == 0 ? -1 : i;
-                }
-
-                return null;
             }
         }
     }

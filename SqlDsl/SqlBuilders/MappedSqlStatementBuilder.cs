@@ -2,6 +2,7 @@ using SqlDsl.Mapper;
 using SqlDsl.Query;
 using SqlDsl.SqlBuilders.SqlStatementParts;
 using SqlDsl.Utils;
+using SqlDsl.Utils.EqualityComparers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -92,14 +93,13 @@ namespace SqlDsl.SqlBuilders
 
         string BuildGroupByStatement(string prefix)
         {
-            if (SelectProperties.All(x => x.Value.FromParams.AggregationType == AggregationType.NotAggregated))
+            if (!RequiresGroupBy())
                 return "";
 
             var groupByCols = SelectProperties
                 .SelectMany(sp => sp.Value.FromParams.GetAggregatedEnumerable())
                 .Where(x => !x.isAggregated)
                 .Select(c => c.element.Column)
-                // TODO: what if the column is grouped by also
                 .Concat(Statement.SelectColumns.Where(c => c.IsRowNumber));
 
             var output = new List<string>(16);
@@ -110,6 +110,48 @@ namespace SqlDsl.SqlBuilders
                 prefix += "GROUP BY ";
 
             return $"{prefix}{output.JoinString(",")}";
+        }
+
+        bool RequiresGroupBy()
+        {
+            var columnsByTable = SelectProperties
+                .SelectMany(p => p.Value.FromParams.GetAggregatedEnumerable())
+                .Where(p => !p.element.IsParameter)
+                .GroupBy(p => p.element.Column.RowNumberColumn.IsRowNumberForTable)
+                .OrderBy(p => p.Key, TablePrecedenceOrderer.Instance);
+
+            string aggregatedTable = null;
+            foreach (var columns in columnsByTable)
+            {
+                string currentTable = null;
+                string aggregatedColumn = null;
+                string nonAggregatedColumn = null;
+                foreach (var column in columns)
+                {
+                    if (currentTable == null)
+                        currentTable = column.element.Column.RowNumberColumn.IsRowNumberForTable.Alias;
+
+                    if (column.isAggregated)
+                        aggregatedColumn = aggregatedColumn ?? column.element.Column.Alias;
+                    else
+                        nonAggregatedColumn = nonAggregatedColumn ?? column.element.Column.Alias;
+
+                    if (aggregatedColumn != null && nonAggregatedColumn != null)
+                        break;
+                }
+
+                if (aggregatedColumn != null && nonAggregatedColumn != null)
+                    throw new InvalidOperationException(
+                        $"You cannot have an aggregated column ({aggregatedColumn}) and non aggregated column ({nonAggregatedColumn}) in the same query.");
+
+                if (aggregatedTable != null && nonAggregatedColumn != null)
+                    throw new InvalidOperationException(
+                        $"Table {currentTable} is a child of {aggregatedTable}. {aggregatedTable} is aggregated, therefore {currentTable} must be aggregated also.");
+
+                aggregatedTable = aggregatedTable ?? (aggregatedColumn == null ? null : currentTable);
+            }
+            
+            return aggregatedTable != null;
         }
     }
 }

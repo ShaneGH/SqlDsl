@@ -422,7 +422,7 @@ namespace SqlDsl.Mapper
             BuildMapState state, 
             Expression enumerable, 
             LambdaExpression sumMapper, 
-            string toPrefix = null) => BuildMapForSum(state, AddSelectToFunmerable(enumerable, sumMapper), toPrefix);
+            string toPrefix = null) => BuildMapForSum(state, AddSelectToEnunmerable(enumerable, sumMapper), toPrefix);
         
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForAverage(
             BuildMapState state, 
@@ -433,7 +433,7 @@ namespace SqlDsl.Mapper
             BuildMapState state, 
             Expression enumerable, 
             LambdaExpression averageMapper, 
-            string toPrefix = null) => BuildMapForAverage(state, AddSelectToFunmerable(enumerable, averageMapper), toPrefix);
+            string toPrefix = null) => BuildMapForAverage(state, AddSelectToEnunmerable(enumerable, averageMapper), toPrefix);
         
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMax(
             BuildMapState state, 
@@ -444,7 +444,7 @@ namespace SqlDsl.Mapper
             BuildMapState state, 
             Expression enumerable, 
             LambdaExpression averageMapper, 
-            string toPrefix = null) => BuildMapForMax(state, AddSelectToFunmerable(enumerable, averageMapper), toPrefix);
+            string toPrefix = null) => BuildMapForMax(state, AddSelectToEnunmerable(enumerable, averageMapper), toPrefix);
         
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMin(
             BuildMapState state, 
@@ -455,14 +455,14 @@ namespace SqlDsl.Mapper
             BuildMapState state, 
             Expression enumerable, 
             LambdaExpression averageMapper, 
-            string toPrefix = null) => BuildMapForMin(state, AddSelectToFunmerable(enumerable, averageMapper), toPrefix);
+            string toPrefix = null) => BuildMapForMin(state, AddSelectToEnunmerable(enumerable, averageMapper), toPrefix);
         
         /// <summary>
         /// convert xs
         /// to
         /// convert xs.Select(x => x.val)
         /// </summary>
-        static Expression AddSelectToFunmerable(Expression enumerable, LambdaExpression mapper) 
+        static Expression AddSelectToEnunmerable(Expression enumerable, LambdaExpression mapper) 
         {
             var enumeratedType = ReflectionUtils.GetIEnumerableType(enumerable.Type);
             if (enumeratedType == null)
