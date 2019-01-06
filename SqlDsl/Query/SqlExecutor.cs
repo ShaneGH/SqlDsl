@@ -28,7 +28,7 @@ namespace SqlDsl.Query
         /// <summary>
         /// A cache of column names for a given type
         /// </summary>
-        static readonly ConcurrentDictionary<Type, IEnumerable<(string name, Type dataType)>> Columns = new ConcurrentDictionary<Type, IEnumerable<(string, Type)>>();
+        static readonly ConcurrentDictionary<Type, IEnumerable<(string nameX, string alias, Type dataType)>> Columns = new ConcurrentDictionary<Type, IEnumerable<(string, string, Type)>>();
 
         /// <summary>
         /// The name of the member on the TResult which the primary table is appended to
@@ -171,9 +171,9 @@ namespace SqlDsl.Query
 
             // Add select columns to builder
             foreach (var col in selectColumns)
-            {
-                var alias = col.table == SqlStatementConstants.RootObjectAlias ? col.column.name : $"{col.table}.{col.column.name}";
-                builder.AddSelectColumn(col.column.dataType, col.table, col.column.name, alias);
+            {   
+                var alias = col.table == SqlStatementConstants.RootObjectAlias ? col.column.alias : $"{col.table}.{col.column.alias}";
+                builder.AddSelectColumn(col.column.dataType, col.table, col.column.nameX, alias);
             }
 
             // add a where clause if specified
@@ -234,9 +234,9 @@ namespace SqlDsl.Query
         /// <summary>
         /// Get all of the column names for a given type
         /// </summary>
-        static IEnumerable<(string name, Type dataType)> ColumnsOf(Type t)
+        static IEnumerable<(string nameX, string alias, Type dataType)> ColumnsOf(Type t)
         {
-            if (Columns.TryGetValue(t, out IEnumerable<(string, Type)> value))
+            if (Columns.TryGetValue(t, out IEnumerable<(string, string, Type)> value))
                 return value;
 
             value = GetColumnNames(t)
@@ -249,13 +249,13 @@ namespace SqlDsl.Query
         /// <summary>
         /// Return all of the property and field names of a type as column names
         /// </summary>
-        static IEnumerable<(string name, Type dataType)> GetColumnNames(Type t)
+        static IEnumerable<(string nameX, string alias, Type dataType)> GetColumnNames(Type t)
         {
             foreach (var col in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                yield return (col.Name, col.PropertyType);
+                yield return ColumnAttribute.GetColumnName(col).AddT(col.PropertyType);
                 
             foreach (var col in t.GetFields(BindingFlags.Public | BindingFlags.Instance))
-                yield return (col.Name, col.FieldType);
+                yield return ColumnAttribute.GetColumnName(col).AddT(col.FieldType);
         }
     }
 }

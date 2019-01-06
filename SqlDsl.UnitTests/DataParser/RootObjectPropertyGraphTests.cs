@@ -17,6 +17,7 @@ using NUnit.Framework.Interfaces;
 using SqlDsl.DataParser;
 using SqlDsl.Query;
 using SqlDsl.Mapper;
+using SqlDsl.Schema;
 
 namespace SqlDsl.UnitTests.DataParser
 {
@@ -1058,6 +1059,40 @@ namespace SqlDsl.UnitTests.DataParser
 
             Compare(expected, actual);
         }
+    
+        [Table("Person")]
+        public class PersonWithAttributes
+        {
+            [Column("Id")]
+            public long TheId { get; set; }
+            
+            [Column("Name")]
+            public string TheName { get; set; }
+        }
+
+        [Test]
+        public void PropertyGraph_WithColumnAttribute_ReturnsCorrectOPG()
+        {
+            // arrange
+            // act
+            var actual = Sql.Query
+                .Sqlite<PersonWithAttributes>()
+                .BuildSimpleObjetPropertyGraph<PersonWithAttributes>();
+                
+            // assert
+            var expected = new ObjectPropertyGraph(
+                typeof(PersonWithAttributes),
+                new []
+                {
+                    (0, "#rowid", new int[0], (Type)null, (Type)null),
+                    (1, "TheId", new int[0], typeof(long), typeof(long)),   
+                    (2, "TheName", new int[0], typeof(string), typeof(string))   
+                },
+                null, 
+                new[] { 0 });
+
+            Compare(expected, actual);
+        }
 
         // See todo in ComplexMapBuilder.BuildMapForConstructor
 
@@ -1130,6 +1165,15 @@ namespace SqlDsl.UnitTests.DataParser
 
     public static class RootObjectPropertyGraphTestUtils
     {
+        public static RootObjectPropertyGraph BuildSimpleObjetPropertyGraph<TResult>(this Dsl.IPager<TResult> builder, bool printQuery = true)
+        {
+            var select = (SqlSelect<TResult>)builder;
+            var compiled = (CompiledQuery<object, TResult>)select
+                .Compile();
+
+            return compiled.PropertyGraph;
+        }
+
         public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.IPager<object, TResult> builder)
         {
             var compiled = (CompiledQuery<object, TResult>)((PagedMapper<object, TMappedFrom, TResult>)builder)

@@ -1,6 +1,7 @@
 using SqlDsl.DataParser;
 using SqlDsl.Dsl;
 using SqlDsl.Mapper;
+using SqlDsl.Schema;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 using System;
@@ -30,14 +31,10 @@ namespace SqlDsl.Query
             : base(sqlSyntax)
         {
         }
-
-        /// <inheritdoc />
-        IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
-            new JoinBuilder<TJoin>(this, JoinType.Inner, tableName, joinResult);
         
         /// <inheritdoc />
         public IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
-            InnerJoin<TJoin>(typeof(TJoin).Name, joinResult);
+            new JoinBuilder<TJoin>(this, JoinType.Inner, TableAttribute.GetTableName(typeof(TJoin)), joinResult);
             
         /// <inheritdoc />
         IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinResult) =>
@@ -45,7 +42,7 @@ namespace SqlDsl.Query
         
         /// <inheritdoc />
         public IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, TJoin>> joinResult) =>
-            InnerJoin<TJoin>(typeof(TJoin).Name, joinResult);
+            InnerJoin<TJoin>(TableAttribute.GetTableName(typeof(TJoin)), joinResult);
         
         /// <inheritdoc />
         IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
@@ -53,7 +50,7 @@ namespace SqlDsl.Query
         
         /// <inheritdoc />
         public IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
-            LeftJoin<TJoin>(typeof(TJoin).Name, joinResult);
+            LeftJoin<TJoin>(TableAttribute.GetTableName(typeof(TJoin)), joinResult);
         
         /// <inheritdoc />
         IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinResult) =>
@@ -61,7 +58,7 @@ namespace SqlDsl.Query
         
         /// <inheritdoc />
         public IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, TJoin>> joinResult) =>
-            LeftJoin<TJoin>(typeof(TJoin).Name, joinResult);
+            LeftJoin<TJoin>(TableAttribute.GetTableName(typeof(TJoin)), joinResult);
 
         /// <summary>
         /// Holds partial join state and can build a join

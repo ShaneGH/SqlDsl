@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using SqlDsl.Schema;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 
@@ -303,13 +304,21 @@ namespace SqlDsl.Mapper
             return (
                 result.properties
                     .Select(p => new StringBasedMappedProperty(
-                        p.FromParams.MapParamName(x => CombineStrings(x, expr.Member.Name)),
+                        p.FromParams.MapParamName(x => CombineStrings(x, GetMemberName(expr.Member))),
                         p.To,
                         expr.Type))
                     .Enumerate(),
                 result.tables,
                 result.isConstant
             );
+
+            string GetMemberName(MemberInfo member)
+            {
+                if (state.UseColumnAliases)
+                    return member.Name;
+
+                return ColumnAttribute.GetColumnName(member).name;
+            }
         }
 
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMemberInit(BuildMapState state, MemberInitExpression expr, string toPrefix = null)
@@ -326,9 +335,7 @@ namespace SqlDsl.Mapper
                         m.map.properties.SelectMany(x => 
                         {
                             if (PropertyRepresentsTable(state, x))
-                            {
                                 return SplitMapOfComplexProperty(x, m.binding.Member.GetPropertyOrFieldType());
-                            }
 
                             return new StringBasedMappedProperty(
                                 x.FromParams, 

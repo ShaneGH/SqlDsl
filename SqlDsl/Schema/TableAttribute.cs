@@ -4,7 +4,7 @@ using System.Linq;
 namespace SqlDsl.Schema
 {
     [System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Struct, Inherited = true, AllowMultiple = false)]
-    public class TableAttribute : Attribute
+    public sealed class TableAttribute : Attribute
     {
         public readonly string Name;
         public readonly string Schema;

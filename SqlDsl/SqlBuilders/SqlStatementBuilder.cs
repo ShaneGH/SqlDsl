@@ -191,7 +191,7 @@ namespace SqlDsl.SqlBuilders
             string description)
         {
             var stat = new SqlStatementParts.SqlStatement(this);
-            var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRootParam, queryArgsParam, stat, SqlSyntax);
+            var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRootParam, queryArgsParam, stat, SqlSyntax, false);
 
             var (mp, _) = ComplexMapBuilder.BuildMap(state, conditionStatement);
             var map = mp.ToArray();
@@ -271,7 +271,7 @@ namespace SqlDsl.SqlBuilders
             var allTables = selectTables.ToHashSet();
 
             // build WHERE part
-            var where = Where == null ? "" : $" WHERE {Where.Value.sql}";
+            var where = Where == null ? "" : $"WHERE {Where.Value.sql}";
             if (Where != null)
                 allTables.AddRange(Where.Value.queryObjectReferences);
 
@@ -324,13 +324,12 @@ namespace SqlDsl.SqlBuilders
             {
                 $"\nSELECT {selectColumns.JoinString(",")}",
                 $"FROM ({primaryTable.Sql}) " + SqlSyntax.WrapAlias(PrimaryTableAlias),
-                $"{joins.Select(j => j.table.Sql).JoinString("\n")}",
-                orderBy
+                $"{joins.Select(j => j.table.Sql).JoinString("\n")}"
             }
             .Where(x => !string.IsNullOrEmpty(x))
             .JoinString("\n");
 
-            return (setupSql, query, where, "", teardownSql, !newQueryForTeardown);
+            return (setupSql, query, $"\n{where}", $"\n{orderBy}", teardownSql, !newQueryForTeardown);
         }
 
         // TODO: this function was copy pasted

@@ -17,6 +17,7 @@ namespace SqlDsl.Mapper
         public readonly string PrimarySelectTableAlias;
         public readonly ISqlSyntax SqlBuilder;
         public IEnumerable<string> CurrentTable { get; private set; }
+        public readonly bool UseColumnAliases;
 
         public BuildMapState(
             string primarySelectTableAlias, 
@@ -24,7 +25,8 @@ namespace SqlDsl.Mapper
             ParameterExpression queryObject, 
             ParameterExpression argsObject, 
             ISqlStatement wrappedSqlStatement, 
-            ISqlSyntax sqlBuilder)
+            ISqlSyntax sqlBuilder,
+            bool useColumnAliases)
         {
             Parameters = parameters;
             QueryObject = queryObject;
@@ -33,6 +35,7 @@ namespace SqlDsl.Mapper
             PrimarySelectTableAlias = primarySelectTableAlias;
             SqlBuilder = sqlBuilder;
             CurrentTable = PrimarySelectTableAlias.Split('.');
+            UseColumnAliases = useColumnAliases;
         }
 
         public IDisposable SwitchContext(ParameterExpression newContext)
