@@ -57,13 +57,27 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
             var table = QueryBuilder.Joins
                 .Where(j => j.alias == Alias)
-                // TODO: Will fail when a table is joined to multiple other tables
-                .Select(x => x.queryObjectReferences.Single()).FirstOrDefault();
+                .Select(x => SingleQueryObjectReferenceFromJoin(x.queryObjectReferences)).FirstOrDefault();
 
             if (table == null)
                 throw new InvalidOperationException($"Cannot find join table with alias: {Alias}");
 
             return Tables[table];
+        }
+
+        static string SingleQueryObjectReferenceFromJoin(IEnumerable<string> queryObjectReferences)
+        {
+            string qor = null;
+
+            foreach (var o in queryObjectReferences)
+            {
+                if (qor == null)
+                    qor = o;
+                else
+                    throw new NotSupportedException("Multi dimentional joins are not supported.");
+            }
+
+            return qor ?? throw new InvalidOperationException("A table must join to at least one other table.");
         }
 
         /// <summary>
