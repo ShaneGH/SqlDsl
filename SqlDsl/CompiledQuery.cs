@@ -84,7 +84,9 @@ namespace SqlDsl
             }
 
             if (!string.IsNullOrWhiteSpace(teardown))
-                await executor.ExecuteCommandAsync(teardown, CodingConstants.Empty.StringObject);
+                await executor
+                    .ExecuteCommandAsync(teardown, CodingConstants.Empty.StringObject)
+                    .ConfigureAwait(false);
 
             if (logger.CanLogInfo(LogMessages.ExecutedQuery))
                 logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
@@ -269,7 +271,8 @@ namespace SqlDsl
         public async Task<TResult> FirstAsync(IExecutor executor, TArgs args, ILogger logger = null)
         {
             var timer = new Timer(true);
-            var result = (await LoadDataAsync(executor, args, logger))
+            var result = (await LoadDataAsync(executor, args, logger)
+                .ConfigureAwait(false))
                 .Parse<TResult>(PropertyGraph, logger)
                 .First();
             
@@ -297,7 +300,8 @@ namespace SqlDsl
         public async Task<TResult> FirstOrDefaultAsync(IExecutor executor, TArgs args, ILogger logger = null)
         {
             var timer = new Timer(true);
-            var result = (await LoadDataAsync(executor, args, logger))
+            var result = (await LoadDataAsync(executor, args, logger)
+                .ConfigureAwait(false))
                 .Parse<TResult>(PropertyGraph, logger)
                 .FirstOrDefault();
             
@@ -325,7 +329,8 @@ namespace SqlDsl
         public async Task<TResult> SingleAsync(IExecutor executor, TArgs args, ILogger logger = null)
         {
             var timer = new Timer(true);
-            var result = (await LoadDataAsync(executor, args, logger))
+            var result = (await LoadDataAsync(executor, args, logger)
+                .ConfigureAwait(false))
                 .Parse<TResult>(PropertyGraph, logger)
                 .Single();
             
@@ -353,7 +358,8 @@ namespace SqlDsl
         public async Task<TResult> SingleOrDefaultAsync(IExecutor executor, TArgs args, ILogger logger = null)
         {
             var timer = new Timer(true);
-            var result = (await LoadDataAsync(executor, args, logger))
+            var result = (await LoadDataAsync(executor, args, logger)
+                .ConfigureAwait(false))
                 .Parse<TResult>(PropertyGraph, logger)
                 .SingleOrDefault();
             
