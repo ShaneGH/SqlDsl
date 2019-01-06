@@ -328,7 +328,7 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // arrange
             // act
             var values = StartTest()
-                .Where(x => x.Byte_N.In(new byte?[1] { null }))
+                .Where(x => x.Byte_N.In(new byte?[] { null }))
                 .ToArray(Executor);
 
             // assert

@@ -58,7 +58,8 @@ namespace SqlDsl
         IEnumerable<(string name, object value)> BuildParameters(TArgs args)
         {
             return Parameters
-                .SelectMany((p, i) => GetParamValue(p, args, i));
+                .SelectMany((p, i) => GetParamValue(p, args, i))
+                .Select(p => (p.name, p.value ?? DBNull.Value));
         }
 
         async Task<IEnumerable<object[]>> LoadDataAsync(IExecutor executor, TArgs args, ILogger logger)
@@ -69,9 +70,8 @@ namespace SqlDsl
 
             var timer = new Timer(true);
 
-            IEnumerable<object[]> results;
-
             // execute and get all rows
+            IEnumerable<object[]> results;
             using (var reader = await executor
                 .ExecuteDebugAsync(sql, BuildParameters(args), SelectColumns)
                 .ConfigureAwait(false))
@@ -100,10 +100,8 @@ namespace SqlDsl
 
             var timer = new Timer(true);
             
-            IEnumerable<object[]> results;
-
             // execute and get all rows
-            // TODO: is it possible to limit the data returned if First or Single are called?
+            IEnumerable<object[]> results;
             using (var reader = executor.ExecuteDebug(sql, BuildParameters(args), SelectColumns))
                 results = reader.GetRows().Enumerate();
 
