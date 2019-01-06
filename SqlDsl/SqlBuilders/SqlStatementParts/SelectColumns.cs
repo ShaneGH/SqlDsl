@@ -36,7 +36,13 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             return queryParts.AllSelectColumns.Select(BuildColumn);
 
             ISelectColumn BuildColumn((bool isRowId, SqlStatementBuilder.SelectColumn col) col) => 
-                new SelectColumn(col.col.RepresentsColumns, col.Item2.Alias, col.isRowId, col.col.CellDataType, col.col.ArgConstructors, tables);
+                new SelectColumn(
+                    new [] { (col.col.Table, col.col.Column, CodingConstants.Null.String) }, 
+                    col.Item2.Alias, 
+                    col.isRowId, 
+                    col.col.CellDataType, 
+                    col.col.ArgConstructors, 
+                    tables);
         }
 
         public IEnumerator<ISelectColumn> GetEnumerator() => Columns.GetEnumerator();

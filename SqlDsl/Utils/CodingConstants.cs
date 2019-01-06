@@ -15,6 +15,13 @@ namespace SqlDsl.Utils
             public static readonly (string, object)[] StringObject = Enumerable
                 .Empty<(string, object)>()
                 .ToArray();
+                
+            public static readonly ConstructorInfo[] ConstructorInfo = new ConstructorInfo[0];
+        }
+        
+        public class Null
+        {
+            public static readonly string String = null;
         }
         
         public class Expressions

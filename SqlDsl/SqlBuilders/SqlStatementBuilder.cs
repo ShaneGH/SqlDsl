@@ -16,9 +16,7 @@ namespace SqlDsl.SqlBuilders
     /// </summary>
     public class SqlStatementBuilder : ISqlString
     {
-        static readonly (string, (string, string, string)[]) Select1 = ("1", new (string, string, string)[0]);
-        static readonly ConstructorInfo[] EmptyConstructorInfo = new ConstructorInfo[0];
-        static readonly string NullString = null;
+        static readonly (string, string) Select1 = ("1", CodingConstants.Null.String);
 
         public readonly ISqlSyntax SqlSyntax;
 
@@ -69,8 +67,8 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Add a column to the SELECT statement
         /// </summary>
-        public void AddSelectColumn(Type cellDataType, string selectCode, string alias, (string table, string column, string aggregatedToTable)[] representsColumns, ConstructorInfo[] argConstructors = null) =>
-            _Select.Add(new SelectColumn(cellDataType, selectCode, alias ?? throw new ArgumentNullException(nameof(alias)), representsColumns, argConstructors ?? EmptyConstructorInfo));
+        public void AddSelectColumn(Type cellDataType, string table, string column, string alias, ConstructorInfo[] argConstructors = null) =>
+            _Select.Add(new SelectColumn(cellDataType, table, column, alias ?? throw new ArgumentNullException(nameof(alias)), argConstructors ?? CodingConstants.Empty.ConstructorInfo));
 
         public void AddOrderBy(ParameterExpression queryRootParam, ParameterExpression argsParam, Expression orderBy, OrderDirection direction, ParamBuilder parameters)
         {
@@ -239,8 +237,8 @@ namespace SqlDsl.SqlBuilders
 
             // TODO: look at $"{rid.tableAlias}.{rid.rowIdColumnName}". What if tableAlias is null or #root
             var sels = rowIds
-                .Select(rid => (sql: BuildSqlForRid(rid), representsColumns: new [] { (table: rid.tableAlias, NullString, aggregatedToTable: NullString) }))
-                .Concat(selects.Select(sel => (sql: SqlSyntax.AddAliasColumn(sel.SelectCode, sel.Alias), representsColumns: sel.RepresentsColumns)))
+                .Select(rid => (sql: BuildSqlForRid(rid), table: rid.tableAlias))
+                .Concat(selects.Select(sel => (sql: SqlSyntax.AddAliasColumn(SqlSyntax.BuildSelectColumn(sel.Table, sel.Column), sel.Alias), table: sel.Table)))
                 .ToList();
 
             // if there is absolutely nothing to select, prevent error by selecting 1
@@ -250,8 +248,7 @@ namespace SqlDsl.SqlBuilders
             return _ToSqlString(
                 sels.Select(c => c.sql), 
                 sels
-                    .SelectMany(s => s.representsColumns)
-                    .SelectMany(c => new [] { c.table, c.aggregatedToTable })
+                    .Select(c => c.table)
                     .RemoveNulls()
                     .Distinct());
 
@@ -365,7 +362,7 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         protected IEnumerable<(bool isRowId, SelectColumn col)> GetAllSelectColumns() =>
             GetRowIdSelectColumns()
-            .Select(x => (true, new SelectColumn((Type)null, SqlSyntax.BuildSelectColumn(x.tableAlias, x.rowIdColumnName), x.rowIdColumnNameAlias, new [] { (x.tableAlias, x.rowIdColumnName, NullString) }, EmptyConstructorInfo)))
+            .Select(x => (true, new SelectColumn((Type)null, x.tableAlias, x.rowIdColumnName, x.rowIdColumnNameAlias, CodingConstants.Empty.ConstructorInfo)))
             .Concat(_Select.Select(x => (false, x)));
 
         /// <summary>
@@ -415,22 +412,22 @@ namespace SqlDsl.SqlBuilders
         public class SelectColumn
         {
             public readonly Type CellDataType;
-            public readonly string SelectCode;
+            public readonly string Table;
+            public readonly string Column;
             public readonly  string Alias;
-            public readonly  (string table, string column, string aggregatedToTable)[] RepresentsColumns;
             public readonly  ConstructorInfo[] ArgConstructors;
 
             public SelectColumn(
-                Type cellDataType, 
-                string selectCode, 
+                Type cellDataType,
+                string table, 
+                string column,
                 string alias, 
-                (string table, string column, string aggregatedToTable)[] representsColumns, 
                 ConstructorInfo[] argConstructors)
             {
                 CellDataType = cellDataType;
-                SelectCode = selectCode;
+                Table = table;
+                Column = column;
                 Alias = alias;
-                RepresentsColumns = representsColumns;
                 ArgConstructors = argConstructors;
             }
         }

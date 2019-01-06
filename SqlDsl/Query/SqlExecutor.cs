@@ -136,8 +136,6 @@ namespace SqlDsl.Query
             return compiled;
         }
 
-        static readonly string NullString = null;
-
         /// <summary>
         /// Create a populated sql builder along with any constants specified in the query
         /// </summary>
@@ -175,7 +173,7 @@ namespace SqlDsl.Query
             foreach (var col in selectColumns)
             {
                 var alias = col.table == SqlStatementConstants.RootObjectAlias ? col.column.name : $"{col.table}.{col.column.name}";
-                builder.AddSelectColumn(col.column.dataType, SqlSyntax.BuildSelectColumn(col.table, col.column.name), alias, new [] {(col.table, col.column.name, NullString)});
+                builder.AddSelectColumn(col.column.dataType, col.table, col.column.name, alias);
             }
 
             // add a where clause if specified
