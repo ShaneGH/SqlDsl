@@ -86,8 +86,8 @@ namespace SqlDsl.ObjectBuilders
             }
 
             var key = values.PropertyGraph.SimpleConstructorArgs.Length == 0
-                ? values.PropertyGraph.SimpleProps[0].rowNumberColumnIds
-                : values.PropertyGraph.SimpleConstructorArgs[0].rowNumberColumnIds;
+                ? values.PropertyGraph.SimpleProps[0].primaryKeyColumns
+                : values.PropertyGraph.SimpleConstructorArgs[0].primaryKeyColumns;
 
             // run a "Distinct" on the rowNumbers
             var dataRowsForProp = values.PropertyGraph.GetDataRowsForSimpleProperty(values.Objects, key);

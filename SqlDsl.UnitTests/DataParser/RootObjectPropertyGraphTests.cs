@@ -66,7 +66,7 @@ namespace SqlDsl.UnitTests.DataParser
 
             Assert.AreEqual(expected.ObjectType, actual.ObjectType);
 
-            CompareRowIdColumnNumbers(expected, actual);
+            ComparePrimaryKeyColumns(expected, actual);
 
             if (expected.SimpleProps.Count() != actual.SimpleProps.Count()) Fail("Simple props count");
             for (var i = 0; i < expected.SimpleProps.Count(); i++)
@@ -79,7 +79,7 @@ namespace SqlDsl.UnitTests.DataParser
                 Assert.AreEqual(x_.resultPropertyType, y_.resultPropertyType, "Simple prop " + i + " resultPropertyType");
                 Assert.AreEqual(x_.dataCellType, y_.dataCellType, "Simple prop " + i + " dataCellType");
 
-                CollectionAssert.AreEqual(x_.rowNumberColumnIds, y_.rowNumberColumnIds, ErrMessage("Simple prop " + i));
+                CollectionAssert.AreEqual(x_.primaryKeyColumns, y_.primaryKeyColumns, ErrMessage("Simple prop " + i));
             }
 
             if (expected.ComplexProps.Count() != actual.ComplexProps.Count()) Fail("Complex props count");
@@ -104,7 +104,7 @@ namespace SqlDsl.UnitTests.DataParser
                 Assert.AreEqual(x_.argIndex, y_.argIndex, "Simple cArg " + i + " argIndex");
                 Assert.AreEqual(x_.resultPropertyType, y_.resultPropertyType, "Simple cArg " + i + " resultPropertyType");
                 Assert.AreEqual(x_.dataCellType, y_.dataCellType, "Simple cArg " + i + " dataCellType");
-                CollectionAssert.AreEqual(x_.rowNumberColumnIds, y_.rowNumberColumnIds, ErrMessage("Simple cArg " + i));
+                CollectionAssert.AreEqual(x_.primaryKeyColumns, y_.primaryKeyColumns, ErrMessage("Simple cArg " + i));
             }
 
             if (expected.ComplexConstructorArgs.Count() != actual.ComplexConstructorArgs.Count()) Fail("Complex cArgs count");
@@ -130,17 +130,17 @@ namespace SqlDsl.UnitTests.DataParser
             }
         }
 
-        void CompareRowIdColumnNumbers(ObjectPropertyGraph expected, ObjectPropertyGraph actual)
+        void ComparePrimaryKeyColumns(ObjectPropertyGraph expected, ObjectPropertyGraph actual)
         {
             if (expected == null && actual == null) return;
             if (expected == null || actual == null) Fail();
 
-            if (expected.RowIdColumnNumbers.Count() != actual.RowIdColumnNumbers.Count()) Fail("RowIdColumnNumbers count");
-            for (var i = 0; i < expected.RowIdColumnNumbers.Count(); i++)
+            if (expected.PrimaryKeyColumns.Count() != actual.PrimaryKeyColumns.Count()) Fail("PrimaryKeyColumns count");
+            for (var i = 0; i < expected.PrimaryKeyColumns.Count(); i++)
             {
-                if (expected.RowIdColumnNumbers.ElementAt(i) !=
-                    actual.RowIdColumnNumbers.ElementAt(i))
-                    Fail("RowIdColumnNumber " + i);
+                if (expected.PrimaryKeyColumns.ElementAt(i) !=
+                    actual.PrimaryKeyColumns.ElementAt(i))
+                    Fail("PrimaryKeyColumn " + i);
             }
 
             if (expected.ComplexProps.Count() != actual.ComplexProps.Count()) Fail("Complex props count");
@@ -152,7 +152,7 @@ namespace SqlDsl.UnitTests.DataParser
                 if (x_.name != y_.name)
                     Fail("Complex prop " + i);
 
-                CompareRowIdColumnNumbers(x_.value, y_.value);
+                ComparePrimaryKeyColumns(x_.value, y_.value);
             }
 
             string ErrMessage(string message = null) 

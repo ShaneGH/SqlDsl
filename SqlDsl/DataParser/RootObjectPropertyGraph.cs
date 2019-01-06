@@ -20,7 +20,7 @@ namespace SqlDsl.DataParser
         /// <summary>
         /// If null, ignore. If not null, this object references a simple value
         /// </summary>
-        readonly (int columnIndex, int rowNumberColumnIndex, Type cellType, bool simplePropertyCellIsTypeEnumerable)? SimpleProperty;
+        readonly (int columnIndex, int primaryKeyColumnIndex, Type cellType, bool simplePropertyCellIsTypeEnumerable)? SimpleProperty;
 
         /// <summary>
         /// Specifies the type of this graph. If true graph only has one node which represents a simple value (e.g. a string, int etc...).
@@ -38,7 +38,7 @@ namespace SqlDsl.DataParser
         /// If IsSimpleValue == true, will specify the row number column index for the SimpleValueColumn
         /// Otherwise the value of this property should be ignored
         /// </summary>
-        public int SimpleValueRowNumberColumnIndex => SimpleProperty?.rowNumberColumnIndex ?? 0;
+        public int SimpleValuePrimaryKeyColumn => SimpleProperty?.primaryKeyColumnIndex ?? 0;
 
         /// <summary>
         /// If IsSimpleValue == true, will specify the type of the cell
@@ -53,16 +53,16 @@ namespace SqlDsl.DataParser
         /// <param name="colNames">The column names that this graph is based on.</param>
         /// <param name="simpleProps">Properties of an object with simple values like strings, ints etc... The index is the index of the column in the sql query resuts table.</param>
         /// <param name="complexProps">Properties of an object which have sub properies</param>
-        /// <param name="rowIdColumnNumbers">A composite of the row numbers which point to this object</param>
+        /// <param name="primaryKeyColumns">A composite of the row numbers which point to this object</param>
         public RootObjectPropertyGraph(
             Type objectType,
             IEnumerable<string> colNames,
-            (int index, string name, int[] rowNumberColumnIds, Type resultPropertyType, Type dataCellType)[] simpleProps, 
+            (int index, string name, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType)[] simpleProps, 
             (string name, ObjectPropertyGraph value)[] complexProps, 
-            int[] rowIdColumnNumbers,
-            (int index, int argIndex, int[] rowNumberColumnIds, Type resultPropertyType, Type dataCellType)[] simpleConstructorArgs = null,
+            int[] primaryKeyColumns,
+            (int index, int argIndex, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType)[] simpleConstructorArgs = null,
             (int argIndex, Type constructorArgType, ObjectPropertyGraph value)[] complexConstructorArgs = null)
-            : base(objectType, simpleProps, complexProps, rowIdColumnNumbers, simpleConstructorArgs, complexConstructorArgs)
+            : base(objectType, simpleProps, complexProps, primaryKeyColumns, simpleConstructorArgs, complexConstructorArgs)
         {
             ColumnNames = colNames.ToArray();
         }
@@ -71,10 +71,10 @@ namespace SqlDsl.DataParser
         /// Build an object graph for a simple value.
         /// </summary>
         /// <param name="objectType">The type of the object.</param>
-        public RootObjectPropertyGraph(Type objectType, int columnIndex, int rowNumberColumnIndex, Type cellType, bool cellTypeIsEnumerable)
+        public RootObjectPropertyGraph(Type objectType, int columnIndex, int primaryKeyColumnIndex, Type cellType, bool cellTypeIsEnumerable)
             : this(objectType, Enumerable.Empty<string>(), null,  null,  null)
         {
-            SimpleProperty = (columnIndex, rowNumberColumnIndex, cellType, cellTypeIsEnumerable);
+            SimpleProperty = (columnIndex, primaryKeyColumnIndex, cellType, cellTypeIsEnumerable);
         }
 
         public override string ToString() =>

@@ -49,21 +49,21 @@ namespace SqlDsl.ObjectBuilders
                 .Select(p => (p.argIndex, CreateObject(p.value, Objects)));
 
         (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleCArg(
-                    (int index, int argIndex, int[] rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+                    (int index, int argIndex, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType) p)
         {
-            var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
+            var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.primaryKeyColumns, p.dataCellType);
             return (p.argIndex, data, cellEnumType != null);
         }
 
-        (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp((int index, string name, int[] rowNumberColumnIds, Type resultPropertyType, Type dataCellType) p)
+        (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp((int index, string name, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType) p)
         {
-            var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.rowNumberColumnIds, p.dataCellType);
+            var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.primaryKeyColumns, p.dataCellType);
             return (p.name, data, cellEnumType != null);
         }
 
-        (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, IEnumerable<int> rowNumberColumnIds, Type dataCellType)
+        (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, IEnumerable<int> primaryKeyColumns, Type dataCellType)
         {
-            var dataRowsForProp = PropertyGraph.GetDataRowsForSimpleProperty(Objects, rowNumberColumnIds);
+            var dataRowsForProp = PropertyGraph.GetDataRowsForSimpleProperty(Objects, primaryKeyColumns);
 
             var data = dataRowsForProp
                 .Select(o => o[index])

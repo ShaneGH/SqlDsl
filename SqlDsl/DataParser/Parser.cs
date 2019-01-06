@@ -38,7 +38,7 @@ namespace SqlDsl.DataParser
                 // simple mapped properties are always grouped around the primary select
                 .GroupBy(r => r[0])
                 .Select(singleRecord => singleRecord
-                    .GroupBy(r => r[propertyGraph.SimpleValueRowNumberColumnIndex])
+                    .GroupBy(r => r[propertyGraph.SimpleValuePrimaryKeyColumn])
                     .Select(Enumerable.First))
                 .Select(rs => rs.Select(r => r[propertyGraph.SimpleValueColumnIndex]));
 

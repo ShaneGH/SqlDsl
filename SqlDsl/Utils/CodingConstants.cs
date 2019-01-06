@@ -17,6 +17,8 @@ namespace SqlDsl.Utils
                 .ToArray();
                 
             public static readonly ConstructorInfo[] ConstructorInfo = new ConstructorInfo[0];
+                
+            public static readonly int[] Int = new int[0];
         }
         
         public class Null

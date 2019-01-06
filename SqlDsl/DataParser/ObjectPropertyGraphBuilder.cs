@@ -34,7 +34,7 @@ namespace SqlDsl.DataParser
                 columns.Select(x => x.name), 
                 opg.SimpleProps, 
                 opg.ComplexProps, 
-                opg.RowIdColumnNumbers,
+                opg.PrimaryKeyColumns,
                 opg.SimpleConstructorArgs,
                 opg.ComplexConstructorArgs);
         }
@@ -53,22 +53,22 @@ namespace SqlDsl.DataParser
 
         static ObjectPropertyGraph _Build(
             Type objectType, 
-            int[] rowIdColumnNumbers, 
+            int[] primaryKeyColumns, 
             IEnumerable<(string[] name, int[] rowIdColumnMap)> mappedTableProperties, 
             IEnumerable<(int index, string[] name, int[] rowIdColumnMap, Type cellType, ConstructorInfo[] constructorArgInfo)> columns, 
             QueryParseType queryParseType)
         {
-            var simpleProps = new List<(int index, string propertyName, int[] rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();
-            var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)>();
-            var simpleCArgs = new List<(int index, int argIndex, int[] rowIdColumnNumbers, Type resultPropertyType, Type dataCellType)>();
-            var complexCArgs = new List<(int index, int argIndex, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)>();
+            var simpleProps = new List<(int index, string propertyName, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType)>();
+            var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropPrimaryKeyColumns, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)>();
+            var simpleCArgs = new List<(int index, int argIndex, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType)>();
+            var complexCArgs = new List<(int index, int argIndex, string[] subPropName, int[] subPropPrimaryKeyColumns, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)>();
 
             // if mappedTableProperties are invalid
             // check mapped tables in QueryMapper.BuildMapForSelect(...)
             mappedTableProperties = mappedTableProperties
                 .Select(p => (
                     p.name, 
-                    RemoveBeforePattern(rowIdColumnNumbers, p.rowIdColumnMap, throwErrorIfPatternNotFound: false)
+                    RemoveBeforePattern(primaryKeyColumns, p.rowIdColumnMap, throwErrorIfPatternNotFound: false)
                 ))
                 .Enumerate();
 
@@ -91,8 +91,8 @@ namespace SqlDsl.DataParser
                         simpleCArgs.Add((
                             col.index, 
                             index, 
-                            FilterRowIdColumnNumbers(
-                                RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap)).ToArray(),
+                            FilterPrimaryKeyColumns(
+                                RemoveBeforePattern(primaryKeyColumns, col.rowIdColumnMap)).ToArray(),
                             typedConstructorArgs[index],
                             col.cellType
                         ));
@@ -106,8 +106,8 @@ namespace SqlDsl.DataParser
                         simpleProps.Add((
                             col.index, 
                             col.name[0], 
-                            FilterRowIdColumnNumbers(
-                                RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap)).ToArray(),
+                            FilterPrimaryKeyColumns(
+                                RemoveBeforePattern(primaryKeyColumns, col.rowIdColumnMap)).ToArray(),
                             colType,
                             col.cellType
                         ));
@@ -128,7 +128,7 @@ namespace SqlDsl.DataParser
                             col.index, 
                             index, 
                             col.name.Skip(1).ToArray(),
-                            RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap),
+                            RemoveBeforePattern(primaryKeyColumns, col.rowIdColumnMap),
                             colType,
                             col.cellType,
                             col.constructorArgInfo));
@@ -146,7 +146,7 @@ namespace SqlDsl.DataParser
                             col.index, 
                             col.name[0], 
                             col.name.Skip(1).ToArray(),
-                            RemoveBeforePattern(rowIdColumnNumbers, col.rowIdColumnMap),
+                            RemoveBeforePattern(primaryKeyColumns, col.rowIdColumnMap),
                             colType,
                             col.cellType,
                             col.constructorArgInfo));
@@ -168,14 +168,14 @@ namespace SqlDsl.DataParser
                 objectType, 
                 simpleProps.ToArray(), 
                 cplxProps.ToArray(), 
-                rowIdColumnNumbers, 
+                primaryKeyColumns, 
                 simpleCArgs.ToArray(), 
                 cplxCArgs.ToArray());
 
             string PropertyName((int, string propertyName, string[], int[], Type, Type, ConstructorInfo[]) value) => value.propertyName;
             int ArgIndex((int, int argIndex, string[], int[], Type, Type, ConstructorInfo[]) value) => value.argIndex;
 
-            (string, ObjectPropertyGraph) BuildComplexProp(IEnumerable<(int index, string propertyName, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)> values)
+            (string, ObjectPropertyGraph) BuildComplexProp(IEnumerable<(int index, string propertyName, string[] subPropName, int[] subPropPrimaryKeyColumns, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)> values)
             {
                 values = values.Enumerate();
                 var propertyName = values.First().propertyName;
@@ -193,7 +193,7 @@ namespace SqlDsl.DataParser
                 {
                     propertyTableMap = values
                         .Where(x => x.subPropName.Length == 1)
-                        .Select(x => x.subPropRowIdColumnNumbers)
+                        .Select(x => x.subPropPrimaryKeyColumns)
                         .OrderedIntersection()
                         .ToArray();
                 }
@@ -202,13 +202,13 @@ namespace SqlDsl.DataParser
                     propertyName,
                     _Build(
                         values.First().propertyType,
-                        FilterRowIdColumnNumbers(propertyTableMap).ToArray(),
+                        FilterPrimaryKeyColumns(propertyTableMap).ToArray(),
                         mappedTableProperties.Where(p => p.name.Length > 1).Select(p => (p.name.Skip(1).ToArray(), p.rowIdColumnMap)),
-                        values.Select(v => (v.index, v.subPropName, v.subPropRowIdColumnNumbers, v.dataCellType, v.constructorArgInfo)),
+                        values.Select(v => (v.index, v.subPropName, v.subPropPrimaryKeyColumns, v.dataCellType, v.constructorArgInfo)),
                         queryParseType));
             }
 
-            (int, Type, ObjectPropertyGraph) BuildComplexCArg(IEnumerable<(int index, int argIndex, string[] subPropName, int[] subPropRowIdColumnNumbers, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)> values)
+            (int, Type, ObjectPropertyGraph) BuildComplexCArg(IEnumerable<(int index, int argIndex, string[] subPropName, int[] subPropPrimaryKeyColumns, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)> values)
             {
                 values = values.Enumerate();
                 var argIndex = values.First().argIndex;
@@ -232,7 +232,7 @@ namespace SqlDsl.DataParser
                 {
                     propertyTableMap = values
                         .Where(x => x.subPropName.Length == 1)
-                        .Select(x => x.subPropRowIdColumnNumbers)
+                        .Select(x => x.subPropPrimaryKeyColumns)
                         .OrderedIntersection()
                         .ToArray();
                 }
@@ -242,13 +242,13 @@ namespace SqlDsl.DataParser
                     constructorInfo.GetParameters()[argIndex].ParameterType,
                     _Build(
                         values.First().propertyType,
-                        FilterRowIdColumnNumbers(propertyTableMap).ToArray(),
+                        FilterPrimaryKeyColumns(propertyTableMap).ToArray(),
                         mappedTableProperties.Where(p => p.name.Length > 1).Select(p => (p.name.Skip(1).ToArray(), p.rowIdColumnMap)),
-                        values.Select(v => (v.index, v.subPropName, v.subPropRowIdColumnNumbers, v.dataCellType, v.constructorArgInfo.Skip(1).ToArray())),
+                        values.Select(v => (v.index, v.subPropName, v.subPropPrimaryKeyColumns, v.dataCellType, v.constructorArgInfo.Skip(1).ToArray())),
                         queryParseType));
             }
 
-            IEnumerable<int> FilterRowIdColumnNumbers(IEnumerable<int> numbers)
+            IEnumerable<int> FilterPrimaryKeyColumns(IEnumerable<int> numbers)
             {
                 switch (queryParseType)
                 {
