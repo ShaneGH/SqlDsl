@@ -1,6 +1,7 @@
 using SqlDsl.DataParser;
 using SqlDsl.Dsl;
 using SqlDsl.Mapper;
+using SqlDsl.Schema;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 using System;
@@ -32,19 +33,16 @@ namespace SqlDsl.Query
         }
 
         /// <inheritdoc />
-        IQuery<TArgs, TResult> From<TTable>(string tableName, Expression<Func<TResult, TTable>> tableProperty)
+        public IQuery<TArgs, TResult> From<TTable>(Expression<Func<TResult, TTable>> tableProperty)
         {
             var (memberName, type) = CheckMemberExpression(tableProperty.Body, tableProperty.Parameters[0]);
+            
             __PrimaryTableMember = (
                 memberName,
-                tableName ?? throw new ArgumentNullException(nameof(tableName)),
+                TableAttribute.GetTableName(type),
                 type);
 
             return this;
         }
-
-        /// <inheritdoc />
-        public IQuery<TArgs, TResult> From<TTable>(Expression<Func<TResult, TTable>> tableProperty) =>
-            From<TTable>(typeof(TTable).Name, tableProperty);
     }
 }

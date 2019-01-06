@@ -1,6 +1,7 @@
 using SqlDsl.DataParser;
 using SqlDsl.Dsl;
 using SqlDsl.Mapper;
+using SqlDsl.Schema;
 using SqlDsl.SqlBuilders;
 using SqlDsl.SqlBuilders.SqlStatementParts;
 using SqlDsl.Utils;
@@ -19,7 +20,10 @@ namespace SqlDsl.Query
     /// </summary>
     public abstract class SqlExecutor<TArgs, TResult> : ISqlExecutor<TArgs, TResult>
     {      
-        static readonly (string, string, Type) DefaultPrimaryTableMember = (SqlStatementConstants.RootObjectAlias, typeof(TResult).Name, typeof(TResult));
+        static readonly (string, string, Type) DefaultPrimaryTableMember = (
+            SqlStatementConstants.RootObjectAlias, 
+            TableAttribute.GetTableName(typeof(TResult)), 
+            typeof(TResult));
 
         /// <summary>
         /// A cache of column names for a given type
