@@ -47,8 +47,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
-                .InnerJoin<PersonClass>(nameof(PersonClass), result => result.ThePersonClasses)
+                .From(result => result.ThePerson)
+                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -76,8 +76,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
-                .LeftJoin<PersonClass>(nameof(PersonClass), result => result.ThePersonClasses)
+                .From(result => result.ThePerson)
+                .LeftJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -91,10 +91,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
-                .InnerJoin<PersonClass>(nameof(PersonClass), result => result.ThePersonClasses)
+                .From(result => result.ThePerson)
+                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
-                .InnerJoin<ClassTag>(nameof(ClassTag), result => result.TheClassTags)
+                .InnerJoin<ClassTag>(result => result.TheClassTags)
                     .On((q, c) => q.ThePersonClasses.First().ClassId == c.ClassId)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -117,10 +117,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
-                .InnerJoin<ClassTag>(nameof(ClassTag), result => result.TheClassTags)
+                .From(result => result.ThePerson)
+                .InnerJoin<ClassTag>(result => result.TheClassTags)
                     .On((q, c) => q.ThePersonClasses.Single().ClassId == c.ClassId)
-                .InnerJoin<PersonClass>(nameof(PersonClass), result => result.ThePersonClasses)
+                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -143,8 +143,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
-                .InnerJoin<PersonClass>(nameof(PersonClass), result => result.ThePersonClasses)
+                .From(result => result.ThePerson)
+                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => c.ClassId == Data.Classes.Archery.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -166,8 +166,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
-                .InnerJoin<PersonClass>(nameof(PersonClass), result => result.ThePersonClasses)
+                .From(result => result.ThePerson)
+                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => c.ClassId == Data.Classes.Tennis.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -190,8 +190,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
-                .InnerJoin<PersonClass>(nameof(PersonClass), result => result.ThePersonClasses)
+                .From(result => result.ThePerson)
+                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId && c.ClassId == Data.Classes.Tennis.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 

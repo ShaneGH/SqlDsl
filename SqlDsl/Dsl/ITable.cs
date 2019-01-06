@@ -9,47 +9,21 @@ namespace SqlDsl.Dsl
     /// Interface to help with query building DSL
     /// </summary>
     public interface ISqlSelect<TResult> : IFilter<TResult>
-    {
-        /// <summary>
-        /// Set the [Table] in SELECT FROM [Table]
-        /// </summary>
-        /// <param name="resultProperty">
-        /// An expression to map the selected table to a property on the result
-        /// </param>
-        IQuery<TResult> From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty);
-        
+    {        
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table]. Uses the class name of TTable as the sql table name
         /// </summary>
         IQuery<TResult> From<TTable>(Expression<Func<TResult, TTable>> resultProperty);
-        
-        /// <summary>
-        /// Set the [Table] in SELECT FROM [Table] to be TResult.
-        /// </summary>
-        IQuery<TResult> From(string tableName);
     }
     
     /// <summary>
     /// Interface to help with query building DSL
     /// </summary>
     public interface ISqlSelect<TArgs, TResult> : IFilter<TArgs, TResult>
-    {
-        /// <summary>
-        /// Set the [Table] in SELECT FROM [Table]
-        /// </summary>
-        /// <param name="resultProperty">
-        /// An expression to map the selected table to a property on the result
-        /// </param>
-        IQuery<TArgs, TResult> From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty);
-        
+    {        
         /// <summary>
         /// Set the [Table] in SELECT FROM [Table]. Uses the class name of TTable as the sql table name
         /// </summary>
         IQuery<TArgs, TResult> From<TTable>(Expression<Func<TResult, TTable>> resultProperty);
-        
-        /// <summary>
-        /// Set the [Table] in SELECT FROM [Table] to be TResult.
-        /// </summary>
-        IQuery<TArgs, TResult> From(string tableName);
     }
 }

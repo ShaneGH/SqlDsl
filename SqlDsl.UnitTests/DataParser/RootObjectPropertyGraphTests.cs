@@ -639,7 +639,7 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(nameof(ClassTag), result => result.PersonClasses)
+                .InnerJoin<PersonClass>(result => result.PersonClasses)
                     .On((q, c) => c.ClassId == Data.Classes.Tennis.Id)
                 .BuildObjetPropertyGraph();
 

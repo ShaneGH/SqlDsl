@@ -57,35 +57,17 @@ namespace SqlDsl.Query
 
         ICompiledQuery<TResult> ISqlExecutor<TResult>.Compile(ILogger logger) => new CompiledQuery<TResult>(base.Compile(logger: logger));
 
-        IQuery<TResult> ISqlSelect<TResult>.From<TTable>(string tableName, Expression<Func<TResult, TTable>> resultProperty) =>
-            (SqlSelect<TResult>)base.From(tableName, resultProperty);
-
         IQuery<TResult> ISqlSelect<TResult>.From<TTable>(Expression<Func<TResult, TTable>> resultProperty) =>
             (SqlSelect<TResult>)base.From(resultProperty);
-
-        IQuery<TResult> ISqlSelect<TResult>.From(string tableName) =>
-            (SqlSelect<TResult>)base.From(tableName);
-
-        IJoinBuilder<TResult, TJoin> IQuery<TResult>.InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
-            new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(tableName, joinProperty));
 
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.InnerJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
             new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(joinProperty));
 
-        IJoinBuilder<TResult, TJoin> IQuery<TResult>.InnerJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinProperty) =>
-            new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(tableName, joinProperty));
-
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.InnerJoin<TJoin>(Expression<Func<TResult, TJoin>> joinProperty) =>
             new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(joinProperty));
 
-        IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
-            new JoinBuilder_WithoutArgs<TJoin>(base.LeftJoin(tableName, joinProperty));
-
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
             new JoinBuilder_WithoutArgs<TJoin>(base.LeftJoin(joinProperty));
-
-        IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinProperty) =>
-            new JoinBuilder_WithoutArgs<TJoin>(base.LeftJoin(tableName, joinProperty));
 
         IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoin<TJoin>(Expression<Func<TResult, TJoin>> joinProperty) =>
             new JoinBuilder_WithoutArgs<TJoin>(base.LeftJoin(joinProperty));

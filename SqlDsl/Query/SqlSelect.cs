@@ -32,7 +32,7 @@ namespace SqlDsl.Query
         }
 
         /// <inheritdoc />
-        public IQuery<TArgs, TResult> From<TTable>(string tableName, Expression<Func<TResult, TTable>> tableProperty)
+        IQuery<TArgs, TResult> From<TTable>(string tableName, Expression<Func<TResult, TTable>> tableProperty)
         {
             var (memberName, type) = CheckMemberExpression(tableProperty.Body, tableProperty.Parameters[0]);
             __PrimaryTableMember = (
@@ -46,9 +46,5 @@ namespace SqlDsl.Query
         /// <inheritdoc />
         public IQuery<TArgs, TResult> From<TTable>(Expression<Func<TResult, TTable>> tableProperty) =>
             From<TTable>(typeof(TTable).Name, tableProperty);
-
-        /// <inheritdoc />
-        public IQuery<TArgs, TResult> From(string tableName) =>
-            From<TResult>(tableName, x => x);
     }
 }

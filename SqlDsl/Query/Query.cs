@@ -32,7 +32,7 @@ namespace SqlDsl.Query
         }
 
         /// <inheritdoc />
-        public IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
+        IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
             new JoinBuilder<TJoin>(this, JoinType.Inner, tableName, joinResult);
         
         /// <inheritdoc />
@@ -40,7 +40,7 @@ namespace SqlDsl.Query
             InnerJoin<TJoin>(typeof(TJoin).Name, joinResult);
             
         /// <inheritdoc />
-        public IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinResult) =>
+        IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinResult) =>
             new JoinBuilder<TJoin>(this, JoinType.Inner, tableName, joinResult);
         
         /// <inheritdoc />
@@ -48,7 +48,7 @@ namespace SqlDsl.Query
             InnerJoin<TJoin>(typeof(TJoin).Name, joinResult);
         
         /// <inheritdoc />
-        public IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
+        IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
             new JoinBuilder<TJoin>(this, JoinType.Left, tableName, joinResult);
         
         /// <inheritdoc />
@@ -56,7 +56,7 @@ namespace SqlDsl.Query
             LeftJoin<TJoin>(typeof(TJoin).Name, joinResult);
         
         /// <inheritdoc />
-        public IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinResult) =>
+        IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinResult) =>
             new JoinBuilder<TJoin>(this, JoinType.Left, tableName, joinResult);
         
         /// <inheritdoc />

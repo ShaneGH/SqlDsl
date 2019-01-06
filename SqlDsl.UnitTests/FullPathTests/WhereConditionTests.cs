@@ -35,7 +35,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)                
+                .From(result => result.ThePerson)                
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
@@ -50,7 +50,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // actt
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id == Data.People.Mary.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -65,7 +65,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id != Data.People.Mary.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -80,7 +80,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id > Data.People.John.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -95,7 +95,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id >= Data.People.Mary.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -110,7 +110,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id < Data.People.Mary.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -125,7 +125,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id <= Data.People.John.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -142,7 +142,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id.In(inVals))
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -159,7 +159,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id.In(inVals))
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -173,7 +173,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id.In(new [] { Data.People.John.Id }))
                 .ToArrayAsync(Executor, logger: Logger);
 
@@ -188,7 +188,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id.In(new [] { Data.People.John.Id, 1000 }))
                 .ToArrayAsync(Executor, logger: Logger);
 
@@ -203,7 +203,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id.In(new [] { Data.People.John.Id + 1, 1000 + 1 }))
                 .ToArrayAsync(Executor, logger: Logger);
 
@@ -218,7 +218,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<int, QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where((result, args) => result.ThePerson.Id.In(new [] { Data.People.John.Id, args }))
                 .ToArrayAsync(Executor, 1000, logger: Logger);
 
@@ -233,7 +233,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<long[], QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where((result, args) => result.ThePerson.Id.In(args))
                 .ToArrayAsync(Executor, new long[] { Data.People.John.Id, 1000 }, logger: Logger);
 
@@ -248,7 +248,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<long[], QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where((result, args) => result.ThePerson.Id.In(args))
                 .ToArrayAsync(Executor, new long[0], logger: Logger);
 
@@ -262,7 +262,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id.In(new long[0]))
                 .ToArrayAsync(Executor, logger: Logger);
 
@@ -278,7 +278,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => inVals.Contains(result.ThePerson.Id))
                 .ToArrayAsync(Executor, logger: Logger);
 
@@ -293,7 +293,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => new [] { Data.People.John.Id }.Contains(result.ThePerson.Id))
                 .ToListAsync(Executor, logger: Logger);
 
@@ -308,7 +308,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .InnerJoin(x => x.ThePersonClasses).On((q, pc) => pc.PersonId.In(new [] { Data.People.Mary.Id }))
                 .Where(result => result.ThePerson.Id == Data.People.Mary.Id)
                 .ToListAsync(Executor, logger: Logger);
@@ -324,7 +324,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id.In(new List<long> { Data.People.John.Id }))
                 .ToArrayAsync(Executor, logger: Logger);
 
@@ -339,7 +339,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .Where(result => result.ThePerson.Id.In(new List<long> { Data.People.John.Id, 1000 }))
                 .ToArrayAsync(Executor, logger: Logger);
 
@@ -354,7 +354,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .InnerJoin(x => x.ThePersonClasses).On((q, pc) => pc.PersonId.In(new [] { Data.People.John.Id }))
                 .ToArray(Executor, logger: Logger);
 
@@ -382,7 +382,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Sql.Query.Sqlite<QueryClass>()
-                .From(nameof(Person), result => result.ThePerson)
+                .From(result => result.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
                 .Where(result => result.ThePersonClasses.One().ClassId == Data.Classes.Archery.Id)
