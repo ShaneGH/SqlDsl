@@ -36,7 +36,7 @@ namespace SqlDsl
         /// </summary>
         public static async Task<IEnumerable<object[]>> GetRowsAsync(this IReader reader)
         {
-            var rows = new List<object[]>();
+            var rows = new List<object[]>(16);
 
             (bool, object[]) row;
             while ((row = await reader.GetRowAsync().ConfigureAwait(false)).Item1)
@@ -54,9 +54,7 @@ namespace SqlDsl
 
             (bool, object[]) row;
             while ((row = reader.GetRow()).Item1)
-                rows.Add(row.Item2);
-
-            return rows;
+                yield return row.Item2;
         }
     }
 }
