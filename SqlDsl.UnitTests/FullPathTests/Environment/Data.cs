@@ -138,6 +138,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         {
             if (t == typeof(string)) return "TEXT";
             if (t == typeof(bool)) return "INTEGER";
+            if (t == typeof(DateTime)) return "INTEGER";
             if (t == typeof(bool?)) return "INTEGER";
             if (t == typeof(int)) return "INTEGER";
             if (t == typeof(int?)) return "INTEGER";
@@ -155,6 +156,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         static string SqlValue(object val, Type t, List<object> parameters)
         {
             if (t == typeof(int)) return val.ToString();
+            if (t == typeof(DateTime)) return ((DateTime)val).Ticks.ToString();
             if (t == typeof(int?)) return val == null ? "NULL" : val.ToString();
             if (t == typeof(bool)) return ((bool)val ? 1 : 0).ToString();
             if (t == typeof(bool?)) return val == null ? "NULL" : ((bool)val ? 1 : 0).ToString();
@@ -314,7 +316,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             Amount = 100,
             PersonId = new People().John.Id,
             PurchaedForPersonId = new People().John.Id,
-            ClassId = null
+            ClassId = null,
+            DateUtc = new DateTime(2000, 1, 1)
         };
 
         public readonly Purchase JohnPurchasedHimselfTennis = new Purchase
@@ -323,32 +326,46 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             Amount = 200,
             PersonId = new People().John.Id,
             PurchaedForPersonId = new People().John.Id,
-            ClassId = new Classes().Tennis.Id
+            ClassId = new Classes().Tennis.Id,
+            DateUtc = new DateTime(2000, 1, 1)
         };
 
-        public readonly Purchase MaryPurchasedHerselfTennis = new Purchase
+        public readonly Purchase MaryPurchasedHerselfTennis1 = new Purchase
         {
             Id = 9,
             Amount = 300,
             PersonId = new People().Mary.Id,
             PurchaedForPersonId = new People().Mary.Id,
-            ClassId = new Classes().Tennis.Id
+            ClassId = new Classes().Tennis.Id,
+            DateUtc = new DateTime(2000, 6, 1)
+        };
+
+        public readonly Purchase MaryPurchasedHerselfTennis2 = new Purchase
+        {
+            Id = 10,
+            Amount = 600,
+            PersonId = new People().Mary.Id,
+            PurchaedForPersonId = new People().Mary.Id,
+            ClassId = new Classes().Tennis.Id,
+            DateUtc = new DateTime(2000, 11, 1)
         };
 
         public readonly Purchase MaryPurchasedJohnArchery = new Purchase
         {
-            Id = 10,
+            Id = 11,
             Amount = 400,
             PersonId = new People().Mary.Id,
             PurchaedForPersonId = new People().John.Id,
-            ClassId = new Classes().Archery.Id
+            ClassId = new Classes().Archery.Id,
+            DateUtc = new DateTime(2000, 11, 1)
         };
 
         public IEnumerator<Purchase> GetEnumerator() => (new [] 
         { 
             JohnPurchasedHimselfShoes,
             JohnPurchasedHimselfTennis,
-            MaryPurchasedHerselfTennis,
+            MaryPurchasedHerselfTennis1,
+            MaryPurchasedHerselfTennis2,
             MaryPurchasedJohnArchery
         } as IEnumerable<Purchase>).GetEnumerator();
 

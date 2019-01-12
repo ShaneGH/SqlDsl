@@ -27,8 +27,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             public List<Class> TheClasses { get; set; }
             public List<ClassTag> TheClassTags { get; set; }
             public List<Tag> TheTags { get; set; }
-            public List<Purchase> ThePurchasesByMe { get; set; }
-            public List<Purchase> ThePurchasesByMeForMyClasses { get; set; }
+            public List<Purchase> ThePurchasesByClass { get; set; }
         }
 
         static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
@@ -43,34 +42,70 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
                 .LeftJoin<Tag>(q => q.TheTags)
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id)
-                .LeftJoin<Purchase>(q => q.ThePurchasesByMe)
-                    .On((q, t) => q.ThePerson.Id == t.PersonId);
-                // .LeftJoin<Purchase>(q => q.PurchasesByMeForMyClasses)
-                //     .On((q, t) => q.ThePerson.Id == t.PersonId && q.Classes.One().Id == t.ClassId);
+                .LeftJoin<Purchase>(q => q.ThePurchasesByClass)
+                    .On((q, t) => q.ThePerson.Id == t.PersonId && q.ThePerson.Id == t.PurchaedForPersonId && q.TheClasses.One().Id == t.ClassId);
         }
 
         [Test]
-        public async Task SimpleMapOn1Table()
+        [Ignore("TODO")]
+        public async Task SimpleMapOn1Table_WithOneResult()
         {
             // arrange
             // act
             var data = await FullyJoinedQuery()
+                .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(p => new
                 { 
-                    TheName = p.ThePerson.Name,
-                    Inner = new
-                    {
-                        TheName = p.ThePerson.Name
-                    }
+                    Person = p.ThePerson.Name,
+                    Classes = p.TheClasses
+                        .Select(c => new
+                        {
+                            Name = c.Name,
+                            Price = p.ThePurchasesByClass.One().Amount
+                        })
+                        .ToArray()
                 })
                 .ToListAsync(Executor, logger: Logger);
 
             // assert
-            Assert.AreEqual(2, data.Count());
-            Assert.AreEqual(Data.People.John.Name, data[0].TheName);
-            Assert.AreEqual(Data.People.John.Name, data[0].Inner.TheName);
-            Assert.AreEqual(Data.People.Mary.Name, data[1].TheName);
-            Assert.AreEqual(Data.People.Mary.Name, data[1].Inner.TheName);
+            Assert.AreEqual(1, data.Count);
+            
+            Assert.AreEqual(Data.People.John.Name, data[0].Person);
+            CollectionAssert.AreEqual(new [] 
+            { 
+                new { Name = Data.Classes.Tennis.Name, Price = Data.Purchases.JohnPurchasedHimselfTennis.Amount } 
+            }, data[0].Classes);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public async Task SimpleMapOn1Table_WithMultipleResults()
+        {
+            // arrange
+            // act
+            var data = await FullyJoinedQuery()
+                .Where(x => x.ThePerson.Id == Data.People.Mary.Id)
+                .Map(p => new
+                { 
+                    Person = p.ThePerson.Name,
+                    Classes = p.TheClasses
+                        .Select(c => new
+                        {
+                            Name = c.Name,
+                            Price = p.ThePurchasesByClass.Select(x => x.Amount).ToArray()
+                        })
+                        .ToArray()
+                })
+                .ToListAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(1, data.Count);
+            
+            Assert.AreEqual(Data.People.Mary.Name, data[0].Person);
+            Assert.AreEqual(1, data[0].Classes.Length);
+            Assert.AreEqual(Data.Classes.Tennis.Name, data[0].Classes[0].Name);
+            Assert.AreEqual(Data.Purchases.MaryPurchasedHerselfTennis1, data[0].Classes[0].Price[0]);
+            Assert.AreEqual(Data.Purchases.MaryPurchasedHerselfTennis2, data[0].Classes[0].Price[1]);
         }
     }
 }

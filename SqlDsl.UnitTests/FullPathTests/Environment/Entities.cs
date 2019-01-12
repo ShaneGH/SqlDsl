@@ -156,6 +156,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         public long PersonId { get; set; }
         public long PurchaedForPersonId { get; set; }
         public long? ClassId { get; set; }
+        public DateTime DateUtc { get; set; }
 
         public override int GetHashCode() => $"{Id}.{Amount}.{PersonId}.{ClassId}.{PurchaedForPersonId}".GetHashCode();
         public override bool Equals(object p)
