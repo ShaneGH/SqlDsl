@@ -20,37 +20,14 @@ namespace SqlDsl.UnitTests.FullPathTests
     [TestFixture]
     public class MappingTests : FullPathTestBase
     {
-        class JoinedQueryClass
+        class DeepQueryContainer
         {
-            public Person ThePerson { get; set; }
-            public List<PersonClass> ThePersonClasses { get; set; }
-            public List<Class> TheClasses { get; set; }
-            public List<ClassTag> TheClassTags { get; set; }
-            public List<Tag> TheTags { get; set; }
+            public QueryContainer Query { get; set; }
         }
 
-        static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
+        static Dsl.IQuery<DeepQueryContainer> DeepFullyJoinedQuery()
         {
-            return Sql.Query.Sqlite<JoinedQueryClass>()
-                .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
-                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.TheClasses)
-                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
-                    .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.TheTags)
-                    .On((q, t) => q.TheClassTags.One().TagId == t.Id);
-        }
-
-        class DeepJoinedQueryClass
-        {
-            public JoinedQueryClass Query { get; set; }
-        }
-
-        static Dsl.IQuery<DeepJoinedQueryClass> DeepFullyJoinedQuery()
-        {
-            return Sql.Query.Sqlite<DeepJoinedQueryClass>()
+            return Sql.Query.Sqlite<DeepQueryContainer>()
                 .From<Person>(x => x.Query.ThePerson)
                 .InnerJoin<PersonClass>(q => q.Query.ThePersonClasses)
                     .On((q, pc) => q.Query.ThePerson.Id == pc.PersonId)
@@ -101,7 +78,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task MapComplexObject1()
+        public async Task MapComplexObject()
         {
             // arrange
             // act
@@ -119,11 +96,11 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task MapComplexObject2()
+        public async Task MapComplexObject_WithAnotherProperty()
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
+            var data = await Sql.Query.Sqlite<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .Map(p => new MapComplexObjectType1
                 { 
@@ -148,7 +125,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task MapComplexObject3()
+        public async Task MapComplexObject_WithLongTableAlias()
         {
             // arrange
             // act
@@ -183,11 +160,11 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task MapComplexObject4()
+        public async Task MapComplexObject_WithReContext()
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Map(p => new MapComplexObjectType2
                 { 
                     PersonName = p.ThePerson.Name,
@@ -233,7 +210,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task MapComplexObject5()
+        public async Task MapComplexObject5_WithLongAliasAndReContext()
         {
             // arrange
             // act
@@ -283,11 +260,11 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task MapOnTableWith1JoinedTable()
+        public async Task MapOnTable_With1JoinedTable()
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
+            var data = await Sql.Query.Sqlite<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
@@ -310,11 +287,11 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task MapOnTableWith2JoinedTables()
+        public async Task MapOnTable_With2JoinedTables()
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
+            var data = await Sql.Query.Sqlite<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
@@ -349,7 +326,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
+            var data = await Sql.Query.Sqlite<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
@@ -418,13 +395,13 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task MapOnTableWith2JoinedTables_2()
+        public async Task MapOnTableWith2JoinedTables_ComplexMappingWithManyProperties()
         {
             // arrange
             PrintStatusOnFailure = false;
 
             // act
-            var data = await Sql.Query.Sqlite<JoinedQueryClass>()
+            var data = await Sql.Query.Sqlite<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
@@ -485,7 +462,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass3
                 { 
                     FavouriteClasses = query.TheClasses
@@ -529,7 +506,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Map(query => new
                 { 
                     FavouriteClasses = query.TheClasses
@@ -582,7 +559,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             // assert
-            Assert.ThrowsAsync(typeof(InvalidOperationException), () => FullyJoinedQuery()
+            Assert.ThrowsAsync(typeof(InvalidOperationException), () => TestUtils.FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass3_1
                 { 
                     FavouriteClasses = query.TheClasses
@@ -616,7 +593,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass3_2
                 { 
                     Inner = new SmartJoinedClass3_2
@@ -684,7 +661,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass1
                 { 
                     PersonsName = query.ThePerson.Name,
@@ -735,7 +712,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass1(query.ThePerson.Name)
                 { 
                     FavouriteClasses = query.TheClasses
@@ -796,7 +773,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Where(q => q.TheTags.One().Name == Data.Tags.Sport.Name)
                 .Map(query => new SmartJoinedClass5
                 { 

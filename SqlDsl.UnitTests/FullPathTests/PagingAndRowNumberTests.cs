@@ -19,33 +19,8 @@ using SqlDsl.Dsl;
 namespace SqlDsl.UnitTests.FullPathTests
 {
     [TestFixture]
-    public class PagingTests : FullPathTestBase
+    public class PagingAndRowNumberTests : FullPathTestBase
     {
-        class JoinedQueryClass
-        {
-            public Person ThePerson { get; set; }
-            public List<PersonClass> ThePersonClasses { get; set; }
-            public List<Class> TheClasses { get; set; }
-            public List<ClassTag> TheClassTags { get; set; }
-            public List<Tag> TheTags { get; set; }
-        }
-
-        IQuery<object, JoinedQueryClass> FullyJoinedQuery() => FullyJoinedQuery<object>();
-
-        IQuery<TArgs, JoinedQueryClass> FullyJoinedQuery<TArgs>()
-        {
-            return Sql.Query.Sqlite<TArgs, JoinedQueryClass>()
-                .From(result => result.ThePerson)
-                .LeftJoin<PersonClass>(result => result.ThePersonClasses)
-                    .On((r, pc) => r.ThePerson.Id == pc.PersonId)
-                .LeftJoin<Class>(result => result.TheClasses)
-                    .On((r, pc) => r.ThePersonClasses.One().ClassId == pc.Id)
-                .LeftJoin<ClassTag>(result => result.TheClassTags)
-                    .On((r, pc) => r.TheClasses.One().Id == pc.ClassId)
-                .LeftJoin<Tag>(result => result.TheTags)
-                    .On((r, pc) => r.TheClassTags.One().TagId == pc.Id);
-        }
-
         [Test]
         public void Take_UnmappedQuery_PagesResults()
         {
@@ -103,7 +78,8 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = FullyJoinedQuery()
+            var data = TestUtils
+                .FullyJoinedQuery()
                 .Map(x => new
                 {
                     person = x.ThePerson.Name,
@@ -111,7 +87,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 })
                 .Skip(1)
                 .Take(20)
-                .ToArray(Executor, null, logger: Logger);
+                .ToArray(Executor, logger: Logger);
 
             // assert
             CollectionAssert.AreEqual(new[] 
@@ -143,7 +119,8 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = FullyJoinedQuery<(int skip, int take)>()
+            var data = TestUtils
+                .FullyJoinedQueryWithArg<(int skip, int take)>()
                 .Map(x => new
                 {
                     person = x.ThePerson.Name,
@@ -165,14 +142,15 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = FullyJoinedQuery()
+            var data = TestUtils
+                .FullyJoinedQuery()
                 .Where(x => Sql.RowNumber() == 2)
                 .Map(x => new
                 {
                     person = x.ThePerson.Name,
                     classes = x.TheClasses.Count
                 })
-                .ToArray(Executor, null, logger: Logger);
+                .ToArray(Executor, logger: Logger);
 
             // assert
             CollectionAssert.AreEqual(new[] 
@@ -186,13 +164,14 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = FullyJoinedQuery()
+            var data = TestUtils
+                .FullyJoinedQuery()
                 .Map(x => new
                 {
                     person = x.ThePerson,
                     rowNumber = Sql.RowNumber()
                 })
-                .ToArray(Executor, null, logger: Logger);
+                .ToArray(Executor, logger: Logger);
 
             // assert
             CollectionAssert.AreEqual(new[] 

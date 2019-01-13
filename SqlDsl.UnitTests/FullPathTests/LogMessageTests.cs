@@ -18,34 +18,8 @@ using NUnit.Framework.Interfaces;
 namespace SqlDsl.UnitTests.FullPathTests
 {
     [TestFixture]
-    public class LogTests : FullPathTestBase
+    public class LogMessageTests : FullPathTestBase
     {
-        class JoinedQueryClass
-        {
-            public Person ThePerson { get; set; }
-            public PersonsData ThePersonsData { get; set; }
-            public List<PersonClass> ThePersonClasses { get; set; }
-            public List<Class> TheClasses { get; set; }
-            public List<ClassTag> TheClassTags { get; set; }
-            public List<Tag> TheTags { get; set; }
-        }
-
-        static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
-        {
-            return Sql.Query.Sqlite<JoinedQueryClass>()
-                .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
-                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<PersonsData>(q => q.ThePersonsData)
-                    .On((q, pd) => q.ThePerson.Id == pd.PersonId)
-                .InnerJoin<Class>(q => q.TheClasses)
-                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
-                    .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.TheTags)
-                    .On((q, t) => q.TheClassTags.One().TagId == t.Id);
-        }
-
         [Test]
         public async Task WarningWhenCollectionTypeIsWrong()
         {
@@ -53,7 +27,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            await FullyJoinedQuery()
+            await TestUtils.FullyJoinedQuery()
                 .Map(p => p.ThePersonsData.Data.ToList())
                 .ToListAsync(Executor, logger: Logger);
 
@@ -68,7 +42,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            await FullyJoinedQuery()
+            await TestUtils.FullyJoinedQuery()
                 .Map(p => new { data = p.ThePersonsData.Data.ToList() })
                 .ToListAsync(Executor, logger: Logger);
 
@@ -83,7 +57,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            await Sql.Query.Sqlite<JoinedQueryClass>()
+            await Sql.Query.Sqlite<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -101,7 +75,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            Sql.Query.Sqlite<JoinedQueryClass>()
+            Sql.Query.Sqlite<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .ToList(Executor, logger: Logger);
 
@@ -119,7 +93,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            await Sql.Query.Sqlite<JoinedQueryClass>()
+            await Sql.Query.Sqlite<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -136,7 +110,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            Sql.Query.Sqlite<JoinedQueryClass>()
+            Sql.Query.Sqlite<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .ToList(Executor, logger: Logger);
 
@@ -153,7 +127,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            FullyJoinedQuery()
+            TestUtils.FullyJoinedQuery()
                 .ToList(Executor, logger: Logger);
 
             // assert
@@ -169,7 +143,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            FullyJoinedQuery()
+            TestUtils.FullyJoinedQuery()
                 .Map(x => x.ThePerson.Name)
                 .ToList(Executor, logger: Logger);
 
@@ -186,7 +160,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            FullyJoinedQuery()
+            TestUtils.FullyJoinedQuery()
                 .Map(x => new { val = x.TheClasses })
                 .ToList(Executor, logger: Logger);
 
@@ -203,7 +177,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            FullyJoinedQuery()
+            TestUtils.FullyJoinedQuery()
                 .Map(x => new { val = x.TheClasses })
                 .ToList(Executor, logger: Logger);
 
@@ -220,7 +194,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            await FullyJoinedQuery()
+            await TestUtils.FullyJoinedQuery()
                 .Map(x => new { val = x.TheClasses })
                 .ToListAsync(Executor, logger: Logger);
 
@@ -237,7 +211,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            FullyJoinedQuery()
+            TestUtils.FullyJoinedQuery()
                 .Map(x => new { val = x.TheClasses })
                 .ToArray(Executor, logger: Logger);
 
@@ -254,7 +228,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            await FullyJoinedQuery()
+            await TestUtils.FullyJoinedQuery()
                 .Map(x => new { val = x.TheClasses })
                 .ToArrayAsync(Executor, logger: Logger);
 

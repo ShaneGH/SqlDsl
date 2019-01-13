@@ -21,35 +21,12 @@ namespace SqlDsl.UnitTests.FullPathTests
     [TestFixture]
     public class RemoveValuesFromInnerQueryTests : FullPathTestBase
     {
-        class JoinedQueryClass
-        {
-            public Person ThePerson { get; set; }
-            public List<PersonClass> ThePersonClasses { get; set; }
-            public List<Class> TheClasses { get; set; }
-            public List<ClassTag> TheClassTags { get; set; }
-            public List<Tag> TheTags { get; set; }
-        }
-
-        IQuery<JoinedQueryClass> FullyJoinedQuery()
-        {
-            return Sql.Query.Sqlite<JoinedQueryClass>()
-                .From(result => result.ThePerson)
-                .LeftJoin<PersonClass>(result => result.ThePersonClasses)
-                    .On((r, pc) => r.ThePerson.Id == pc.PersonId)
-                .LeftJoin<Class>(result => result.TheClasses)
-                    .On((r, pc) => r.ThePersonClasses.One().ClassId == pc.Id)
-                .LeftJoin<ClassTag>(result => result.TheClassTags)
-                    .On((r, pc) => r.TheClasses.One().Id == pc.ClassId)
-                .LeftJoin<Tag>(result => result.TheTags)
-                    .On((r, pc) => r.TheClassTags.One().TagId == pc.Id);
-        }
-
         [Test]
-        public async Task OrderByTableNotInSelect()
+        public async Task OrderByTableNotInMap()
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .OrderBy(x => x.TheTags.One().Id)
                 .Map(q => q.ThePerson.Name)
                 .ToArrayAsync(Executor, logger: Logger);
@@ -59,11 +36,11 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task WhereTableNotInSelect()
+        public async Task WhereTableNotInMap()
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Where(x => x.TheClasses.One().Id == Data.Classes.Archery.Id)
                 .Map(q => q.ThePerson.Name)
                 .ToArrayAsync(Executor, logger: Logger);

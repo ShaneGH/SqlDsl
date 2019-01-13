@@ -98,7 +98,7 @@ namespace SqlDsl.SqlBuilders
 
             var groupByCols = SelectProperties
                 .SelectMany(sp => sp.Value.FromParams.GetAggregatedEnumerable())
-                .Where(x => !x.isAggregated)
+                .Where(x => !x.isAggregated && !x.element.IsParameter)
                 .Select(c => c.element.Column)
                 .Concat(Statement.SelectColumns.Where(c => c.IsRowNumber));
 

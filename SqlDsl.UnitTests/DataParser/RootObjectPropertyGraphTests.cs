@@ -34,20 +34,6 @@ namespace SqlDsl.UnitTests.DataParser
             public List<Purchase> PurchasesByClass { get; set; }
         }
 
-        static SqlSelect<object, JoinedQueryClass> FullyJoinedQuery()
-        {
-            return Sql.Query.Sqlite<JoinedQueryClass>()
-                .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
-                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.Classes)
-                    .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.ClassTags)
-                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.Tags)
-                    .On((q, t) => q.ClassTags.One().TagId == t.Id) as SqlSelect<object, JoinedQueryClass>;
-        }
-
         void CompareAndDisplayAllObjsOnFailure(ObjectPropertyGraph expected, ObjectPropertyGraph actual)
         {
             try
@@ -218,58 +204,69 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery().BuildObjetPropertyGraph();
+            var actual = TestUtils
+                .FullyJoinedQuery()
+                .BuildObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
-                typeof(JoinedQueryClass),
+                typeof(QueryContainer),
                 null, 
                 new[]
                 {
-                    ("PersonClasses", new ObjectPropertyGraph(
-                        typeof(PersonClass),
+                    ("ThePersonsData", new ObjectPropertyGraph(
+                        typeof(PersonsData),
                         new[]
                         {
-                            (5, "PersonId", new int[0], typeof(long), typeof(long)),
-                            (6, "ClassId", new int[0], typeof(long), typeof(long))
+                            (6, "PersonId", new int[0], typeof(long), typeof(long)),
+                            (7, "Data", new int[0], typeof(byte[]), typeof(byte[]))
                         }, 
                         null, 
                         new[]{1})),
-                    ("Classes", new ObjectPropertyGraph(
-                        typeof(Class),
+                    ("ThePersonClasses", new ObjectPropertyGraph(
+                        typeof(PersonClass),
                         new[]
                         {
-                            (7, "Id", new int[0], typeof(long), typeof(long)),
-                            (8, "Name", new int[0], typeof(string), typeof(string))
+                            (8, "PersonId", new int[0], typeof(long), typeof(long)),
+                            (9, "ClassId", new int[0], typeof(long), typeof(long))
                         }, 
                         null, 
                         new[]{2})),
-                    ("ClassTags", new ObjectPropertyGraph(
-                        typeof(ClassTag),
+                    ("TheClasses", new ObjectPropertyGraph(
+                        typeof(Class),
                         new[]
                         {
-                            (9, "ClassId", new int[0], typeof(long), typeof(long)),
-                            (10, "TagId", new int[0], typeof(long), typeof(long))
+                            (10, "Id", new int[0], typeof(long), typeof(long)),
+                            (11, "Name", new int[0], typeof(string), typeof(string))
                         }, 
                         null, 
                         new[]{3})),
-                    ("Tags", new ObjectPropertyGraph(
-                        typeof(Tag),
+                    ("TheClassTags", new ObjectPropertyGraph(
+                        typeof(ClassTag),
                         new[]
                         {
-                            (11, "Id", new int[0], typeof(long), typeof(long)),
-                            (12, "Name", new int[0], typeof(string), typeof(string))
+                            (12, "ClassId", new int[0], typeof(long), typeof(long)),
+                            (13, "TagId", new int[0], typeof(long), typeof(long))
                         }, 
                         null, 
                         new[]{4})),
+                    ("TheTags", new ObjectPropertyGraph(
+                        typeof(Tag),
+                        new[]
+                        {
+                            (14, "Id", new int[0], typeof(long), typeof(long)),
+                            (15, "Name", new int[0], typeof(string), typeof(string))
+                        }, 
+                        null, 
+                        new[]{5})),
                     ("ThePerson", new ObjectPropertyGraph(
                         typeof(Person),
                         new[]
                         {
-                            (13, "Id", new int[0], typeof(long), typeof(long)),
-                            (14, "Name", new int[0], typeof(string), typeof(string)),
-                            (15, "Gender", new int[0], typeof(Gender), typeof(Gender)),
-                            (16, "IsMember", new int[0], typeof(bool), typeof(bool))
+                            (16, "Id", new int[0], typeof(long), typeof(long)),
+                            (17, "Name", new int[0], typeof(string), typeof(string)),
+                            (18, "Gender", new int[0], typeof(Gender), typeof(Gender)),
+                            (19, "IsMember", new int[0], typeof(bool), typeof(bool))
                         }, 
                         null, 
                         null))
@@ -296,12 +293,13 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
+            var actual = TestUtils
+                .FullyJoinedQuery()
                 .Map(x => new MappedVersion
                 {
                     PersonName = x.ThePerson.Name
                 })
-                .BuildObjetPropertyGraph<MappedVersion, JoinedQueryClass>();
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -321,17 +319,18 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
+            var actual = TestUtils
+                .FullyJoinedQuery()
                 .Map(x => new MappedVersion
                 {
                     PersonName = x.ThePerson.Name,
-                    MappedClasses = x.Classes
+                    MappedClasses = x.TheClasses
                         .Select(c => new MappedClass
                         {
                             ClassName = c.Name
                         })
                 })
-                .BuildObjetPropertyGraph<MappedVersion, JoinedQueryClass>();
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -361,20 +360,21 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
+            var actual = TestUtils
+                .FullyJoinedQuery()
                 .Map(x => new MappedVersion
                 {
                     PersonName = x.ThePerson.Name,
-                    MappedClasses = x.Classes
+                    MappedClasses = x.TheClasses
                         .Select(c => new MappedClass
                         {
                             ClassName = c.Name,
-                            TagNames = x.Tags
+                            TagNames = x.TheTags
                                 .Select(t => t.Name)
 
                         })
                 })
-                .BuildObjetPropertyGraph<MappedVersion, JoinedQueryClass>();
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -422,20 +422,21 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
+            var actual = TestUtils
+                .FullyJoinedQuery()
                 .Map(x => new MappedVersion2
                 {
                     PersonName = x.ThePerson.Name,
-                    MappedClasses = x.Classes
+                    MappedClasses = x.TheClasses
                         .Select(c => new MappedClass2
                         {
                             ClassName = c.Name,
-                            Tags = x.Tags
+                            Tags = x.TheTags
                                 .Select(t => new Tag2 { TagName = t.Name })
 
                         })
                 })
-                .BuildObjetPropertyGraph<MappedVersion2, JoinedQueryClass>();
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -485,19 +486,20 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
+            var actual = TestUtils
+                .FullyJoinedQuery()
                 .Map(query => new DifficultScenario
                 { 
-                    FavouriteClasses = query.Classes
+                    FavouriteClasses = query.TheClasses
                         .Select(c => new DifficultScenarioInner
                         {
-                            TagIds = query.ClassTags
+                            TagIds = query.TheClassTags
                                 .Select(t => t.TagId)
                                 .ToArray()
                         })
                         .ToArray()
                 })
-                .BuildObjetPropertyGraph<DifficultScenario, JoinedQueryClass>();
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -529,14 +531,15 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
+            var actual = TestUtils
+                .FullyJoinedQuery()
                 .Map(query => new DifficultScenario2
                 { 
-                    TagIds = query.ClassTags
+                    TagIds = query.TheClassTags
                         .Select(t => t.TagId)
                         .ToArray()
                 })
-                .BuildObjetPropertyGraph<DifficultScenario2, JoinedQueryClass>();
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -568,17 +571,18 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
+            var actual = TestUtils
+                .FullyJoinedQuery()
                 .Map(query => new DeepJoinedClass
                 { 
                     Inner = new DeepJoinedClass
                     {
                         Inner = new DeepJoinedClass
                         {
-                            FavouriteClasses = query.Classes
+                            FavouriteClasses = query.TheClasses
                                 .Select(c => new DeepJoinedClassData
                                 {
-                                    TagIds = query.ClassTags
+                                    TagIds = query.TheClassTags
                                         .Select(t => t.TagId)
                                         .ToArray()
                                 })
@@ -586,7 +590,7 @@ namespace SqlDsl.UnitTests.DataParser
                         }
                     }
                 })
-                .BuildObjetPropertyGraph<DeepJoinedClass, JoinedQueryClass>();
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -704,7 +708,7 @@ namespace SqlDsl.UnitTests.DataParser
                         .Select(c => c.ClassId)
                         .ToArray()
                 })
-                .BuildObjetPropertyGraph<DataCellTypeIsArray1Result, DataCellTypeIsArray1>();
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -756,7 +760,7 @@ namespace SqlDsl.UnitTests.DataParser
                         .Select(c => c.ClassId)
                         .ToArray()
                 })
-                .BuildObjetPropertyGraph<DataCellTypeIsArray2Result, DataCellTypeIsArray2>();
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -791,7 +795,7 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query.Sqlite<Person>()
                 .Map(x => new SemiPerson(x, x.Gender))
-                .BuildObjetPropertyGraph<SemiPerson, Person>(true);
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -857,17 +861,18 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
+            var actual = TestUtils
+                .FullyJoinedQuery()
                 .Map(q => new Outer
                 {
-                    classes1 = q.PersonClasses
+                    classes1 = q.ThePersonClasses
                         .Select(pc => new Inner
                         {
-                            classes2 = q.Classes.ToArray()
+                            classes2 = q.TheClasses.ToArray()
                         })
                         .ToArray()
                 })
-                .BuildObjetPropertyGraph<Outer, JoinedQueryClass>();
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -904,11 +909,12 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
-                .Map(q => new Outer(q.PersonClasses
-                    .Select(pc => new Inner(q.Classes.ToArray()))
+            var actual = TestUtils
+                .FullyJoinedQuery()
+                .Map(q => new Outer(q.ThePersonClasses
+                    .Select(pc => new Inner(q.TheClasses.ToArray()))
                     .ToArray()))
-                .BuildObjetPropertyGraph<Outer, JoinedQueryClass>();
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -952,9 +958,10 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
-                .Map(p => p.PersonClasses.Select(pc => new AnotherDifficultCase { ClassId = pc.ClassId }).ToList())
-                .BuildObjetPropertyGraph<List<AnotherDifficultCase>, JoinedQueryClass>();
+            var actual = TestUtils
+                .FullyJoinedQuery()
+                .Map(p => p.ThePersonClasses.Select(pc => new AnotherDifficultCase { ClassId = pc.ClassId }).ToList())
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -974,9 +981,10 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
-                .Map(p => p.PersonClasses.ToList())
-                .BuildObjetPropertyGraph<List<PersonClass>, JoinedQueryClass>();
+            var actual = TestUtils
+                .FullyJoinedQuery()
+                .Map(p => p.ThePersonClasses.ToList())
+                .BuildMappedObjetPropertyGraph();
 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -1003,13 +1011,14 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
+            var actual = TestUtils
+                .FullyJoinedQuery()
                 .Map(p => new CountAndGroupClass
                 {
                     person = p.ThePerson.Name,
-                    classes = p.Classes.Count()
+                    classes = p.TheClasses.Count()
                 })
-                .BuildObjetPropertyGraph<CountAndGroupClass, JoinedQueryClass>();
+                .BuildMappedObjetPropertyGraph();
                 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -1030,13 +1039,14 @@ namespace SqlDsl.UnitTests.DataParser
         {
             // arrange
             // act
-            var actual = FullyJoinedQuery()
+            var actual = TestUtils
+                .FullyJoinedQuery()
                 .Map(p => new CountAndGroupClass
                 {
                     person = p.ThePerson.Name,
-                    classes = p.Classes.Select(x => x.Id).Count()
+                    classes = p.TheClasses.Select(x => x.Id).Count()
                 })
-                .BuildObjetPropertyGraph<CountAndGroupClass, JoinedQueryClass>();
+                .BuildMappedObjetPropertyGraph();
                 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -1069,7 +1079,7 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query
                 .Sqlite<PersonWithAttributes>()
-                .BuildSimpleObjetPropertyGraph<PersonWithAttributes>();
+                .BuildObjetPropertyGraph();
                 
             // assert
             var expected = new ObjectPropertyGraph(
@@ -1128,7 +1138,7 @@ namespace SqlDsl.UnitTests.DataParser
                         })
                         .ToArray()
                 })
-                .BuildObjetPropertyGraph<SimpleMapOn1Table_WithMultipleResultsResult, JoinedQueryClass>(printQuery: false);
+                .BuildMappedObjetPropertyGraph();
 
             //Assert.Fail();
 
@@ -1224,52 +1234,5 @@ namespace SqlDsl.UnitTests.DataParser
 
         //     Compare(expected, actual);
         // }
-    }
-
-    public static class RootObjectPropertyGraphTestUtils
-    {
-        public static RootObjectPropertyGraph BuildSimpleObjetPropertyGraph<TResult>(this Dsl.IPager<TResult> builder, bool printQuery = true)
-        {
-            var select = (SqlSelect<TResult>)builder;
-            var compiled = (CompiledQuery<object, TResult>)select
-                .Compile();
-
-            return compiled.PropertyGraph;
-        }
-
-        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.IPager<object, TResult> builder)
-        {
-            var compiled = (CompiledQuery<object, TResult>)((PagedMapper<object, TMappedFrom, TResult>)builder)
-                .Compile();
-
-            return compiled.PropertyGraph;
-        }
-        
-        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult, TMappedFrom>(this Dsl.IPager<TResult> builder, bool printQuery = true)
-        {
-            var mapper = (QueryMapper<TResult>)builder;
-            var compiled = (CompiledQuery<TResult>)mapper
-                .Compile();
-
-            if (printQuery) Console.WriteLine("NOTE: this string might not represent the full query:\n" + compiled.Sql);
-
-            return compiled.PropertyGraph;
-        }
-        
-        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult>(this Dsl.IQuery<TResult> builder)
-        {
-            var compiled = (CompiledQuery<object, TResult>)((SqlSelect<object, TResult>)builder)
-                .Compile();
-
-            return compiled.PropertyGraph;
-        }
-        
-        public static RootObjectPropertyGraph BuildObjetPropertyGraph<TResult>(this Dsl.IQuery<object, TResult> builder)
-        {
-            var compiled = (CompiledQuery<object, TResult>)((SqlSelect<object, TResult>)builder)
-                .Compile();
-
-            return compiled.PropertyGraph;
-        }
     }
 }

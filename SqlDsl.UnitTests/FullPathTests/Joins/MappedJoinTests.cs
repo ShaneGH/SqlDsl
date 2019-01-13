@@ -16,40 +16,18 @@ using SqlDsl.Sqlite;
 using NUnit.Framework.Interfaces;
 using SqlDsl.Dsl;
 
-namespace SqlDsl.UnitTests.FullPathTests
+namespace SqlDsl.UnitTests.FullPathTests.Joins
 {
     [TestFixture]
-    public class JoinMapTests : FullPathTestBase
+    public class MappedJoinTests : FullPathTestBase
     {
-        class JoinedQueryClass
-        {
-            public Person ThePerson { get; set; }
-            public List<PersonClass> ThePersonClasses { get; set; }
-            public List<Class> TheClasses { get; set; }
-            public List<ClassTag> TheClassTags { get; set; }
-            public List<Tag> TheTags { get; set; }
-        }
-
-        IQuery<JoinedQueryClass> FullyJoinedQuery()
-        {
-            return Sql.Query.Sqlite<JoinedQueryClass>()
-                .From(result => result.ThePerson)
-                .LeftJoin<PersonClass>(result => result.ThePersonClasses)
-                    .On((r, pc) => r.ThePerson.Id == pc.PersonId)
-                .LeftJoin<Class>(result => result.TheClasses)
-                    .On((r, pc) => r.ThePersonClasses.One().ClassId == pc.Id)
-                .LeftJoin<ClassTag>(result => result.TheClassTags)
-                    .On((r, pc) => r.TheClasses.One().Id == pc.ClassId)
-                .LeftJoin<Tag>(result => result.TheTags)
-                    .On((r, pc) => r.TheClassTags.One().TagId == pc.Id);
-        }
-
         [Test]
         public async Task Join1Level_1()
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils
+                .FullyJoinedQuery()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -68,7 +46,8 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils
+                .FullyJoinedQuery()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -87,7 +66,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -106,7 +85,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -125,7 +104,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -144,7 +123,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -163,7 +142,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -191,7 +170,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             base.PrintStatusOnFailure = false;
             
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new 
                 {
@@ -217,7 +196,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -254,7 +233,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = FullyJoinedQuery()
+            var data = TestUtils.FullyJoinedQuery()
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new Cls1
                 {
@@ -280,7 +259,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = FullyJoinedQuery()
+            var data = TestUtils.FullyJoinedQuery()
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -306,7 +285,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange  
             // act
-            var data = FullyJoinedQuery()
+            var data = TestUtils.FullyJoinedQuery()
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -332,7 +311,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {

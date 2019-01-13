@@ -18,7 +18,7 @@ using NUnit.Framework.Interfaces;
 namespace SqlDsl.UnitTests.FullPathTests
 {
     [TestFixture]
-    public class DataTypeTests : FullPathTestBase
+    public class EnumerableDataTypeTests : FullPathTestBase
     {
         class JoinedQueryClass
         {

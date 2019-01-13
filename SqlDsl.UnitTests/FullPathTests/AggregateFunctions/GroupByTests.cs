@@ -10,41 +10,20 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
     [TestFixture]
     public class GroupByTests : FullPathTestBase
     {
-        class JoinedQueryClass
-        {
-            public Person ThePerson { get; set; }
-            public List<PersonClass> ThePersonClasses { get; set; }
-            public List<Class> TheClasses { get; set; }
-            public List<ClassTag> TheClassTags { get; set; }
-            public List<Tag> TheTags { get; set; }
-        }
-
-        static Dsl.IQuery<TArg, JoinedQueryClass> FullyJoinedQuery<TArg>()
-        {
-            return Sql.Query.Sqlite<TArg, JoinedQueryClass>()
-                .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
-                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.TheClasses)
-                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
-                    .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.TheTags)
-                    .On((q, t) => q.TheClassTags.One().TagId == t.Id);
-        }
 
         [Test]
         public async Task GroupBy_WithGroupOn1Table_UsingConstructorArgs()
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery<object>()
+            var data = await TestUtils
+                .FullyJoinedQuery()
                 .Map(p => new 
                 {
                     person = p.ThePerson.Name,
                     classes = p.TheClasses.Select(x => x.Id).Count()
                 })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             CollectionAssert.AreEqual(new [] 
@@ -73,13 +52,14 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery<object>()
+            var data = await TestUtils
+                .FullyJoinedQuery()
                 .Map(p => new CountAndGroupTest
                 {
                     thePerson = p.ThePerson.Name,
                     theClasses = p.TheClasses.Select(x => x.Id).Count()
                 })
-                .ToArrayAsync(Executor, null, logger: Logger);
+                .ToArrayAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, data.Length);
@@ -94,7 +74,8 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             // arrange
             // act
-            var data = FullyJoinedQuery<object>()
+            var data = TestUtils
+                .FullyJoinedQuery()
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -105,7 +86,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
                         })
                         .ToArray()
                 })
-                .ToList(Executor, null, logger: Logger);
+                .ToList(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count);
@@ -120,7 +101,8 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             // arrange
             // act
-            var data = await FullyJoinedQuery<object>()
+            var data = await TestUtils
+                .FullyJoinedQuery()
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(p => new 
                 {
@@ -130,7 +112,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
                         tags = p.TheTags.Count()
                     }).ToArray()
                 })
-                .ToArrayAsync(Executor, null, logger: Logger);
+                .ToArrayAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Length);
@@ -143,14 +125,15 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             // arrange
             // act
-            var result = FullyJoinedQuery<object>()
+            var result = TestUtils
+                .FullyJoinedQuery()
                 .Map(x => new
                 {
                     name = x.ThePerson.Name,
                     classesSum = x.TheClasses.Sum(y => y.Id),
                     classesCount = x.TheClasses.Count
                 })
-                .ToList(Executor, null, logger: Logger);
+                .ToList(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, result.Count);
@@ -171,13 +154,14 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             // arrange
             // act
-            var result = FullyJoinedQuery<object>()
+            var result = TestUtils
+                .FullyJoinedQuery()
                 .Map(x => new
                 {
                     name = x.ThePerson.Name,
                     classesAverage = x.TheClasses.Sum(y => y.Id) / x.TheClasses.Count
                 })
-                .ToList(Executor, null, logger: Logger);
+                .ToList(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(2, result.Count);
@@ -198,14 +182,15 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // act
             // assert
             Assert.Throws(typeof(InvalidOperationException), 
-                () => FullyJoinedQuery<object>()
+                () => TestUtils
+                    .FullyJoinedQuery()
                     .Map(x => new
                     {
                         name = x.ThePerson.Name,
                         classes = x.TheClasses.Select(c => c.Name).ToArray(),
                         classesCount = x.TheClasses.Count
                     })
-                    .ToList(Executor, null, logger: Logger));
+                    .ToList(Executor, logger: Logger));
 
         }
 
@@ -216,7 +201,8 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // act
             // assert
             Assert.Throws(typeof(InvalidOperationException), 
-                () => FullyJoinedQuery<object>()
+                () => TestUtils
+                    .FullyJoinedQuery()
                     .Map(x => new
                     {
                         name = x.ThePerson.Name,
@@ -224,7 +210,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
                             .Select(c => c.Id + x.TheClasses.Count)
                             .ToArray()
                     })
-                    .ToList(Executor, null, logger: Logger));
+                    .ToList(Executor, logger: Logger));
         }
 
         [Test]
@@ -234,14 +220,15 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // act
             // assert
             Assert.Throws(typeof(InvalidOperationException), 
-                () => FullyJoinedQuery<object>()
+                () => TestUtils
+                    .FullyJoinedQuery()
                     .Map(x => new
                     {
                         name = x.ThePerson.Name,
                         classesCount = x.TheClasses.Count,
                         tags = x.TheTags.Select(c => c.Name).ToArray()
                     })
-                    .ToList(Executor, null, logger: Logger));
+                    .ToList(Executor, logger: Logger));
         }
 
         [Test]
@@ -249,9 +236,10 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             // arrange
             // act
-            var result = FullyJoinedQuery<object>()
+            var result = TestUtils
+                .FullyJoinedQuery()
                 .Map(x => x.TheClasses.Count)
-                .ToList(Executor, null, logger: Logger);
+                .ToList(Executor, logger: Logger);
 
             // assert
             CollectionAssert.AreEqual(new[]{ 2, 1 }, result);

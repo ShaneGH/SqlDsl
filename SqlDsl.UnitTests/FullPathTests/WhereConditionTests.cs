@@ -135,7 +135,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereIn1()
+        public async Task Select1SimpleObject_WithWhereIn_ExternalArray()
         {
             // arrange
             var inVals = new [] { Data.People.John.Id, 1000 };
@@ -168,7 +168,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereIn2()
+        public async Task Select1SimpleObject_WithWhereIn_InlineArray()
         {
             // arrange
             // act
@@ -183,7 +183,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereIn2_2()
+        public async Task Select1SimpleObject_WithWhereIn_InlineArrayWithMultipleElements()
         {
             // arrange
             // act
@@ -198,7 +198,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereIn2_2WithMultipleParts()
+        public async Task Select1SimpleObject_WithWhereIn_InlineArrayWithMultipleElementsAndAddition()
         {
             // arrange
             // act
@@ -213,7 +213,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereIn3()
+        public async Task Select1SimpleObject_WithWhereIn_InlineArrayWithParamAndArg()
         {
             // arrange
             // act
@@ -228,7 +228,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereIn4()
+        public async Task Select1SimpleObject_WithWhereIn_ArrayAsArg()
         {
             // arrange
             // act
@@ -243,7 +243,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereEmptyIn2()
+        public async Task Select1SimpleObject_WithWhereEmptyIn_EmptyArrayAsArg()
         {
             // arrange
             // act
@@ -257,7 +257,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereEmptyIn3()
+        public async Task Select1SimpleObject_WithWhereEmptyIn_InlineEmptyArray()
         {
             // arrange
             // act
@@ -271,7 +271,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereIn5()
+        public async Task Select1SimpleObject_WithWhereContains()
         {
             // arrange
             var inVals = new [] { Data.People.John.Id };
@@ -288,7 +288,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereIn6()
+        public async Task Select1SimpleObject_WithWhereContains_InlineArray()
         {
             // arrange
             // act
@@ -303,7 +303,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereIn7()
+        public async Task Select1SimpleObject_WithOnIn()
         {
             // arrange
             // act
@@ -319,7 +319,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereInList()
+        public async Task Select1SimpleObject_WithWhereInList_SingleElement()
         {
             // arrange
             // act
@@ -334,7 +334,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereInList_2()
+        public async Task Select1SimpleObject_WithWhereInList_MultipleElements()
         {
             // arrange
             // act
@@ -349,7 +349,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public void Select1SimpleObject_WithJoinOnIn4()
+        public void Select1SimpleObject_WithJoinOnIn_Inlline()
         {
             // arrange
             // act

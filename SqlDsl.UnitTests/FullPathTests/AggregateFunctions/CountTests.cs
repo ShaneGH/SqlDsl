@@ -36,9 +36,9 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             public HashSet<Tag> TheTags { get; set; }
         }
 
-        static Dsl.IQuery<TArg, JoinedQueryClassLists> FullyJoinedQueryLists<TArg>()
+        static Dsl.IQuery<JoinedQueryClassLists> FullyJoinedQueryLists()
         {
-            return Sql.Query.Sqlite<TArg, JoinedQueryClassLists>()
+            return Sql.Query.Sqlite<JoinedQueryClassLists>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
@@ -50,9 +50,9 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
 
-        static Dsl.IQuery<TArg, JoinedQueryClassArrays> FullyJoinedQueryArrays<TArg>()
+        static Dsl.IQuery<JoinedQueryClassArrays> FullyJoinedQueryArrays()
         {
-            return Sql.Query.Sqlite<TArg, JoinedQueryClassArrays>()
+            return Sql.Query.Sqlite<JoinedQueryClassArrays>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
@@ -64,9 +64,9 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
 
-        static Dsl.IQuery<TArg, JoinedQueryClassHashSets> FullyJoinedQueryHashSets<TArg>()
+        static Dsl.IQuery<JoinedQueryClassHashSets> FullyJoinedQueryHashSets()
         {
-            return Sql.Query.Sqlite<TArg, JoinedQueryClassHashSets>()
+            return Sql.Query.Sqlite<JoinedQueryClassHashSets>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
@@ -83,13 +83,13 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQueryLists()
                 .Map(p => new 
                 {
                     person = p.ThePerson.Name,
                     classes = p.TheClasses.Count()
                 })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             CollectionAssert.AreEqual(new [] 
@@ -112,13 +112,13 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQueryLists()
                 .Map(p => new 
                 {
                     person = p.ThePerson.Name,
                     classes = p.TheClasses.Select(x => x.Id).Count()
                 })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             CollectionAssert.AreEqual(new [] 
@@ -141,12 +141,12 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryLists<object>()
+            var data = await FullyJoinedQueryLists()
                 .Map(p => new 
                 {
                     classes = p.TheClasses.Count
                 })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             CollectionAssert.AreEqual(new [] { new { classes = 2 }, new { classes = 1 } }, data);
@@ -157,12 +157,12 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryHashSets<object>()
+            var data = await FullyJoinedQueryHashSets()
                 .Map(p => new 
                 {
                     classes = p.TheClasses.Count
                 })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             CollectionAssert.AreEqual(new [] { new { classes = 2 }, new { classes = 1 } }, data);
@@ -173,12 +173,12 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             // arrange
             // act
-            var data = await FullyJoinedQueryArrays<object>()
+            var data = await FullyJoinedQueryArrays()
                 .Map(p => new 
                 {
                     classes = p.TheClasses.Length
                 })
-                .ToIEnumerableAsync(Executor, null, logger: Logger);
+                .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
             CollectionAssert.AreEqual(new [] { new { classes = 2 }, new { classes = 1 } }, data);

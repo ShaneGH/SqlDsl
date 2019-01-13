@@ -56,15 +56,7 @@ namespace SqlDsl.ObjectBuilders
 
             T MultipleGetter(IEnumerable<object> objects, ILogger logger) => objGetter(objects, logger);
 
-            T Getter(IEnumerable<object> objects, ILogger logger)
-            {
-                if (typeof(T) == typeof(DateTime))
-                    {
-                        var ttt = 9;
-                    }
-
-                return objGetter(GetOne(objects), logger);
-            }
+            T Getter(IEnumerable<object> objects, ILogger logger) => objGetter(GetOne(objects), logger);
         }
 
         /// <summary>

@@ -171,14 +171,14 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         }
     }
 
-    public class TableWithOneColumn : EqComparer
+    public class TableWithOneRowAndOneColumn : EqComparer
     {
-        public string Value { get; set; }
+        public int Value { get; set; }
 
         public override int GetHashCode() => Value.GetHashCode();
         public override bool Equals(object t)
         {
-            var table = t as TableWithOneColumn;
+            var table = t as TableWithOneRowAndOneColumn;
             return table != null && 
                 table.Value == Value;
         }

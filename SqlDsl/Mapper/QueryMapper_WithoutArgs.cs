@@ -16,7 +16,6 @@ namespace SqlDsl.Mapper
     public class QueryMapper<TMapped> : IPager<TMapped>
     {
         readonly IPager<object, TMapped> Worker;
-        (int? skip, int? take) Paging;
         
         public QueryMapper(IPager<object, TMapped> worker)
         {
@@ -26,14 +25,14 @@ namespace SqlDsl.Mapper
         /// <inheritdoc />
         public IPager2<TMapped> Skip(int result)
         {
-            Paging = (result, Paging.take);
+            Worker.Skip(result);
             return this;
         }
 
         /// <inheritdoc />
         public ISqlExecutor<TMapped> Take(int result)
         {
-            Paging = (Paging.skip, result);
+            Worker.Take(result);
             return this;
         }
 

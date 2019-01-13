@@ -23,7 +23,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         public static readonly PersonClasses PersonClasses = new PersonClasses();
         public static readonly ClassTags ClassTags = new ClassTags();
         public static readonly Purchases Purchases = new Purchases();
-        public static readonly TablesWithOneColumn TablesWithOneColumn = new TablesWithOneColumn();
+        public static readonly TableWithOneRowAndOneColumns TablesWithOneRowAndOneColumn = new TableWithOneRowAndOneColumns();
     }
 
     public static class InitData
@@ -58,7 +58,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 personClasses: Data.PersonClasses,
                 classTags: Data.ClassTags,
                 purchases: Data.Purchases,
-                tablesWithOneColumn: Data.TablesWithOneColumn);
+                tablesWithOneColumn: Data.TablesWithOneRowAndOneColumn);
 
         public static void InitWithData(
             IEnumerable<Person> people = null,
@@ -68,7 +68,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             IEnumerable<ClassTag> classTags = null,
             IEnumerable<Tag> tags = null,
             IEnumerable<Purchase> purchases = null,
-            IEnumerable<TableWithOneColumn> tablesWithOneColumn = null)
+            IEnumerable<TableWithOneRowAndOneColumn> tablesWithOneColumn = null)
         {
             var location = GetDbLocation();
             if (File.Exists(location)) File.Delete(location);
@@ -372,17 +372,17 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
     
-    class TablesWithOneColumn : IEnumerable<TableWithOneColumn>
+    class TableWithOneRowAndOneColumns : IEnumerable<TableWithOneRowAndOneColumn>
     {
-        public readonly TableWithOneColumn Record = new TableWithOneColumn
+        public readonly TableWithOneRowAndOneColumn Record = new TableWithOneRowAndOneColumn
         {
-            Value = "The value"
+            Value = 10
         };
 
-        public IEnumerator<TableWithOneColumn> GetEnumerator() => (new [] 
+        public IEnumerator<TableWithOneRowAndOneColumn> GetEnumerator() => (new [] 
         { 
             Record
-        } as IEnumerable<TableWithOneColumn>).GetEnumerator();
+        } as IEnumerable<TableWithOneRowAndOneColumn>).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

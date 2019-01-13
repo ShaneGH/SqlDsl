@@ -150,8 +150,8 @@ namespace SqlDsl.Query
                 expr = TryOne(expr.Expression) as MemberExpression;
             }
 
-            if (!output.Any() || output[0].DeclaringType != typeof(TResult))
-                throw new ArgumentException("This expression must point to a paramater on the query object.", nameof(body));
+            if (!output.Any() || !output[0].DeclaringType.IsAssignableFrom(typeof(TResult)))
+                throw new ArgumentException($"The expression \"{body}\" must point to a paramater on the query object.", nameof(body));
                 
             // return the name and type
             return (output.MemberName(), output.Last().GetPropertyOrFieldType());
