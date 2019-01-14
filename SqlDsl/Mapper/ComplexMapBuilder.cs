@@ -17,7 +17,7 @@ namespace SqlDsl.Mapper
 
         public static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMap(BuildMapState state, Expression expr)
         {
-            var (x, y, _) = BuildMap(state, expr, MapType.Root, isExprTip: true);
+            var (x, y, _) = BuildMap(state, expr, MapType.Root);
             return (x, y);
         }
 
@@ -25,8 +25,7 @@ namespace SqlDsl.Mapper
             BuildMapState state, 
             Expression expr, 
             MapType nextMap,
-            string toPrefix = null, 
-            bool isExprTip = false)
+            string toPrefix = null)
         {
             var (isConstant, requiresArgs) = ReflectionUtils.IsConstant(expr, state.ArgsObject);
             if (isConstant)
@@ -44,13 +43,10 @@ namespace SqlDsl.Mapper
                 );
             }
 
-            if (isExprTip && ExprRepresentsTable(state, expr))
-                expr = ReflectionUtils.ConvertToFullMemberInit(expr);
-
             switch (expr.NodeType)
             {
                 case ExpressionType.Convert:
-                    return BuildMap(state, (expr as UnaryExpression).Operand, nextMap, toPrefix, isExprTip);
+                    return BuildMap(state, (expr as UnaryExpression).Operand, nextMap, toPrefix);
 
                 case ExpressionType.Parameter:
                     return (
@@ -102,7 +98,7 @@ namespace SqlDsl.Mapper
 
                     var (isIn, inLhs, inRhs) = ReflectionUtils.IsIn(exprMethod);
                     if (isIn)
-                        return BuildMapForIn(state, inLhs, inRhs, toPrefix, isExprTip).AddT(false);
+                        return BuildMapForIn(state, inLhs, inRhs, toPrefix).AddT(false);
 
                     var (isCount, countExpr) = ReflectionUtils.IsCount(expr);
                     if (isCount)
@@ -149,7 +145,7 @@ namespace SqlDsl.Mapper
 
                     var (isSelect, enumerableS, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(exprMethod);
                     if (isSelect)
-                        return BuildMapForSelect(state, enumerableS, nextMap, mapper, toPrefix, isExprTip).AddT(false);
+                        return BuildMapForSelect(state, enumerableS, nextMap, mapper, toPrefix).AddT(false);
 
                     break;
 
@@ -166,30 +162,6 @@ namespace SqlDsl.Mapper
             ExpressionType.NewArrayInit,
             ExpressionType.ListInit
         };
-
-        static bool ExprRepresentsTable(BuildMapState state, Expression expr)
-        {
-            var (isPropertyChain, root, chain) = ReflectionUtils.GetPropertyChain(expr);
-            if (!isPropertyChain)
-                return false;
-
-            var chainPrefix = state.ParameterRepresentsProperty
-                .Where(p => p.parameter == root)
-                .Select(p => p.property)
-                .FirstOrDefault();
-
-            if (chainPrefix == null)
-            {
-                if (state.QueryObject != root)
-                    return false;
-                    
-                chainPrefix = Enumerable.Empty<string>();
-            }
-
-            var property = chainPrefix.Concat(chain).JoinString(".");
-            if (string.IsNullOrEmpty(property)) property = SqlStatementConstants.RootObjectAlias;
-            return state.WrappedSqlStatement.ContainsTable(property);
-        }
 
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForConstructor(BuildMapState state, NewExpression expr, MapType nextMap, string toPrefix = null)
         {
@@ -210,7 +182,7 @@ namespace SqlDsl.Mapper
                 throw new InvalidOperationException($"You cannot map to an object with has no data from table columns: {expr}.");
 
             return expr.Arguments
-                .Select(ex => (type: ex.Type, map: BuildMap(state, ex, MapType.Other, toPrefix: null, isExprTip: true)))
+                .Select(ex => (type: ex.Type, map: BuildMap(state, ex, MapType.Other, toPrefix: null)))
                 .Select((map, i) => (
                     map.Item2.properties.SelectMany(p => CreateContructorArg(p, map.type, i)), 
                     map.map.tables.Select(x => new MappedTable(x.From, CombineStrings(SqlStatementConstants.ConstructorArgs.BuildConstructorArg(i), x.To), x.TableresultsAreAggregated))))
@@ -291,7 +263,7 @@ namespace SqlDsl.Mapper
                     ? ReflectionUtils.ConvertToFullMemberInit(expr)
                     : ReflectionUtils.ConvertCollectionToFullMemberInit(expr);
 
-                return BuildMap(state, rewritten, nextMapType, toPrefix, false);
+                return BuildMap(state, rewritten, nextMapType, toPrefix);
             }
 
             var result = BuildMap(state, expr.Expression, MapType.MemberAccess, toPrefix);
@@ -369,8 +341,8 @@ namespace SqlDsl.Mapper
             string toPrefix = null, 
             bool isExprTip = false)
         {
-            var (lP, lTab, _) = BuildMap(state, lhs, MapType.Other, null, false);
-            var (rP, rTab, rConstant) = BuildMap(state, rhs, MapType.Other, null, false);
+            var (lP, lTab, _) = BuildMap(state, lhs, MapType.Other, null);
+            var (rP, rTab, rConstant) = BuildMap(state, rhs, MapType.Other, null);
 
             rP = rP.Enumerate();
             lP = lP.Enumerate();
@@ -517,7 +489,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, MapType nextMap, LambdaExpression mapper, string toPrefix, bool isExprTip)
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, MapType nextMap, LambdaExpression mapper, string toPrefix)
         {
             if (mapper.Body == mapper.Parameters[0])
             {
@@ -529,7 +501,7 @@ namespace SqlDsl.Mapper
             (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool) innerMap;
             var outerMap = BuildMap(state, enumerable, MapType.Select, toPrefix);
             using (state.SwitchContext(mapper.Parameters[0]))
-                innerMap = BuildMap(state, mapper.Body, MapType.Other, isExprTip: isExprTip);
+                innerMap = BuildMap(state, mapper.Body, MapType.Other);
 
             var (isSuccess, name) = CompileMemberName(enumerable);
             var newTableMap = isSuccess
@@ -592,7 +564,7 @@ namespace SqlDsl.Mapper
                 return (Enumerable.Empty<StringBasedMappedProperty>(), Enumerable.Empty<MappedTable>());
 
             return elements
-                .Select(e => BuildMap(state, e, MapType.Other, null, false))
+                .Select(e => BuildMap(state, e, MapType.Other, null))
                 .Aggregate(Combine)
                 .RemoveLastT();
 
