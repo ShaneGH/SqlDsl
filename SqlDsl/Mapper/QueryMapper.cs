@@ -55,6 +55,7 @@ namespace SqlDsl.Mapper
                         p.FromParams,
                         SqlStatementConstants.SingleColumnAlias,
                         p.MappedPropertyType,
+                        p.MappingContext,
                         p.PropertySegmentConstructors).ToEnumerable();
 
                     var statement = new MappedSelectStatement(properties, tables, wrappedStatement.Tables.First().RowNumberColumn);
