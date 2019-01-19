@@ -37,7 +37,12 @@ namespace SqlDsl.Mapper
                 var paramName = state.Parameters.AddParam(result, expr.Type);
 
                 return (
-                    new StringBasedMappedProperty(null, paramName, toPrefix, expr.Type, aggregatedToTable: state.CurrentTable.JoinString(".")).ToEnumerable(),
+                    new StringBasedMappedProperty(
+                        null, 
+                        paramName, 
+                        toPrefix, 
+                        expr.Type, 
+                        aggregatedToTable: state.MappingContext.propertyName.JoinString(".")).ToEnumerable(),
                     EmptyMappedTables,
                     true
                 );

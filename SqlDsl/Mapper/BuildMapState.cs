@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using SqlDsl.Query;
 using SqlDsl.SqlBuilders;
+using SqlDsl.Utils;
 
 namespace SqlDsl.Mapper
 {
@@ -16,7 +17,7 @@ namespace SqlDsl.Mapper
         public readonly ISqlStatement WrappedSqlStatement;
         public readonly string PrimarySelectTableAlias;
         public readonly ISqlSyntax SqlBuilder;
-        public IEnumerable<string> CurrentTable { get; private set; }
+        public (ParameterExpression tableParam, IEnumerable<string> propertyName) MappingContext { get; private set; }
         public readonly bool UseColumnAliases;
 
         public BuildMapState(
@@ -34,7 +35,7 @@ namespace SqlDsl.Mapper
             WrappedSqlStatement = wrappedSqlStatement;
             PrimarySelectTableAlias = primarySelectTableAlias;
             SqlBuilder = sqlBuilder;
-            CurrentTable = PrimarySelectTableAlias.Split('.');
+            MappingContext = (queryObject, PrimarySelectTableAlias.Split('.'));
             UseColumnAliases = useColumnAliases;
         }
 
@@ -42,27 +43,15 @@ namespace SqlDsl.Mapper
         {
             var ctxt = ParameterRepresentsProperty
                 .Where(p => p.parameter == newContext)
-                .Select(p => p.property)
+                .AsNullable()
                 .FirstOrDefault();
 
             if (ctxt == null)
                 throw new InvalidOperationException($"Cannot find context for parameter: {newContext}.");
 
-            var currentContext = CurrentTable;
-            CurrentTable = ctxt;
-            return new GenericDisposable(() => CurrentTable = currentContext);
-        }
-
-        class GenericDisposable : IDisposable
-        {
-            readonly Action Dispose;
-
-            public GenericDisposable(Action dispose)
-            {
-                Dispose = dispose;
-            }
-
-            void IDisposable.Dispose() => Dispose();
+            var currentContext = MappingContext;
+            MappingContext = ctxt.Value;
+            return ReusableGenericDisposable.Build(() => MappingContext = currentContext);
         }
     }
 }
