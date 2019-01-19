@@ -194,10 +194,8 @@ namespace SqlDsl.Mapper
                     SplitMapOfComplexProperty(arg, argType) :
                     arg.ToEnumerable();
 
-                return many.Select(q => new StringBasedMappedProperty(
-                    q.FromParams,
-                    CombineStrings(toPrefix, CombineStrings(SqlStatementConstants.ConstructorArgs.BuildConstructorArg(argIndex), q.To)), 
-                    q.MappedPropertyType,
+                return many.Select(q => q.With(
+                    to: CombineStrings(toPrefix, CombineStrings(SqlStatementConstants.ConstructorArgs.BuildConstructorArg(argIndex), q.To)), 
                     constructorArgs: q.PropertySegmentConstructors.Prepend(expr.Constructor).ToArray()));
             }
         }
@@ -275,10 +273,9 @@ namespace SqlDsl.Mapper
 
             return (
                 result.properties
-                    .Select(p => new StringBasedMappedProperty(
-                        p.FromParams.MapParamName(x => CombineStrings(x, GetMemberName(expr.Member))),
-                        p.To,
-                        expr.Type))
+                    .Select(p => p.With(
+                        fromParams: p.FromParams.MapParamName(x => CombineStrings(x, GetMemberName(expr.Member))),
+                        mappedPropertyType: expr.Type))
                     .Enumerate(),
                 result.tables,
                 result.isConstant
@@ -309,11 +306,7 @@ namespace SqlDsl.Mapper
                             if (PropertyRepresentsTable(state, x))
                                 return SplitMapOfComplexProperty(x, m.binding.Member.GetPropertyOrFieldType());
 
-                            return new StringBasedMappedProperty(
-                                x.FromParams, 
-                                CombineStrings(toPrefix, x.To),
-                                x.MappedPropertyType, 
-                                x.PropertySegmentConstructors).ToEnumerable();
+                            return x.With(to: CombineStrings(toPrefix, x.To)).ToEnumerable();
                         }),
                         m.map.tables.Select(x => new MappedTable(x.From, CombineStrings(m.memberName, x.To), x.TableresultsAreAggregated)))))
                 .AggregateTuple2();
@@ -367,13 +360,10 @@ namespace SqlDsl.Mapper
             if (rConstant || !InPlaceArrayCreation.Contains(rhsType))
             {
                 // TODO: this method will require find and replace in strings (inefficient)
-                rProp = new StringBasedMappedProperty(
+                rProp = rProp.With(
                     // if there is only one parameter, it is an array and will need to be
                     // split into parts when rendering
-                    rProp.FromParams.MapParamName(n => $"{n}{SqlStatementConstants.ParamArrayFlag}"),
-                    rProp.To,
-                    rProp.MappedPropertyType,
-                    rProp.PropertySegmentConstructors);
+                    fromParams: rProp.FromParams.MapParamName(n => $"{n}{SqlStatementConstants.ParamArrayFlag}"));
             }
 
             var inPart = new StringBasedMappedProperty(
@@ -463,15 +453,13 @@ namespace SqlDsl.Mapper
             var (properties, tables, _) = BuildMap(state, enumerable, MapType.AggregateFunction, toPrefix);
 
             // if aggregate is on a table, change to aggregate row id
-            properties = properties.Select(arg => new StringBasedMappedProperty(
-                PropertyRepresentsTable(state, arg)
+            properties = properties.Select(arg => arg.With(
+                fromParams: PropertyRepresentsTable(state, arg)
                     ? canSubstituteRowNumberForTable
                         ? arg.FromParams.MapParamName(x => $"{x}.{SqlStatementConstants.RowIdName}")
                         : ThrowMappingError<IAccumulator<StringBasedElement>>($". Cannot apply {function.ToString()} function to table \"{enumerable}\".")
                     : arg.FromParams,
-                arg.To,
-                typeof(int),
-                arg.PropertySegmentConstructors));
+                mappedPropertyType: typeof(int)));
 
             tables = tables.Enumerate();
 
@@ -481,11 +469,8 @@ namespace SqlDsl.Mapper
 
             StringBasedMappedProperty WrapWithFunc(StringBasedMappedProperty property)
             {
-                return new StringBasedMappedProperty(
-                    new UnaryAccumulator<StringBasedElement>(property.FromParams, function),
-                    property.To,
-                    property.MappedPropertyType,
-                    property.PropertySegmentConstructors);
+                return property.With(
+                    fromParams: new UnaryAccumulator<StringBasedElement>(property.FromParams, function));
             }
         }
 
@@ -514,16 +499,14 @@ namespace SqlDsl.Mapper
 
             return (
                 innerMap.properties
-                    .Select(m => new StringBasedMappedProperty(
-                        m.FromParams.MapParam(x => new StringBasedElement(
+                    .Select(m => m.With(
+                        fromParams: m.FromParams.MapParam(x => new StringBasedElement(
                             x.ParamRoot ?? outerMapProperties[0].FromParams.First.ParamRoot, 
                             x.ParamRoot != null || (x.Param?.StartsWith("@") ?? false)
                                 ? x.Param
                                 : CombineStrings(outerMapProperties[0].FromParams.First.Param, x.Param),
                             x.AggregatedToTable)),
-                        CombineStrings(outerMapProperties[0].To, m.To), 
-                        m.MappedPropertyType, 
-                        m.PropertySegmentConstructors)),
+                        to: CombineStrings(outerMapProperties[0].To, m.To))),
                 outerMap.tables
                     .Concat(innerMap.tables)
                     .Concat(newTableMap)

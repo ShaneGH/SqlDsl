@@ -32,6 +32,19 @@ namespace SqlDsl.Mapper
                 MappedPropertyType,
                 PropertySegmentConstructors);
         }
+
+        public StringBasedMappedProperty With(
+            IAccumulator<StringBasedElement> fromParams = null, 
+            string to = null, 
+            Type mappedPropertyType = null,
+            ConstructorInfo[] constructorArgs = null)
+        {
+            return new StringBasedMappedProperty(
+                fromParams ?? FromParams, 
+                to ?? To, 
+                mappedPropertyType ?? MappedPropertyType, 
+                constructorArgs ?? PropertySegmentConstructors);
+        }
     }
     
     class QueryElementBasedMappedProperty : MappedProperty<SelectColumnBasedElement>
