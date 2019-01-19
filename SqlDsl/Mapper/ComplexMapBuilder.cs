@@ -42,7 +42,7 @@ namespace SqlDsl.Mapper
                         paramName, 
                         toPrefix, 
                         expr.Type, 
-                        aggregatedToTable: state.MappingContext.propertyName.JoinString(".")).ToEnumerable(),
+                        aggregatedToTable: state.MappingContext.propertyName).ToEnumerable(),
                     EmptyMappedTables,
                     true
                 );

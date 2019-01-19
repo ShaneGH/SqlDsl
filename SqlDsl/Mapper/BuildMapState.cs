@@ -17,7 +17,7 @@ namespace SqlDsl.Mapper
         public readonly ISqlStatement WrappedSqlStatement;
         public readonly string PrimarySelectTableAlias;
         public readonly ISqlSyntax SqlBuilder;
-        public (ParameterExpression tableParam, IEnumerable<string> propertyName) MappingContext { get; private set; }
+        public (ParameterExpression tableParam, string propertyName) MappingContext { get; private set; }
         public readonly bool UseColumnAliases;
 
         public BuildMapState(
@@ -35,7 +35,7 @@ namespace SqlDsl.Mapper
             WrappedSqlStatement = wrappedSqlStatement;
             PrimarySelectTableAlias = primarySelectTableAlias;
             SqlBuilder = sqlBuilder;
-            MappingContext = (queryObject, PrimarySelectTableAlias.Split('.'));
+            MappingContext = (queryObject, PrimarySelectTableAlias);
             UseColumnAliases = useColumnAliases;
         }
 
@@ -50,7 +50,7 @@ namespace SqlDsl.Mapper
                 throw new InvalidOperationException($"Cannot find context for parameter: {newContext}.");
 
             var currentContext = MappingContext;
-            MappingContext = ctxt.Value;
+            MappingContext = (ctxt.Value.parameter, ctxt.Value.property.JoinString("."));
             return ReusableGenericDisposable.Build(() => MappingContext = currentContext);
         }
     }
