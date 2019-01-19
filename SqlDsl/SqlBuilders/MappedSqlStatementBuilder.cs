@@ -112,13 +112,17 @@ namespace SqlDsl.SqlBuilders
             return $"{prefix}{output.JoinString(",")}";
         }
 
+        /// <summary>
+        /// Returns true if the query requires a group by statement.
+        /// Also validates the aggregation
+        /// </summary>
         bool RequiresGroupBy()
         {
             var columnsByTable = SelectProperties
                 .SelectMany(p => p.Value.FromParams.GetAggregatedEnumerable())
                 .Where(p => !p.element.IsParameter)
                 .GroupBy(p => p.element.Column.RowNumberColumn.IsRowNumberForTable)
-                .OrderBy(p => p.Key, TablePrecedenceOrderer.Instance);
+                .OrderBy(p => p.Key, new TablePrecedenceOrderer(State.WrappedSqlStatement.Tables[State.PrimarySelectTableAlias]));
 
             string aggregatedTable = null;
             foreach (var columns in columnsByTable)

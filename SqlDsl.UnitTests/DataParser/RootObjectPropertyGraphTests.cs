@@ -31,6 +31,7 @@ namespace SqlDsl.UnitTests.DataParser
             public List<Class> Classes { get; set; }
             public List<ClassTag> ClassTags { get; set; }
             public List<Tag> Tags { get; set; }
+            public List<Purchase> PurchasesByClass { get; set; }
         }
 
         static SqlSelect<object, JoinedQueryClass> FullyJoinedQuery()
@@ -184,28 +185,26 @@ namespace SqlDsl.UnitTests.DataParser
                 null, 
                 new[]
                 {
+                    ("PersonClasses", new ObjectPropertyGraph(
+                        typeof(PersonClass),
+                        new[]
+                        {
+                            (2, "PersonId", new int[0], typeof(long), typeof(long)),
+                            (3, "ClassId", new int[0], typeof(long), typeof(long))
+                        }, 
+                        null, 
+                        new[]{1})),
                     ("ThePerson", new ObjectPropertyGraph(
                         typeof(Person),
                         new[]
                         {
-                            (0, "#rowid", new int[0], null, null),
                             (4, "Id", new int[0], typeof(long), typeof(long)),
                             (5, "Name", new int[0], typeof(string), typeof(string)),
                             (6, "Gender", new int[0], typeof(Gender), typeof(Gender)),
                             (7, "IsMember", new int[0], typeof(bool), typeof(bool))
                         }, 
                         null, 
-                        null)),
-                    ("PersonClasses", new ObjectPropertyGraph(
-                        typeof(PersonClass),
-                        new[]
-                        {
-                            (1, "#rowid", new int[0], null, null),
-                            (2, "PersonId", new int[0], typeof(long), typeof(long)),
-                            (3, "ClassId", new int[0], typeof(long), typeof(long))
-                        }, 
-                        null, 
-                        new[]{1}))
+                        null))
                 }, 
                 new[] { 0 });
 
@@ -227,23 +226,10 @@ namespace SqlDsl.UnitTests.DataParser
                 null, 
                 new[]
                 {
-                    ("ThePerson", new ObjectPropertyGraph(
-                        typeof(Person),
-                        new[]
-                        {
-                            (0, "#rowid", new int[0], null, null),
-                            (13, "Id", new int[0], typeof(long), typeof(long)),
-                            (14, "Name", new int[0], typeof(string), typeof(string)),
-                            (15, "Gender", new int[0], typeof(Gender), typeof(Gender)),
-                            (16, "IsMember", new int[0], typeof(bool), typeof(bool))
-                        }, 
-                        null, 
-                        null)),
                     ("PersonClasses", new ObjectPropertyGraph(
                         typeof(PersonClass),
                         new[]
                         {
-                            (1, "#rowid", new int[0], null, null),
                             (5, "PersonId", new int[0], typeof(long), typeof(long)),
                             (6, "ClassId", new int[0], typeof(long), typeof(long))
                         }, 
@@ -253,7 +239,6 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(Class),
                         new[]
                         {
-                            (2, "#rowid", new int[0], null, null),
                             (7, "Id", new int[0], typeof(long), typeof(long)),
                             (8, "Name", new int[0], typeof(string), typeof(string))
                         }, 
@@ -263,7 +248,6 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(ClassTag),
                         new[]
                         {
-                            (3, "#rowid", new int[0], null, null),
                             (9, "ClassId", new int[0], typeof(long), typeof(long)),
                             (10, "TagId", new int[0], typeof(long), typeof(long))
                         }, 
@@ -273,12 +257,22 @@ namespace SqlDsl.UnitTests.DataParser
                         typeof(Tag),
                         new[]
                         {
-                            (4, "#rowid", new int[0], null, null),
                             (11, "Id", new int[0], typeof(long), typeof(long)),
                             (12, "Name", new int[0], typeof(string), typeof(string))
                         }, 
                         null, 
-                        new[]{4}))
+                        new[]{4})),
+                    ("ThePerson", new ObjectPropertyGraph(
+                        typeof(Person),
+                        new[]
+                        {
+                            (13, "Id", new int[0], typeof(long), typeof(long)),
+                            (14, "Name", new int[0], typeof(string), typeof(string)),
+                            (15, "Gender", new int[0], typeof(Gender), typeof(Gender)),
+                            (16, "IsMember", new int[0], typeof(bool), typeof(bool))
+                        }, 
+                        null, 
+                        null))
                 }, 
                 new[] { 0 });              
 
@@ -650,28 +644,26 @@ namespace SqlDsl.UnitTests.DataParser
                 null, 
                 new[]
                 {
+                    ("PersonClasses", new ObjectPropertyGraph(
+                        typeof(PersonClass),
+                        new[]
+                        {
+                            (2, "PersonId", new int[0], typeof(long), typeof(long)),
+                            (3, "ClassId", new int[0], typeof(long), typeof(long))
+                        }, 
+                        null, 
+                        new[]{1})),
                     ("ThePerson", new ObjectPropertyGraph(
                         typeof(Person),
                         new[]
                         {
-                            (0, "#rowid", new int[0], null, null),
                             (4, "Id", new int[0], typeof(long), typeof(long)),
                             (5, "Name", new int[0], typeof(string), typeof(string)),
                             (6, "Gender", new int[0], typeof(Gender), typeof(Gender)),
                             (7, "IsMember", new int[0], typeof(bool), typeof(bool))
                         }, 
                         null, 
-                        null)),
-                    ("PersonClasses", new ObjectPropertyGraph(
-                        typeof(PersonClass),
-                        new[]
-                        {
-                            (1, "#rowid", new int[0], null, null),
-                            (2, "PersonId", new int[0], typeof(long), typeof(long)),
-                            (3, "ClassId", new int[0], typeof(long), typeof(long))
-                        }, 
-                        null, 
-                        new[]{1}))
+                        null))
                 }, 
                 new[] { 0 });
 
@@ -1092,6 +1084,77 @@ namespace SqlDsl.UnitTests.DataParser
                 new[] { 0 });
 
             Compare(expected, actual);
+        }
+        
+
+        class SimpleMapOn1Table_WithMultipleResultsResult
+        {
+            public string ThePerson;
+            public SimpleMapOn1Table_WithMultipleResultsClassResult[] TheClasses;
+        }
+
+        class SimpleMapOn1Table_WithMultipleResultsClassResult
+        {
+            public string Name;
+            public float[] Prices;
+        }
+
+        [Test]
+        public void SimpleMapOn1Table_WithMultipleResults_AndProperties()
+        {
+            // arrange
+            // act
+            var actual = Sql.Query.Sqlite<JoinedQueryClass>()
+                .From<Person>(x => x.ThePerson)
+                .LeftJoin<PersonClass>(q => q.PersonClasses)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                .LeftJoin<Class>(q => q.Classes)
+                    .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
+                .LeftJoin<ClassTag>(q => q.ClassTags)
+                    .On((q, ct) => q.Classes.One().Id == ct.ClassId)
+                .LeftJoin<Tag>(q => q.Tags)
+                    .On((q, t) => q.ClassTags.One().TagId == t.Id)
+                .LeftJoin<Purchase>(q => q.PurchasesByClass)
+                    .On((q, t) => q.ThePerson.Id == t.PersonId && q.ThePerson.Id == t.PurchaedForPersonId && q.Classes.One().Id == t.ClassId)
+                .Where(x => x.ThePerson.Id == Data.People.Mary.Id)
+                .Map(p => new SimpleMapOn1Table_WithMultipleResultsResult
+                { 
+                    ThePerson = p.ThePerson.Name,
+                    TheClasses = p.Classes
+                        .Select(c => new SimpleMapOn1Table_WithMultipleResultsClassResult
+                        {
+                            Name = c.Name,
+                            Prices = p.PurchasesByClass.Select(x => x.Amount).ToArray()
+                        })
+                        .ToArray()
+                })
+                .BuildObjetPropertyGraph<SimpleMapOn1Table_WithMultipleResultsResult, JoinedQueryClass>(printQuery: false);
+
+            //Assert.Fail();
+
+            // assert
+            // [0-ThePerson.#rowid, 1-Classes.#rowid, 2-PurchasesByClass.#rowid, 3-PersonClasses.#rowid, 4-ThePerson, 5-TheClasses.Name, 6-TheClasses.Prices]
+            var expected = new ObjectPropertyGraph(
+                typeof(SimpleMapOn1Table_WithMultipleResultsResult),
+                new []
+                {
+                    (4, "ThePerson", new int[0], typeof(string), typeof(string))
+                },
+                new []
+                {
+                    ("TheClasses", new ObjectPropertyGraph(
+                        typeof(SimpleMapOn1Table_WithMultipleResultsClassResult),
+                        new []
+                        {
+                            (5, "Name", new int[0], typeof(string), typeof(string)),   
+                            (6, "Prices", new int[] { 2 }, typeof(float[]), typeof(float))   
+                        },
+                        null, 
+                        new[] { 3, 1 }))
+                }, 
+                new[] { 0 });
+
+            CompareAndDisplayAllObjsOnFailure(expected, actual);
         }
 
         // See todo in ComplexMapBuilder.BuildMapForConstructor

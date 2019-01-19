@@ -37,6 +37,11 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
         IQueryTable Table => _Table ?? (_Table = GetRowIdSelectTable());
 
+        /// <summary>
+        /// The mapping context for an unmapped column is it's own table
+        /// </summary>
+        public IQueryTable MappingContext => Table;
+
         public SelectColumn(
             (string table, string column, string aggregatedToTable)[] referencesColumns, 
             string alias, 

@@ -16,8 +16,8 @@ namespace SqlDsl.DataParser
     {
         public static RootObjectPropertyGraph Build(
             Type objectType, 
-            IEnumerable<(string name, int[] rowIdColumnMap)> mappedTableProperties, 
-            IEnumerable<(string name, int[] rowIdColumnMap, Type cellType, ConstructorInfo[] constructorArgInfo)> columns, 
+            IEnumerable<(string name, int[] primaryKeyColumnMap)> mappedTableProperties, 
+            IEnumerable<(string name, int[] primaryKeyColumnMap, Type cellType, ConstructorInfo[] constructorArgInfo)> columns, 
             QueryParseType queryParseType)
         {
             columns = columns.Enumerate();
@@ -25,8 +25,8 @@ namespace SqlDsl.DataParser
             var opg = _Build(
                 objectType, 
                 new [] { 0 },
-                mappedTableProperties.Select(c => (c.name.Split('.'), c.rowIdColumnMap)),
-                columns.OrEmpty().Select((c, i) => (i, c.name.Split('.'), c.rowIdColumnMap, c.cellType, c.constructorArgInfo)), 
+                mappedTableProperties.Select(c => (c.name.Split('.'), c.primaryKeyColumnMap)),
+                columns.OrEmpty().Select((c, i) => (i, c.name.Split('.'), c.primaryKeyColumnMap, c.cellType, c.constructorArgInfo)), 
                 queryParseType);
 
             return new RootObjectPropertyGraph(
@@ -39,7 +39,7 @@ namespace SqlDsl.DataParser
                 opg.ComplexConstructorArgs);
         }
 
-        static void ValidateColumns(IEnumerable<(string name, int[] rowIdColumnMap, Type cellType, ConstructorInfo[] constructorArgInfo)> columns)
+        static void ValidateColumns(IEnumerable<(string name, int[] primaryKeyColumnMap, Type cellType, ConstructorInfo[] constructorArgInfo)> columns)
         {
             foreach(var col in columns)
             {
@@ -54,8 +54,8 @@ namespace SqlDsl.DataParser
         static ObjectPropertyGraph _Build(
             Type objectType, 
             int[] primaryKeyColumns, 
-            IEnumerable<(string[] name, int[] rowIdColumnMap)> mappedTableProperties, 
-            IEnumerable<(int index, string[] name, int[] rowIdColumnMap, Type cellType, ConstructorInfo[] constructorArgInfo)> columns, 
+            IEnumerable<(string[] name, int[] primaryKeyColumnMap)> mappedTableProperties, 
+            IEnumerable<(int index, string[] name, int[] primaryKeyColumnMap, Type cellType, ConstructorInfo[] constructorArgInfo)> columns, 
             QueryParseType queryParseType)
         {
             var simpleProps = new List<(int index, string propertyName, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType)>();
@@ -68,7 +68,7 @@ namespace SqlDsl.DataParser
             mappedTableProperties = mappedTableProperties
                 .Select(p => (
                     p.name, 
-                    RemoveBeforePattern(primaryKeyColumns, p.rowIdColumnMap, throwErrorIfPatternNotFound: false)
+                    RemoveBeforePattern(primaryKeyColumns, p.primaryKeyColumnMap, throwErrorIfPatternNotFound: false)
                 ))
                 .Enumerate();
 
@@ -92,7 +92,7 @@ namespace SqlDsl.DataParser
                             col.index, 
                             index, 
                             FilterPrimaryKeyColumns(
-                                RemoveBeforePattern(primaryKeyColumns, col.rowIdColumnMap)).ToArray(),
+                                RemoveBeforePattern(primaryKeyColumns, col.primaryKeyColumnMap)).ToArray(),
                             typedConstructorArgs[index],
                             col.cellType
                         ));
@@ -107,7 +107,7 @@ namespace SqlDsl.DataParser
                             col.index, 
                             col.name[0], 
                             FilterPrimaryKeyColumns(
-                                RemoveBeforePattern(primaryKeyColumns, col.rowIdColumnMap)).ToArray(),
+                                RemoveBeforePattern(primaryKeyColumns, col.primaryKeyColumnMap)).ToArray(),
                             colType,
                             col.cellType
                         ));
@@ -128,12 +128,17 @@ namespace SqlDsl.DataParser
                             col.index, 
                             index, 
                             col.name.Skip(1).ToArray(),
-                            RemoveBeforePattern(primaryKeyColumns, col.rowIdColumnMap),
+                            RemoveBeforePattern(primaryKeyColumns, col.primaryKeyColumnMap),
                             colType,
                             col.cellType,
                             col.constructorArgInfo));
                     }
-                    else if (typedColNames.ContainsKey(col.name[0]))
+                    else if (typedColNames.ContainsKey(col.name[0]) 
+                        // If a table alias and column alias clash,
+                        // The typedColNames check will give a false positive 
+                        // and the result will be an attempt to create a complex
+                        // object from something like a string or int
+                        && col.name[col.name.Length - 1] != SqlStatementConstants.RowIdName)
                     {
                         // unwrap from IEnumerable    
                         var colType = 
@@ -146,7 +151,7 @@ namespace SqlDsl.DataParser
                             col.index, 
                             col.name[0], 
                             col.name.Skip(1).ToArray(),
-                            RemoveBeforePattern(primaryKeyColumns, col.rowIdColumnMap),
+                            RemoveBeforePattern(primaryKeyColumns, col.primaryKeyColumnMap),
                             colType,
                             col.cellType,
                             col.constructorArgInfo));
@@ -183,7 +188,7 @@ namespace SqlDsl.DataParser
                 // try to get row ids from property table map
                 var propertyTableMap = mappedTableProperties
                     .Where(p => p.name.Length == 1 && p.name[0] == propertyName)
-                    .Select(x => x.rowIdColumnMap)
+                    .Select(x => x.primaryKeyColumnMap)
                     .FirstOrDefault();
 
                 // if there is no map, use the common root for all properties
@@ -203,7 +208,7 @@ namespace SqlDsl.DataParser
                     _Build(
                         values.First().propertyType,
                         FilterPrimaryKeyColumns(propertyTableMap).ToArray(),
-                        mappedTableProperties.Where(p => p.name.Length > 1).Select(p => (p.name.Skip(1).ToArray(), p.rowIdColumnMap)),
+                        mappedTableProperties.Where(p => p.name.Length > 1).Select(p => (p.name.Skip(1).ToArray(), p.primaryKeyColumnMap)),
                         values.Select(v => (v.index, v.subPropName, v.subPropPrimaryKeyColumns, v.dataCellType, v.constructorArgInfo)),
                         queryParseType));
             }
@@ -220,7 +225,7 @@ namespace SqlDsl.DataParser
                 // try to get row ids from property table map
                 var propertyTableMap = mappedTableProperties
                     .Where(p => p.name.Length == 1 && SqlStatementConstants.ConstructorArgs.BuildConstructorArg(argIndex) == p.name[0])
-                    .Select(x => x.rowIdColumnMap)
+                    .Select(x => x.primaryKeyColumnMap)
                     .FirstOrDefault();
 
                 //int[] propertyTableMap = null;
@@ -243,7 +248,7 @@ namespace SqlDsl.DataParser
                     _Build(
                         values.First().propertyType,
                         FilterPrimaryKeyColumns(propertyTableMap).ToArray(),
-                        mappedTableProperties.Where(p => p.name.Length > 1).Select(p => (p.name.Skip(1).ToArray(), p.rowIdColumnMap)),
+                        mappedTableProperties.Where(p => p.name.Length > 1).Select(p => (p.name.Skip(1).ToArray(), p.primaryKeyColumnMap)),
                         values.Select(v => (v.index, v.subPropName, v.subPropPrimaryKeyColumns, v.dataCellType, v.constructorArgInfo.Skip(1).ToArray())),
                         queryParseType));
             }

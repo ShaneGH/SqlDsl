@@ -97,8 +97,8 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
             void AddParentRowIdIfAvailable(ISelectColumn col)
             {
-                if (col?.IsRowNumberForTable?.JoinedFrom != null)
-                    cs.Add(col.IsRowNumberForTable.JoinedFrom.RowNumberColumn);
+                if (col.IsRowNumberForTable?.JoinedFrom != null)
+                    cs.AddRange(col.IsRowNumberForTable.JoinedFrom.Select(jf => jf.RowNumberColumn));
             }
 
             return cs.Distinct();
@@ -109,7 +109,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             return (singleSelectPart, TryGetRowNumberColumn(singleSelectPart));
         };
 
-        static readonly Func<QueryElementBasedMappedProperty, ISelectColumn> TryGetRowNumberColumn = singleSelectPart =>
+        static ISelectColumn TryGetRowNumberColumn(QueryElementBasedMappedProperty singleSelectPart)
         {
             return singleSelectPart.FromParams
                 .GetAggregatedEnumerable()
@@ -118,10 +118,10 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                 .Select(GetRowIdColumn)
                 .Select(TryGetTable)
                 .RemoveNulls()
-                .OrderByDescending(Identity, TablePrecedenceOrderer.Instance)
+                .OrderByDescending(Identity, new TablePrecedenceOrderer(singleSelectPart.MappingContext))
                 .Select(TryGetRowNumberColumnFromTable)
                 .FirstOrDefault();
-        };
+        }
 
         static readonly Func<(bool isAggregated, SelectColumnBasedElement), bool> FilterOutAggregated = x => !x.isAggregated;
 
@@ -155,21 +155,26 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             /// <inheritdoc />
             public bool IsRowNumber => false;
 
+            /// <inheritdoc />
+            public IQueryTable MappingContext { get; }
+
             public SqlSelectColumn(QueryElementBasedMappedProperty prop, ISelectColumn rowIdSelectColumn)
                 : this(
                     prop.To,
                     prop.MappedPropertyType,
                     prop.PropertySegmentConstructors,
-                    rowIdSelectColumn)
+                    rowIdSelectColumn,
+                    prop.MappingContext)
             {
             }
 
-            public SqlSelectColumn(string alias, Type dataType, ConstructorInfo[] argConstructors, ISelectColumn rowNumberColumn)
+            public SqlSelectColumn(string alias, Type dataType, ConstructorInfo[] argConstructors, ISelectColumn rowNumberColumn, IQueryTable mappingContext)
             {
                 Alias = alias ?? throw new ArgumentNullException(nameof(alias));
                 ArgConstructors = argConstructors ?? throw new ArgumentNullException(nameof(argConstructors));
                 DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
                 RowNumberColumn = rowNumberColumn ?? throw new ArgumentNullException(nameof(rowNumberColumn));
+                MappingContext = mappingContext ?? throw new ArgumentNullException(nameof(mappingContext));
             }
         }
     }

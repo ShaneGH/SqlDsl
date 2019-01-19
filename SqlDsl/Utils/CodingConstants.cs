@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using SqlDsl.SqlBuilders;
 
 namespace SqlDsl.Utils
 {
@@ -19,6 +20,8 @@ namespace SqlDsl.Utils
             public static readonly ConstructorInfo[] ConstructorInfo = new ConstructorInfo[0];
                 
             public static readonly int[] Int = new int[0];
+                
+            public static readonly IQueryTable[] IQueryTable = new IQueryTable[0];
         }
         
         public class Null

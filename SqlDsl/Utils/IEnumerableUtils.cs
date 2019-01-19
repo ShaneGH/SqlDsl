@@ -82,6 +82,35 @@ namespace SqlDsl.Utils
         /// </summary>
         public static IEnumerable<T> ToEnumerableStruct<T>(this T x)
             where T: struct => new [] { x };
+        
+        /// <summary>
+        /// Take the values of an enumerable until a condition is met
+        /// </summary>
+        public static IEnumerable<T> TakeUntil<T>(this IEnumerable<T> xs, Func<T, bool> condition) => TakeUntil(xs, condition, false);
+        
+        /// <summary>
+        /// Take the values of an enumerable until a condition is met. Also include the element that satisfied the condition
+        /// </summary>
+        public static IEnumerable<T> TakeUntilIncludeLast<T>(this IEnumerable<T> xs, Func<T, bool> condition) => TakeUntil(xs, condition, true);
+        
+        /// <summary>
+        /// Take the values of an enumerable until a condition is met
+        /// </summary>
+        static IEnumerable<T> TakeUntil<T>(this IEnumerable<T> xs, Func<T, bool> condition, bool takeTheValueWhichMeetsTheCondition)
+        {
+            foreach (var x in xs)
+            {
+                if (condition(x))
+                {
+                    if (takeTheValueWhichMeetsTheCondition)
+                        yield return x;
+
+                    break;
+                }
+
+                yield return x;
+            }
+        }
 
         /// <summary>
         /// Convert from IEnumerable<(IEnumerable&lt;T>, IEnumerable&lt;U>)> to (IEnumerable&lt;T>, IEnumerable&lt;U>)

@@ -209,7 +209,7 @@ namespace SqlDsl.Mapper
 
                 return many.Select(q => q.WithLock(
                     state.MappingContext.propertyName,
-                    lockMappingContext: nextMap == MapType.Select,
+                    lockMappingContext: nextMap == MapType.ContextSwitch,
                     constructorArgs: q.PropertySegmentConstructors.Prepend(expr.Constructor).ToArray()));
             }
         }
@@ -322,7 +322,7 @@ namespace SqlDsl.Mapper
                             ? SplitMapOfComplexProperty(state, x, m.binding.Member.GetPropertyOrFieldType())
                             : x.WithLock( 
                                 state.MappingContext.propertyName,
-                                lockMappingContext: nextMap == MapType.Select,
+                                lockMappingContext: nextMap == MapType.ContextSwitch,
                                 to: CombineStrings(toPrefix, x.To)).ToEnumerable()),
                         m.map.tables.Select(x => new MappedTable(x.From, CombineStrings(m.memberName, x.To), x.TableresultsAreAggregated)))))
                 .AggregateTuple2();
@@ -509,7 +509,7 @@ namespace SqlDsl.Mapper
             (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool) innerMap;
             var outerMap = BuildMap(state, enumerable, MapType.Select, toPrefix);
             using (state.SwitchContext(mapper.Parameters[0]))
-                innerMap = BuildMap(state, mapper.Body, MapType.Other);
+                innerMap = BuildMap(state, mapper.Body, MapType.ContextSwitch);
 
             var (isSuccess, name) = CompileMemberName(enumerable);
             var newTableMap = isSuccess
@@ -688,6 +688,7 @@ namespace SqlDsl.Mapper
             MemberAccess,
             MemberInit,
             AggregateFunction,
+            ContextSwitch,
             Other
         }
     }

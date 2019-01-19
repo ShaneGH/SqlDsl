@@ -23,11 +23,14 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         public string Alias { get; }
 
+        IQueryTable[] _JoinedFrom = null;
+
         /// <summary>
         /// If this table is in a join, will be the table that it is joined on.
         /// Otherwise it will be null
         /// </summary>
-        public IQueryTable JoinedFrom => GetJoinedFrom();
+        public IQueryTable[] JoinedFrom =>
+            _JoinedFrom ?? (_JoinedFrom = GetJoinedFrom().ToArray());
 
         ISelectColumn _RowNumberColumn;
 
@@ -50,19 +53,17 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// Calling this method before full construction of the SqlStatement graph will
         /// cause instability
         /// </summary>
-        IQueryTable GetJoinedFrom()
+        IEnumerable<IQueryTable> GetJoinedFrom()
         {
             if (QueryBuilder.PrimaryTableAlias == Alias)
-                return null;
+                return CodingConstants.Empty.IQueryTable;
 
-            var table = QueryBuilder.Joins
+            return QueryBuilder.Joins
                 .Where(j => j.alias == Alias)
-                .Select(x => SingleQueryObjectReferenceFromJoin(x.queryObjectReferences)).FirstOrDefault();
-
-            if (table == null)
-                throw new InvalidOperationException($"Cannot find join table with alias: {Alias}");
-
-            return Tables[table];
+                .Select(x => x.queryObjectReferences)
+                .FirstOrDefault()
+                ?.Select(t => Tables[t])
+                .ToArray() ?? throw new InvalidOperationException($"Cannot find join table with alias: {Alias}");
         }
 
         static string SingleQueryObjectReferenceFromJoin(IEnumerable<string> queryObjectReferences)

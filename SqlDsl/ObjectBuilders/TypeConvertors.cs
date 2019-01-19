@@ -31,7 +31,7 @@ namespace SqlDsl.ObjectBuilders
                 { Tuple.Create(typeof(double), false), ForNonNullable(AddDummyLogger(Convert.ToDouble)) },
                 { Tuple.Create(typeof(decimal), false), ForNonNullable(AddDummyLogger(Convert.ToDecimal)) },
                 { Tuple.Create(typeof(char), false), ForNonNullable(AddDummyLogger(Convert.ToChar)) },
-                { Tuple.Create(typeof(DateTime), false), ForNonNullable(AddDummyLogger(Convert.ToDateTime)) },
+                { Tuple.Create(typeof(DateTime), false), ForNonNullable(AddDummyLogger(ConvertDateTime)) },
                 { Tuple.Create(typeof(string), false), ForNullableClass(AddDummyLogger(Convert.ToString)) },
                 { Tuple.Create(typeof(Guid), false), ForNonNullable(AddDummyLogger(ConvertGuid)) },
             });
@@ -39,7 +39,7 @@ namespace SqlDsl.ObjectBuilders
         static Func<object, ILogger, T> AddDummyLogger<T>(Func<object, T> basedOn)
         {
             return Added;
-            T Added(object x, ILogger logger) => basedOn(x);
+            T Added(object x, ILogger logger) => basedOn(x);        
         }
 
         /// <summary>
@@ -298,14 +298,50 @@ namespace SqlDsl.ObjectBuilders
             return Expression.Lambda(body, input, logger).Compile();
         }
 
+        static DateTime ConvertDateTime(object input)
+        {
+            // TODO datetime kind
+            // TODO accept string (or char array) and use date formatter
+            switch (input)
+            {
+                case null:
+                    return Convert.ToDateTime(input);
+                case byte x:
+                    return new DateTime(x);
+                case sbyte x:
+                    return new DateTime(x);
+                case short x:
+                    return new DateTime(x);
+                case int x:
+                    return new DateTime(x);
+                case long x:
+                    return new DateTime(x);
+                case ushort x:
+                    return new DateTime(x);
+                case uint x:
+                    return new DateTime(x);
+                case ulong x:
+                    if (x > long.MaxValue)
+                        throw new InvalidOperationException($"Invalid datetime value {x}");
+
+                    return new DateTime((long)x);
+                case DateTime x:
+                    return x;
+                default:
+                    return Convert.ToDateTime(input);
+            }
+        }
+
         static Guid ConvertGuid(object x)
         {
-            if (x is Guid) return (Guid)x;
-            if (x is byte[]) return new Guid(x as byte[]);
-            if (x is IEnumerable<byte>) return new Guid((x as IEnumerable<byte>).ToArray());
-            if (x is string) return new Guid(x as string);
-
-            throw new InvalidOperationException($"Cannot convert type {x.GetType()} to Guid");
+            switch (x)
+            {
+                case Guid y: return y;
+                case byte[] y: return new Guid(y);
+                case IEnumerable<byte> y: return new Guid(y.ToArray());
+                case string y: return new Guid(y);
+                default: throw new InvalidOperationException($"Cannot convert type {x.GetType()} to Guid");
+            }
         }
     }
 }

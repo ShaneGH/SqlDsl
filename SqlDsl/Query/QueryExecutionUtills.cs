@@ -85,19 +85,19 @@ namespace SqlDsl.Query
                 .Select(GetMappedTable);
 
             // map each column to a chain of row id column numbers
-            var rowIdColumns = sqlBuilder
+            var columnWithPrimaryKeys = sqlBuilder
                 .SelectColumns
                 .Select(GetMappedColumn);
                 
-            return ObjectPropertyGraphBuilder.Build(objectType, mappedTableProperties, rowIdColumns, queryParseType);
+            return ObjectPropertyGraphBuilder.Build(objectType, mappedTableProperties, columnWithPrimaryKeys, queryParseType);
 
-            (string name, int[] rowIdColumnMap) GetMappedTable((string columnGroupPrefix, ISelectColumn rowNumberColumn) map) => (
+            (string name, int[] primaryKeyColumnMap) GetMappedTable((string columnGroupPrefix, ISelectColumn rowNumberColumn) map) => (
                 map.columnGroupPrefix,
-                sqlBuilder.GetRowNumberColumnIndexes(map.rowNumberColumn.Alias).ToArray());
+                sqlBuilder.GetRowNumberColumnIndexes(map.rowNumberColumn.Alias, map.rowNumberColumn.IsRowNumberForTable).ToArray());
 
-            (string name, int[] rowIdColumnMap, Type dataCellType, ConstructorInfo[] isConstructorArg) GetMappedColumn(ISelectColumn column) => (
+            (string name, int[] primaryKeyColumnMap, Type dataCellType, ConstructorInfo[] isConstructorArg) GetMappedColumn(ISelectColumn column) => (
                 column.Alias,
-                sqlBuilder.GetRowNumberColumnIndexes(column.Alias).ToArray(),
+                sqlBuilder.GetRowNumberColumnIndexes(column.Alias, column.MappingContext).ToArray(),
                 column.DataType,
                 column.ArgConstructors);
         }

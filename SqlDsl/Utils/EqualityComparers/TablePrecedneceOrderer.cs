@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SqlDsl.SqlBuilders;
 
 namespace SqlDsl.Utils.EqualityComparers
@@ -9,40 +10,51 @@ namespace SqlDsl.Utils.EqualityComparers
     /// </summary>
     public class TablePrecedenceOrderer : IComparer<IQueryTable>
     {
-        public static IComparer<IQueryTable> Instance = new TablePrecedenceOrderer();
+        /// <summary>
+        /// The context of the ordering. In practice this will be a table in a mapped Select() call
+        /// </summary>
+        readonly IQueryTable Context;
 
-        private TablePrecedenceOrderer()
+        public TablePrecedenceOrderer(IQueryTable context)
         {
+            Context = context;
         }
 
         public int Compare(IQueryTable x, IQueryTable y)
-        {
-            return CompareRec(x, y) 
-                ?? throw new InvalidOperationException($"Cannot find table precendence between {x.Alias} and {y.Alias}");
-        }
-
-        int? CompareRec(IQueryTable x, IQueryTable y)
         {
             if (x == null || y == null)
                 throw new NotSupportedException();
 
             if (x == y) return 0;
 
-            if (x.JoinedFrom != null)
+            foreach (var ts in GetPossibilities())
             {
-                var i = CompareRec(x.JoinedFrom, y);
-                if (i != null)
-                    return i == 0 ? 1 : i;
-            }
-            
-            if (y.JoinedFrom != null)
-            {
-                var i = CompareRec(x, y.JoinedFrom);
-                if (i != null)
-                    return i == 0 ? -1 : i;
+                if (ts == null)
+                    continue;
+
+                foreach (var t in ts)
+                {
+                    if (t == x)
+                        return -1;
+                    if (t == y)
+                        return 1;
+                }
             }
 
-            return null;
+            throw new InvalidOperationException($"Cannot find table precendence between {x.Alias} and {y.Alias}");
+
+            IEnumerable<IEnumerable<IQueryTable>> GetPossibilities()
+            {
+                // context is more likely to be earlier in the chain
+                // order tests accordingly
+                // TODO ^^ not sure about the above. Need to test
+                yield return Context.GetTableChain(x, GetPathErrorHandling.ReturnNull);
+                yield return Context.GetTableChain(y, GetPathErrorHandling.ReturnNull);
+                yield return x.GetTableChain(y, GetPathErrorHandling.ReturnNull);
+                yield return y.GetTableChain(x, GetPathErrorHandling.ReturnNull);
+                yield return x.GetTableChain(Context, GetPathErrorHandling.ReturnNull);
+                yield return y.GetTableChain(Context, GetPathErrorHandling.ReturnNull);
+            }
         }
     }
 }

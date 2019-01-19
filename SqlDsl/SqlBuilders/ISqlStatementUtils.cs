@@ -10,19 +10,20 @@ namespace SqlDsl.SqlBuilders
 {
     public static class ISqlSelectStatementUtils
     {
-        public static IEnumerable<ISelectColumn> GetRowNumberColumns(this ISqlSelectStatement sqlStatement, string columnAlias)
+        public static IEnumerable<ISelectColumn> GetRowNumberColumns(this ISqlSelectStatement sqlStatement, string columnAlias, IQueryTable context)
         {
-            // if the piece is a parameter, Table will be null
             var col = sqlStatement.SelectColumns[columnAlias].RowNumberColumn;
+
+            // if the piece is a parameter, Table will be null
             return col == null 
                 ? Enumerable.Empty<ISelectColumn>() 
-                : col.IsRowNumberForTable.GetRowNumberColumns();
+                : col.IsRowNumberForTable.GetPrimaryKeyColumns(context);
         }
         
-        public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlSelectStatement sqlStatement, string columnAlias)
+        public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlSelectStatement sqlStatement, string columnAlias, IQueryTable context)
         {
             var result = sqlStatement
-                .GetRowNumberColumns(columnAlias)
+                .GetRowNumberColumns(columnAlias, context)
                 .Select(c => sqlStatement.SelectColumns.IndexOf(c));
 
             return RemoveTrailingMinusOnes(result, columnAlias);
@@ -47,16 +48,24 @@ namespace SqlDsl.SqlBuilders
             return i == r.Length - 1 ? r : r.Take(i + 1);
         }
         
-        public static IEnumerable<ISelectColumn> GetRowNumberColumns(this IQueryTable table)
+        public static IEnumerable<IQueryTable> GetTableChain(this IQueryTable table, IQueryTable context, GetPathErrorHandling errorHandling = GetPathErrorHandling.ThrowException)
         {
-            var op = new List<ISelectColumn>();
-            while (table != null)
-            {
-                op.Insert(0, table.RowNumberColumn);
-                table = table.JoinedFrom;
-            }
-
-            return op.Skip(0);
+            return table.GetPath(context, errorHandling);
+        }
+        
+        public static IEnumerable<ISelectColumn> GetPrimaryKeyColumns(this IQueryTable table, IQueryTable context)
+        {
+            return table.GetTableChain(context).Select(t => t.RowNumberColumn);
+        }
+        
+        public static IEnumerable<IQueryTable> GetAllReferencedTables(this IQueryTable table)
+        {
+            return table.GetTablesInPath();
+        }
+        
+        public static IEnumerable<ISelectColumn> GetAllPrimaryKeyColumns(this IQueryTable table)
+        {
+            return table.GetAllReferencedTables().Select(t => t.RowNumberColumn);
         }
         
         public static bool ContainsTable(this ISqlStatement sqlStatement, string tableAlias)

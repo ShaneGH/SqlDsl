@@ -383,7 +383,7 @@ namespace SqlDsl.SqlBuilders
                 var stat = new SqlStatement(this);
                 var sca = selectColumnAliases
                     .Select(a => stat.SelectColumns[a].RowNumberColumn.IsRowNumberForTable)
-                    .SelectMany(GetTableChain)
+                    .SelectMany(ISqlSelectStatementUtils.GetAllReferencedTables)
                     .Select(t => t.Alias)
                     .ToHashSet();
 
@@ -398,14 +398,6 @@ namespace SqlDsl.SqlBuilders
                     join, 
                     $"{join}.{SqlStatementConstants.RowIdName}");
             }
-        }
-            
-        static IEnumerable<IQueryTable> GetTableChain(IQueryTable table)
-        {
-            if (table.JoinedFrom == null)
-                return table.ToEnumerable();
-
-            return GetTableChain(table.JoinedFrom).Append(table);
         }
 
         public class SelectColumn
