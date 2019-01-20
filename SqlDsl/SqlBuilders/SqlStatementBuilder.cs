@@ -72,7 +72,7 @@ namespace SqlDsl.SqlBuilders
 
         public void AddOrderBy(ParameterExpression queryRootParam, ParameterExpression argsParam, Expression orderBy, OrderDirection direction, ParamBuilder parameters)
         {
-            var (sql, queryObjectReferences) = BuildCondition(queryRootParam, argsParam, orderBy, parameters, "ORDER BY");
+            var (sql, queryObjectReferences) = BuildCondition(queryRootParam, argsParam, orderBy, parameters, MappingPurpose.OrderBy);
             Ordering.Add((sql, queryObjectReferences, direction));
         }
 
@@ -106,7 +106,7 @@ namespace SqlDsl.SqlBuilders
                     AddJoinProperty);
             
             equalityStatement = ParameterReplacer.ReplaceParameter(equalityStatement, joinTableParam, joinTableProp);
-            var (sql, queryObjectReferences) = BuildCondition(queryRootParam, queryArgsParam, equalityStatement, parameters, "JOIN ON");
+            var (sql, queryObjectReferences) = BuildCondition(queryRootParam, queryArgsParam, equalityStatement, parameters, MappingPurpose.JoinOn);
             queryObjectReferences = queryObjectReferences.Where(x => x != joinTableAlias);
 
             // if there are no query object references, add a reference to
@@ -179,7 +179,7 @@ namespace SqlDsl.SqlBuilders
         /// <param name="parameters">A list of parameters which will be added to if a constant is found in the equalityStatement</param>
         public void SetWhere(ParameterExpression queryRoot, ParameterExpression args, Expression equality, ParamBuilder parameters)
         {
-            var (whereSql, queryObjectReferences) = BuildCondition(queryRoot, args, equality, parameters, "WHERE");
+            var (whereSql, queryObjectReferences) = BuildCondition(queryRoot, args, equality, parameters, MappingPurpose.Where);
             Where = (whereSql, queryObjectReferences);
         }
 
@@ -188,15 +188,15 @@ namespace SqlDsl.SqlBuilders
             ParameterExpression queryArgsParam,
             Expression conditionStatement, 
             ParamBuilder parameters,
-            string description)
+            MappingPurpose mapping)
         {
             var stat = new SqlStatementParts.SqlStatement(this);
-            var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRootParam, queryArgsParam, stat, SqlSyntax, false);
+            var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRootParam, queryArgsParam, stat, SqlSyntax, false, mapping);
 
             var (mp, _) = ComplexMapBuilder.BuildMap(state, conditionStatement);
             var map = mp.ToArray();
             if (map.Length != 1)
-                throw new InvalidOperationException($"Invalid {description} condition: {conditionStatement}.");
+                throw new InvalidOperationException($"Invalid {mapping} condition: {conditionStatement}.");
 
             var mapSql = map[0].FromParams.BuildFromString(state, SqlSyntax);
             var queryObjectReferences = map[0].FromParams

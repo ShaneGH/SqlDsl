@@ -31,7 +31,7 @@ namespace SqlDsl.Mapper
             var wrappedStatement = new SqlStatement(wrappedBuilder);
 
             var argsParam = mapper.Parameters.Count > 1 ? mapper.Parameters[1] : null;
-            var state = new BuildMapState(query.PrimaryTableMember.memberName, parameters, mapper.Parameters[0], argsParam, wrappedStatement, query.SqlSyntax, true);
+            var state = new BuildMapState(query.PrimaryTableMember.memberName, parameters, mapper.Parameters[0], argsParam, wrappedStatement, query.SqlSyntax, true, MappingPurpose.Mapping);
             var (resultType, properties, tables) = MapBuilder.BuildMapFromRoot(state, mapper.Body);
 
             switch (resultType)

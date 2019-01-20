@@ -19,6 +19,7 @@ namespace SqlDsl.Mapper
         public readonly ISqlSyntax SqlBuilder;
         public (ParameterExpression tableParam, string propertyName) MappingContext { get; private set; }
         public readonly bool UseColumnAliases;
+        public readonly MappingPurpose MappingPurpose;
 
         public BuildMapState(
             string primarySelectTableAlias, 
@@ -27,7 +28,8 @@ namespace SqlDsl.Mapper
             ParameterExpression argsObject, 
             ISqlStatement wrappedSqlStatement, 
             ISqlSyntax sqlBuilder,
-            bool useColumnAliases)
+            bool useColumnAliases,
+            MappingPurpose mappingPurpose)
         {
             Parameters = parameters;
             QueryObject = queryObject;
@@ -37,6 +39,7 @@ namespace SqlDsl.Mapper
             SqlBuilder = sqlBuilder;
             MappingContext = (queryObject, PrimarySelectTableAlias);
             UseColumnAliases = useColumnAliases;
+            MappingPurpose = mappingPurpose;
         }
 
         public IDisposable SwitchContext(ParameterExpression newContext)

@@ -17,15 +17,31 @@ namespace SqlDsl.Mapper
 
         public static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMap(BuildMapState state, Expression expr)
         {
-            var (x, y, _) = BuildMap(state, expr, MapType.Root);
+            var (x, y, _) = BuildMapWithErrorHandling(state, expr, MapType.Root);
             return (x, y);
+        }
+
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool isConstant) BuildMapWithErrorHandling(
+            BuildMapState state, 
+            Expression expr, 
+            MapType nextMap,
+            string toPrefix = null)
+        {
+            try
+            {
+                return BuildMap(state, expr, nextMap, toPrefix);
+            }
+            catch (Exception e)
+            {
+                throw new SqlBuilderException(state.MappingPurpose, expr, e);
+            }
         }
 
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool isConstant) BuildMap(
             BuildMapState state, 
             Expression expr, 
             MapType nextMap,
-            string toPrefix = null)
+            string toPrefix)
         {
             var (isConstant, requiresArgs) = ReflectionUtils.IsConstant(expr, state.ArgsObject);
             if (isConstant)
@@ -53,7 +69,7 @@ namespace SqlDsl.Mapper
             switch (expr.NodeType)
             {
                 case ExpressionType.Convert:
-                    return BuildMap(state, (expr as UnaryExpression).Operand, nextMap, toPrefix);
+                    return BuildMapWithErrorHandling(state, (expr as UnaryExpression).Operand, nextMap, toPrefix);
 
                 case ExpressionType.Parameter:
                     return (
@@ -144,17 +160,17 @@ namespace SqlDsl.Mapper
                     var oneExpr = ReflectionUtils.IsOne(exprMethod);
                     if (oneExpr != null)
                         // .One(...) is invisible as far as nextMap is concerned
-                        return BuildMap(state, oneExpr, nextMap, toPrefix);
+                        return BuildMapWithErrorHandling(state, oneExpr, nextMap, toPrefix);
                         
                     var (isToList, enumerableL) = ReflectionUtils.IsToList(exprMethod);
                     if (isToList)
                         // .ToList(...) is invisible as far as nextMap is concerned
-                        return BuildMap(state, enumerableL, nextMap, toPrefix);
+                        return BuildMapWithErrorHandling(state, enumerableL, nextMap, toPrefix);
                         
                     var (isToArray, enumerableA) = ReflectionUtils.IsToArray(exprMethod);
                     if (isToArray)
                         // .ToArray(...) is invisible as far as nextMap is concerned
-                        return BuildMap(state, enumerableA, nextMap, toPrefix);
+                        return BuildMapWithErrorHandling(state, enumerableA, nextMap, toPrefix);
 
                     var (isSelect, enumerableS, mapper) = ReflectionUtils.IsSelectWithLambdaExpression(exprMethod);
                     if (isSelect)
@@ -166,7 +182,7 @@ namespace SqlDsl.Mapper
                     break;
             }
 
-            throw BuildMappingError(expr);
+            throw BuildMappingError(state.MappingPurpose, expr);
         }
 
         static readonly HashSet<ExpressionType> InPlaceArrayCreation = new HashSet<ExpressionType>
@@ -192,10 +208,10 @@ namespace SqlDsl.Mapper
             //      SimpleMapReturningEmptyObject
 
             if (nextMap != MapType.MemberInit && expr.Arguments.Count == 0)
-                throw new InvalidOperationException($"You cannot map to an object with has no data from table columns: {expr}.");
+                throw BuildMappingError(state.MappingPurpose, $"You cannot map to an object with has no data from table columns: {expr}.");
 
             return expr.Arguments
-                .Select((ex, i) => (type: ex.Type, map: BuildMap(state, ex, MapType.Other, toPrefix: CombineStrings(toPrefix, SqlStatementConstants.ConstructorArgs.BuildConstructorArg(i)))))
+                .Select((ex, i) => (type: ex.Type, map: BuildMapWithErrorHandling(state, ex, MapType.Other, toPrefix: CombineStrings(toPrefix, SqlStatementConstants.ConstructorArgs.BuildConstructorArg(i)))))
                 .Select((map, i) => (
                     map.Item2.properties.SelectMany(p => CreateContructorArg(p, map.type, i)), 
                     map.map.tables.Select(x => new MappedTable(x.From, CombineStrings(SqlStatementConstants.ConstructorArgs.BuildConstructorArg(i), x.To), x.TableresultsAreAggregated))))
@@ -219,17 +235,20 @@ namespace SqlDsl.Mapper
 
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForBinaryCondition(BuildMapState state, Expression left, Expression right, Type combinedType, BinarySqlOperator combiner, string toPrefix = null)
         {
-            var l = BuildMap(state, left, MapType.Other, toPrefix);
-            var r = BuildMap(state, right, MapType.Other, toPrefix);
+            var l = BuildMapWithErrorHandling(state, left, MapType.Other, toPrefix);
+            var r = BuildMapWithErrorHandling(state, right, MapType.Other, toPrefix);
 
             var lProp = l.properties.ToArray();
             var rProp = r.properties.ToArray();
 
+            if (lProp.Length > 1 || rProp.Length > 1)
+                throw BuildMappingError(state.MappingPurpose, $"You cannot perform a \"{combiner}\" operation on a table");
+
             if (lProp.Length != 1)
-                throw BuildMappingError(left);
+                throw BuildMappingError(state.MappingPurpose, left);
 
             if (rProp.Length != 1)
-                throw BuildMappingError(right);
+                throw BuildMappingError(state.MappingPurpose, right);
 
             return (
                 new StringBasedMappedProperty(
@@ -277,15 +296,15 @@ namespace SqlDsl.Mapper
                     ? ReflectionUtils.ConvertToFullMemberInit(expr)
                     : ReflectionUtils.ConvertCollectionToFullMemberInit(expr);
 
-                return BuildMap(state, rewritten, nextMapType, toPrefix);
+                return BuildMapWithErrorHandling(state, rewritten, nextMapType, toPrefix);
             }
 
-            var result = BuildMap(state, expr.Expression, MapType.MemberAccess, toPrefix);
+            var result = BuildMapWithErrorHandling(state, expr.Expression, MapType.MemberAccess, toPrefix);
             var properties = result.properties.Enumerate();
 
             // cannot support (x + y).Value
             if (properties.Any(p => !p.FromParams.HasOneItemOnly))
-                throw new InvalidOperationException("Unable to understand mapping statement: " + expr);
+                throw BuildMappingError(state.MappingPurpose, expr);
 
             return (
                 result.properties
@@ -312,11 +331,11 @@ namespace SqlDsl.Mapper
             var bindings = expr.Bindings.OfType<MemberAssignment>();
             var mapType = bindings.Any() ? MapType.MemberInit : MapType.Other;
 
-            return BuildMap(state, expr.NewExpression, mapType, toPrefix)
+            return BuildMapWithErrorHandling(state, expr.NewExpression, mapType, toPrefix)
                 .RemoveLastT()
                 .ToEnumerableStruct()
                 .Concat(bindings
-                    .Select(b => (binding: b, memberName: b.Member.Name, map: BuildMap(state, b.Expression, MapType.Other, b.Member.Name)))
+                    .Select(b => (binding: b, memberName: b.Member.Name, map: BuildMapWithErrorHandling(state, b.Expression, MapType.Other, b.Member.Name)))
                     .Select(m => (
                         m.map.properties.SelectMany(x => PropertyRepresentsTable(state, x)
                             ? SplitMapOfComplexProperty(state, x, m.binding.Member.GetPropertyOrFieldType())
@@ -352,16 +371,16 @@ namespace SqlDsl.Mapper
             string toPrefix = null, 
             bool isExprTip = false)
         {
-            var (lP, lTab, _) = BuildMap(state, lhs, MapType.Other, null);
-            var (rP, rTab, rConstant) = BuildMap(state, rhs, MapType.Other, null);
+            var (lP, lTab, _) = BuildMapWithErrorHandling(state, lhs, MapType.Other, null);
+            var (rP, rTab, rConstant) = BuildMapWithErrorHandling(state, rhs, MapType.Other, null);
 
             rP = rP.Enumerate();
             lP = lP.Enumerate();
 
             if (lP.Count() != 1)
-                throw new InvalidOperationException($"Invalid mapping statement: {lhs}");
+                throw BuildMappingError(state.MappingPurpose, lhs);
             if (rP.Count() != 1)
-                throw new InvalidOperationException($"Invalid mapping statement: {rhs}");
+                throw BuildMappingError(state.MappingPurpose, rhs);
 
             var rProp = rP.First();
             var lProp = lP.First();
@@ -370,7 +389,7 @@ namespace SqlDsl.Mapper
             if (rProp.FromParams.GetEnumerable()
                 .Any(x => x.Param != null && !x.Param.StartsWith("@")))
             {
-                throw new InvalidOperationException($"The values in an \"IN (...)\" clause must be a real parameter value. " + 
+                throw BuildMappingError(state.MappingPurpose, $"The values in an \"IN (...)\" clause must be a real parameter value. " + 
                     $"They cannot come from another table:\n{rhs}");
             }
 
@@ -412,7 +431,7 @@ namespace SqlDsl.Mapper
             BuildMapState state, 
             Expression enumerable, 
             LambdaExpression sumMapper, 
-            string toPrefix = null) => BuildMapForSum(state, AddSelectToEnunmerable(enumerable, sumMapper), toPrefix);
+            string toPrefix = null) => BuildMapForSum(state, AddSelectToEnunmerable(state, enumerable, sumMapper), toPrefix);
         
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForAverage(
             BuildMapState state, 
@@ -423,7 +442,7 @@ namespace SqlDsl.Mapper
             BuildMapState state, 
             Expression enumerable, 
             LambdaExpression averageMapper, 
-            string toPrefix = null) => BuildMapForAverage(state, AddSelectToEnunmerable(enumerable, averageMapper), toPrefix);
+            string toPrefix = null) => BuildMapForAverage(state, AddSelectToEnunmerable(state, enumerable, averageMapper), toPrefix);
         
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMax(
             BuildMapState state, 
@@ -434,7 +453,7 @@ namespace SqlDsl.Mapper
             BuildMapState state, 
             Expression enumerable, 
             LambdaExpression averageMapper, 
-            string toPrefix = null) => BuildMapForMax(state, AddSelectToEnunmerable(enumerable, averageMapper), toPrefix);
+            string toPrefix = null) => BuildMapForMax(state, AddSelectToEnunmerable(state, enumerable, averageMapper), toPrefix);
         
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForMin(
             BuildMapState state, 
@@ -445,18 +464,18 @@ namespace SqlDsl.Mapper
             BuildMapState state, 
             Expression enumerable, 
             LambdaExpression averageMapper, 
-            string toPrefix = null) => BuildMapForMin(state, AddSelectToEnunmerable(enumerable, averageMapper), toPrefix);
+            string toPrefix = null) => BuildMapForMin(state, AddSelectToEnunmerable(state, enumerable, averageMapper), toPrefix);
         
         /// <summary>
         /// convert xs
         /// to
         /// convert xs.Select(x => x.val)
         /// </summary>
-        static Expression AddSelectToEnunmerable(Expression enumerable, LambdaExpression mapper) 
+        static Expression AddSelectToEnunmerable(BuildMapState state, Expression enumerable, LambdaExpression mapper) 
         {
             var enumeratedType = ReflectionUtils.GetIEnumerableType(enumerable.Type);
             if (enumeratedType == null)
-                throw BuildMappingError(enumerable);
+                throw BuildMappingError(state.MappingPurpose, enumerable);
 
             return Expression.Call(
                 CodingConstants.GenericSelectMethod.MakeGenericMethod(enumeratedType, mapper.Body.Type),
@@ -471,7 +490,7 @@ namespace SqlDsl.Mapper
             UnarySqlOperator function,
             string toPrefix = null)
         {
-            var (properties, tables, _) = BuildMap(state, enumerable, MapType.AggregateFunction, toPrefix);
+            var (properties, tables, _) = BuildMapWithErrorHandling(state, enumerable, MapType.AggregateFunction, toPrefix);
 
             // if aggregate is on a table, change to aggregate row id
             properties = properties.Select(arg => arg.With( 
@@ -479,7 +498,7 @@ namespace SqlDsl.Mapper
                 fromParams: PropertyRepresentsTable(state, arg)
                     ? canSubstituteRowNumberForTable
                         ? arg.FromParams.MapParamName(x => $"{x}.{SqlStatementConstants.RowIdName}")
-                        : ThrowMappingError<IAccumulator<StringBasedElement>>($". Cannot apply {function.ToString()} function to table \"{enumerable}\".")
+                        : ThrowMappingError<IAccumulator<StringBasedElement>>(state.MappingPurpose, $". Cannot apply {function.ToString()} function to table \"{enumerable}\".")
                     : arg.FromParams,
                 mappedPropertyType: typeof(int)));
 
@@ -501,15 +520,15 @@ namespace SqlDsl.Mapper
         {
             if (mapper.Body == mapper.Parameters[0])
             {
-                throw new InvalidOperationException($"Mapping \"{mapper}\" is not supported.");
+                throw BuildMappingError(state.MappingPurpose, mapper);
             }
 
             TryAddSelectStatementParameterToProperty(state, enumerable, mapper.Parameters[0]);
 
             (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool) innerMap;
-            var outerMap = BuildMap(state, enumerable, MapType.Select, toPrefix);
+            var outerMap = BuildMapWithErrorHandling(state, enumerable, MapType.Select, toPrefix);
             using (state.SwitchContext(mapper.Parameters[0]))
-                innerMap = BuildMap(state, mapper.Body, MapType.ContextSwitch);
+                innerMap = BuildMapWithErrorHandling(state, mapper.Body, MapType.ContextSwitch);
 
             var (isSuccess, name) = CompileMemberName(enumerable);
             var newTableMap = isSuccess
@@ -518,7 +537,7 @@ namespace SqlDsl.Mapper
 
             var outerMapProperties  = outerMap.properties.ToArray();
             if (outerMapProperties.Length != 1 || !outerMapProperties[0].FromParams.HasOneItemOnly)
-                throw new InvalidOperationException($"Mapping from \"{enumerable}\" is not supported.");
+                throw BuildMappingError(state.MappingPurpose, enumerable);
 
             return (
                 innerMap.properties
@@ -546,15 +565,17 @@ namespace SqlDsl.Mapper
         /// <summary>
         /// Build a condition for a new list expression
         /// </summary>
-        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForNewList(BuildMapState state, ListInitExpression expr, string toPrefix) => 
-            BuildMapForNewArray(state, expr.Initializers.Select(GetFirstListAddParam), toPrefix, expr.Type);
-
-        static Expression GetFirstListAddParam(ElementInit i)
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForNewList(BuildMapState state, ListInitExpression expr, string toPrefix)
         {
-            if (i.Arguments.Count != 1)
-                throw new InvalidOperationException("Invalid list initializer.");
-            
-            return i.Arguments[0];
+            return BuildMapForNewArray(state, expr.Initializers.Select(GetFirstListAddParam), toPrefix, expr.Type);
+
+            Expression GetFirstListAddParam(ElementInit i)
+            {
+                if (i.Arguments.Count != 1)
+                    throw BuildMappingError(state.MappingPurpose, "Invalid list initializer.");
+                
+                return i.Arguments[0];
+            }
         }
 
         /// <summary>
@@ -571,7 +592,7 @@ namespace SqlDsl.Mapper
                 return (Enumerable.Empty<StringBasedMappedProperty>(), Enumerable.Empty<MappedTable>());
 
             return elements
-                .Select(e => BuildMap(state, e, MapType.Other, null))
+                .Select(e => BuildMapWithErrorHandling(state, e, MapType.Other, null))
                 .Aggregate(Combine)
                 .RemoveLastT();
 
@@ -582,7 +603,7 @@ namespace SqlDsl.Mapper
                 var xProps = x.properties.ToArray();
                 var yProps = y.properties.ToArray();
                 if (xProps.Length != 1 || yProps.Length != 1)
-                    throw new InvalidOperationException($"Unsupported mapping expression \"{elements.JoinString(", ")}\".");
+                    throw BuildMappingError(state.MappingPurpose, $"Unsupported mapping expression \"{elements.JoinString(", ")}\".");
 
                 var prop = xProps[0].FromParams.Combine(yProps[0].FromParams, BinarySqlOperator.Comma);
                 return (
@@ -667,11 +688,11 @@ namespace SqlDsl.Mapper
             }
         }
 
-        static InvalidOperationException BuildMappingError(Expression mapping) => BuildMappingError($" \"{mapping}\".");
+        static SqlBuilderException BuildMappingError(MappingPurpose purpose, Expression expr) => new SqlBuilderException(purpose, expr);
 
-        static InvalidOperationException BuildMappingError(string message) => new InvalidOperationException($"Unsupported mapping expression{message}.");
+        static SqlBuilderException BuildMappingError(MappingPurpose purpose, string message) => new SqlBuilderException(purpose, message);
 
-        static T ThrowMappingError<T>(string message) => throw BuildMappingError(message);
+        static T ThrowMappingError<T>(MappingPurpose purpose, string message) => throw BuildMappingError(purpose, message);
 
         static (bool isSuccess, string name) CompileMemberName(Expression expr)
         {
