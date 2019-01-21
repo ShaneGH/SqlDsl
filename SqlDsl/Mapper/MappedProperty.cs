@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using SqlDsl.SqlBuilders;
+using SqlDsl.SqlExpressions;
 using SqlDsl.Utils;
 using SqlDsl.Utils.Diagnostics;
 
@@ -16,7 +17,7 @@ namespace SqlDsl.Mapper
         public readonly bool LockMappingContext;
 
         public StringBasedMappedProperty(
-            IAccumulator<StringBasedElement> fromParams, 
+            ISqlExpression<StringBasedElement> fromParams, 
             string to, 
             Type mappedPropertyType, 
             string mappingContext, 
@@ -38,7 +39,7 @@ namespace SqlDsl.Mapper
             ConstructorInfo[] constructorArgs = null, 
             string aggregatedToTable = null)
 
-            : this (new Accumulator<StringBasedElement>(
+            : this (new SqlExpression<StringBasedElement>(
                 new Accumulator<StringBasedElement, BinarySqlOperator>(
                     new StringBasedElement(fromParamRoot, from, aggregatedToTable))), to, mappedPropertyType, mappingContext, lockMappingContext, constructorArgs)
         {
@@ -59,7 +60,7 @@ namespace SqlDsl.Mapper
         private StringBasedMappedProperty With(
             string mappingContext,
             bool lockMappingContext,
-            IAccumulator<StringBasedElement> fromParams = null, 
+            ISqlExpression<StringBasedElement> fromParams = null, 
             string to = null, 
             Type mappedPropertyType = null,
             ConstructorInfo[] constructorArgs = null)
@@ -79,7 +80,7 @@ namespace SqlDsl.Mapper
         public StringBasedMappedProperty WithLock(
             string mappingContext,
             bool lockMappingContext = true,
-            IAccumulator<StringBasedElement> fromParams = null, 
+            ISqlExpression<StringBasedElement> fromParams = null, 
             string to = null, 
             Type mappedPropertyType = null,
             ConstructorInfo[] constructorArgs = null)
@@ -92,7 +93,7 @@ namespace SqlDsl.Mapper
         /// </summary>
         public StringBasedMappedProperty With(
             string mappingContext,
-            IAccumulator<StringBasedElement> fromParams = null, 
+            ISqlExpression<StringBasedElement> fromParams = null, 
             string to = null, 
             Type mappedPropertyType = null,
             ConstructorInfo[] constructorArgs = null)
@@ -105,7 +106,7 @@ namespace SqlDsl.Mapper
     {
         public readonly IQueryTable MappingContext;
 
-        public QueryElementBasedMappedProperty(IAccumulator<SelectColumnBasedElement> fromParams, string to, Type mappedPropertyType, IQueryTable mappingContext, ConstructorInfo[] constructorArgs = null)
+        public QueryElementBasedMappedProperty(ISqlExpression<SelectColumnBasedElement> fromParams, string to, Type mappedPropertyType, IQueryTable mappingContext, ConstructorInfo[] constructorArgs = null)
             : base(fromParams, to, mappedPropertyType, constructorArgs)
         {
             MappingContext = mappingContext;
@@ -120,9 +121,9 @@ namespace SqlDsl.Mapper
         public readonly Type MappedPropertyType;
         public readonly ConstructorInfo[] PropertySegmentConstructors;
         public readonly string To;
-        public readonly IAccumulator<TElement> FromParams;
+        public readonly ISqlExpression<TElement> FromParams;
 
-        public MappedProperty(IAccumulator<TElement> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs)
+        public MappedProperty(ISqlExpression<TElement> fromParams, string to, Type mappedPropertyType, ConstructorInfo[] constructorArgs)
         {
             To = to;
             FromParams = fromParams;

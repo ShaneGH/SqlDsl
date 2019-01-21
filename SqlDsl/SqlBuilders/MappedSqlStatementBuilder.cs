@@ -1,6 +1,7 @@
 using SqlDsl.Mapper;
 using SqlDsl.Query;
 using SqlDsl.SqlBuilders.SqlStatementParts;
+using SqlDsl.SqlExpressions;
 using SqlDsl.Utils;
 using SqlDsl.Utils.EqualityComparers;
 using System;

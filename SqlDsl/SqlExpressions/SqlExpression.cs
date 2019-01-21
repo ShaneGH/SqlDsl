@@ -6,10 +6,10 @@ using System.Text;
 using SqlDsl.Utils;
 using SqlDsl.Utils.Diagnostics;
 
-namespace SqlDsl.Mapper
+namespace SqlDsl.SqlExpressions
 {
     [DebuggerDisplay("{GetDebuggerDisplay()}")]
-    class Accumulator<TElement>: IAccumulator<TElement>, IDebuggerDisplay
+    class SqlExpression<TElement>: ISqlExpression<TElement>, IDebuggerDisplay
     {   
         public bool HasOneItemOnly => !Inner.Next.Any();
         
@@ -21,7 +21,7 @@ namespace SqlDsl.Mapper
 
         readonly Accumulator<TElement, BinarySqlOperator> Inner;
         
-        public Accumulator(Accumulator<TElement, BinarySqlOperator> acc)
+        public SqlExpression(Accumulator<TElement, BinarySqlOperator> acc)
         {
             Inner = acc;
         }
@@ -37,17 +37,17 @@ namespace SqlDsl.Mapper
             return GetEnumerable().Select(x => (isAggregated, x));
         }
 
-        public IAccumulator<T> MapParam<T>(Func<TElement, T> map)
+        public ISqlExpression<T> MapParam<T>(Func<TElement, T> map)
         {
-            return new Accumulator<T>(Inner.Map(map));
+            return new SqlExpression<T>(Inner.Map(map));
         }
 
-        public IAccumulator<TElement> Combine(IAccumulator<TElement> x, BinarySqlOperator combiner)
+        public ISqlExpression<TElement> Combine(ISqlExpression<TElement> x, BinarySqlOperator combiner)
         {
-            return new BinaryAccumulator<TElement>(this, x, combiner);
+            return new BinarySqlExpression<TElement>(this, x, combiner);
         }
 
-        public IEnumerable<T> GetEnumerable<T>(Func<IAccumulator<TElement>, TElement, T> mapper)
+        public IEnumerable<T> GetEnumerable<T>(Func<ISqlExpression<TElement>, TElement, T> mapper)
         {
             return GetEnumerable().Select(x => mapper(this, x));
         }

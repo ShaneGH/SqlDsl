@@ -1,7 +1,7 @@
 using System;
 using System.Linq.Expressions;
 
-namespace SqlDsl.Mapper
+namespace SqlDsl.SqlExpressions
 {
     public enum BinarySqlOperator
     {

@@ -2,18 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SqlDsl.Mapper
+namespace SqlDsl.SqlExpressions
 {
-    class SimpleCaseAccumulator<T> : IAccumulator<T>
+    class SimpleCaseSqlExpression<T> : ISqlExpression<T>
     {
-        public readonly IAccumulator<T> Subject;
-        public readonly (IAccumulator<T> when, IAccumulator<T> then)[] Cases;
-        public readonly IAccumulator<T> Else;
+        public readonly ISqlExpression<T> Subject;
+        public readonly (ISqlExpression<T> when, ISqlExpression<T> then)[] Cases;
+        public readonly ISqlExpression<T> Else;
 
-        public SimpleCaseAccumulator(
-            IAccumulator<T> subject,
-            IEnumerable<(IAccumulator<T> when, IAccumulator<T> then)> cases,
-            IAccumulator<T> @else)
+        public SimpleCaseSqlExpression(
+            ISqlExpression<T> subject,
+            IEnumerable<(ISqlExpression<T> when, ISqlExpression<T> then)> cases,
+            ISqlExpression<T> @else)
         {
             Subject = subject ?? throw new ArgumentNullException(nameof(subject));
             Cases = cases?.ToArray() ?? throw new ArgumentNullException(nameof(cases));
@@ -26,8 +26,8 @@ namespace SqlDsl.Mapper
 
         public AggregationType AggregationType => GetAggregationType();
 
-        public IAccumulator<T> Combine(IAccumulator<T> x, BinarySqlOperator combiner) =>
-            new BinaryAccumulator<T>(this, x, combiner);
+        public ISqlExpression<T> Combine(ISqlExpression<T> x, BinarySqlOperator combiner) =>
+            new BinarySqlExpression<T>(this, x, combiner);
 
         public IEnumerable<(bool isAggregated, T element)> GetAggregatedEnumerable() => Cases
             .SelectMany(c => new[] { c.when, c.then })
@@ -41,9 +41,9 @@ namespace SqlDsl.Mapper
             .Prepend(Subject)
             .SelectMany(x => x.GetEnumerable());
 
-        public IAccumulator<U> MapParam<U>(Func<T, U> map)
+        public ISqlExpression<U> MapParam<U>(Func<T, U> map)
         {
-            return new SimpleCaseAccumulator<U>(
+            return new SimpleCaseSqlExpression<U>(
                 Subject.MapParam(map),
                 Cases.Select(c => (c.when.MapParam(map), c.then.MapParam(map))),
                 Else.MapParam(map));

@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using SqlDsl.Schema;
 using SqlDsl.SqlBuilders;
+using SqlDsl.SqlExpressions;
 using SqlDsl.Utils;
 
 namespace SqlDsl.Mapper
@@ -361,7 +362,7 @@ namespace SqlDsl.Mapper
 
             return (
                 new StringBasedMappedProperty(
-                    new Accumulator<StringBasedElement>(
+                    new SqlExpression<StringBasedElement>(
                         new Accumulator<StringBasedElement, BinarySqlOperator>(
                             new StringBasedElement(null, rowNumber, state.PrimarySelectTableAlias))),
                     toPrefix,
@@ -506,7 +507,7 @@ namespace SqlDsl.Mapper
                 fromParams: PropertyRepresentsTable(state, arg)
                     ? canSubstituteRowNumberForTable
                         ? arg.FromParams.MapParamName(x => $"{x}.{SqlStatementConstants.RowIdName}")
-                        : ThrowMappingError<IAccumulator<StringBasedElement>>(state.MappingPurpose, $". Cannot apply {function.ToString()} function to table \"{enumerable}\".")
+                        : ThrowMappingError<ISqlExpression<StringBasedElement>>(state.MappingPurpose, $". Cannot apply {function.ToString()} function to table \"{enumerable}\".")
                     : arg.FromParams,
                 mappedPropertyType: typeof(int)));
 
@@ -520,7 +521,7 @@ namespace SqlDsl.Mapper
             {
                 return property.With( 
                     state.MappingContext.propertyName,
-                    fromParams: new UnaryAccumulator<StringBasedElement>(property.FromParams, function));
+                    fromParams: new UnarySqlExpression<StringBasedElement>(property.FromParams, function));
             }
         }
 

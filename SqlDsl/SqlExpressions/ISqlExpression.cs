@@ -1,20 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SqlDsl.Mapper;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 
-namespace SqlDsl.Mapper
+namespace SqlDsl.SqlExpressions
 {
-    interface IAccumulator<TElement>
+    interface ISqlExpression<TElement>
     {
         bool HasOneItemOnly { get; }
         TElement First  { get; }
         AggregationType AggregationType { get; }
         IEnumerable<TElement> GetEnumerable();
         IEnumerable<(bool isAggregated, TElement element)> GetAggregatedEnumerable();
-        IAccumulator<T> MapParam<T>(Func<TElement, T> map);
-        IAccumulator<TElement> Combine(IAccumulator<TElement> x, BinarySqlOperator combiner);
+        ISqlExpression<T> MapParam<T>(Func<TElement, T> map);
+        ISqlExpression<TElement> Combine(ISqlExpression<TElement> x, BinarySqlOperator combiner);
     }
 
     enum AggregationType
@@ -24,7 +25,7 @@ namespace SqlDsl.Mapper
         ContainsAggregatedPart
     }
 
-    static class IAccumulatorUtils
+    static class ISqlExpressionUtils
     {
         public static Func<StringBasedElement, (string param, string aggregatedToTable)> AddRoot(BuildMapState state)
         {
@@ -52,7 +53,7 @@ namespace SqlDsl.Mapper
 
         public static (string param, string aggregatedToTable) AddRoot(this StringBasedElement value, BuildMapState state) => AddRoot(state)(value);
 
-        public static IAccumulator<SelectColumnBasedElement> Convert(this IAccumulator<StringBasedElement> acc, BuildMapState state)
+        public static ISqlExpression<SelectColumnBasedElement> Convert(this ISqlExpression<StringBasedElement> acc, BuildMapState state)
         {
             IQueryTable primaryTable = null;
             return acc.MapParam(Map);
@@ -98,38 +99,38 @@ namespace SqlDsl.Mapper
                 fullName.Substring(0, i);
         }
 
-        public static IAccumulator<StringBasedElement> MapParamName(this IAccumulator<StringBasedElement> acc, Func<string, string> map)
+        public static ISqlExpression<StringBasedElement> MapParamName(this ISqlExpression<StringBasedElement> acc, Func<string, string> map)
         {
             return acc.MapParam(_Map);
             StringBasedElement _Map(StringBasedElement el) => new StringBasedElement(el.ParamRoot, map(el.Param), el.AggregatedToTable);
         }
 
-        public static string BuildFromString<TElement>(this IAccumulator<TElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias = null)
+        public static string BuildFromString<TElement>(this ISqlExpression<TElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias = null)
         {
             switch (acc)
             {
-                case Accumulator<StringBasedElement> a:
+                case SqlExpression<StringBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias, wrappedQueryAlias == null);
-                case BinaryAccumulator<StringBasedElement> a:
+                case BinarySqlExpression<StringBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
-                case UnaryAccumulator<StringBasedElement> a:
+                case UnarySqlExpression<StringBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
-                case CaseAccumulator<StringBasedElement> a:
+                case CaseSqlExpression<StringBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
-                case SimpleCaseAccumulator<StringBasedElement> a:
+                case SimpleCaseSqlExpression<StringBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
-                case Accumulator<SelectColumnBasedElement> a:
+                case SqlExpression<SelectColumnBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
-                case BinaryAccumulator<SelectColumnBasedElement> a:
+                case BinarySqlExpression<SelectColumnBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
-                case UnaryAccumulator<SelectColumnBasedElement> a:
+                case UnarySqlExpression<SelectColumnBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
-                case CaseAccumulator<SelectColumnBasedElement> a:
+                case CaseSqlExpression<SelectColumnBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
-                case SimpleCaseAccumulator<SelectColumnBasedElement> a:
+                case SimpleCaseSqlExpression<SelectColumnBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
                 default:
-                    throw new NotSupportedException($"IAccumulator<{typeof(TElement)}>");
+                    throw new NotSupportedException($"ISqlExpression<{typeof(TElement)}>");
             }
         }
 
@@ -180,7 +181,7 @@ namespace SqlDsl.Mapper
                     return sqlFragmentBuilder.BuildLessThanEqualToCondition(l, r);
 
                 default:
-                    throw new InvalidOperationException($"Cannot build accumulator for expression type {combine}.");
+                    throw new InvalidOperationException($"Cannot build sql expression for expression type {combine}.");
             }
         }
 
@@ -200,13 +201,13 @@ namespace SqlDsl.Mapper
                     return Func(sqlFragmentBuilder.SumFunctionName);
 
                 default:
-                    throw new InvalidOperationException($"Cannot build accumulator for expression type {condition}.");
+                    throw new InvalidOperationException($"Cannot build sql expression for expression type {condition}.");
             }
 
             string Func(string functionName) => $"{functionName}({input})";
         }
 
-        private static string _BuildFromString(Accumulator<StringBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias, bool tableIsFirstParamPart)
+        private static string _BuildFromString(SqlExpression<StringBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias, bool tableIsFirstParamPart)
         {
             if (tableIsFirstParamPart && wrappedQueryAlias != null)
                 throw new InvalidOperationException($"You cannot specify {nameof(wrappedQueryAlias)} and {nameof(tableIsFirstParamPart)}");
@@ -242,7 +243,7 @@ namespace SqlDsl.Mapper
             }
         }
 
-        private static string _BuildFromString(CaseAccumulator<StringBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        private static string _BuildFromString(CaseSqlExpression<StringBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
         {
             var cases = wrappedQueryAlias != null 
                 ? acc.Cases.Select(c => (
@@ -259,7 +260,7 @@ namespace SqlDsl.Mapper
             return $"CASE {cases.Select(c => $"WHEN {c.when} THEN {c.then}").JoinString(" ")} ELSE {@else} END";
         }
 
-        private static string _BuildFromString(SimpleCaseAccumulator<StringBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        private static string _BuildFromString(SimpleCaseSqlExpression<StringBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
         {
             var subject = wrappedQueryAlias != null 
                 ? acc.Subject.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)
@@ -280,7 +281,7 @@ namespace SqlDsl.Mapper
             return $"CASE {subject} {cases.Select(c => $"WHEN {c.when} THEN {c.then}").JoinString(" ")} ELSE {@else} END";
         }
 
-        private static string _BuildFromString(CaseAccumulator<SelectColumnBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        private static string _BuildFromString(CaseSqlExpression<SelectColumnBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
         {
             var cases = wrappedQueryAlias != null 
                 ? acc.Cases.Select(c => (
@@ -297,7 +298,7 @@ namespace SqlDsl.Mapper
             return $"CASE {cases.Select(c => $"WHEN {c.when} THEN {c.then}").JoinString(" ")} ELSE {@else} END";
         }
 
-        private static string _BuildFromString(SimpleCaseAccumulator<SelectColumnBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        private static string _BuildFromString(SimpleCaseSqlExpression<SelectColumnBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
         {
             var subject = wrappedQueryAlias != null 
                 ? acc.Subject.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)
@@ -318,7 +319,7 @@ namespace SqlDsl.Mapper
             return $"CASE {subject} {cases.Select(c => $"WHEN {c.when} THEN {c.then}").JoinString(" ")} ELSE {@else} END";
         }
 
-        private static string _BuildFromString(Accumulator<SelectColumnBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        private static string _BuildFromString(SqlExpression<SelectColumnBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
         {
             return acc.Next.Aggregate(
                 BuildColumn(acc.First),
@@ -339,7 +340,7 @@ namespace SqlDsl.Mapper
             }
         }
         
-        static string _BuildFromString<TElement>(BinaryAccumulator<TElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        static string _BuildFromString<TElement>(BinarySqlExpression<TElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
         {
             var first = wrappedQueryAlias != null 
                 ? acc.First.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)
@@ -359,7 +360,7 @@ namespace SqlDsl.Mapper
                 acc.Next.Item2);
         }
         
-        static string _BuildFromString<TElement>(UnaryAccumulator<TElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        static string _BuildFromString<TElement>(UnarySqlExpression<TElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
         {
             var first = wrappedQueryAlias != null 
                 ? acc.First.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)

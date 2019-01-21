@@ -5,16 +5,16 @@ using System.Linq;
 using SqlDsl.Utils;
 using SqlDsl.Utils.Diagnostics;
 
-namespace SqlDsl.Mapper
+namespace SqlDsl.SqlExpressions
 {
     [DebuggerDisplay("{GetDebuggerDisplay()}")]
-    class UnaryAccumulator<TElement> : IAccumulator<TElement>,  IDebuggerDisplay
+    class UnarySqlExpression<TElement> : ISqlExpression<TElement>,  IDebuggerDisplay
     {
-        public readonly IAccumulator<TElement> First;
+        public readonly ISqlExpression<TElement> First;
         public readonly UnarySqlOperator Operator;
         public AggregationType AggregationType => GetAggregationType();
 
-        public UnaryAccumulator(IAccumulator<TElement> first, UnarySqlOperator op)
+        public UnarySqlExpression(ISqlExpression<TElement> first, UnarySqlOperator op)
         {
             First = first;
             Operator = op;
@@ -22,11 +22,11 @@ namespace SqlDsl.Mapper
 
         public bool HasOneItemOnly => First.HasOneItemOnly;
 
-        TElement IAccumulator<TElement>.First => First.First;
+        TElement ISqlExpression<TElement>.First => First.First;
 
-        public IAccumulator<TElement> Combine(IAccumulator<TElement> x, BinarySqlOperator combiner)
+        public ISqlExpression<TElement> Combine(ISqlExpression<TElement> x, BinarySqlOperator combiner)
         {
-            return new BinaryAccumulator<TElement>(this, x, combiner);
+            return new BinarySqlExpression<TElement>(this, x, combiner);
         }
 
         public IEnumerable<TElement> GetEnumerable()
@@ -43,10 +43,10 @@ namespace SqlDsl.Mapper
                 .Select(x => (x.isAggregated || isAggregated, x.element));
         }
 
-        public IAccumulator<T> MapParam<T>(Func<TElement, T> map)
+        public ISqlExpression<T> MapParam<T>(Func<TElement, T> map)
         {
             var first = First.MapParam(map);
-            return new UnaryAccumulator<T>(first, Operator);
+            return new UnarySqlExpression<T>(first, Operator);
         }
 
         public AggregationType GetAggregationType()

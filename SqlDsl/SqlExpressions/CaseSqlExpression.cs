@@ -2,16 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SqlDsl.Mapper
+namespace SqlDsl.SqlExpressions
 {
-    class CaseAccumulator<T> : IAccumulator<T>
+    class CaseSqlExpression<T> : ISqlExpression<T>
     {
-        public readonly (IAccumulator<T> when, IAccumulator<T> then)[] Cases;
-        public readonly IAccumulator<T> Else;
+        public readonly (ISqlExpression<T> when, ISqlExpression<T> then)[] Cases;
+        public readonly ISqlExpression<T> Else;
 
-        public CaseAccumulator(
-            IEnumerable<(IAccumulator<T> when, IAccumulator<T> then)> cases,
-            IAccumulator<T> @else)
+        public CaseSqlExpression(
+            IEnumerable<(ISqlExpression<T> when, ISqlExpression<T> then)> cases,
+            ISqlExpression<T> @else)
         {
             Cases = cases?.ToArray() ?? throw new ArgumentNullException(nameof(cases));
             Else = @else ?? throw new ArgumentNullException(nameof(@else));
@@ -23,8 +23,8 @@ namespace SqlDsl.Mapper
 
         public AggregationType AggregationType => GetAggregationType();
 
-        public IAccumulator<T> Combine(IAccumulator<T> x, BinarySqlOperator combiner) =>
-            new BinaryAccumulator<T>(this, x, combiner);
+        public ISqlExpression<T> Combine(ISqlExpression<T> x, BinarySqlOperator combiner) =>
+            new BinarySqlExpression<T>(this, x, combiner);
 
         public IEnumerable<(bool isAggregated, T element)> GetAggregatedEnumerable() => Cases
             .SelectMany(c => new[] { c.when, c.then })
@@ -36,9 +36,9 @@ namespace SqlDsl.Mapper
             .Append(Else)
             .SelectMany(x => x.GetEnumerable());
 
-        public IAccumulator<U> MapParam<U>(Func<T, U> map)
+        public ISqlExpression<U> MapParam<U>(Func<T, U> map)
         {
-            return new CaseAccumulator<U>(
+            return new CaseSqlExpression<U>(
                 Cases.Select(c => (c.when.MapParam(map), c.then.MapParam(map))),
                 Else.MapParam(map));
         }

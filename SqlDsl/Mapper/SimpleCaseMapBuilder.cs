@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using SqlDsl.Dsl;
+using SqlDsl.SqlExpressions;
 using SqlDsl.Utils;
 using static SqlDsl.Mapper.ComplexMapBuilder;
 
@@ -34,7 +35,7 @@ namespace SqlDsl.Mapper
             var (subject, cases, tables2) = GetCases(state, caseExpression.Object, MapType.Other, toPrefix);
 
             var prop = new StringBasedMappedProperty(
-                new SimpleCaseAccumulator<StringBasedElement>(
+                new SimpleCaseSqlExpression<StringBasedElement>(
                     subject.FromParams,
                     cases.Select(c => (c.when.FromParams, c.then.FromParams)), 
                     el[0].FromParams), 

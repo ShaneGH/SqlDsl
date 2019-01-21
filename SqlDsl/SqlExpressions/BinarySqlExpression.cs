@@ -5,16 +5,16 @@ using System.Linq;
 using SqlDsl.Utils;
 using SqlDsl.Utils.Diagnostics;
 
-namespace SqlDsl.Mapper
+namespace SqlDsl.SqlExpressions
 {
     [DebuggerDisplay("{GetDebuggerDisplay()}")]
-    class BinaryAccumulator<TElement> : IAccumulator<TElement>, IDebuggerDisplay
+    class BinarySqlExpression<TElement> : ISqlExpression<TElement>, IDebuggerDisplay
     {
-        public readonly IAccumulator<TElement> First;
-        public readonly (IAccumulator<TElement>, BinarySqlOperator) Next;
+        public readonly ISqlExpression<TElement> First;
+        public readonly (ISqlExpression<TElement>, BinarySqlOperator) Next;
         public AggregationType AggregationType => GetAggregationType();
 
-        public BinaryAccumulator(IAccumulator<TElement> first, IAccumulator<TElement> next, BinarySqlOperator combiner)
+        public BinarySqlExpression(ISqlExpression<TElement> first, ISqlExpression<TElement> next, BinarySqlOperator combiner)
         {
             First = first;
             Next = (next, combiner);
@@ -22,11 +22,11 @@ namespace SqlDsl.Mapper
 
         public bool HasOneItemOnly => false;
 
-        TElement IAccumulator<TElement>.First => First.First;
+        TElement ISqlExpression<TElement>.First => First.First;
 
-        public IAccumulator<TElement> Combine(IAccumulator<TElement> x, BinarySqlOperator combiner)
+        public ISqlExpression<TElement> Combine(ISqlExpression<TElement> x, BinarySqlOperator combiner)
         {
-            return new BinaryAccumulator<TElement>(this, x, combiner);
+            return new BinarySqlExpression<TElement>(this, x, combiner);
         }
 
         public IEnumerable<TElement> GetEnumerable()
@@ -46,7 +46,7 @@ namespace SqlDsl.Mapper
                 .Select(x => (x.isAggregated || isAggregated, x.element));
         }
 
-        public IAccumulator<T> MapParam<T>(Func<TElement, T> map)
+        public ISqlExpression<T> MapParam<T>(Func<TElement, T> map)
         {
             var first = First.MapParam(map);
             var second = Next.Item1.MapParam(map);
