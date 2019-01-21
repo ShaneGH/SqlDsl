@@ -26,7 +26,7 @@ namespace SqlDsl.Mapper
 
         public IAccumulator<TElement> Combine(IAccumulator<TElement> x, BinarySqlOperator combiner)
         {
-            return new BinaryAccumulator<TElement>(this, (x, combiner));
+            return new BinaryAccumulator<TElement>(this, x, combiner);
         }
 
         public IEnumerable<TElement> GetEnumerable()

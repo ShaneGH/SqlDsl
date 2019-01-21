@@ -109,16 +109,24 @@ namespace SqlDsl.Mapper
             switch (acc)
             {
                 case Accumulator<StringBasedElement> a:
-                    return BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias, wrappedQueryAlias == null);
+                    return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias, wrappedQueryAlias == null);
                 case BinaryAccumulator<StringBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
                 case UnaryAccumulator<StringBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
+                case CaseAccumulator<StringBasedElement> a:
+                    return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
+                case SimpleCaseAccumulator<StringBasedElement> a:
+                    return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
                 case Accumulator<SelectColumnBasedElement> a:
-                    return BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
+                    return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
                 case BinaryAccumulator<SelectColumnBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
                 case UnaryAccumulator<SelectColumnBasedElement> a:
+                    return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
+                case CaseAccumulator<SelectColumnBasedElement> a:
+                    return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
+                case SimpleCaseAccumulator<SelectColumnBasedElement> a:
                     return _BuildFromString(a, state, sqlFragmentBuilder, wrappedQueryAlias);
                 default:
                     throw new NotSupportedException($"IAccumulator<{typeof(TElement)}>");
@@ -198,7 +206,7 @@ namespace SqlDsl.Mapper
             string Func(string functionName) => $"{functionName}({input})";
         }
 
-        private static string BuildFromString(Accumulator<StringBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias, bool tableIsFirstParamPart)
+        private static string _BuildFromString(Accumulator<StringBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias, bool tableIsFirstParamPart)
         {
             if (tableIsFirstParamPart && wrappedQueryAlias != null)
                 throw new InvalidOperationException($"You cannot specify {nameof(wrappedQueryAlias)} and {nameof(tableIsFirstParamPart)}");
@@ -234,7 +242,83 @@ namespace SqlDsl.Mapper
             }
         }
 
-        private static string BuildFromString(Accumulator<SelectColumnBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        private static string _BuildFromString(CaseAccumulator<StringBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        {
+            var cases = wrappedQueryAlias != null 
+                ? acc.Cases.Select(c => (
+                    when: c.when.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias),
+                    then: c.then.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)))
+                : acc.Cases.Select(c => (
+                    when: c.when.BuildFromString(state, sqlFragmentBuilder),
+                    then: c.then.BuildFromString(state, sqlFragmentBuilder)));
+
+            var @else = wrappedQueryAlias != null 
+                ? acc.Else.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)
+                : acc.Else.BuildFromString(state, sqlFragmentBuilder);
+
+            return $"CASE {cases.Select(c => $"WHEN {c.when} THEN {c.then}").JoinString(" ")} ELSE {@else} END";
+        }
+
+        private static string _BuildFromString(SimpleCaseAccumulator<StringBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        {
+            var subject = wrappedQueryAlias != null 
+                ? acc.Subject.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)
+                : acc.Subject.BuildFromString(state, sqlFragmentBuilder);
+
+            var cases = wrappedQueryAlias != null 
+                ? acc.Cases.Select(c => (
+                    when: c.when.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias),
+                    then: c.then.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)))
+                : acc.Cases.Select(c => (
+                    when: c.when.BuildFromString(state, sqlFragmentBuilder),
+                    then: c.then.BuildFromString(state, sqlFragmentBuilder)));
+
+            var @else = wrappedQueryAlias != null 
+                ? acc.Else.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)
+                : acc.Else.BuildFromString(state, sqlFragmentBuilder);
+
+            return $"CASE {subject} {cases.Select(c => $"WHEN {c.when} THEN {c.then}").JoinString(" ")} ELSE {@else} END";
+        }
+
+        private static string _BuildFromString(CaseAccumulator<SelectColumnBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        {
+            var cases = wrappedQueryAlias != null 
+                ? acc.Cases.Select(c => (
+                    when: c.when.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias),
+                    then: c.then.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)))
+                : acc.Cases.Select(c => (
+                    when: c.when.BuildFromString(state, sqlFragmentBuilder),
+                    then: c.then.BuildFromString(state, sqlFragmentBuilder)));
+
+            var @else = wrappedQueryAlias != null 
+                ? acc.Else.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)
+                : acc.Else.BuildFromString(state, sqlFragmentBuilder);
+
+            return $"CASE {cases.Select(c => $"WHEN {c.when} THEN {c.then}").JoinString(" ")} ELSE {@else} END";
+        }
+
+        private static string _BuildFromString(SimpleCaseAccumulator<SelectColumnBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
+        {
+            var subject = wrappedQueryAlias != null 
+                ? acc.Subject.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)
+                : acc.Subject.BuildFromString(state, sqlFragmentBuilder);
+
+            var cases = wrappedQueryAlias != null 
+                ? acc.Cases.Select(c => (
+                    when: c.when.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias),
+                    then: c.then.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)))
+                : acc.Cases.Select(c => (
+                    when: c.when.BuildFromString(state, sqlFragmentBuilder),
+                    then: c.then.BuildFromString(state, sqlFragmentBuilder)));
+
+            var @else = wrappedQueryAlias != null 
+                ? acc.Else.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)
+                : acc.Else.BuildFromString(state, sqlFragmentBuilder);
+
+            return $"CASE {subject} {cases.Select(c => $"WHEN {c.when} THEN {c.then}").JoinString(" ")} ELSE {@else} END";
+        }
+
+        private static string _BuildFromString(Accumulator<SelectColumnBasedElement> acc, BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias)
         {
             return acc.Next.Aggregate(
                 BuildColumn(acc.First),

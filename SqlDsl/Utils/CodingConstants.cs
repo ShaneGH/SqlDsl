@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using SqlDsl.Mapper;
 using SqlDsl.SqlBuilders;
 
 namespace SqlDsl.Utils
@@ -10,6 +11,11 @@ namespace SqlDsl.Utils
         public static readonly MethodInfo GenericSelectMethod = ReflectionUtils
             .GetMethod(() => new int[0].Select(x => x))
             .GetGenericMethodDefinition();
+
+        public class Messages
+        {
+            public const string MethodIsForExpression = "This method is not meant to be called. It should be used in expressions only";
+        }
         
         public class Empty
         {
@@ -22,6 +28,10 @@ namespace SqlDsl.Utils
             public static readonly int[] Int = new int[0];
                 
             public static readonly IQueryTable[] IQueryTable = new IQueryTable[0];
+
+            internal static readonly MappedTable[] MappedTable = new MappedTable[0];
+
+            internal static readonly (StringBasedMappedProperty, StringBasedMappedProperty)[] Case = new (StringBasedMappedProperty, StringBasedMappedProperty)[0];
         }
         
         public class Null

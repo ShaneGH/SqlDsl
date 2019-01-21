@@ -14,10 +14,10 @@ namespace SqlDsl.Mapper
         public readonly (IAccumulator<TElement>, BinarySqlOperator) Next;
         public AggregationType AggregationType => GetAggregationType();
 
-        public BinaryAccumulator(IAccumulator<TElement> first, (IAccumulator<TElement>, BinarySqlOperator) next)
+        public BinaryAccumulator(IAccumulator<TElement> first, IAccumulator<TElement> next, BinarySqlOperator combiner)
         {
             First = first;
-            Next = next;
+            Next = (next, combiner);
         }
 
         public bool HasOneItemOnly => false;
@@ -26,7 +26,7 @@ namespace SqlDsl.Mapper
 
         public IAccumulator<TElement> Combine(IAccumulator<TElement> x, BinarySqlOperator combiner)
         {
-            return new BinaryAccumulator<TElement>(this, (x, combiner));
+            return new BinaryAccumulator<TElement>(this, x, combiner);
         }
 
         public IEnumerable<TElement> GetEnumerable()

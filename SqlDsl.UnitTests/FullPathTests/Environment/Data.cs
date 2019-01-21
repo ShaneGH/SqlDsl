@@ -256,7 +256,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         public readonly Tag UnusedTag = new Tag
         {
             Id = 12,
-            Name = "Ball sport"
+            Name = "Unused tag"
         };
 
         public IEnumerator<Tag> GetEnumerator() => (new [] { Sport, BallSport, UnusedTag } as IEnumerable<Tag>).GetEnumerator();

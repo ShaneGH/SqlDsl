@@ -33,7 +33,7 @@ namespace SqlDsl.Dsl
         /// However, you cannot use values from a table JOINED to the current mapping context. 
         /// You can only use values JOINED from the current mapping context.
         /// </summary>
-        T Else(bool condition);
+        T Else(T value);
     }
 
     /// <summary>

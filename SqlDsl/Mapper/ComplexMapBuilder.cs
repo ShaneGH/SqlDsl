@@ -176,6 +176,14 @@ namespace SqlDsl.Mapper
                     if (isSelect)
                         return BuildMapForSelect(state, enumerableS, nextMap, mapper, toPrefix).AddT(false);
 
+                    var isCase = CaseMapBuilder.IsCase(exprMethod);
+                    if (isCase)
+                        return CaseMapBuilder.BuildMap(state, exprMethod, nextMap, toPrefix).AddT(false);
+
+                    var isSimpleCase = SimpleCaseMapBuilder.IsCase(exprMethod);
+                    if (isSimpleCase)
+                        return SimpleCaseMapBuilder.BuildMap(state, exprMethod, nextMap, toPrefix).AddT(false);
+
                     break;
 
                 default:
