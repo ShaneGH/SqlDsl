@@ -35,6 +35,7 @@ namespace SqlDsl.Dsl
         /// Execute the compiled query
         /// </summary>
         List<TResult> ToList(IExecutor executor, ILogger logger = null);
+        
         /// <summary>
         /// Execute the compiled query
         /// </summary>

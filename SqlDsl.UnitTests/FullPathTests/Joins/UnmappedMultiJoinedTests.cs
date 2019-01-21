@@ -52,7 +52,9 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             CollectionAssert.AreEquivalent(
                 new []{ Data.Purchases.JohnPurchasedHimselfTennis }, 
                 data[0].ThePurchasesByClass);
-            CollectionAssert.AreEquivalent(Data.Tags, data[0].TheTags);
+            CollectionAssert.AreEquivalent(
+                Data.Tags.Where(t => t.Id != Data.Tags.UnusedTag.Id), 
+                data[0].TheTags);
         }
 
         [Test]
@@ -79,7 +81,9 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             CollectionAssert.AreEquivalent(
                 new []{ Data.Purchases.MaryPurchasedHerselfTennis1, Data.Purchases.MaryPurchasedHerselfTennis2 }, 
                 data[0].ThePurchasesByClass);
-            CollectionAssert.AreEquivalent(Data.Tags, data[0].TheTags);
+            CollectionAssert.AreEquivalent(
+                Data.Tags.Where(t => t.Id != Data.Tags.UnusedTag.Id), 
+                data[0].TheTags);
         }
     }
 }

@@ -252,8 +252,14 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             Id = 6,
             Name = "Ball sport"
         };
+        
+        public readonly Tag UnusedTag = new Tag
+        {
+            Id = 12,
+            Name = "Ball sport"
+        };
 
-        public IEnumerator<Tag> GetEnumerator() => (new [] { Sport, BallSport } as IEnumerable<Tag>).GetEnumerator();
+        public IEnumerator<Tag> GetEnumerator() => (new [] { Sport, BallSport, UnusedTag } as IEnumerable<Tag>).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
