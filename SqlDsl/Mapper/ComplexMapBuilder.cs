@@ -362,7 +362,7 @@ namespace SqlDsl.Mapper
 
             return (
                 new StringBasedMappedProperty(
-                    new SqlExpression<StringBasedElement>(
+                    new StringBasedSqlExpression(
                         new Accumulator<StringBasedElement, BinarySqlOperator>(
                             new StringBasedElement(null, rowNumber, state.PrimarySelectTableAlias))),
                     toPrefix,

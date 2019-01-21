@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using SqlDsl.Mapper;
+using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 using SqlDsl.Utils.Diagnostics;
 
@@ -66,6 +68,21 @@ namespace SqlDsl.SqlExpressions
         public string GetDebuggerDisplay()
         {
             return $"({First.GetDebuggerDisplay()} {Next.Item2.ToString()} {Next.Item1.GetDebuggerDisplay()})";
+        }
+
+        public string BuildFromString(BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias = null)
+        {
+            var first = First.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias);
+            var second = Next.Item1.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias);
+
+            if (!First.HasOneItemOnly) first = $"({first})";
+            if (!Next.Item1.HasOneItemOnly) second = $"({second})";
+
+            return ISqlExpressionUtils.Combine(
+                sqlFragmentBuilder,
+                first, 
+                second,
+                Next.Item2);
         }
     }
 }

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using SqlDsl.Mapper;
+using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 using SqlDsl.Utils.Diagnostics;
 
@@ -67,6 +69,39 @@ namespace SqlDsl.SqlExpressions
         public string GetDebuggerDisplay()
         {
             return $"{Operator} ({First.GetDebuggerDisplay()})";
+        }
+
+        public string BuildFromString(BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias = null)
+        {
+            var first = First.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias);
+
+            return AddUnaryCondition(
+                sqlFragmentBuilder,
+                first, 
+                Operator,
+                First.HasOneItemOnly);
+        }
+
+        static string AddUnaryCondition(ISqlSyntax sqlFragmentBuilder, string input, UnarySqlOperator condition, bool hasOneItemOnly)
+        {
+            switch (condition)
+            {
+                case UnarySqlOperator.AverageFunction:
+                    return Func(sqlFragmentBuilder.AverageFunctionName);
+                case UnarySqlOperator.CountFunction:
+                    return Func(sqlFragmentBuilder.CountFunctionName);
+                case UnarySqlOperator.MaxFunction:
+                    return Func(sqlFragmentBuilder.MaxFunctionName);
+                case UnarySqlOperator.MinFunction:
+                    return Func(sqlFragmentBuilder.MinFunctionName);
+                case UnarySqlOperator.SumFunction:
+                    return Func(sqlFragmentBuilder.SumFunctionName);
+
+                default:
+                    throw new InvalidOperationException($"Cannot build sql expression for expression type {condition}.");
+            }
+
+            string Func(string functionName) => $"{functionName}({input})";
         }
     }
 }

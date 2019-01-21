@@ -39,7 +39,7 @@ namespace SqlDsl.Mapper
             ConstructorInfo[] constructorArgs = null, 
             string aggregatedToTable = null)
 
-            : this (new SqlExpression<StringBasedElement>(
+            : this (new StringBasedSqlExpression(
                 new Accumulator<StringBasedElement, BinarySqlOperator>(
                     new StringBasedElement(fromParamRoot, from, aggregatedToTable))), to, mappedPropertyType, mappingContext, lockMappingContext, constructorArgs)
         {

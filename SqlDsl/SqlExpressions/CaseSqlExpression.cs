@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SqlDsl.Mapper;
+using SqlDsl.SqlBuilders;
+using SqlDsl.Utils;
 
 namespace SqlDsl.SqlExpressions
 {
@@ -22,6 +25,16 @@ namespace SqlDsl.SqlExpressions
         public T First => Cases.Length == 0 ? Else.First : Cases[0].when.First;
 
         public AggregationType AggregationType => GetAggregationType();
+
+        public string BuildFromString(BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias = null)
+        {
+            var cases = Cases.Select(c => (
+                when: c.when.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias),
+                then: c.then.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias)));
+            var @else = Else.BuildFromString(state, sqlFragmentBuilder, wrappedQueryAlias);
+
+            return $"CASE {cases.Select(c => $"WHEN {c.when} THEN {c.then}").JoinString(" ")} ELSE {@else} END";
+        }
 
         public ISqlExpression<T> Combine(ISqlExpression<T> x, BinarySqlOperator combiner) =>
             new BinarySqlExpression<T>(this, x, combiner);

@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using SqlDsl.Mapper;
+using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 using SqlDsl.Utils.Diagnostics;
 
 namespace SqlDsl.SqlExpressions
 {
     [DebuggerDisplay("{GetDebuggerDisplay()}")]
-    class SqlExpression<TElement>: ISqlExpression<TElement>, IDebuggerDisplay
+    abstract class SqlExpression<TElement>: ISqlExpression<TElement>, IDebuggerDisplay
     {   
         public bool HasOneItemOnly => !Inner.Next.Any();
         
@@ -39,7 +41,7 @@ namespace SqlDsl.SqlExpressions
 
         public ISqlExpression<T> MapParam<T>(Func<TElement, T> map)
         {
-            return new SqlExpression<T>(Inner.Map(map));
+            return Create(Inner.Map(map));
         }
 
         public ISqlExpression<TElement> Combine(ISqlExpression<TElement> x, BinarySqlOperator combiner)
@@ -61,5 +63,20 @@ namespace SqlDsl.SqlExpressions
 
             return op.ToString();
         }
+
+        ISqlExpression<TNewElement> Create<TNewElement>(Accumulator<TNewElement, BinarySqlOperator> acc)
+        {
+            var str = acc as Accumulator<StringBasedElement, BinarySqlOperator>;
+            if (str != null)
+                return new StringBasedSqlExpression(str) as ISqlExpression<TNewElement>;
+                
+            var selCol = acc as Accumulator<SelectColumnBasedElement, BinarySqlOperator>;
+            if (selCol != null)
+                return new SelectColumnBasedSqlExpression(selCol) as ISqlExpression<TNewElement>;
+                
+            throw new NotImplementedException($"There is no concrete implementation of SqlExpression<{typeof(TNewElement)}>.");
+        }
+
+        public abstract string BuildFromString(BuildMapState state, ISqlSyntax sqlFragmentBuilder, string wrappedQueryAlias = null);
     }
 }

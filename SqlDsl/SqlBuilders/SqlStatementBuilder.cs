@@ -199,7 +199,7 @@ namespace SqlDsl.SqlBuilders
             if (map.Length != 1)
                 throw new InvalidOperationException($"Invalid {mapping} condition: {conditionStatement}.");
 
-            var mapSql = map[0].FromParams.BuildFromString(state, SqlSyntax);
+            var mapSql = map[0].FromParams.BuildFromString(state, SqlSyntax, null);
             var queryObjectReferences = map[0].FromParams
                 .GetEnumerable()
                 .Select(param)
