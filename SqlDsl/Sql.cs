@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using SqlDsl.Dsl;
 
 namespace SqlDsl
 {
@@ -36,6 +37,13 @@ namespace SqlDsl
         public static int RowNumber()
         {
             throw new InvalidOperationException("This method is not meant to be called. It should be used in expressions only");   
+        }
+
+        public static class Case
+        {
+            public static ICase When(bool condition) => throw new NotImplementedException();
+
+            public static ISimpleCase<TSubject> Simple<TSubject>(TSubject subject) => throw new NotImplementedException();
         }
     }
 
