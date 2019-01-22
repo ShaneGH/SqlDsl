@@ -1,0 +1,3 @@
+This is a temp file to store TODOs if I am offline and cannot add an issue to github
+
+1. Sql NOT operator, e.g. !(Person.Id == 4)
