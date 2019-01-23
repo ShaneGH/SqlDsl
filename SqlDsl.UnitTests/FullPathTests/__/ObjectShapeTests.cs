@@ -19,19 +19,134 @@ using SqlDsl.Mapper;
 namespace SqlDsl.UnitTests.FullPathTests
 {
     [TestFixture]
-    public class ObjectShapeTests : FullPathTestBase
+    public class MappingObjectShapeTests : FullPathTestBase
     {
-        // class JoinedQueryClass
+        public class TableWithOneColumnMapper1
+        {
+            public TableWithOneRowAndOneColumn Tab { get; set; }
+        }
+
+        [Test]
+        public async Task ReturnMultipleFromMap_With1Column_1()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<TableWithOneColumnMapper1>()
+                .From(x => x.Tab)
+                .Map(x => x.Tab)
+                .ToIEnumerableAsync(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(Data.TablesWithOneRowAndOneColumn, data);
+        }
+
+        public class TableWithOneColumnMapper2
+        {
+            public Person ThePerson { get; set; }
+            public IEnumerable<TableWithOneRowAndOneColumn> Tabs { get; set; }
+        }
+
+        [Test]
+        public void ReturnMultipleFromMap_With1Column_2()
+        {
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<TableWithOneColumnMapper2>()
+                .From(x => x.ThePerson)
+                .InnerJoin(q => q.Tabs).On((q, t) => q.ThePerson.Id == Data.People.John.Id)
+                .Where(q => q.ThePerson.Id == Data.People.John.Id)
+                .Map(x => x.Tabs)
+                .ToIEnumerable(Executor, logger: Logger)
+                .SelectMany(x => x);
+
+            // assert
+            CollectionAssert.AreEqual(Data.TablesWithOneRowAndOneColumn, data);
+        }
+
+        // See todo in ComplexMapBuilder.BuildMapForConstructor
+
+        // [Test]
+        // public async Task SimpleMapReturningEmptyObject()
         // {
-        //     public Person ThePerson { get; set; }
-        //     public List<PersonClass> ThePersonClasses { get; set; }
-        //     public List<PersonsData> ThePersonsData { get; set; }
-        //     public List<Class> TheClasses { get; set; }
-        //     public List<ClassTag> TheClassTags { get; set; }
-        //     public List<Tag> TheTags { get; set; }
-        //     public List<Purchase> ThePurchasesByMe { get; set; }
-        //     public List<Purchase> ThePurchasesByMeForMyClasses { get; set; }
+        //     // arrange
+        //     // act
+        //     var data = await FullyJoinedQuery<object>()
+        //         .Map(p => new object())
+        //         .ToIEnumerableAsync(Executor, logger: Logger);
+
+        //     // assert
+        //     Assert.AreEqual(2, data.Count());
+        //     Assert.AreEqual(typeof(object), data.First().GetType());
+        //     Assert.AreEqual(typeof(object), data.ElementAt(1).GetType());
         // }
+
+        [Test]
+        public async Task SimpleMapOn1FullTable()
+        {
+            // arrange
+            // act
+            var data = await TestUtils
+                .FullyJoinedQuery()
+                .Map(p => p.ThePerson)
+                .ToIEnumerableAsync(Executor, logger: Logger);
+                
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John, data.First());
+            Assert.AreEqual(Data.People.Mary, data.ElementAt(1));
+        }
+
+        [Test]
+        public async Task SimpleMapOn1Table()
+        {
+            // arrange
+            // act
+            var data = await TestUtils
+                .FullyJoinedQuery()
+                .Map(p => p.ThePerson.Name)
+                .ToIEnumerableAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John.Name, data.First());
+            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1));
+        }
+        
+        [Test]
+        public async Task ReturnOneFromMap()
+        {
+            // arrange
+            // act
+            var data = await TestUtils
+                .FullyJoinedQuery()
+                .Where(q => q.ThePersonClasses.One().ClassId == Data.Classes.Tennis.Id)
+                .Map(p => p.ThePersonClasses.One())
+                .ToIEnumerableAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.PersonClasses.JohnTennis, data.First());
+            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1));
+        }
+
+        [Test]
+        public async Task ReturnMultipleFromMap()
+        {
+            // arrange
+            // act
+            var data = await TestUtils
+                .FullyJoinedQuery()
+                .Map(p => p.ThePersonClasses)
+                .ToIEnumerableAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(2, data.First().Count());
+            Assert.AreEqual(1, data.ElementAt(1).Count());
+            Assert.AreEqual(Data.PersonClasses.JohnTennis, data.First().First());
+            Assert.AreEqual(Data.PersonClasses.JohnArchery, data.First().ElementAt(1));
+            Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1).First());
+        }
 
         class QueryClass1
         {

@@ -18,8 +18,10 @@ namespace SqlDsl.Query
     /// </summary>
     public class SqlSelect<TResult> : SqlSelect<object, TResult>, ISqlSelect<TResult>, IQuery<TResult>, IOrdererAgain<TResult>
     {
-        public SqlSelect(ISqlSyntax syntax)
-            : base(syntax)
+        /// <param name="strictJoins">If set to true, every join added to the SqlDsl query will also be added to the Sql query.
+        /// If false, joins which are not used in a mapping, WHERE clause, ON clause etc... will be automatically removed</param>
+        public SqlSelect(ISqlSyntax syntax, bool strictJoins)
+            : base(syntax, strictJoins)
         {
         }
 

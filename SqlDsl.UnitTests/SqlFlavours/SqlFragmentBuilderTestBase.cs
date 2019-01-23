@@ -80,7 +80,9 @@ namespace SqlDsl.UnitTests.SqlFlavours
             #pragma warning restore 0649
         }
 
-        protected ISqlSelect<TestDataTable> StartTest() => ((ISqlSelect<TestDataTable>)new SqlSelect<TestDataTable>(GetSyntax()));
+        protected ISqlSelect<TestDataTable> StartTest() => StartTest<TestDataTable>();
+
+        protected ISqlSelect<T> StartTest<T>() => ((ISqlSelect<T>)new SqlSelect<T>(GetSyntax(), true));
 
         [Test]
         public void TestValues()
@@ -102,7 +104,7 @@ namespace SqlDsl.UnitTests.SqlFlavours
         {
             // arrange
             // act
-            var values = ((ISqlSelect<One2One>)new SqlSelect<One2One>(GetSyntax()))
+            var values = StartTest<One2One>()
                 .From(x => x.T1)
                 .InnerJoin(x => x.T2).On((q, t2) => q.T1.PrimaryKey == t2.PrimaryKey)
                 .ToIEnumerable(Executor)

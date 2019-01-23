@@ -79,7 +79,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(false)
                 .Map(x => new
                 {
                     person = x.ThePerson.Name,
@@ -120,7 +120,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQueryWithArg<(int skip, int take)>()
+                .FullyJoinedQueryWithArg<(int skip, int take)>(false)
                 .Map(x => new
                 {
                     person = x.ThePerson.Name,
@@ -143,7 +143,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(false)
                 .Where(x => Sql.RowNumber() == 2)
                 .Map(x => new
                 {

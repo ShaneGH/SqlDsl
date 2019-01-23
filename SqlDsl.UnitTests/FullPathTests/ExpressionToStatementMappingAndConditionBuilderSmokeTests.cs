@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using SqlDsl.Dsl;
 using SqlDsl.UnitTests.FullPathTests.Environment;
@@ -129,6 +130,67 @@ namespace SqlDsl.UnitTests.FullPathTests
             ReflectionUtils.GetMethod(() =>
                 MappingOnlyParts_Executor<object>(null, null), resultType)
                 .Invoke(this, new[] { mapper, result });
+        }
+
+        [Test]
+        public void PreservesOperatorPrecedence()
+        {
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<Person>()
+                .Map(p => p.Id + 1 == Data.People.John.Id + 1)
+                .ToList(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new [] {true, false}, data);
+        }
+
+        [Test]
+        public async Task WorksInsideComplexMap()
+        {
+            // arrange
+            // act
+            var data = await TestUtils
+                .FullyJoinedQuery()
+                .Map(p => new
+                {
+                    pid = p.ThePerson.Id + 1,
+                    classes = p.ThePersonClasses
+                        .Select(pc => pc.ClassId + p.TheClasses.One().Id)
+                        .ToList()
+                })
+                .ToArrayAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(Data.People.John.Id + 1, data[0].pid);
+            CollectionAssert.AreEqual(new [] {Data.Classes.Tennis.Id * 2, Data.Classes.Archery.Id * 2}, data[0].classes);
+
+            Assert.AreEqual(Data.People.Mary.Id + 1, data[1].pid);
+            CollectionAssert.AreEqual(new [] {Data.Classes.Tennis.Id * 2}, data[1].classes);
+        }
+
+        [Test]
+        public async Task WorksAcrossContextBounds()
+        {
+            // arrange
+            // act
+            var data = await TestUtils
+                .FullyJoinedQuery()
+                .Map(p => new
+                {
+                    name = p.ThePerson.Name,
+                    classes= p.TheClasses.Select(c => c.Id + p.ThePerson.Id)
+                })
+                .ToListAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count);
+            Assert.AreEqual(Data.People.John.Name, data[0].name);
+            CollectionAssert.AreEqual(new[] { 4, 5 }, data[0].classes);
+            
+            Assert.AreEqual(Data.People.Mary.Name, data[1].name);
+            CollectionAssert.AreEqual(new[] { 5 }, data[1].classes);
         }
 
         void MappingOnlyParts_Executor<T>(Expression<Func<QueryClass, T>> mapper, T result)

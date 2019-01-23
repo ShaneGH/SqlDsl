@@ -57,12 +57,17 @@ namespace SqlDsl.SqlBuilders
         /// A list of columns in the SELECT statement
         /// </summary>
         public IEnumerable<(bool isRowId, SelectColumn col)> AllSelectColumns => GetAllSelectColumns();
+        
+        /// <summary>If set to true, every join added to the SqlDsl query will also be added to the Sql query.
+        /// If false, joins which are not used in a mapping, WHERE clause, ON clause etc... will be automatically removed</summary>
+        private bool StrictJoins;
 
-        public SqlStatementBuilder(ISqlSyntax sqlFragmentBuilder, string primaryTable, string primaryTableAlias)
+        public SqlStatementBuilder(ISqlSyntax sqlFragmentBuilder, string primaryTable, string primaryTableAlias, bool strictJoins)
         {
             SqlSyntax = sqlFragmentBuilder ?? throw new ArgumentNullException(nameof(sqlFragmentBuilder));
             PrimaryTable = primaryTable ?? throw new ArgumentNullException(nameof(primaryTable));
             PrimaryTableAlias = primaryTableAlias ?? throw new ArgumentNullException(nameof(primaryTableAlias));
+            StrictJoins = strictJoins;
         }
 
         /// <summary>
@@ -246,7 +251,7 @@ namespace SqlDsl.SqlBuilders
             if (sels.Count == 0)
                 sels.Add(Select1);
 
-            return _ToSqlString(
+            return ToSqlString(
                 sels.Select(c => c.sql), 
                 sels
                     .Select(c => c.table)
@@ -267,7 +272,7 @@ namespace SqlDsl.SqlBuilders
         }    
 
         /// <inheritdoc />
-        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql, string teardownSql, bool teardownSqlCanBeInlined) _ToSqlString(IEnumerable<string> selectColumns, IEnumerable<string> selectTables)
+        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql, string teardownSql, bool teardownSqlCanBeInlined) ToSqlString(IEnumerable<string> selectColumns, IEnumerable<string> selectTables)
         {
             var allTables = selectTables.ToHashSet();
 
@@ -298,9 +303,11 @@ namespace SqlDsl.SqlBuilders
             foreach (var t in allTables.ToArray())
                 allTables.AddRange(GetLineage(t, Enumerable.Empty<string>()));
 
-            var joins = _Joins
-                .Where(j => allTables.Contains(j.alias))
-                .ToArray();
+            var joins = StrictJoins
+                ? _Joins
+                : _Joins
+                    .Where(j => allTables.Contains(j.alias))
+                    .ToList();
                 
             // concat all setup sql from all other parts
             var setupSql = joins

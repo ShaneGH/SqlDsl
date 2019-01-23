@@ -27,9 +27,15 @@ namespace SqlDsl.Query
         /// <inheritdoc />
         public override (string memberName, string tableName, Type type)? PrimaryTableDetails => __PrimaryTableMember;
 
-        public SqlSelect(ISqlSyntax sqlSyntax)
+        /// <inheritdoc />
+        protected override bool StrictJoins { get; }
+
+        /// <param name="strictJoins">If set to true, every join added to the SqlDsl query will also be added to the Sql query.
+        /// If false, joins which are not used in a mapping, WHERE clause, ON clause etc... will be automatically removed</param>
+        public SqlSelect(ISqlSyntax sqlSyntax, bool strictJoins)
             : base(sqlSyntax)
         {
+            StrictJoins = strictJoins;
         }
 
         /// <inheritdoc />

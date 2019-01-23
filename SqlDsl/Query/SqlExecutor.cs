@@ -49,6 +49,10 @@ namespace SqlDsl.Query
         /// The paging for to the query
         /// </summary>
         protected abstract (Expression<Func<TArgs, int>> skip, Expression<Func<TArgs, int>> take) Paging { get; }
+
+        /// <param name="strictJoins">If set to true, every join added to the SqlDsl query will also be added to the Sql query.
+        /// If false, joins which are not used in a mapping, WHERE clause, ON clause etc... will be automatically removed</param>
+        protected abstract bool StrictJoins { get; }
         
         /// <summary>
         /// The WHERE part of the query
@@ -145,7 +149,7 @@ namespace SqlDsl.Query
             var (memberName, tableName, primaryTableMemberType) = PrimaryTableMember;
             
             // Set the SELECT table
-            var builder = new SqlStatementBuilder(SqlSyntax, tableName, memberName);
+            var builder = new SqlStatementBuilder(SqlSyntax, tableName, memberName, StrictJoins);
 
             // get all columns from SELECT and JOINs
             var selectColumns = Joins

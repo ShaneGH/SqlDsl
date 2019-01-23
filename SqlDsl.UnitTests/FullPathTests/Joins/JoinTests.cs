@@ -86,6 +86,53 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         }
 
         [Test]
+        public void UnmappedQuery_LeftJoinReturnsNull_ReturnsCorrectElements()
+        {
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<QueryContainer>()
+                .From<Person>(x => x.ThePerson)
+                .LeftJoin<ClassTag>(q => q.TheClassTags)
+                    .On((q, ct) => q.ThePerson.Id == ct.ClassId)
+                .ToArray(Executor, logger: Logger);
+
+            Assert.AreEqual(2, data.Length);
+
+            Assert.AreEqual(Data.People.John, data[0].ThePerson);
+            Assert.IsEmpty(data[0].TheClassTags);
+
+            Assert.AreEqual(Data.People.Mary, data[1].ThePerson);
+            Assert.IsEmpty(data[1].TheClassTags);
+        }
+
+        [Test]
+        public void MappedQuery_LeftJoinReturnsNull_ReturnsCorrectElements()
+        {
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<QueryContainer>()
+                .From<Person>(x => x.ThePerson)
+                .LeftJoin<ClassTag>(q => q.TheClassTags)
+                    .On((q, ct) => q.ThePerson.Id == ct.ClassId)
+                .Map(x => new
+                {
+                    thePerson = x.ThePerson.Name,
+                    theClassTagIds = x.TheClassTags
+                        .Select(y => y.ClassId)
+                        .ToArray()
+                })
+                .ToArray(Executor, logger: Logger);
+
+            Assert.AreEqual(2, data.Length);
+
+            Assert.AreEqual(Data.People.John.Name, data[0].thePerson);
+            Assert.IsEmpty(data[0].theClassTagIds);
+
+            Assert.AreEqual(Data.People.Mary.Name, data[1].thePerson);
+            Assert.IsEmpty(data[1].theClassTagIds);
+        }
+
+        [Test]
         public async Task Select_JoinOnNonTable_ReturnsCorrectValues1()
         {
             // arrange

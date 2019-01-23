@@ -48,5 +48,37 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             CollectionAssert.AreEqual(new[] { Data.People.John.Name }, data);
         }
+
+        [Test]
+        public void RemovesUnusedTablesForNonStrictJoin()
+        {
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<QueryContainer>(false)
+                .From(x => x.ThePerson)
+                .InnerJoin(q => q.ThePersonsData)
+                    .On((q, pc) => q.ThePerson.Id == 77)
+                .Map(p => p.ThePerson.Name)
+                .ToArray(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEquivalent(new[]{ Data.People.John.Name, Data.People.Mary.Name  }, data);
+        }
+
+        [Test]
+        public void RetainsUnusedTablesForStrictJoin()
+        {
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<QueryContainer>()
+                .From(x => x.ThePerson)
+                .InnerJoin(q => q.ThePersonsData)
+                    .On((q, pc) => q.ThePerson.Id == 77)
+                .Map(p => p.ThePerson.Name)
+                .ToArray(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(0, data.Length);
+        }
     }
 }
