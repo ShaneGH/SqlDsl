@@ -12,7 +12,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery(false)
                 .OrderBy(x => x.TheTags.One().Id)
                 .Map(q => q.ThePerson.Name)
                 .ToArrayAsync(Executor, logger: Logger);
@@ -26,7 +26,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery(false)
                 .Where(x => x.TheClasses.One().Id == Data.Classes.Archery.Id)
                 .Map(q => q.ThePerson.Name)
                 .ToArrayAsync(Executor, logger: Logger);

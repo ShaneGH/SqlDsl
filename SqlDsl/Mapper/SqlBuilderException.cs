@@ -11,7 +11,7 @@ namespace SqlDsl.Mapper
     {
         readonly string _invalidExpressionMessage;
         readonly SqlBuilderException _innerException;
-        readonly MappingPurpose _mappingPurpose;
+        readonly MappingPurpose? _mappingPurpose;
 
         static char[] NewlineArray = Environment.NewLine.ToArray();
 
@@ -23,6 +23,16 @@ namespace SqlDsl.Mapper
         }
 
         public SqlBuilderException(MappingPurpose mappingPurpose, string invalidExpressionMessage, Exception innerException = null)
+            : this((MappingPurpose?)mappingPurpose, invalidExpressionMessage, innerException)
+        {
+        }
+
+        public SqlBuilderException(string invalidExpressionMessage, Exception innerException = null)
+            : this(null, invalidExpressionMessage, innerException)
+        {
+        }
+
+        private SqlBuilderException(MappingPurpose? mappingPurpose, string invalidExpressionMessage, Exception innerException = null)
             : base(null, innerException is SqlBuilderException ? null : innerException)
         {
             _mappingPurpose = mappingPurpose;
@@ -32,7 +42,10 @@ namespace SqlDsl.Mapper
         
         public string GetExceptionMessage()
         {
-            return $"Error in {_mappingPurpose} expression:"
+            return (
+                _mappingPurpose.HasValue
+                    ? $"Error in {_mappingPurpose} expression:" + Environment.NewLine
+                    : "")
                 + Environment.NewLine
                 + GetExpressionString()
                     .Select((x, i) => "> " + BuildWhiteSpace(i * 2) + x)

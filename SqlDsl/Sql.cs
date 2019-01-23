@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using SqlDsl.Dsl;
+using SqlDsl.Mapper;
 using SqlDsl.Utils;
 
 namespace SqlDsl
@@ -11,6 +12,8 @@ namespace SqlDsl
     /// </summary>
     public static class Sql
     {
+        const string InvalidMessageString = "The \"{0}\" method is not valid in this context. \nPlease ensure that you are only using this method on table values within a sql query. \nDo not use on query constants or query arguments.";
+
         /// <summary>
         /// Create a sql query
         /// </summary>
@@ -21,7 +24,7 @@ namespace SqlDsl
         /// </summary>
         public static T One<T>(this IEnumerable<T> values)
         {
-            throw new InvalidOperationException(CodingConstants.Messages.MethodIsForExpression);
+            throw new SqlBuilderException(string.Format(InvalidMessageString, "One"));
         }
 
         /// <summary>
@@ -29,7 +32,7 @@ namespace SqlDsl
         /// </summary>
         public static bool In<T>(this T value, IEnumerable<T> values)
         {
-            throw new InvalidOperationException(CodingConstants.Messages.MethodIsForExpression);
+            throw new SqlBuilderException(string.Format(InvalidMessageString, "In"));
         }
 
         /// <summary>
@@ -37,7 +40,7 @@ namespace SqlDsl
         /// </summary>
         public static int RowNumber()
         {
-            throw new InvalidOperationException(CodingConstants.Messages.MethodIsForExpression);
+            throw new SqlBuilderException(string.Format(InvalidMessageString, "RowNumber"));
         }
 
         public static class Case
@@ -45,12 +48,12 @@ namespace SqlDsl
             /// <summary>
             /// Begin a sql CASE statement
             /// </summary>
-            public static ICase When(bool condition) => throw new InvalidOperationException(CodingConstants.Messages.MethodIsForExpression);
+            public static ICase When(bool condition) => throw new SqlBuilderException(string.Format(InvalidMessageString, "Case.When"));
 
             /// <summary>
             /// Begin a sql CASE statement which has a subject
             /// </summary>
-            public static ISimpleCase<TSubject> Simple<TSubject>(TSubject subject) => throw new InvalidOperationException(CodingConstants.Messages.MethodIsForExpression);
+            public static ISimpleCase<TSubject> Simple<TSubject>(TSubject subject) => throw new SqlBuilderException(string.Format(InvalidMessageString, "Case.Simple"));
         }
     }
 

@@ -11,11 +11,6 @@ namespace SqlDsl.Utils
         public static readonly MethodInfo GenericSelectMethod = ReflectionUtils
             .GetMethod(() => new int[0].Select(x => x))
             .GetGenericMethodDefinition();
-
-        public class Messages
-        {
-            public const string MethodIsForExpression = "This method is not meant to be called. It should be used in expressions only";
-        }
         
         public class Empty
         {
