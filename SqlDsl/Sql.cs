@@ -38,7 +38,8 @@ namespace SqlDsl
         /// <summary>
         /// When used in a query expression, represents the row number of the primary table. Can be used for paging
         /// </summary>
-        public static int RowNumber()
+        /// <param name="context">The query part (table) to get a row number from. </param>
+        public static int RowNumber<T>(this T context)
         {
             throw new SqlBuilderException(string.Format(InvalidMessageString, "RowNumber"));
         }

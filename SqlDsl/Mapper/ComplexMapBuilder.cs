@@ -124,7 +124,7 @@ namespace SqlDsl.Mapper
 
                     var isRowNumber = ReflectionUtils.IsRowNumber(exprMethod);
                     if (isRowNumber)
-                        return BuildMapForRowNumber(state, toPrefix).AddT(false);
+                        return BuildMapForRowNumber(state, exprMethod, toPrefix).AddT(false);
 
                     var (isIn, inLhs, inRhs) = ReflectionUtils.IsIn(exprMethod);
                     if (isIn)
@@ -277,6 +277,7 @@ namespace SqlDsl.Mapper
                 case MapType.MemberAccess:
                 case MapType.Select:
                 case MapType.AggregateFunction:
+                case MapType.RowNumber:
                     return false;
             }
             
@@ -356,21 +357,21 @@ namespace SqlDsl.Mapper
                 .AggregateTuple2();
         }
 
-        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForRowNumber(BuildMapState state, string toPrefix)
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForRowNumber(BuildMapState state, MethodCallExpression rowNumberExpression, string toPrefix)
         {
-            var rowNumber = $"{state.PrimarySelectTableAlias}.{SqlStatementConstants.RowIdName}";
+            var rowNumberTable = rowNumberExpression.Arguments[0] == state.QueryObject && state.PrimarySelectTableAlias != SqlStatementConstants.RootObjectAlias
+                ? Expression.PropertyOrField(state.QueryObject, state.PrimarySelectTableAlias)
+                : rowNumberExpression.Arguments[0];
+
+            var (properties, tables, isConstant) = BuildMapWithErrorHandling(state, rowNumberTable, MapType.RowNumber, toPrefix);
+            if (isConstant)
+                throw BuildMappingError(state.MappingPurpose, $"Row number cannot be used on non table elements\n{rowNumberExpression}");
 
             return (
-                new StringBasedMappedProperty(
-                    new StringBasedSqlExpression(
-                        new Accumulator<StringBasedElement, BinarySqlOperator>(
-                            new StringBasedElement(null, rowNumber, state.PrimarySelectTableAlias))),
-                    toPrefix,
-                    typeof(int), 
+                properties.Select(p => p.With(
                     state.MappingContext.propertyName,
-                    false).ToEnumerable(),
-                EmptyMappedTables
-            );
+                    fromParams: p.FromParams.MapParamName(x => CombineStrings(x, SqlStatementConstants.RowIdName)))),
+                tables);
         }
 
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForIn(
@@ -719,6 +720,7 @@ namespace SqlDsl.Mapper
             MemberInit,
             AggregateFunction,
             ContextSwitch,
+            RowNumber,
             Other
         }
     }

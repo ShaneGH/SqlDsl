@@ -33,11 +33,5 @@ namespace SqlDsl.Utils
         {
             public static readonly string String = null;
         }
-        
-        public class Expressions
-        {
-            public static readonly MethodCallExpression SqlRowNumber = Expression.Call(
-                ReflectionUtils.GetMethod(() => Sql.RowNumber()));
-        }
     }
 }

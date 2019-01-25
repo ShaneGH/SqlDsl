@@ -61,6 +61,26 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public void SkipAndTake_WithoutMap_PagesResults()
+        {
+            // arrange
+            // act
+            var data = TestUtils
+                .FullyJoinedQuery(false)
+                .Skip(1)
+                .Take(1)
+                .First(Executor, logger: Logger);
+                
+            // assert
+            Assert.AreEqual(Data.People.Mary, data.ThePerson);
+            Assert.AreEqual(Data.PeoplesData.MarysData, data.ThePersonsData);
+            CollectionAssert.AreEquivalent(new [] { Data.PersonClasses.MaryTennis }, data.ThePersonClasses);
+            CollectionAssert.AreEquivalent(new [] { Data.Classes.Tennis }, data.TheClasses);
+            CollectionAssert.AreEquivalent(new [] { Data.ClassTags.TennisBallSport, Data.ClassTags.TennisSport }, data.TheClassTags);
+            CollectionAssert.AreEquivalent(new [] { Data.Tags.Sport, Data.Tags.BallSport }, data.TheTags);
+        }
+
+        [Test]
         public void SkipAndTake_MappedQuery_PagesResults()
         {
             // arrange
@@ -131,7 +151,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = TestUtils
                 .FullyJoinedQuery(false)
-                .Where(x => Sql.RowNumber() == 2)
+                .Where(x => x.RowNumber() == 2)
                 .Map(x => new
                 {
                     person = x.ThePerson.Name,
@@ -156,7 +176,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Map(x => new
                 {
                     person = x.ThePerson,
-                    rowNumber = Sql.RowNumber()
+                    rowNumber = x.RowNumber()
                 })
                 .ToArray(Executor, logger: Logger);
 
@@ -166,6 +186,86 @@ namespace SqlDsl.UnitTests.FullPathTests
                 new { person = Data.People.John, rowNumber = 1 },
                 new { person = Data.People.Mary, rowNumber = 2 },
             }, data);
+        }
+
+        [Test]
+        public void Map_WithRowNumberInInnerEntity_MapsResults()
+        {
+            // arrange
+            // act
+            var data = TestUtils
+                .FullyJoinedQuery()
+                .Map(x => new
+                {
+                    person = x.ThePerson,
+                    classes = x.TheClasses
+                        .Select(c => new
+                        {
+                            name = c.Name,
+                            rowNumber1 = x.RowNumber(),
+                            rowNumber2 = c.RowNumber()
+                        })
+                        .ToArray()
+                })
+                .ToArray(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Length);
+            Assert.AreEqual(Data.People.John, data[0].person);
+            Assert.AreEqual(Data.People.Mary, data[1].person);
+
+            CollectionAssert.AreEqual(new[] 
+            { 
+                new { name = Data.Classes.Tennis.Name, rowNumber1 = 1, rowNumber2 = 1 },
+                new { name = Data.Classes.Archery.Name, rowNumber1 = 1, rowNumber2 = 2 }
+            }, data[0].classes);
+
+            CollectionAssert.AreEqual(new[] 
+            { 
+                new { name = Data.Classes.Tennis.Name, rowNumber1 = 2, rowNumber2 = 1 }
+            }, data[1].classes);
+        }
+
+        [Test]
+        public void Map_OnlyRowNumber_MapsResults()
+        {
+            // arrange
+            // act
+            var data = TestUtils
+                .FullyJoinedQuery()
+                .Map(x => x.RowNumber())
+                .ToArray(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new[]{1,2}, data);
+        }
+
+        [Test]
+        public void Map_OnlySinlgeInnerRowNumber_MapsResults()
+        {
+            // arrange
+            // act
+            var data = TestUtils
+                .FullyJoinedQuery()
+                .Map(x => x.ThePersonsData.RowNumber())
+                .ToArray(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new[]{1,2}, data);
+        }
+
+        [Test]
+        public void Map_OnlyMultiInnerRowNumber_MapsResults()
+        {
+            // arrange
+            // act
+            var data = TestUtils
+                .FullyJoinedQuery()
+                .Map(x => x.TheClasses.Select(c => c.RowNumber()))
+                .First(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new[]{1,2}, data);
         }
     }
 }

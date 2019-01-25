@@ -210,7 +210,11 @@ namespace SqlDsl.Query
             if (Paging.skip != null)
             {
                 skipWithParametersReplaced = ParameterReplacer.ReplaceParameter(Paging.skip.Body, Paging.skip.Parameters[0], argsParam);
-                skip = Expression.LessThan(skipWithParametersReplaced, CodingConstants.Expressions.SqlRowNumber);
+                skip = Expression.LessThan(
+                    skipWithParametersReplaced, 
+                    Expression.Call(
+                        ReflectionUtils.GetRowNumberMethod(queryObjectParam.Type),
+                        queryObjectParam));
             }
 
             Expression take = null;
@@ -220,7 +224,11 @@ namespace SqlDsl.Query
                 if (skipWithParametersReplaced != null)
                     take = Expression.Add(skipWithParametersReplaced, take);
 
-                take = Expression.LessThanOrEqual(CodingConstants.Expressions.SqlRowNumber, take);
+                take = Expression.LessThanOrEqual(
+                    Expression.Call(
+                        ReflectionUtils.GetRowNumberMethod(queryObjectParam.Type),
+                        queryObjectParam), 
+                    take);
             }
 
             var where = new[]

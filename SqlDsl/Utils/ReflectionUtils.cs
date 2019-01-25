@@ -223,13 +223,15 @@ namespace SqlDsl.Utils
         /// The sql Contains (IN) method.
         /// </summary>
         static readonly MethodInfo _Contains = GetMethod(() => Enumerable.Contains<object>(null, null)).GetGenericMethodDefinition();
+        
+        static readonly MethodInfo RowNumberMethod = GetMethod<int>(x => x.RowNumber()).GetGenericMethodDefinition();
 
         /// <summary>
         /// If the input expression represents a call to Sql.RowNumber()
         /// </summary>
         public static bool IsRowNumber(MethodCallExpression e)
         {
-            return e.Method == CodingConstants.Expressions.SqlRowNumber.Method;
+            return  e.Method.IsGenericMethod && e.Method.GetGenericMethodDefinition() == RowNumberMethod;
         }
 
         /// <summary>
@@ -295,7 +297,7 @@ namespace SqlDsl.Utils
 
                 case ExpressionType.Call:
                     var call = expr as MethodCallExpression;
-                    if (call.Method == CodingConstants.Expressions.SqlRowNumber.Method)
+                    if (IsRowNumber(call))
                         return (false, false);
                     
                     var ra2 = false;
@@ -718,6 +720,19 @@ namespace SqlDsl.Utils
                 return (member as FieldInfo).FieldType;
 
             throw new InvalidOperationException("Member must be a property or field: " + member);
+        }
+
+        static readonly ConcurrentDictionary<Type, MethodInfo> RowNumberMethods = new ConcurrentDictionary<Type, MethodInfo>();
+        
+        public static MethodInfo GetRowNumberMethod(Type contextType)
+        {
+            if (!RowNumberMethods.TryGetValue(contextType, out MethodInfo result))
+            {
+                result = GetMethod<int>(x => x.RowNumber(), contextType);
+                RowNumberMethods.TryAdd(contextType, result);
+            }
+
+            return result;
         }
 
         /// <summary>
