@@ -34,7 +34,7 @@ namespace SqlDsl.Query
         
         /// <inheritdoc />
         public IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
-            new JoinBuilder<TJoin>(this, JoinType.Inner, TableAttribute.GetTableName(typeof(TJoin)), joinResult);
+            new JoinBuilder<TJoin>(this, JoinType.Inner, null, joinResult);
             
         /// <inheritdoc />
         IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinResult) =>
@@ -42,7 +42,7 @@ namespace SqlDsl.Query
         
         /// <inheritdoc />
         public IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, TJoin>> joinResult) =>
-            InnerJoin<TJoin>(TableAttribute.GetTableName(typeof(TJoin)), joinResult);
+            InnerJoin<TJoin>(null, joinResult);
         
         /// <inheritdoc />
         IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
@@ -50,7 +50,7 @@ namespace SqlDsl.Query
         
         /// <inheritdoc />
         public IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
-            LeftJoin<TJoin>(TableAttribute.GetTableName(typeof(TJoin)), joinResult);
+            LeftJoin<TJoin>(null, joinResult);
         
         /// <inheritdoc />
         IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(string tableName, Expression<Func<TResult, TJoin>> joinResult) =>
@@ -58,7 +58,7 @@ namespace SqlDsl.Query
         
         /// <inheritdoc />
         public IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, TJoin>> joinResult) =>
-            LeftJoin<TJoin>(TableAttribute.GetTableName(typeof(TJoin)), joinResult);
+            LeftJoin<TJoin>(null, joinResult);
 
         /// <summary>
         /// Holds partial join state and can build a join
@@ -82,7 +82,9 @@ namespace SqlDsl.Query
                 JoinType = joinType;
                 JoinResultBody = joinResultBody ?? throw new ArgumentNullException(nameof(joinResultBody));
                 JoinResultQueryParam = joinResultQueryParam ?? throw new ArgumentNullException(nameof(joinResultQueryParam));
-                TableName = tableName ?? throw new ArgumentNullException(nameof(tableName));
+                
+                var joinTableType = ReflectionUtils.GetIEnumerableType(typeof(TJoin)) ?? typeof(TJoin);
+                TableName = tableName ?? TableAttribute.GetTableName(joinTableType);
             }
 
             public JoinBuilder(Query<TArgs, TResult> query, JoinType joinType, string tableName, Expression<Func<TResult, TJoin>> joinResult)
@@ -153,8 +155,10 @@ namespace SqlDsl.Query
             if (!output.Any() || !output[0].DeclaringType.IsAssignableFrom(typeof(TResult)))
                 throw new ArgumentException($"The expression \"{body}\" must point to a paramater on the query object.", nameof(body));
                 
+            var tableType = output.Last().GetPropertyOrFieldType();
+            
             // return the name and type
-            return (output.MemberName(), output.Last().GetPropertyOrFieldType());
+            return (output.MemberName(), ReflectionUtils.GetIEnumerableType(tableType) ?? tableType);
 
             Expression TryOne(Expression val) => ReflectionUtils.IsOne(val) ?? val;
         }

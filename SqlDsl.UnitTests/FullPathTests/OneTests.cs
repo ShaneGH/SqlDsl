@@ -109,6 +109,38 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public void WithNonCollectionTypeJoin_GetOneTableAndOrderJoinOnProperty()
+        {
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<QueryContainer>()
+                .From(x => x.ThePerson)
+                .LeftJoin(q => q.ThePersonClasses)
+                    .On((q, pcs) => q.ThePerson.Id == pcs.One().PersonId)
+                .First(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(data.ThePerson, Data.People.John);
+            CollectionAssert.AreEqual(data.ThePersonClasses, new [] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery });
+        }
+
+        [Test]
+        public void WithNonCollectionTypeJoin_SelectFromTableAndJoinOnResult()
+        {
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<QueryContainer>()
+                .From(x => x.ThePerson)
+                .LeftJoin(q => q.ThePersonClasses)
+                    .On((q, pcs) => q.ThePerson.Id == pcs.Select(pc => pc.PersonId).One())
+                .First(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(data.ThePerson, Data.People.John);
+            CollectionAssert.AreEqual(data.ThePersonClasses, new [] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery });
+        }
+
+        [Test]
         public void WithCollectionTypeJoin_GetOneTableAndJoinOnProperty()
         {
             // arrange
@@ -144,6 +176,51 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(data.ThePersonClasses, new [] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery });
         }
 
+        public class LoadsOfData
+        {
+            public PersonsData Data1;
+            public List<PersonsData> Data2;
+            public List<PersonsData> Data3;
+        }
+
+        [Test]
+        public void WithCollectionTypeJoinAndCollectionTypeData_GetOneTableAndJoinOnProperty()
+        {
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<LoadsOfData>()
+                .From(x => x.Data1)
+                .LeftJoin(q => q.Data2)
+                    .On((q, d) => q.Data1.Data == d.One().Data)
+                .LeftJoin(q => q.Data3)
+                    .On((q, d) => q.Data2.One().Data == d.One().Data)
+                .First(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(data.Data1, Data.PeoplesData.JohnsData);
+            CollectionAssert.AreEqual(data.Data2, new [] { Data.PeoplesData.JohnsData });
+            CollectionAssert.AreEqual(data.Data3, new [] { Data.PeoplesData.JohnsData });
+        }
+
+        [Test]
+        public void WithCollectionTypeJoinAndCollectionTypeData_SelectFromTableAndJoinOnResult()
+        {
+            // arrange
+            // act
+            var data = Sql.Query.Sqlite<LoadsOfData>()
+                .From(x => x.Data1)
+                .LeftJoin(q => q.Data2)
+                    .On((q, d) => q.Data1.Data == d.Select(x => x.Data).One())
+                .LeftJoin(q => q.Data3)
+                    .On((q, d) => q.Data2.Select(x => x.Data).One() == d.Select(x => x.Data).One())
+                .First(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(data.Data1, Data.PeoplesData.JohnsData);
+            CollectionAssert.AreEqual(data.Data2, new [] { Data.PeoplesData.JohnsData });
+            CollectionAssert.AreEqual(data.Data3, new [] { Data.PeoplesData.JohnsData });
+        }
+
         [Test]
         public void OneOnConst_ThrowsException()
         {
@@ -167,23 +244,6 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.Throws(typeof(SqlBuilderException), () => Sql.Query.Sqlite<List<int>, Person>()
                 .Map((x, a) => a.One())
                 .First(Executor, new List<int> { 1 }, logger: Logger));
-
-        }
-
-        [Test]
-        public void WithNonCollectionTypeJoin_GetOneTableAndOrderJoinOnProperty()
-        {
-            // arrange
-            // act
-            var data = Sql.Query.Sqlite<QueryContainer>()
-                .From(x => x.ThePerson)
-                .LeftJoin(q => q.ThePersonClasses)
-                    .On((q, pcs) => q.ThePerson.Id == pcs.Select(pc => pc.PersonId).One())
-                .First(Executor, logger: Logger);
-
-            // assert
-            Assert.AreEqual(data.ThePerson, Data.People.John);
-            CollectionAssert.AreEqual(data.ThePersonClasses, new [] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery });
         }
     }
 }

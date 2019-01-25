@@ -102,9 +102,11 @@ namespace SqlDsl.SqlBuilders
             ParamBuilder parameters, 
             string joinTableAlias)
         {
-            // convert (q, j) => q.Table1.Id == j.Table1Id
+            // convert (q, j) => q.Table1.Id == j.Table1Id - or -
+            // convert (q, j) => q.Table1.Id == j.One().Table1Id
             // to
             // q => q.Table1.Id == q.Table2.One().Table1Id
+            var addOne = ReflectionUtils.GetIEnumerableType(joinTableParam.Type) == null;
             var joinTableProp = joinTableAlias
                 .Split('.')
                 .Aggregate(
@@ -134,12 +136,15 @@ namespace SqlDsl.SqlBuilders
             Expression AddJoinProperty(Expression rootExpression, string property)
             {
                 Expression rawProp = Expression.PropertyOrField(rootExpression, property);
-                var enumerableType = ReflectionUtils.GetIEnumerableType(rawProp.Type);
-                if (enumerableType != null)
+                if (addOne)
                 {
-                    rawProp = Expression.Call(
-                        ReflectionUtils.GetMethod(() => new string[0].One(), enumerableType),
-                        rawProp);
+                    var enumerableType = ReflectionUtils.GetIEnumerableType(rawProp.Type);
+                    if (enumerableType != null)
+                    {
+                        rawProp = Expression.Call(
+                            ReflectionUtils.GetMethod(() => new string[0].One(), enumerableType),
+                            rawProp);
+                    }
                 }
 
                 return rawProp;

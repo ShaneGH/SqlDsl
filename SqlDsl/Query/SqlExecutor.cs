@@ -153,7 +153,7 @@ namespace SqlDsl.Query
 
             // get all columns from SELECT and JOINs
             var selectColumns = Joins
-                .SelectMany((x, i) => ColumnsOf(x.JoinExpression.joinParam.Type)
+                .SelectMany((x, i) => ColumnsOf(x.JoinedTableProperty.type)
                     .Select(y => (table: x.JoinedTableProperty.name, column: y)))
                 .Concat(ColumnsOf(primaryTableMemberType)
                     .Select(y => (table: memberName, column: y)));
@@ -177,7 +177,7 @@ namespace SqlDsl.Query
             foreach (var col in selectColumns)
             {   
                 var alias = col.table == SqlStatementConstants.RootObjectAlias ? col.column.alias : $"{col.table}.{col.column.alias}";
-                builder.AddSelectColumn(col.column.dataType, col.table, col.column.nameX, alias);
+                builder.AddSelectColumn(col.column.dataType, col.table, col.column.name, alias);
             }
 
             // add a where clause if specified
@@ -238,7 +238,7 @@ namespace SqlDsl.Query
         /// <summary>
         /// Get all of the column names for a given type
         /// </summary>
-        static IEnumerable<(string nameX, string alias, Type dataType)> ColumnsOf(Type t)
+        static IEnumerable<(string name, string alias, Type dataType)> ColumnsOf(Type t)
         {
             if (Columns.TryGetValue(t, out IEnumerable<(string, string, Type)> value))
                 return value;
@@ -253,7 +253,7 @@ namespace SqlDsl.Query
         /// <summary>
         /// Return all of the property and field names of a type as column names
         /// </summary>
-        static IEnumerable<(string nameX, string alias, Type dataType)> GetColumnNames(Type t)
+        static IEnumerable<(string name, string alias, Type dataType)> GetColumnNames(Type t)
         {
             foreach (var col in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 yield return ColumnAttribute.GetColumnName(col).AddT(col.PropertyType);
