@@ -378,8 +378,7 @@ namespace SqlDsl.Mapper
             BuildMapState state, 
             Expression lhs, 
             Expression rhs, 
-            string toPrefix = null, 
-            bool isExprTip = false)
+            string toPrefix = null)
         {
             var (lP, lTab, _) = BuildMapWithErrorHandling(state, lhs, MapType.Other, null);
             var (rP, rTab, rConstant) = BuildMapWithErrorHandling(state, rhs, MapType.Other, null);
