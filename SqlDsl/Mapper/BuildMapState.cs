@@ -44,17 +44,25 @@ namespace SqlDsl.Mapper
 
         public IDisposable SwitchContext(ParameterExpression newContext)
         {
+            return SwitchContext(newContext, DefaultOnContextNotFound);
+        }
+
+        public IDisposable SwitchContext(ParameterExpression newContext, Func<ParameterExpression, IDisposable> onContextNotFound)
+        {
             var ctxt = ParameterRepresentsProperty
                 .Where(p => p.parameter == newContext)
                 .AsNullable()
                 .FirstOrDefault();
 
             if (ctxt == null)
-                throw new InvalidOperationException($"Cannot find context for parameter: {newContext}.");
+                return onContextNotFound(newContext);
 
             var currentContext = MappingContext;
             MappingContext = (ctxt.Value.parameter, ctxt.Value.property.JoinString("."));
             return ReusableGenericDisposable.Build(() => MappingContext = currentContext);
         }
+
+        static readonly Func<ParameterExpression, IDisposable> DefaultOnContextNotFound = newContext => 
+            throw new InvalidOperationException($"Cannot find context for parameter: {newContext}.");
     }
 }

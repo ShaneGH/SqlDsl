@@ -525,6 +525,9 @@ namespace SqlDsl.Mapper
             }
         }
 
+        static readonly Func<ParameterExpression, IDisposable> DefaultOnContextNotFound = newContext => 
+            throw new SqlBuilderException($"You cannot use a Select(...) on a field.");
+
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, MapType nextMap, LambdaExpression mapper, string toPrefix)
         {
             if (mapper.Body == mapper.Parameters[0])
@@ -536,7 +539,7 @@ namespace SqlDsl.Mapper
 
             (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool) innerMap;
             var outerMap = BuildMapWithErrorHandling(state, enumerable, MapType.Select, toPrefix);
-            using (state.SwitchContext(mapper.Parameters[0]))
+            using (state.SwitchContext(mapper.Parameters[0], DefaultOnContextNotFound))
                 innerMap = BuildMapWithErrorHandling(state, mapper.Body, MapType.ContextSwitch);
 
             var (isSuccess, name) = CompileMemberName(enumerable);
@@ -658,7 +661,6 @@ namespace SqlDsl.Mapper
             if (propertyType == null)
                 throw new ArgumentNullException(nameof(propertyType));
 
-            Console.WriteLine(propertyType.ToString());
             var param = Expression.Parameter(propertyType);
             state.ParameterRepresentsProperty.Add((param, property.To.Split('.')));
 

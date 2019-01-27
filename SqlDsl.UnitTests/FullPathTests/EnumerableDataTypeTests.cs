@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using SqlDsl.Mapper;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 using SqlDsl.Utils;
 
@@ -497,42 +498,35 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("What should actually happen in this case?")]
         public void ArrayDataType_WithReContext_SomethingHappens()
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.ThePerson)
-                .InnerJoin(x => x.ThePersonsData)
-                    .On((q, pd) => q.ThePerson.Id == pd.PersonId)
-                .Where(p => p.ThePerson.Id == Data.People.John.Id)
-                .Map(p => p.ThePersonsData.One().Data.Select(pd => (int)pd))
-                .ToList(Executor, logger: Logger);
-
             // assert
-            Assert.AreEqual(1, data.Count());
-            var john = data.First();
-
-            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data.Cast<int>(), john);
+            Assert.Throws(typeof(SqlBuilderException), () =>
+                Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                    .From(x => x.ThePerson)
+                    .InnerJoin(x => x.ThePersonsData)
+                        .On((q, pd) => q.ThePerson.Id == pd.PersonId)
+                    .Where(p => p.ThePerson.Id == Data.People.John.Id)
+                    .Map(p => p.ThePersonsData.One().Data.Select(pd => (int)pd))
+                    .ToList(Executor, logger: Logger));
         }
 
         [Test]
-        [Ignore("TODO")]
         public void ArrayDataType_WithOneOnData_SomethingHappens()
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<ArrayDataTypeQuery>()
-                .From(x => x.ThePerson)
-                .InnerJoin(x => x.ThePersonsData)
-                    .On((q, pd) => q.ThePerson.Id == pd.PersonId)
-                .Where(p => p.ThePerson.Id == Data.People.John.Id)
-                .Map(p => p.ThePersonsData.One().Data.One())
-                .ToList(Executor, logger: Logger);
-
             // assert
-            Assert.Fail("This case should throw an exception. Just make sure it is the correct one.");
+            Assert.Throws(typeof(InvalidCastException), () =>
+                Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                    .From(x => x.ThePerson)
+                    .InnerJoin(x => x.ThePersonsData)
+                        .On((q, pd) => q.ThePerson.Id == pd.PersonId)
+                    .Where(p => p.ThePerson.Id == Data.People.John.Id)
+                    .Map(p => p.ThePersonsData.One().Data.One())
+                    .ToList(Executor, logger: Logger));
         }
     }
 }
