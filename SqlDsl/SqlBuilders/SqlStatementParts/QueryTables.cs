@@ -36,10 +36,10 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// </summary>
         static IEnumerable<IQueryTable> BuildTables(SqlStatementBuilder queryBuilder, IQueryTables tables, ISqlStatement sqlStatement)
         {
-            yield return new QueryTable(queryBuilder.PrimaryTableAlias, queryBuilder, tables, sqlStatement);
+            yield return new QueryTable(queryBuilder.PrimaryTableAlias, null, queryBuilder, tables, sqlStatement);
 
             foreach (var j in queryBuilder.Joins)
-                yield return new QueryTable(j.alias, queryBuilder, tables, sqlStatement);
+                yield return new QueryTable(j.alias, j.joinType, queryBuilder, tables, sqlStatement);
         }
 
         /// <inheritdoc />

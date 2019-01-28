@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using SqlDsl.Mapper;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
@@ -189,6 +190,28 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public void Map_WithNullableRowNumber_PagesResults()
+        {
+            // arrange
+            // act
+            var data = TestUtils
+                .FullyJoinedQuery()
+                .Map(x => new
+                {
+                    person = x.ThePerson,
+                    rowNumber = x.NullableRowNumber()
+                })
+                .ToArray(Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEqual(new[] 
+            { 
+                new { person = Data.People.John, rowNumber = (int?)1 },
+                new { person = Data.People.Mary, rowNumber = (int?)2 },
+            }, data);
+        }
+
+        [Test]
         public void Map_WithRowNumberInInnerEntity_MapsResults()
         {
             // arrange
@@ -241,6 +264,20 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public void Map_RowNumberOnProperty_ThrowsException()
+        {
+            // arrange
+            // act
+            // assert
+            Assert.Throws(
+                typeof(SqlBuilderException), 
+                () => TestUtils
+                    .FullyJoinedQuery()
+                    .Map(x => x.ThePerson.Name.RowNumber())
+                    .ToArray(Executor, logger: Logger));
+        }
+
+        [Test]
         public void Map_OnlySinlgeInnerRowNumber_MapsResults()
         {
             // arrange
@@ -266,6 +303,24 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             CollectionAssert.AreEqual(new[]{1,2}, data);
+        }
+
+        [Test]
+        public void Map_WithRowNumberOnLeftJoin_ThrowsException()
+        {
+            // arrange
+            // act
+            // assert
+            Assert.Throws(
+                typeof(SqlBuilderException), 
+                () => TestUtils
+                    .FullyLeftJoinedQuery()
+                    .Map(x => new
+                    {
+                        person = x.ThePerson,
+                        rowNumbers = x.TheClasses.Select(c => c.RowNumber())
+                    })
+                    .ToArray(Executor, logger: Logger));
         }
     }
 }

@@ -85,6 +85,11 @@ namespace SqlDsl.SqlBuilders
         /// The primary key of this table
         /// </summary>
         ISelectColumn RowNumberColumn { get; }
+
+        /// <summary>
+        /// The type of the join, or null if this table is the FROM table
+        /// </summary>
+        JoinType? JoinType { get; }
     }
     
     /// <summary>

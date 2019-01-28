@@ -38,11 +38,15 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public ISelectColumn RowNumberColumn => _RowNumberColumn ??
             (_RowNumberColumn = GetRowNumberColumn());
 
+        /// <inheritdoc />
+        public JoinType? JoinType { get; }
+
         readonly ISqlStatement ParentStatement;
 
-        public QueryTable(string alias, SqlStatementBuilder queryBuilder, IQueryTables tables, ISqlStatement parentStatement)
+        public QueryTable(string alias, JoinType? joinType, SqlStatementBuilder queryBuilder, IQueryTables tables, ISqlStatement parentStatement)
         {
             Alias = alias ?? throw new ArgumentNullException(nameof(alias));
+            JoinType = joinType;
             QueryBuilder = queryBuilder ?? throw new ArgumentNullException(nameof(queryBuilder));
             Tables = tables ?? throw new ArgumentNullException(nameof(tables));
 

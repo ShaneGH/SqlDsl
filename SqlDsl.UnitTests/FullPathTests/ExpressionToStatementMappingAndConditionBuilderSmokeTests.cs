@@ -47,6 +47,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             yield return TC("in 4", x => new [] { 1L, 100L }.Contains(x.ThePerson.Id));
             yield return TC("constant", x => x.ThePerson.Id == 1 && true);
             yield return TC("row number", x => x.RowNumber() == 1);
+            yield return TC("nullable row number", x => x.NullableRowNumber() == 1);
             yield return TC("One", x => x.Other.One().Value != -99, 2);
             yield return TC("Single", x => x.Other.Single().Value != -99, 2);
             yield return TC("ToArray", x => x.Other.ToArray().One().Value != -99, 2);

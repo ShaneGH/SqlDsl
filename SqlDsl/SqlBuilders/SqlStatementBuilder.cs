@@ -46,12 +46,12 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join
         /// </summary>
-        readonly List<(string alias, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences)> _Joins = new List<(string, SelectTableSqlWithRowId, IEnumerable<string>)>();
+        readonly List<(string alias, JoinType joinType, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences)> _Joins = new List<(string, JoinType, SelectTableSqlWithRowId, IEnumerable<string>)>();
 
         /// <summary>
         /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join
         /// </summary>
-        public IEnumerable<(string alias, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences)> Joins => _Joins.Skip(0);
+        public IEnumerable<(string alias, JoinType joinType, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences)> Joins => _Joins.Skip(0);
 
         /// <summary>
         /// A list of columns in the SELECT statement
@@ -130,6 +130,7 @@ namespace SqlDsl.SqlBuilders
 
             _Joins.Add((
                 joinTableAlias, 
+                joinType,
                 join,
                 queryObjectReferences.Where(r => r != joinTableAlias)));
 

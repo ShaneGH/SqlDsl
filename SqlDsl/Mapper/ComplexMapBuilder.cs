@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using SqlDsl.Query;
 using SqlDsl.Schema;
 using SqlDsl.SqlBuilders;
 using SqlDsl.SqlExpressions;
@@ -122,9 +123,9 @@ namespace SqlDsl.Mapper
                 case ExpressionType.Call:
                     var exprMethod = expr as MethodCallExpression;
 
-                    var isRowNumber = ReflectionUtils.IsRowNumber(exprMethod);
+                    var (isRowNumber, isRowNumberNullable) = ReflectionUtils.IsRowNumber(exprMethod);
                     if (isRowNumber)
-                        return BuildMapForRowNumber(state, exprMethod, toPrefix).AddT(false);
+                        return BuildMapForRowNumber(state, exprMethod, isRowNumberNullable, toPrefix).AddT(false);
 
                     var (isIn, inLhs, inRhs) = ReflectionUtils.IsIn(exprMethod);
                     if (isIn)
@@ -357,7 +358,7 @@ namespace SqlDsl.Mapper
                 .AggregateTuple2();
         }
 
-        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForRowNumber(BuildMapState state, MethodCallExpression rowNumberExpression, string toPrefix)
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForRowNumber(BuildMapState state, MethodCallExpression rowNumberExpression, bool rowNumberIsNullable, string toPrefix)
         {
             var rowNumberTable = rowNumberExpression.Arguments[0] == state.QueryObject && state.PrimarySelectTableAlias != SqlStatementConstants.RootObjectAlias
                 ? Expression.PropertyOrField(state.QueryObject, state.PrimarySelectTableAlias)
@@ -367,9 +368,28 @@ namespace SqlDsl.Mapper
             if (isConstant)
                 throw BuildMappingError(state.MappingPurpose, $"Row number cannot be used on non table elements\n{rowNumberExpression}");
 
+            // if row number is not nullable, ensure that join is not a LEFT join
+            if (!rowNumberIsNullable)
+            {
+                var ps = properties.ToArray();
+                properties = ps;
+
+                if (ps.Length != 1 || !ps[0].FromParams.HasOneItemOnly)
+                    throw BuildMappingError(state.MappingPurpose, rowNumberExpression);
+
+                var (name, _) = ps[0].FromParams.First.AddRoot(state);
+                if (!string.IsNullOrEmpty(name))
+                {
+                    var join = state.WrappedSqlStatement.Tables[name];
+                    if (join.JoinType == JoinType.Left)
+                        throw BuildMappingError(state.MappingPurpose, $"Row number cannot be used on a left joined table\n{rowNumberExpression}");
+                }
+            }
+
             return (
                 properties.Select(p => p.With(
                     state.MappingContext.propertyName,
+                    mappedPropertyType: rowNumberExpression.Type,
                     fromParams: p.FromParams.MapParamName(x => CombineStrings(x, SqlStatementConstants.RowIdName)))),
                 tables);
         }

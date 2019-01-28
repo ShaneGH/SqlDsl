@@ -225,13 +225,24 @@ namespace SqlDsl.Utils
         static readonly MethodInfo _Contains = GetMethod(() => Enumerable.Contains<object>(null, null)).GetGenericMethodDefinition();
         
         static readonly MethodInfo RowNumberMethod = GetMethod<int>(x => x.RowNumber()).GetGenericMethodDefinition();
+        
+        static readonly MethodInfo NullableRowNumberMethod = GetMethod<int>(x => x.NullableRowNumber()).GetGenericMethodDefinition();
 
         /// <summary>
-        /// If the input expression represents a call to Sql.RowNumber()
+        /// If the input expression represents a call to Sql.RowNumber() or Sql.NullableRowNumber()
         /// </summary>
-        public static bool IsRowNumber(MethodCallExpression e)
+        public static (bool isRowNumber, bool isNullable) IsRowNumber(MethodCallExpression e)
         {
-            return  e.Method.IsGenericMethod && e.Method.GetGenericMethodDefinition() == RowNumberMethod;
+            if (!e.Method.IsGenericMethod)
+                return (false, false);
+
+            if (e.Method.GetGenericMethodDefinition() == RowNumberMethod)
+                return (true, false);
+
+            if (e.Method.GetGenericMethodDefinition() == NullableRowNumberMethod)
+                return (true, true);
+                
+            return (false, false);
         }
 
         /// <summary>
@@ -297,7 +308,7 @@ namespace SqlDsl.Utils
 
                 case ExpressionType.Call:
                     var call = expr as MethodCallExpression;
-                    if (IsRowNumber(call))
+                    if (IsRowNumber(call).isRowNumber)
                         return (false, false);
                     
                     var ra2 = false;
