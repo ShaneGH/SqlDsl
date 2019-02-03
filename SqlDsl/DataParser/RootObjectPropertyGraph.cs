@@ -23,12 +23,6 @@ namespace SqlDsl.DataParser
         readonly (int columnIndex, int primaryKeyColumnIndex, Type cellType, bool simplePropertyCellIsTypeEnumerable)? SimpleProperty;
 
         /// <summary>
-        /// Specifies the type of this graph. If true graph only has one node which represents a simple value (e.g. a string, int etc...).
-        /// Otherwise the graph represents a complex object with inner properties
-        /// </summary>
-        public bool IsSimpleValue => SimpleProperty.HasValue;
-
-        /// <summary>
         /// If IsSimpleValue == true, will specify the column index of the simple value column
         /// Otherwise the value of this property should be ignored
         /// </summary>

@@ -54,6 +54,11 @@ namespace SqlDsl
         CreatedObjectGraphAllocation = 10000,
 
         /// <summary>
+        /// A log message which is fired when a new ObjectGraph is created
+        /// </summary>
+        CreatedPropMapValueAllocation = 10001,
+
+        /// <summary>
         /// A log message which confirms a query was compiled and prints the time taken
         /// </summary>
         CompiledQuery = 20000,

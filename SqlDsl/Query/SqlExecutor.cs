@@ -132,7 +132,7 @@ namespace SqlDsl.Query
             var timer = new Timer(true);
             var (builder, paramaters) = ToSqlStatement();
             var compiled = builder
-                .Compile<TArgs, TResult>(new SqlStatement(builder), paramaters.Parameters, builder.SqlSyntax, QueryParseType.DoNotDuplicate);
+                .Compile<TArgs, TResult>(new SqlStatement(builder), paramaters.Parameters, builder.SqlSyntax, QueryParseType.DoNotDuplicate, false);
 
             if (logger.CanLogInfo(LogMessages.CompiledQuery))
                 logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);

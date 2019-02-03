@@ -141,6 +141,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         class QueryClass1
         {
             public Person ThePerson { get; set; }
+            public PersonsData ThePersonsData { get; set; }
             public IEnumerable<PersonClass> ThePersonClasses { get; set; }
         }
         
@@ -198,6 +199,23 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, data.Count());
             Assert.AreEqual(Data.People.John, data.First().ThePerson);
             Assert.AreEqual(Data.People.Mary, data.ElementAt(1).ThePerson);
+        }
+
+        [Test]
+        public async Task SelectWith1Level_ReturnsArrayDataType()
+        {
+            // arrange
+            // act
+            var data = await Sql.Query.Sqlite<QueryClass1>()
+                .From(result => result.ThePerson)
+                .InnerJoin(x => x.ThePersonsData).On((q, d) => q.ThePerson.Id == d.PersonId)
+                .Map(x => x.ThePersonsData.Data)
+                .ToListAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count);
+            CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, data[0]);
+            CollectionAssert.AreEqual(Data.PeoplesData.MarysData.Data, data[1]);
         }
 
         [Test]

@@ -11,23 +11,16 @@ namespace SqlDsl.Mapper
     {
         static readonly IEnumerable<MappedTable> EmptyMappedTables = Enumerable.Empty<MappedTable>();
 
-        public static (MappingType resultType, IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expression)
+        public static (IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables) BuildMapFromRoot(BuildMapState state, Expression expression)
         {
             var (properties, tables) = ComplexMapBuilder.BuildMap(state, expression);
-            var ps = properties.Select(p => p.Convert(state)).ToArray();
-            var ts = tables.Select(p => p.Convert(state.WrappedSqlStatement)).ToArray();
             
-            return (ExpressionMappingTypeFinder.GetMappingType(ps, expression, state), ps, ts);
-
-            /*
-            if (mappedChains.Any(c => c.result.FromParams.GetEnumerable1().Any(x => x.isAggregate)))
-                throw new NotImplementedException("Cannot handle simple aggregate result"); // TODO
-
-            if (mappedChains.Length == 0)
-                throw new InvalidOperationException("Unable to understand mapping statement: " + expression); */
+            return (
+                properties.Select(p => p.Convert(state)).ToArray(), 
+                tables.Select(p => p.Convert(state.WrappedSqlStatement)).ToArray());
         }
 
-        class ExpressionMappingTypeFinder : ExpressionVisitor, IDisposable
+        public class ExpressionMappingTypeFinder : ExpressionVisitor, IDisposable
         {
             [ThreadStatic]
             static readonly ExpressionMappingTypeFinder Instance = new ExpressionMappingTypeFinder();
@@ -70,42 +63,16 @@ namespace SqlDsl.Mapper
                 return node;
             }
 
-            public static MappingType GetMappingType(QueryElementBasedMappedProperty[] properties, Expression expression, BuildMapState state)
+            public static MappingType_New GetMappingType(Expression expression)
             {
-                if (properties.Length == 0)
-                    return MappingType.SimpleProp;
-
                 using (Instance)
                 {
                     Instance.Visit(expression);
                     if (Instance.IsMap)
-                        return MappingType.Map;
-                }
-
-                if (properties.Length != 1 || properties.Any(p => p.To != null))
-                {
-                    return ReflectionUtils.GetIEnumerableType(expression.Type) == null ?
-                        MappingType.SingleComplexProp :
-                        MappingType.MultiComplexProp;
+                        return MappingType_New.Map;
                 }
                 
-                var fromParams = properties[0].FromParams
-                    .GetEnumerable()
-                    .Where(p => !p.IsParameter)
-                    .Select(x => x.Column.Alias)
-                    .ToArray();
-
-                foreach (var table in state.WrappedSqlStatement.Tables)
-                {
-                    if (fromParams.Any(p => p == table.Alias))
-                    {
-                        return ReflectionUtils.GetIEnumerableType(expression.Type) == null ?
-                            MappingType.SingleComplexProp :
-                            MappingType.MultiComplexProp;
-                    }
-                }
-
-                return MappingType.SimpleProp;
+                return MappingType_New.SingleProp;
             }
         }
         
@@ -113,11 +80,9 @@ namespace SqlDsl.Mapper
         /// The type of mapping to be performed.
         /// The results are ordered to hace the simplest mapping first, down to the most complex
         /// </summary>
-        public enum MappingType
+        public enum MappingType_New
         {
-            SimpleProp = 1,
-            SingleComplexProp,
-            MultiComplexProp,
+            SingleProp = 1,
             Map,
         }
     }

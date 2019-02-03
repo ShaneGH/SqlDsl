@@ -64,7 +64,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var tt= await TestUtils
+            await TestUtils
                 .FullyJoinedQuery()
                 .Map(x => new
                 {
@@ -90,6 +90,25 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Count();
 
             Assert.AreEqual(3, debugCount, "3 objects represents 3 levels of properties");
+        }
+
+        [Test]
+        public async Task CountPropMapValueAllocations_ForConstructorArgs()
+        {
+            // arrange
+            // act
+            var data= await TestUtils
+                .FullyJoinedQuery()
+                .Map(x => x.ThePerson.Name)
+                .ToArrayAsync(Executor, logger: Logger);
+
+            // assert
+            var debugCount = Logger.DebugMessages
+                .Where(m => m.Contains(((int)LogMessages.CreatedPropMapValueAllocation).ToString()))
+                .Count();
+
+            Assert.AreEqual(2, data.Length);
+            Assert.AreEqual(1, debugCount);
         }
     }
 }

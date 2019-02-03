@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using SqlDsl.Mapper;
 
 namespace SqlDsl.Utils
 {
@@ -744,6 +745,41 @@ namespace SqlDsl.Utils
             }
 
             return result;
+        }
+
+        static readonly ConcurrentDictionary<Type, Type> IsPropMapValueCache = new ConcurrentDictionary<Type, Type>();
+
+        /// <summary>
+        /// If the input type is a PropMapValue<>, returns it's generic argument, otherwise returns null
+        /// </summary>
+        public static Type IsPropMapValue(Type input)
+        {
+            if (!IsPropMapValueCache.TryGetValue(input, out Type value))
+            {
+                value = input.IsGenericType && input.GetGenericTypeDefinition() == typeof(PropMapValue<>)
+                    ? input.GetGenericArguments()[0]
+                    : null;
+
+                IsPropMapValueCache.TryAdd(input, value);
+            }
+
+            return value;
+        }
+
+        static readonly ConcurrentDictionary<Type, Type> CreatePropMapValueCache = new ConcurrentDictionary<Type, Type>();
+
+        /// <summary>
+        /// Creates a PropMapValue<T>
+        /// </summary>
+        public static Type CreatePropMapValue(Type input)
+        {
+            if (!CreatePropMapValueCache.TryGetValue(input, out Type value))
+            {
+                value = typeof(PropMapValue<>).MakeGenericType(input);
+                CreatePropMapValueCache.TryAdd(input, value);
+            }
+
+            return value;
         }
 
         /// <summary>

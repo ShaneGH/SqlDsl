@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using SqlDsl.Mapper;
 using SqlDsl.Utils;
 
 namespace SqlDsl.ObjectBuilders
@@ -15,7 +16,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        object Build(ReusableObjectGraph values, ILogger logger);
+        object Build(ObjectGraph values, IPropMapValueCache propMapValueCache, ILogger logger);
     }
     
     /// <summary>
@@ -26,7 +27,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        T Build(ReusableObjectGraph values, ILogger logger);
+        T Build(ObjectGraph values, IPropMapValueCache propMapValueCache, ILogger logger);
     }
 
     /// <summary>
@@ -37,7 +38,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compiled function to build an object
         /// </summary>
-        readonly Func<ReusableObjectGraph, ILogger, T> BuildObject;
+        readonly Func<ObjectGraph, IPropMapValueCache, ILogger, T> BuildObject;
         
         /// <summary>
         /// Compiled function to set all null enumerable properties of an object to empty
@@ -53,9 +54,9 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        public T Build(ReusableObjectGraph values, ILogger logger) 
+        public T Build(ObjectGraph values, IPropMapValueCache propMapValueCache, ILogger logger) 
         {
-            var obj = BuildObject(values, logger);
+            var obj = BuildObject(values, propMapValueCache, logger);
             var enumProps = (values?.GetSimpleProps())
                 .OrEmpty()
                 .Where(isEnumerableDataCell)
@@ -72,6 +73,6 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Build a concrete object from an object graph
         /// </summary>
-        object IBuilder.Build(ReusableObjectGraph values, ILogger logger) => Build(values, logger);
+        object IBuilder.Build(ObjectGraph values, IPropMapValueCache propMapValueCache, ILogger logger) => Build(values, propMapValueCache, logger);
     }
 }

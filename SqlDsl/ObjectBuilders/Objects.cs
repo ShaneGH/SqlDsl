@@ -1,3 +1,5 @@
+using SqlDsl.DataParser;
+using SqlDsl.Mapper;
 using SqlDsl.Utils;
 using SqlDsl.Utils.EqualityComparers;
 using System;
@@ -21,7 +23,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Compile a function to build an object from an object graph
         /// </summary>
-        public static Func<ReusableObjectGraph, ILogger, T> CompileObjectBuilder<T>()
+        public static Func<ObjectGraph, IPropMapValueCache, ILogger, T> CompileObjectBuilder<T>()
         {
             var type = typeof(T);
                 
@@ -38,7 +40,7 @@ namespace SqlDsl.ObjectBuilders
                 .Select(c => c.GetParameters().Select(p => p.ParameterType).ToArray())
                 .ToDictionary(x => x, x => x.Select(BuildValueGetter).ToArray(), ArrayComparer<Type>.Instance);
 
-            T build(ReusableObjectGraph vals, ILogger logger) => BuildObject(cArgGetters, propSetters, vals, logger);
+            T build(ObjectGraph vals, IPropMapValueCache propMapValueCache, ILogger logger) => BuildObject(cArgGetters, propSetters, vals, propMapValueCache, logger);
             return build;
         }
 
@@ -84,20 +86,12 @@ namespace SqlDsl.ObjectBuilders
         static readonly Type[] EmptyTypes = new Type[0];
         static readonly object[] EmptyObjects = new object[0];
 
-        /// <summary>
-        /// Build an object
-        /// </summary>
-        /// <param name="propSetters">A set of objects which can set the value of a property</param>
-        /// <param name="vals">The values of the object</param>
-        static T BuildObject<T>(
-            Dictionary<Type[], IValueGetter[]> cArgGetters, 
-            Dictionary<string, (PropertySetter<T> setter, Type propertyType)> propSetters, 
-            ReusableObjectGraph vals, 
+        static T InvokeObjectConstructor<T>(
+            Dictionary<Type[], IValueGetter[]> cArgGetters,
+            ObjectGraph vals, 
+            IPropMapValueCache propMapValueCache, 
             ILogger logger)
         {
-            if (vals == null)
-                return (T)ConstructObject(typeof(T), EmptyTypes, EmptyObjects);
-
             var constructorArgTypes = vals.ConstructorArgTypes ?? EmptyTypes;
             if (!cArgGetters.ContainsKey(constructorArgTypes))
                 throw new InvalidOperationException($"Unable to find constructor for object {typeof(T)} with constructor args [{constructorArgTypes.JoinString(", ")}].");
@@ -118,10 +112,36 @@ namespace SqlDsl.ObjectBuilders
                 });
 
             // Create output object
-            var obj = (T)ConstructObject(
+            return (T)ConstructObject(
                 typeof(T), 
                 constructorArgTypes, 
                 cargs.ToArray());
+
+            (int i, object v) SimpleConstructorArg((int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) arg) =>
+                GetSimpleConstructorArg(constructor, arg, logger);
+
+            (int i, object v) BuildAndDisposeofComplexConstructorArg((int argIndex, IEnumerable<ObjectGraph> value) arg) =>
+                GetComplexConstructorArgAndDisposeObjectGraphs(constructorArgTypes, constructor, arg, propMapValueCache, logger);
+        }
+
+        /// <summary>
+        /// Build an object
+        /// </summary>
+        /// <param name="propSetters">A set of objects which can set the value of a property</param>
+        /// <param name="vals">The values of the object</param>
+        static T BuildObject<T>(
+            Dictionary<Type[], IValueGetter[]> cArgGetters, 
+            Dictionary<string, (PropertySetter<T> setter, Type propertyType)> propSetters, 
+            ObjectGraph vals, 
+            IPropMapValueCache propMapValueCache,
+            ILogger logger)
+        {
+            if (vals == null)
+                return (T)ConstructObject(typeof(T), EmptyTypes, EmptyObjects);
+
+            var obj = ReflectionUtils.IsPropMapValue(typeof(T)) != null
+                ? (T)propMapValueCache.ReleaseOrCreateItem()
+                : InvokeObjectConstructor<T>(cArgGetters, vals, propMapValueCache, logger);
 
             // use a setter to set each simple property
             foreach (var prop in vals.GetSimpleProps().OrEmpty())
@@ -129,14 +149,21 @@ namespace SqlDsl.ObjectBuilders
                 if (!propSetters.TryGetValue(prop.name, out (PropertySetter<T> setter, Type propertyType) setter))
                     continue;
 
-                switch (prop.isEnumerableDataCell)
+                try
                 {
-                    case true:
-                        setter.setter.SetEnumerable(obj, prop.value, logger);
-                        break;
-                    case false:
-                        setter.setter.Set(obj, prop.value, logger);
-                        break;
+                    switch (prop.isEnumerableDataCell)
+                    {
+                        case true:
+                            setter.setter.SetEnumerable(obj, prop.value, logger);
+                            break;
+                        case false:
+                            setter.setter.Set(obj, prop.value, logger);
+                            break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new ParsingException($"Error setting parameter: \"{prop.name}\"", e);
                 }
             }
 
@@ -162,22 +189,16 @@ namespace SqlDsl.ObjectBuilders
                 // set the value of the property
                 setter.setter.Set(obj, values, logger);
 
-                object BuildAndDisposeofComplexProp(ReusableObjectGraph v)
+                object BuildAndDisposeofComplexProp(ObjectGraph v)
                 {
                     // TODO: there is a cast here (possibly a boxing if complex prop is struct)
-                    var result = builder.Build(v, logger);
+                    var result = builder.Build(v, propMapValueCache, logger);
                     v.Dispose();
                     return result;
                 }
             }
 
             return obj;
-
-            (int i, object v) SimpleConstructorArg((int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) arg) =>
-                GetSimpleConstructorArg(constructor, arg, logger);
-
-            (int i, object v) BuildAndDisposeofComplexConstructorArg((int argIndex, IEnumerable<ReusableObjectGraph> value) arg) =>
-                GetComplexConstructorArgAndDisposeObjectGraphs(constructorArgTypes, constructor, arg, logger);
         }
 
         static (int index, object value) GetSimpleConstructorArg(IValueGetter[] argGetters, (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) arg, ILogger logger)
@@ -190,7 +211,7 @@ namespace SqlDsl.ObjectBuilders
             return (arg.argIndex, value);
         }
 
-        static (int index, object value) GetComplexConstructorArgAndDisposeObjectGraphs(Type[] constructorArgTypes, IValueGetter[] argGetters, (int argIndex, IEnumerable<ReusableObjectGraph> value) arg, ILogger logger)
+        static (int index, object value) GetComplexConstructorArgAndDisposeObjectGraphs(Type[] constructorArgTypes, IValueGetter[] argGetters, (int argIndex, IEnumerable<ObjectGraph> value) arg, IPropMapValueCache propMapValueCache, ILogger logger)
         {
             var getter = argGetters[arg.argIndex];
 
@@ -206,10 +227,10 @@ namespace SqlDsl.ObjectBuilders
             var value = getter.Get(values, logger);
             return (arg.argIndex, value);
 
-            object BuildAndDispose(ReusableObjectGraph v)
+            object BuildAndDispose(ObjectGraph v)
             {
                 // TODO: there is a cast here (possibly a boxing if complex prop is struct)
-                var result = builder.Build(v, logger);
+                var result = builder.Build(v, propMapValueCache, logger);
                 v.Dispose();
                 return result;
             }

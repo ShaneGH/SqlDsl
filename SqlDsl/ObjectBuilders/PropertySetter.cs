@@ -1,3 +1,4 @@
+using SqlDsl.DataParser;
 using SqlDsl.Utils;
 using SqlDsl.Utils.EqualityComparers;
 using System;
@@ -36,7 +37,7 @@ namespace SqlDsl.ObjectBuilders
 
         static void CannotSetForEnumerable(TObject x, IEnumerable<object> y, ILogger z)
         {
-            throw new InvalidOperationException("Cannot use this object to set values for a property with an enumerable cell type.");
+            throw new ParsingException("Cannot use this object to set values for a property with an enumerable cell type.");
         }
     }
 }

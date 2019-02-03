@@ -977,7 +977,40 @@ namespace SqlDsl.UnitTests.DataParser
         }
 
         [Test]
-        public void PropertyGraph_ReturnsMultipleComplexArgs_ReturnsCorrectOPG2()
+        public void PropertyGraph_ReturnsOneComplexArgs_ReturnsCorrectOPG()
+        {
+            // arrange
+            // act
+            var actual = TestUtils
+                .FullyJoinedQuery()
+                .Map(p => p.ThePerson)
+                .BuildMappedObjetPropertyGraph();
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                typeof(PropMapValue<Person>),
+                null,
+                new []
+                {
+                    ("Value", new ObjectPropertyGraph(
+                        typeof(Person),
+                        new []
+                        {
+                            (1, "Id", new int[0], typeof(long), typeof(long)),
+                            (2, "Name", new int[0], typeof(string), typeof(string)),
+                            (3, "Gender", new int[0], typeof(Gender), typeof(Gender)),
+                            (4, "IsMember", new int[0], typeof(bool), typeof(bool))
+                        },
+                        null, 
+                        new int[0]))
+                }, 
+                new[] { 0 });
+
+            Compare(expected, actual);
+        }
+
+        [Test]
+        public void PropertyGraph_ReturnsMultipleComplexArgs_ReturnsCorrectOPG()
         {
             // arrange
             // act
@@ -988,16 +1021,69 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
-                typeof(List<PersonClass>),
+                typeof(PropMapValue<List<PersonClass>>),
+                null,
                 new []
                 {
-                    (2, "PersonId", new int[]{1}, (Type)null, typeof(long)),   
-                    (3, "ClassId", new int[]{1}, (Type)null, typeof(long))   
+                    ("Value", new ObjectPropertyGraph(
+                        typeof(PersonClass),
+                        new []
+                        {
+                            (2, "PersonId", new int[0], typeof(long), typeof(long)),   
+                            (3, "ClassId", new int[0], typeof(long), typeof(long))   
+                        },
+                        null, 
+                        new[] { 1 }))
+                }, 
+                new[] { 0 });
+
+            Compare(expected, actual);
+        }
+
+        [Test]
+        public void PropertyGraph_ReturnsOneSimpleArg_ReturnsCorrectOPG()
+        {
+            // arrange
+            // act
+            var actual = TestUtils
+                .FullyJoinedQuery()
+                .Map(p => p.ThePerson.Name)
+                .BuildMappedObjetPropertyGraph();
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                typeof(PropMapValue<string>),
+                new []
+                {
+                    (1, "Value", new int[0], typeof(string), typeof(string))
                 },
                 null, 
                 new[] { 0 });
 
-            Compare(expected, actual);
+            CompareAndDisplayAllObjsOnFailure(expected, actual);
+        }
+
+        [Test]
+        public void PropertyGraph_ReturnsMultipleSimpleArg_ReturnsCorrectOPG()
+        {
+            // arrange
+            // act
+            var actual = TestUtils
+                .FullyJoinedQuery()
+                .Map(p => p.TheClasses.Select(c => c.Name))
+                .BuildMappedObjetPropertyGraph();
+
+            // assert
+            var expected = new ObjectPropertyGraph(
+                typeof(PropMapValue<IEnumerable<string>>),
+                new []
+                {
+                    (3, "Value", new[] { 2, 1 }, typeof(IEnumerable<string>), typeof(string))
+                },
+                null, 
+                new[] { 0 });
+
+            CompareAndDisplayAllObjsOnFailure(expected, actual);
         }
 
         class CountAndGroupClass

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using SqlDsl.DataParser;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 using SqlDsl.Utils;
 
@@ -550,7 +551,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             // assert
-            Assert.ThrowsAsync(typeof(InvalidOperationException), () => TestUtils.FullyJoinedQuery()
+            Assert.ThrowsAsync(typeof(ParsingException), () => TestUtils.FullyJoinedQuery()
                 .Map(query => new SmartJoinedClass3_1
                 { 
                     FavouriteClasses = query.TheClasses

@@ -1,6 +1,7 @@
 using SqlDsl.DataParser;
 using SqlDsl.Utils;
 using SqlDsl.Utils.EqualityComparers;
+using SqlDsl.Utils.ObjectCaches;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,17 +12,44 @@ namespace SqlDsl.ObjectBuilders
     /// <summary>
     /// A generic object graph which can be converted into a concrete class
     /// </summary>
-    public abstract class ObjectGraph<TChildGraph>
+    public class ObjectGraph : ReusableObject<(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> objects)>
     {
         /// <summary>
         /// The type of the constructor args to be used with this object
         /// </summary>
         public virtual Type[] ConstructorArgTypes => PropertyGraph.ConstructorArgTypes;
 
-        public abstract ObjectPropertyGraph PropertyGraph { get; }
+        public ObjectPropertyGraph PropertyGraph { get; private set; }
 
-        public abstract IEnumerable<object[]> Objects { get; }
+        public IEnumerable<object[]> Objects { get; private set; }
 
+        internal readonly IReleasableCache<ObjectGraph> Cache;
+
+        internal ObjectGraph(IReleasableCache<ObjectGraph> cache)
+            : base(cache)
+        {
+            Cache = cache;
+        }
+        
+        public void Init(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> objects)
+        {
+            PropertyGraph = propertyGraph ?? throw new ArgumentNullException(nameof(propertyGraph));
+            Objects = objects ?? throw new ArgumentNullException(nameof(objects));
+        }
+
+        protected override void _Dispose()
+        {
+            PropertyGraph = null;
+            Objects = null;
+        }
+
+        public ObjectGraph Clone()
+        {
+            var clone = Cache.ReleseOrCreateItem();
+            clone.Init(PropertyGraph, Objects);
+            return clone;
+        }
+        
         /// <summary>
         /// Simple properties such as int, string, List&lt;int>, List&lt;string> etc...
         /// </summary>
@@ -31,7 +59,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Complex properties will have properties of their own
         /// </summary>
-        public virtual IEnumerable<(string name, IEnumerable<TChildGraph> value)> GetComplexProps() =>
+        public virtual IEnumerable<(string name, IEnumerable<ObjectGraph> value)> GetComplexProps() =>
             PropertyGraph.ComplexProps
                 .Select(p => (p.name, CreateObject(p.value, Objects)));
 
@@ -44,7 +72,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Complex constructor args will have properties of their own
         /// </summary>
-        public virtual IEnumerable<(int argIndex, IEnumerable<TChildGraph> value)> GetComplexConstructorArgs() =>
+        public virtual IEnumerable<(int argIndex, IEnumerable<ObjectGraph> value)> GetComplexConstructorArgs() =>
             PropertyGraph.ComplexConstructorArgs
                 .Select(p => (p.argIndex, CreateObject(p.value, Objects)));
 
@@ -76,15 +104,17 @@ namespace SqlDsl.ObjectBuilders
             return (data, cellEnumType);
         }
 
-        IEnumerable<TChildGraph> CreateObject(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> rows)
+        IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> rows)
         {
             var objectsData = propertyGraph.GroupAndFilterData(rows);
 
             foreach (var obj in objectsData)
-                yield return BuildChildGraph(propertyGraph, obj);
+            {
+                var graph = Cache.ReleseOrCreateItem();
+                graph.Init(propertyGraph, obj);
+                yield return graph;
+            }
         }
-
-        protected abstract TChildGraph BuildChildGraph(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> rows);
 
         public override string ToString()
         {

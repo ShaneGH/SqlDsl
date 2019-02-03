@@ -19,19 +19,22 @@ namespace SqlDsl
         readonly string[] SelectColumns;
         readonly ISqlSyntax SqlFragmentBuilder;
         public readonly RootObjectPropertyGraph PropertyGraph;
+        public readonly bool RequiresSimpleValueUnwrap;
 
         public CompiledQuery(
             QueryParts sql, 
             object[] parameters, 
             string[] selectColumns,
             RootObjectPropertyGraph propertyGraph,
-            ISqlSyntax sqlFragmentBuilder)
+            ISqlSyntax sqlFragmentBuilder,
+            bool requiresSimpleValueUnwrap)
         {
             SqlParts = sql;
             Parameters = RewriteParameters(sql.Assemble().sql, parameters);
             SelectColumns = selectColumns;
             PropertyGraph = propertyGraph;
             SqlFragmentBuilder = sqlFragmentBuilder;
+            RequiresSimpleValueUnwrap = requiresSimpleValueUnwrap;
         }
 
         static IEnumerable<(string name, object value)> GetParamValue(object param, TArgs args, int i)
@@ -190,7 +193,7 @@ namespace SqlDsl
         public IEnumerable<TResult> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null) 
         {
             return LoadData(executor, args, logger)
-                .Parse<TResult>(PropertyGraph, logger);
+                .Parse<TResult>(PropertyGraph, logger, RequiresSimpleValueUnwrap);
         }
 
         /// <inheritdoc />
@@ -198,7 +201,7 @@ namespace SqlDsl
         {
             var results = await LoadDataAsync(executor, args, logger).ConfigureAwait(false);
             return results
-                .Parse<TResult>(PropertyGraph, logger);
+                .Parse<TResult>(PropertyGraph, logger, RequiresSimpleValueUnwrap);
         }
 
         /// <inheritdoc />
@@ -258,7 +261,7 @@ namespace SqlDsl
         {
             var timer = new Timer(true);
             var result = LoadData(executor, args, logger)
-                .Parse<TResult>(PropertyGraph, logger)
+                .Parse<TResult>(PropertyGraph, logger, RequiresSimpleValueUnwrap)
                 .First();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
@@ -273,7 +276,7 @@ namespace SqlDsl
             var timer = new Timer(true);
             var result = (await LoadDataAsync(executor, args, logger)
                 .ConfigureAwait(false))
-                .Parse<TResult>(PropertyGraph, logger)
+                .Parse<TResult>(PropertyGraph, logger, RequiresSimpleValueUnwrap)
                 .First();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
@@ -287,7 +290,7 @@ namespace SqlDsl
         {
             var timer = new Timer(true);
             var result = LoadData(executor, args, logger)
-                .Parse<TResult>(PropertyGraph, logger)
+                .Parse<TResult>(PropertyGraph, logger, RequiresSimpleValueUnwrap)
                 .FirstOrDefault();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
@@ -302,7 +305,7 @@ namespace SqlDsl
             var timer = new Timer(true);
             var result = (await LoadDataAsync(executor, args, logger)
                 .ConfigureAwait(false))
-                .Parse<TResult>(PropertyGraph, logger)
+                .Parse<TResult>(PropertyGraph, logger, RequiresSimpleValueUnwrap)
                 .FirstOrDefault();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
@@ -316,7 +319,7 @@ namespace SqlDsl
         {
             var timer = new Timer(true);
             var result = LoadData(executor, args, logger)
-                .Parse<TResult>(PropertyGraph, logger)
+                .Parse<TResult>(PropertyGraph, logger, RequiresSimpleValueUnwrap)
                 .Single();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
@@ -331,7 +334,7 @@ namespace SqlDsl
             var timer = new Timer(true);
             var result = (await LoadDataAsync(executor, args, logger)
                 .ConfigureAwait(false))
-                .Parse<TResult>(PropertyGraph, logger)
+                .Parse<TResult>(PropertyGraph, logger, RequiresSimpleValueUnwrap)
                 .Single();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
@@ -345,7 +348,7 @@ namespace SqlDsl
         {
             var timer = new Timer(true);
             var result = LoadData(executor, args, logger)
-                .Parse<TResult>(PropertyGraph, logger)
+                .Parse<TResult>(PropertyGraph, logger, RequiresSimpleValueUnwrap)
                 .SingleOrDefault();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))
@@ -360,7 +363,7 @@ namespace SqlDsl
             var timer = new Timer(true);
             var result = (await LoadDataAsync(executor, args, logger)
                 .ConfigureAwait(false))
-                .Parse<TResult>(PropertyGraph, logger)
+                .Parse<TResult>(PropertyGraph, logger, RequiresSimpleValueUnwrap)
                 .SingleOrDefault();
             
             if (logger.CanLogInfo(LogMessages.ParsedQuery))

@@ -70,10 +70,11 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Where(q => q.TheClasses.Select(x => x.Id).One() == Data.Classes.Tennis.Id)
                 .Map(p => p.TheClasses)
                 .ToArray(Executor, logger: Logger)
-                .SelectMany(x => x);
+                .SelectMany(x => x)
+                .ToArray();
 
             // assert
-            CollectionAssert.AreEqual(data, new [] { Data.Classes.Tennis, Data.Classes.Tennis });
+            CollectionAssert.AreEqual(new [] { Data.Classes.Tennis, Data.Classes.Tennis }, data);
         }
 
         [Test]

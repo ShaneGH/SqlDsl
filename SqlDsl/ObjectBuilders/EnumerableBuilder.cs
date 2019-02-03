@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using SqlDsl.Mapper;
 using SqlDsl.Utils;
 
 namespace SqlDsl.ObjectBuilders
@@ -57,25 +58,25 @@ namespace SqlDsl.ObjectBuilders
                 builder.Parameters);
         }
 
-        public TCollection Build(ReusableObjectGraph values, ILogger logger)
+        public TCollection Build(ObjectGraph values, IPropMapValueCache propMapValueCache, ILogger logger)
         {
             var objects = SplitObjectGraph(values, logger).Select(BuildSingleObject);
             return CollectionBuilder(objects);
 
-            T BuildSingleObject(ReusableObjectGraph obj)
+            T BuildSingleObject(ObjectGraph obj)
             {
-                var result = SingleObjBuilder.Build(obj, logger);
+                var result = SingleObjBuilder.Build(obj, propMapValueCache, logger);
                 obj.Dispose();
                 return result;
             }
         }
 
-        object IBuilder.Build(ReusableObjectGraph values, ILogger logger) => Build(values, logger);
+        object IBuilder.Build(ObjectGraph values, IPropMapValueCache propMapValueCache, ILogger logger) => Build(values, propMapValueCache, logger);
 
         /// <summary>
         /// Split an object graph in the form of {P1: [1, 2], P2: [3, 4]} into [{P1: [1], P2: [3]}, {P1: [2], P2: [4]}]
         /// </summary>
-        static IEnumerable<ReusableObjectGraph> SplitObjectGraph(ReusableObjectGraph values, ILogger logger)
+        static IEnumerable<ObjectGraph> SplitObjectGraph(ObjectGraph values, ILogger logger)
         {
             if (values.PropertyGraph.SimpleConstructorArgs.Length == 0 && values.PropertyGraph.SimpleProps.Length == 0)
             {
@@ -94,7 +95,7 @@ namespace SqlDsl.ObjectBuilders
 
             foreach (var row in dataRowsForProp)
             {
-                var obj = values.Cache.GetGraph(logger);
+                var obj = values.Cache.ReleseOrCreateItem();
                 obj.Init(values.PropertyGraph, new[] { row });
                 yield return obj;
             }

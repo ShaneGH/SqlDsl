@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using SqlDsl.DataParser;
 using SqlDsl.Mapper;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 using SqlDsl.Utils;
@@ -481,7 +482,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             Assert.ThrowsAsync(
-                typeof(InvalidOperationException), 
+                typeof(ParsingException), 
                 () => Sql.Query.Sqlite<ArrayDataTypeQuery>()
                     .From(x => x.ThePerson)
                     .InnerJoin(x => x.ThePersonsData)
@@ -519,7 +520,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             // assert
-            Assert.Throws(typeof(InvalidCastException), () =>
+            Assert.Throws(typeof(ParsingException), () =>
                 Sql.Query.Sqlite<ArrayDataTypeQuery>()
                     .From(x => x.ThePerson)
                     .InnerJoin(x => x.ThePersonsData)

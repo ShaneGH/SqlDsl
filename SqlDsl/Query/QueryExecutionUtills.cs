@@ -23,52 +23,18 @@ namespace SqlDsl.Query
             ISqlSelectStatement statement, 
             IEnumerable<object> parameters,
             ISqlSyntax sqlSyntax, 
-            QueryParseType queryParseType)
+            QueryParseType queryParseType,
+            bool requiresSimpleValueUnwrap)
         {
             var sql = ToSql(sqlBuilder);
 
             var selectColumns = statement.SelectColumns.Select(Alias).ToArray();
-            var propertyGraph = statement.BuildObjetPropertyGraph(typeof(TResult), queryParseType);
+            var resultType = requiresSimpleValueUnwrap 
+                ? ReflectionUtils.CreatePropMapValue(typeof(TResult)) 
+                : typeof(TResult);
+            var propertyGraph = statement.BuildObjetPropertyGraph(resultType, queryParseType);
 
-            return new CompiledQuery<TArgs, TResult>(sql, parameters.ToArray(), selectColumns, propertyGraph, sqlSyntax);
-        }
-
-        /// <summary>
-        /// Compile a sqlBuilder into a query which can be executed multiple times, The query in this case should return one simple value
-        /// </summary>
-        /// <param name="sqlBuilder">The builder with the property populated</param>
-        /// <param name="parameters">Any constant parameters in the statement</param>
-        /// <param name="property">The name of the singe property</param>
-        public static CompiledQuery<TArgs, TResult> CompileSimple<TArgs, TResult>(
-            this ISqlString sqlBuilder,
-            ISqlSelectStatement statement, 
-            IEnumerable<object> parameters, 
-            ISqlSyntax sqlSyntax, 
-            string property)
-        {
-            var selectColumn = statement.SelectColumns[property];
-            var graph = new RootObjectPropertyGraph(
-                typeof(TResult), 
-                statement.SelectColumns.IndexOf(selectColumn),
-                // if RowNumberColumn == null, the selectColumn is a parameter
-                // in this case it is indexed by the first column (rid of primary table)
-                selectColumn.RowNumberColumn == null 
-                    ? 0 
-                    : EnsureNotMinusOne(
-                        statement.SelectColumns.IndexOf(selectColumn.RowNumberColumn), 
-                        selectColumn.RowNumberColumn),
-                selectColumn.DataType,
-                ReflectionUtils.GetIEnumerableType(selectColumn.DataType) != null);
-
-            return new CompiledQuery<TArgs, TResult>(sqlBuilder.ToSql(), parameters.ToArray(), statement.SelectColumns.Select(Alias).ToArray(), graph, sqlSyntax);
-        }
-
-        static int EnsureNotMinusOne(int input, ISelectColumn col)
-        {
-            if (input == -1)
-                throw new InvalidOperationException($"Cannot find index for column: {col.Alias}.");
-
-            return input;
+            return new CompiledQuery<TArgs, TResult>(sql, parameters.ToArray(), selectColumns, propertyGraph, sqlSyntax, requiresSimpleValueUnwrap);
         }    
 
         static string Alias(ISelectColumn c) => c.Alias;

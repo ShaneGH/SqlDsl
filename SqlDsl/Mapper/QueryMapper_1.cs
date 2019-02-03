@@ -12,19 +12,47 @@ namespace SqlDsl.Mapper
     public class QueryMapper<TArgs, TResult, TMapped> : ISqlExecutor<TArgs, TMapped>
     {
         readonly SqlExecutor<TArgs, TResult> Query;
-        readonly Expression<Func<TResult, TArgs, TMapped>> Mapper;
+        readonly LambdaExpression Mapper;
+        readonly bool RequiresPropertyUnwrap;
         
         public QueryMapper(SqlExecutor<TArgs, TResult> query, Expression<Func<TResult, TArgs, TMapped>> mapper)
         {
             Query = query ?? throw new ArgumentNullException(nameof(query));
-            Mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            var (rpu, m) = EnsureComplexMap(mapper ?? throw new ArgumentNullException(nameof(mapper)));
+
+            RequiresPropertyUnwrap = rpu;
+            Mapper = m;
+        }
+
+        /// <summary>
+        /// Ensure that the mapping statement begins with a new { } expression, as only these can be mapped
+        /// <summary>
+        static (bool requiresPropertyUnwrap, LambdaExpression expression) EnsureComplexMap(Expression<Func<TResult, TArgs, TMapped>> mapper)
+        {
+            var mapType = MapBuilder.ExpressionMappingTypeFinder.GetMappingType(mapper.Body);
+            if (mapType != MapBuilder.MappingType_New.SingleProp)
+                return (false, mapper);
+                
+            var valType = typeof(PropMapValue<>).MakeGenericType(mapper.Body.Type);
+            var body = Expression.MemberInit(
+                Expression.New(
+                    valType),
+                Expression.Bind(
+                    valType.GetField("Value"),
+                    mapper.Body));
+
+            return (
+                true,
+                Expression.Lambda<Func<TResult, TArgs, PropMapValue<TMapped>>>(
+                    body,
+                    mapper.Parameters));
         }
 
         /// <inheritdoc />
         public ICompiledQuery<TArgs, TMapped> Compile(ILogger logger = null)
         {
             var timer = new Timer(true);
-            var result = QueryMapper.Compile<TArgs, TResult, TMapped>(Query.SqlSyntax, Query, Mapper, logger: logger);
+            var result = QueryMapper.Compile<TArgs, TResult, TMapped>(Query.SqlSyntax, Query, Mapper, RequiresPropertyUnwrap, logger: logger);
 
             if (logger.CanLogInfo(LogMessages.CompiledQuery))
                 logger.LogInfo($"Query compiled in {timer.SplitString()}", LogMessages.CompiledQuery);

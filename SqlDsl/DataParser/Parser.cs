@@ -1,3 +1,4 @@
+using SqlDsl.Mapper;
 using SqlDsl.ObjectBuilders;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
@@ -19,11 +20,11 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
-        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
+        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger, bool requiresSimpleValueUnwrap)
         {
-            return propertyGraph.IsSimpleValue ?
+            return requiresSimpleValueUnwrap ?
                 ParseSimple<TResult>(rows, propertyGraph, logger) :
-                ParseComplex<TResult>(rows, propertyGraph, logger);
+                ParseComplex<TResult>(rows, propertyGraph, logger, InvalidPropValueCache.Instance);
         }
 
         /// <summary>
@@ -33,21 +34,12 @@ namespace SqlDsl.DataParser
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
         static IEnumerable<TResult> ParseSimple<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
         {
-            // group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable)
-            var dbValuesPerRecord = rows
-                // simple mapped properties are always grouped around the primary select
-                .GroupBy(r => r[0])
-                .Select(singleRecord => singleRecord
-                    .GroupBy(r => r[propertyGraph.SimpleValuePrimaryKeyColumn])
-                    .Select(Enumerable.First))
-                .Select(rs => rs.Select(r => r[propertyGraph.SimpleValueColumnIndex]));
-
-            var resultEnumCount = ReflectionUtils.CountEnumerables(typeof(TResult));
-            var cellEnumType = ReflectionUtils.CountEnumerables(propertyGraph.SimplePropertyCellType);
-
-            var getter = ValueGetters.GetValueGetter<TResult>(resultEnumCount > cellEnumType, cellEnumType > 0);
-            foreach (var value in dbValuesPerRecord)
-                yield return getter(value, logger);
+            var propMapBuilder = new PropMapValueCache<TResult>(logger);
+            foreach (var value in rows.ParseComplex<PropMapValue<TResult>>(propertyGraph, logger, propMapBuilder))
+            {
+                yield return value.Value;
+                value.Dispose();
+            }
         }
 
         /// <summary>
@@ -55,13 +47,13 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
-        static IEnumerable<TResult> ParseComplex<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
+        static IEnumerable<TResult> ParseComplex<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger, IPropMapValueCache propMapBuilder)
         {   
-            var objectGraphCache = new ObjectGraphCache();
+            var objectGraphCache = new ObjectGraphCache(logger);
             var builder = Builders.GetBuilder<TResult>();
             foreach (var obj in CreateObject(propertyGraph, objectGraphCache, rows, logger))
             {
-                var result = builder.Build(obj, logger);
+                var result = builder.Build(obj, propMapBuilder, logger);
                 obj.Dispose();
                 yield return result;
             }
@@ -71,7 +63,7 @@ namespace SqlDsl.DataParser
         /// Map a group of rows to an object property graph to an object graph with properties
         /// </summary>
         /// <param name="objects">A raw block of data, which has not been grouped into objects</param>
-        static IEnumerable<ReusableObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<object[]> rows, ILogger logger)
+        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<object[]> rows, ILogger logger)
         {
             var objectsData = propertyGraph.GroupAndFilterData(rows);
             return CreateObject(propertyGraph, objectGraphCache, objectsData, logger);
@@ -81,13 +73,27 @@ namespace SqlDsl.DataParser
         /// Map a group of rows to an object property graph to an object graph with properties
         /// </summary>
         /// <param name="objects">An enumerable of objects. Each object can span multiple rows (corresponding to sub properties which are enumerable)</param>
-        static IEnumerable<ReusableObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<IEnumerable<object[]>> objects, ILogger logger)
+        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<IEnumerable<object[]>> objects, ILogger logger)
         {
             foreach (var objectData in objects)
             {
-                var graph = objectGraphCache.GetGraph(logger);
+                var graph = objectGraphCache.ReleseOrCreateItem();
                 graph.Init(propertyGraph, objectData);
                 yield return graph;
+            }
+        }
+
+        class InvalidPropValueCache : IPropMapValueCache
+        {
+            public static readonly IPropMapValueCache Instance = new InvalidPropValueCache();
+
+            private InvalidPropValueCache()
+            {
+            }
+
+            public object ReleaseOrCreateItem()
+            {
+                throw new InvalidOperationException($"{typeof(PropMapValueCache<>)} is for internal use only.");
             }
         }
     }
