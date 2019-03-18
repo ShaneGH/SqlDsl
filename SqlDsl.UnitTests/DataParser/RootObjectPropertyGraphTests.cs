@@ -1264,9 +1264,12 @@ namespace SqlDsl.UnitTests.DataParser
 
         class ClassesByTag
         {
+            // warning CS0649: Field ... is never assigned to, and will always have its default value null
+            #pragma warning disable 0649
             public Tag TheTag;
             public IEnumerable<Class> TheClasses;
             public IEnumerable<ClassTag> TheClassTags;
+            #pragma warning restore 0649
         }
 
         class ClassesByTagResult
@@ -1386,7 +1389,6 @@ namespace SqlDsl.UnitTests.DataParser
         }
 
         [Test]
-        [Ignore("TODO")]
         public void SqlCase_WithPlainExpressions_ReturnsCorrectOPG()
         {
             // arrange
@@ -1412,15 +1414,25 @@ namespace SqlDsl.UnitTests.DataParser
                 .BuildMappedObjetPropertyGraph();
 
             // assert
-            // [0-TheTag.#rowid, 1-TheClasses.#rowid, 2-TheClassTags.#rowid, 3-#ca0, 4-#ca1]
+            // [0-TheTag.#rowid, 1-TheClasses.#rowid, 2-TheClassTags.#rowid, 3-Value.#ca0, 4-Value.#ca1]
             var expected = new ObjectPropertyGraph(
-                typeof(IEnumerable<ClassesByTagResult>),
+                typeof(DontCompareType),
+                null,
                 new []
                 {
-                    (3, "name", new int[0], typeof(string), typeof(string))
-                },
-                null, 
-                new[] { 0, 2, 1 });
+                    ("Value", new ObjectPropertyGraph(
+                        typeof(DontCompareType),
+                        null,
+                        null, 
+                        new[] { 2, 1 },
+                        simpleConstructorArgs: new []
+                        {
+                            (3, 0, new int[0], typeof(string), typeof(string)),
+                            (4, 1, new int[0], typeof(int), typeof(int))
+                        }))
+                }, 
+                new[] { 0 });
+                    
 
             // assert
             CompareAndDisplayAllObjsOnFailure(expected, actual);

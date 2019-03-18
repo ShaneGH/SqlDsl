@@ -124,9 +124,12 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
 
         class ClassesByTag
         {
+            // warning CS0649: Field ... is never assigned to, and will always have its default value null
+            #pragma warning disable 0649
             public Tag TheTag;
             public IEnumerable<Class> TheClasses;
             public IEnumerable<ClassTag> TheClassTags;
+            #pragma warning restore 0649
         }
 
         [Test]
