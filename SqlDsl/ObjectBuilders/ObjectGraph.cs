@@ -89,7 +89,7 @@ namespace SqlDsl.ObjectBuilders
             return (p.name, data, cellEnumType != null);
         }
 
-        (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, IEnumerable<int> primaryKeyColumns, Type dataCellType)
+        (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, int[] primaryKeyColumns, Type dataCellType)
         {
             var dataRowsForProp = PropertyGraph.GetDataRowsForSimpleProperty(Objects, primaryKeyColumns);
 

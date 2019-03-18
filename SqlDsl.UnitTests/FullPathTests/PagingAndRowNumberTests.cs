@@ -278,7 +278,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public void Map_OnlySinlgeInnerRowNumber_MapsResults()
+        public void Map_OnlySingleInnerRowNumber_MapsResults()
         {
             // arrange
             // act

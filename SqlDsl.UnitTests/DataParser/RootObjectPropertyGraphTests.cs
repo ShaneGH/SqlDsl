@@ -34,6 +34,8 @@ namespace SqlDsl.UnitTests.DataParser
             public List<Purchase> PurchasesByClass { get; set; }
         }
 
+        class DontCompareType { }
+
         void CompareAndDisplayAllObjsOnFailure(ObjectPropertyGraph expected, ObjectPropertyGraph actual)
         {
             try
@@ -49,9 +51,10 @@ namespace SqlDsl.UnitTests.DataParser
         void Compare(ObjectPropertyGraph expected, ObjectPropertyGraph actual)
         {
             if (expected == null && actual == null) return;
-            if (expected == null || actual == null) Fail();
+            if (expected == null || actual == null) Fail("Actual or expected are null");
 
-            Assert.AreEqual(expected.ObjectType, actual.ObjectType);
+            if (expected.ObjectType != typeof(DontCompareType))
+                Assert.AreEqual(expected.ObjectType, actual.ObjectType);
 
             ComparePrimaryKeyColumns(expected, actual);
 
@@ -76,7 +79,7 @@ namespace SqlDsl.UnitTests.DataParser
                 var y_ = actual.ComplexProps.ElementAt(i);
 
                 if (x_.name != y_.name)
-                    Fail("Complex prop " + i);
+                    Fail("Complex prop " + i + " name");
 
                 Compare(x_.value, y_.value);
             }
@@ -100,8 +103,8 @@ namespace SqlDsl.UnitTests.DataParser
                 var x_ = expected.ComplexConstructorArgs.ElementAt(i);
                 var y_ = actual.ComplexConstructorArgs.ElementAt(i);
                 
-                Assert.AreEqual(x_.argIndex, y_.argIndex, "Complex prop " + i);
-                Assert.AreEqual(x_.constuctorArgType, y_.constuctorArgType, "Complex prop " + i);
+                Assert.AreEqual(x_.argIndex, y_.argIndex, "Complex prop " + i + " index");
+                Assert.AreEqual(x_.constuctorArgType, y_.constuctorArgType, "Complex prop " + i + " constructor arg type");
                 Compare(x_.value, y_.value);
             }
 
@@ -137,7 +140,7 @@ namespace SqlDsl.UnitTests.DataParser
                 var y_ = actual.ComplexProps.ElementAt(i);
 
                 if (x_.name != y_.name)
-                    Fail("Complex prop " + i);
+                    Fail("Complex prop " + i + " name");
 
                 ComparePrimaryKeyColumns(x_.value, y_.value);
             }
@@ -377,6 +380,7 @@ namespace SqlDsl.UnitTests.DataParser
                 .BuildMappedObjetPropertyGraph();
 
             // assert
+            // [0-ThePerson.#rowid, 1-TheClasses.#rowid, 2-TheTags.#rowid, 3-ThePersonClasses.#rowid, 4-TheClassTags.#rowid, 5-PersonName, 6-MappedClasses.ClassName, 7-MappedClasses.TagNames]
             var expected = new ObjectPropertyGraph(
                 typeof(MappedVersion),
                 new[]
@@ -965,12 +969,19 @@ namespace SqlDsl.UnitTests.DataParser
 
             // assert
             var expected = new ObjectPropertyGraph(
-                typeof(List<AnotherDifficultCase>),
+                typeof(PropMapValue<List<AnotherDifficultCase>>),
+                null,
                 new []
                 {
-                    (2, "ClassId", new int[]{1}, (Type)null, typeof(long)),   
-                },
-                null, 
+                    ("Value", new ObjectPropertyGraph(
+                        typeof(AnotherDifficultCase),
+                        new []
+                        {
+                            (2, "ClassId", new int[0], typeof(long), typeof(long)),   
+                        },
+                        null, 
+                        new int[] { 1 }))
+                }, 
                 new[] { 0 });
 
             Compare(expected, actual);
@@ -1196,7 +1207,7 @@ namespace SqlDsl.UnitTests.DataParser
         }
 
         [Test]
-        public void SimpleMapOn1Table_WithMultipleResults_AndProperties()
+        public void SimpleMapOn1Table_WithMultipleResults_AndPropertiesXXX()
         {
             // arrange
             // act
@@ -1226,8 +1237,6 @@ namespace SqlDsl.UnitTests.DataParser
                 })
                 .BuildMappedObjetPropertyGraph();
 
-            //Assert.Fail();
-
             // assert
             // [0-ThePerson.#rowid, 1-Classes.#rowid, 2-PurchasesByClass.#rowid, 3-PersonClasses.#rowid, 4-ThePerson, 5-TheClasses.Name, 6-TheClasses.Prices]
             var expected = new ObjectPropertyGraph(
@@ -1249,6 +1258,204 @@ namespace SqlDsl.UnitTests.DataParser
                         new[] { 3, 1 }))
                 }, 
                 new[] { 0 });
+
+            CompareAndDisplayAllObjsOnFailure(expected, actual);
+        }
+
+        class ClassesByTag
+        {
+            public Tag TheTag;
+            public IEnumerable<Class> TheClasses;
+            public IEnumerable<ClassTag> TheClassTags;
+        }
+
+        class ClassesByTagResult
+        {
+            public string name;
+        }
+
+        [Test]
+        public void SimpleMapOn1Table_MappedToEnumerableWrappedInObject_ReturnsCorrectOPG()
+        {
+            // this is a smoke test for SimpleMapOn1Table_MappedToEnumerable_ReturnsCorrectOPG
+            // it is essentially the same query but with each result wrapped in an anonymous object
+
+            // arrange
+            // act
+            var actual = Sql.Query.Sqlite<ClassesByTag>()
+                .From(x => x.TheTag)
+                .LeftJoin(q => q.TheClassTags)
+                    .On((q, ct) => q.TheTag.Id == ct.TagId)
+                .LeftJoin(q => q.TheClasses)
+                    .On((q, ct) => q.TheClassTags.One().ClassId == ct.Id)
+                .Map(t => new { y = t.TheClasses
+                    .Select(c => new ClassesByTagResult { name = t.TheTag.Name }) })
+                .BuildMappedObjetPropertyGraph();
+
+            // assert
+            // [0-TheTag.#rowid, 1-TheClasses.#rowid, 2-TheClassTags.#rowid, 3-name]
+            var expected = new ObjectPropertyGraph(
+                typeof(DontCompareType),
+                null,
+                null, 
+                new[] { 0 },
+                complexConstructorArgs: new []
+                {
+                    (0, typeof(IEnumerable<ClassesByTagResult>), new ObjectPropertyGraph(
+                        typeof(ClassesByTagResult),
+                        new []
+                        {
+                            (3, "name", new int[0], typeof(string), typeof(string))
+                        },
+                        null, 
+                        new[] { 2, 1 }))
+                });
+
+            CompareAndDisplayAllObjsOnFailure(expected, actual);
+        }
+
+        [Test]
+        public void SimpleMapOn1Table_MappedToEnumerable_ReturnsCorrectOPG()
+        {
+            // arrange
+            // act
+            var actual = Sql.Query.Sqlite<ClassesByTag>()
+                .From(x => x.TheTag)
+                .LeftJoin(q => q.TheClassTags)
+                    .On((q, ct) => q.TheTag.Id == ct.TagId)
+                .LeftJoin(q => q.TheClasses)
+                    .On((q, ct) => q.TheClassTags.One().ClassId == ct.Id)
+                .Map(t => t.TheClasses
+                    .Select(c => new ClassesByTagResult { name = t.TheTag.Name }))
+                .BuildMappedObjetPropertyGraph();
+
+            // assert
+            // [0-TheTag.#rowid, 1-TheClasses.#rowid, 2-TheClassTags.#rowid, 3-name]
+            var expected = new ObjectPropertyGraph(
+                typeof(PropMapValue<IEnumerable<ClassesByTagResult>>),
+                null,
+                new []
+                {
+                    ("Value", new ObjectPropertyGraph(
+                        typeof(ClassesByTagResult),
+                        new []
+                        {
+                            (3, "name", new int[0], typeof(string), typeof(string))
+                        },
+                        null, 
+                        new[] { 2, 1 }))
+                }, 
+                new int[] { 0 });
+
+            CompareAndDisplayAllObjsOnFailure(expected, actual);
+        }
+
+        class myobj<T>
+        {
+            public T Value { get; set; }
+        }
+
+        [Test]
+        public void MappedQuery_LeftJoinReturnsNullAndMappedToEnumerable_ReturnsCorrectOPG()
+        {
+            // arrange
+            // act
+            var actual = Sql.Query.Sqlite<ClassesByTag>()
+                .From(x => x.TheTag)
+                .LeftJoin(q => q.TheClassTags)
+                    .On((q, ct) => q.TheTag.Id == ct.TagId)
+                .LeftJoin(q => q.TheClasses)
+                    .On((q, ct) => q.TheClassTags.One().ClassId == ct.Id)
+                .Map(t => t.TheClasses
+                    .Select(c => t.TheTag.Name))
+                .BuildMappedObjetPropertyGraph();
+
+            // assert
+            // [0-TheTag.#rowid, 1-TheClasses.#rowid, 2-TheClassTags.#rowid, 3-Value]
+            var expected = new ObjectPropertyGraph(
+                typeof(PropMapValue<IEnumerable<string>>),
+                new []
+                {
+                    (3, "Value", new int[] { 2, 1 }, typeof(IEnumerable<string>), typeof(string))
+                },
+                null, 
+                new[] { 0 });
+
+            // assert
+            CompareAndDisplayAllObjsOnFailure(expected, actual);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public void SqlCase_WithPlainExpressions_ReturnsCorrectOPG()
+        {
+            // arrange
+            // act
+            var actual = Sql.Query.Sqlite<ClassesByTag>()
+                .From(x => x.TheTag)
+                .LeftJoin(q => q.TheClassTags)
+                    .On((q, ct) => q.TheTag.Id == ct.TagId)
+                .LeftJoin(q => q.TheClasses)
+                    .On((q, ct) => q.TheClassTags.One().ClassId == ct.Id)
+                .Map(t => t.TheClasses
+                    .Select(c => new
+                    {
+                        n = t.TheTag.Name,
+                        r = t.TheTag.Name == Data.Tags.Sport.Name
+                            ? c.Name == Data.Classes.Tennis.Name
+                                ? 1
+                                : 10
+                            : t.TheTag.Name == Data.Tags.BallSport.Name
+                                ? 100
+                                : 1000
+                    }))
+                .BuildMappedObjetPropertyGraph();
+
+            // assert
+            // [0-TheTag.#rowid, 1-TheClasses.#rowid, 2-TheClassTags.#rowid, 3-#ca0, 4-#ca1]
+            var expected = new ObjectPropertyGraph(
+                typeof(IEnumerable<ClassesByTagResult>),
+                new []
+                {
+                    (3, "name", new int[0], typeof(string), typeof(string))
+                },
+                null, 
+                new[] { 0, 2, 1 });
+
+            // assert
+            CompareAndDisplayAllObjsOnFailure(expected, actual);
+        }
+
+        [Test]
+        public void MappedQuery_LeftJoinReturnsNull_ReturnsCorrectElements()
+        {
+            // arrange
+            // act
+            var actual = Sql.Query.Sqlite<QueryContainer>()
+                .From<Person>(x => x.ThePerson)
+                .LeftJoin<ClassTag>(q => q.TheClassTags)
+                    .On((q, ct) => q.ThePerson.Id == ct.ClassId)
+                .Map(x => new
+                {
+                    thePerson = x.ThePerson.Name,
+                    theClassTagIds = x.TheClassTags
+                        .Select(y => y.ClassId)
+                        .ToArray()
+                })
+                .BuildMappedObjetPropertyGraph();
+
+            // assert
+            // [0-ThePerson.#rowid, 1-TheClassTags.#rowid, 2-#ca0, 3-#ca1]
+            var expected = new ObjectPropertyGraph(
+                typeof(DontCompareType),
+                null,
+                null, 
+                new [] { 0 },
+                simpleConstructorArgs: new[]
+                {
+                    (2, 0, new int[0], typeof(string), typeof(string)),
+                    (3, 1, new [] { 1 }, typeof(long[]), typeof(long))
+                });
 
             CompareAndDisplayAllObjsOnFailure(expected, actual);
         }

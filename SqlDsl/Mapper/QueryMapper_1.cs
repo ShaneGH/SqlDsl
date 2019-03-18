@@ -29,8 +29,8 @@ namespace SqlDsl.Mapper
         /// <summary>
         static (bool requiresPropertyUnwrap, LambdaExpression expression) EnsureComplexMap(Expression<Func<TResult, TArgs, TMapped>> mapper)
         {
-            var mapType = MapBuilder.ExpressionMappingTypeFinder.GetMappingType(mapper.Body);
-            if (mapType != MapBuilder.MappingType_New.SingleProp)
+            var mapType = MapBuilder.GetMappingType(mapper.Body);
+            if (mapType != MapBuilder.MappingType.SingleProp)
                 return (false, mapper);
                 
             var valType = typeof(PropMapValue<>).MakeGenericType(mapper.Body.Type);

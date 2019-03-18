@@ -40,7 +40,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// <summary>
         /// The mapping context for an unmapped column is it's own table
         /// </summary>
-        public IQueryTable MappingContext => Table;
+        public IEnumerable<IQueryTable> MappingContext => new [] { Table };
 
         public SelectColumn(
             (string table, string column, string aggregatedToTable)[] referencesColumns, 

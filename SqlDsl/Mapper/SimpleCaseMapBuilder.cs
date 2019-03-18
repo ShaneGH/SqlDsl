@@ -41,8 +41,7 @@ namespace SqlDsl.Mapper
                     el[0].FromParams), 
                 toPrefix, 
                 caseExpression.Type, 
-                state.MappingContext.propertyName, 
-                false, 
+                state.MappingContext.propertyName,
                 cases
                     .SelectMany(x => new [] { x.when, x.then })
                     .Concat(@else)

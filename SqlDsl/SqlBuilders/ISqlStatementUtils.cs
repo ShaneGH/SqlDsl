@@ -1,5 +1,6 @@
 using SqlDsl.Query;
 using SqlDsl.Utils;
+using SqlDsl.Utils.EqualityComparers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,9 +16,19 @@ namespace SqlDsl.SqlBuilders
             var col = sqlStatement.SelectColumns[columnAlias].RowNumberColumn;
 
             // if the piece is a parameter, Table will be null
-            return col == null 
-                ? Enumerable.Empty<ISelectColumn>() 
-                : col.IsRowNumberForTable.GetPrimaryKeyColumns(context);
+            if (col == null)
+                return Enumerable.Empty<ISelectColumn>();
+
+            var path = col.IsRowNumberForTable
+                .GetPrimaryKeyColumns(context)
+                .ToArray();
+
+            if (path.Contains(context.RowNumberColumn))
+                return path;
+                
+            // in this case a column is being used in the
+            // context of one of its child properties
+            return context.GetPrimaryKeyColumns(col.IsRowNumberForTable);
         }
         
         public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlSelectStatement sqlStatement, string columnAlias, IQueryTable context)
@@ -28,6 +39,31 @@ namespace SqlDsl.SqlBuilders
 
             return RemoveTrailingMinusOnes(result, columnAlias);
         }
+
+        // /// <summary>
+        // /// Get the precedence of 2 tables.
+        // /// </summary>
+        // /// <returns>
+        // /// 0 if they are the same table, -1 if table1 comes before table2, 1 if table2 comes before table1.
+        // /// Throws an exception if tables are not related
+        // /// </returns>
+        // public static int Compare(this ISqlSelectStatement sqlStatement, string tableAlias1, string tableAlias2)
+        // {
+        //     if (tableAlias1 == tableAlias2)
+        //         return 0;
+
+        //     var sqs = (SqlStatementParts.SqlStatement)sqlStatement;
+        //     var t1 = sqs.Tables[tableAlias1];
+        //     var t2 = sqs.Tables[tableAlias2];
+
+        //     if (t1.GetTableChain(t2, GetPathErrorHandling.ReturnNull, ContextPosition.EnsureContextIsBeforeTable) != null)
+        //         return 1;
+
+        //     if (t2.GetTableChain(t1, GetPathErrorHandling.ReturnNull, ContextPosition.EnsureContextIsBeforeTable) != null)
+        //         return -1;
+                
+        //     throw new InvalidOperationException($"Tables {tableAlias1} and {tableAlias2} are unrelated.");
+        // }
         
         static IEnumerable<int>  RemoveTrailingMinusOnes(IEnumerable<int> result, string columnAlias)
         {

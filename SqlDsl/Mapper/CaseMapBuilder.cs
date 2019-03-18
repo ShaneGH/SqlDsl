@@ -22,6 +22,66 @@ namespace SqlDsl.Mapper
 
         public static (IEnumerable<StringBasedMappedProperty> property, IEnumerable<MappedTable> tables) BuildMap(
             BuildMapState state, 
+            ConditionalExpression caseExpression,
+            string toPrefix = null)
+        {
+            var (cases, @else, tables) = GetCasesX(state, caseExpression);
+            return CompileCases(
+                state,
+                cases,
+                @else,
+                tables.Concat(tables),
+                caseExpression.Type,
+                toPrefix);
+        }
+
+        static (IEnumerable<(StringBasedMappedProperty when, StringBasedMappedProperty then)> cases, StringBasedMappedProperty @else, IEnumerable<MappedTable> tables) GetCasesX(
+            BuildMapState state, 
+            Expression expr)
+        {
+            var caseExpression = expr as ConditionalExpression;
+            if (caseExpression == null)
+            {
+                var (elseP, elseTables) = ComplexMapBuilder.BuildMap(
+                    state,
+                    ReflectionUtils.RemoveConvert(expr));
+
+                var elseProperties = elseP.ToArray();
+                if (elseProperties.Length != 1)
+                    throw new SqlBuilderException(state.MappingPurpose, caseExpression);
+
+                return (CodingConstants.Empty.Case, elseProperties[0], elseTables);
+            }
+
+            var (ifP, ifTables) = ComplexMapBuilder.BuildMap(
+                state,
+                ReflectionUtils.RemoveConvert(caseExpression.Test));
+
+            var ifProperties = ifP.ToArray();
+            if (ifProperties.Length != 1)
+                throw new SqlBuilderException(state.MappingPurpose, caseExpression);
+
+            var (thenP, thenTables) = ComplexMapBuilder.BuildMap(
+                state,
+                ReflectionUtils.RemoveConvert(caseExpression.IfTrue));
+
+            var thenProperties = thenP.ToArray();
+            if (thenProperties.Length != 1)
+                throw new SqlBuilderException(state.MappingPurpose, caseExpression);
+
+            var (otherCases, @else, otherTables) = GetCasesX(
+                state,
+                ReflectionUtils.RemoveConvert(caseExpression.IfFalse));
+
+            return (
+                otherCases.Prepend((ifProperties[0], thenProperties[0])),
+                @else,
+                ifTables.Concat(thenTables).Concat(otherTables)
+            );
+        }
+
+        public static (IEnumerable<StringBasedMappedProperty> property, IEnumerable<MappedTable> tables) BuildMap(
+            BuildMapState state, 
             MethodCallExpression caseExpression, 
             MapType nextMap,
             string toPrefix = null)
@@ -35,32 +95,19 @@ namespace SqlDsl.Mapper
             if (el.Length != 1)
                 throw new SqlBuilderException(state.MappingPurpose, caseExpression.Arguments[0]);
 
-            var (cases, tables2) = GetCases(state, caseExpression.Object, MapType.Other, toPrefix);
-
-            var prop = new StringBasedMappedProperty(
-                new CaseSqlExpression<StringBasedElement>(
-                    cases.Select(c => (c.when.FromParams, c.then.FromParams)), 
-                    el[0].FromParams), 
-                toPrefix, 
-                caseExpression.Type, 
-                state.MappingContext.propertyName, 
-                false, 
-                cases
-                    .SelectMany(x => new [] { x.when, x.then })
-                    .Concat(@else)
-                    .SelectMany(c => c.PropertySegmentConstructors)
-                    .ToArray());
-
-            return (
-                prop.ToEnumerable(), 
-                tables.Concat(tables2));
+            var (cases, tables2) = GetDslCases(state, caseExpression.Object);
+            return CompileCases(
+                state,
+                cases,
+                el[0],
+                tables.Concat(tables2),
+                caseExpression.Type,
+                toPrefix);
         }
 
-        static (IEnumerable<(StringBasedMappedProperty when, StringBasedMappedProperty then)> cases, IEnumerable<MappedTable> tables) GetCases(
+        static (IEnumerable<(StringBasedMappedProperty when, StringBasedMappedProperty then)> cases, IEnumerable<MappedTable> tables) GetDslCases(
             BuildMapState state, 
-            Expression caseExpression, 
-            MapType nextMap,
-            string toPrefix = null)
+            Expression caseExpression)
         {
             if (caseExpression == null)
                 return (CodingConstants.Empty.Case, CodingConstants.Empty.MappedTable);
@@ -90,7 +137,7 @@ namespace SqlDsl.Mapper
             if (whenP.Length != 1 || thenP.Length != 1)
                 throw new SqlBuilderException(state.MappingPurpose, caseExpression);
 
-            var (cases, tables) = GetCases(state, whenObject.Object, MapType.Other, toPrefix);
+            var (cases, tables) = GetDslCases(state, whenObject.Object);
             return (
                 cases.Append((whenP[0], thenP[0])),
                 tables.Concat(whenTables).Concat(thenTables)
@@ -146,6 +193,32 @@ namespace SqlDsl.Mapper
             }
 
             return (false, null);
+        }
+
+        static (IEnumerable<StringBasedMappedProperty> property, IEnumerable<MappedTable> tables) CompileCases(
+            BuildMapState state,
+            IEnumerable<(StringBasedMappedProperty when, StringBasedMappedProperty then)> cases, 
+            StringBasedMappedProperty @else,
+            IEnumerable<MappedTable> tables,
+            Type resultType,
+            string toPrefix = null)
+        {
+            var prop = new StringBasedMappedProperty(
+                new CaseSqlExpression<StringBasedElement>(
+                    cases.Select(c => (c.when.FromParams, c.then.FromParams)), 
+                    @else.FromParams), 
+                toPrefix, 
+                resultType, 
+                state.MappingContext.propertyName, 
+                cases
+                    .SelectMany(x => new [] { x.when, x.then })
+                    .Append(@else)
+                    .SelectMany(c => c.PropertySegmentConstructors)
+                    .ToArray());
+
+            return (
+                prop.ToEnumerable(), 
+                tables);
         }
     }
 }

@@ -61,7 +61,6 @@ namespace SqlDsl.Mapper
                         toPrefix, 
                         expr.Type, 
                         state.MappingContext.propertyName,
-                        false,
                         aggregatedToTable: state.MappingContext.propertyName).ToEnumerable(),
                     EmptyMappedTables,
                     true
@@ -75,13 +74,15 @@ namespace SqlDsl.Mapper
 
                 case ExpressionType.Parameter:
                     return (
-                        new [] { new StringBasedMappedProperty(
-                            expr as ParameterExpression, 
-                            null, 
-                            toPrefix, 
-                            expr.Type,
-                            state.MappingContext.propertyName,
-                            false) },
+                        new [] 
+                        { 
+                            new StringBasedMappedProperty(
+                                expr as ParameterExpression, 
+                                null, 
+                                toPrefix, 
+                                expr.Type,
+                                state.MappingContext.propertyName) 
+                        },
                         EmptyMappedTables,
                         false
                     );
@@ -100,6 +101,10 @@ namespace SqlDsl.Mapper
                 case ExpressionType.LessThanOrEqual:
                     var asB = expr as BinaryExpression;
                     return BuildMapForBinaryCondition(state, asB.Left, asB.Right, asB.Type, asB.NodeType, toPrefix).AddT(false);
+                    
+                case ExpressionType.Conditional:
+                    var asC = expr as ConditionalExpression;
+                    return CaseMapBuilder.BuildMap(state, asC, toPrefix).AddT(false);
                     
                 case ExpressionType.MemberAccess:
                     return BuildMapForMemberAccess(state, expr as MemberExpression, nextMap, toPrefix);
@@ -233,9 +238,7 @@ namespace SqlDsl.Mapper
                     SplitMapOfComplexProperty(state, arg, argType) :
                     arg.ToEnumerable();
 
-                return many.Select(q => q.WithLock(
-                    state.MappingContext.propertyName,
-                    lockMappingContext: nextMap == MapType.ContextSwitch,
+                return many.Select(q => q.With(
                     constructorArgs: q.PropertySegmentConstructors.Prepend(expr.Constructor).ToArray()));
             }
         }
@@ -265,8 +268,7 @@ namespace SqlDsl.Mapper
                     lProp[0].FromParams.Combine(rProp[0].FromParams, combiner),
                     toPrefix, 
                     combinedType,
-                    state.MappingContext.propertyName,
-                    false).ToEnumerable(),
+                    state.MappingContext.propertyName).ToEnumerable(),
                 l.tables.Concat(r.tables)
             );
         }
@@ -320,7 +322,6 @@ namespace SqlDsl.Mapper
             return (
                 result.properties
                     .Select(p => p.With( 
-                        state.MappingContext.propertyName,
                         fromParams: p.FromParams.MapParamName(x => CombineStrings(x, GetMemberName(expr.Member))),
                         mappedPropertyType: expr.Type))
                     .Enumerate(),
@@ -350,9 +351,7 @@ namespace SqlDsl.Mapper
                     .Select(m => (
                         m.map.properties.SelectMany(x => PropertyRepresentsTable(state, x)
                             ? SplitMapOfComplexProperty(state, x, m.binding.Member.GetPropertyOrFieldType())
-                            : x.WithLock( 
-                                state.MappingContext.propertyName,
-                                lockMappingContext: nextMap == MapType.ContextSwitch,
+                            : x.With(
                                 to: CombineStrings(toPrefix, x.To)).ToEnumerable()),
                         m.map.tables.Select(x => new MappedTable(x.From, CombineStrings(m.memberName, x.To), x.TableresultsAreAggregated)))))
                 .AggregateTuple2();
@@ -388,7 +387,6 @@ namespace SqlDsl.Mapper
 
             return (
                 properties.Select(p => p.With(
-                    state.MappingContext.propertyName,
                     mappedPropertyType: rowNumberExpression.Type,
                     fromParams: p.FromParams.MapParamName(x => CombineStrings(x, SqlStatementConstants.RowIdName)))),
                 tables);
@@ -427,7 +425,6 @@ namespace SqlDsl.Mapper
             {
                 // TODO: this method will require find and replace in strings (inefficient)
                 rProp = rProp.With( 
-                    state.MappingContext.propertyName,
                     // if there is only one parameter, it is an array and will need to be
                     // split into parts when rendering
                     fromParams: rProp.FromParams.MapParamName(n => $"{n}{SqlStatementConstants.ParamArrayFlag}"));
@@ -438,7 +435,6 @@ namespace SqlDsl.Mapper
                 toPrefix,
                 typeof(bool), 
                 state.MappingContext.propertyName,
-                false,
                 lProp.PropertySegmentConstructors.Concat(rProp.PropertySegmentConstructors).ToArray());
 
             return (
@@ -523,7 +519,6 @@ namespace SqlDsl.Mapper
 
             // if aggregate is on a table, change to aggregate row id
             properties = properties.Select(arg => arg.With( 
-                state.MappingContext.propertyName,
                 fromParams: PropertyRepresentsTable(state, arg)
                     ? canSubstituteRowNumberForTable
                         ? arg.FromParams.MapParamName(x => $"{x}.{SqlStatementConstants.RowIdName}")
@@ -539,8 +534,7 @@ namespace SqlDsl.Mapper
 
             StringBasedMappedProperty WrapWithFunc(StringBasedMappedProperty property)
             {
-                return property.With( 
-                    state.MappingContext.propertyName,
+                return property.With(
                     fromParams: new UnarySqlExpression<StringBasedElement>(property.FromParams, function));
             }
         }
@@ -557,8 +551,9 @@ namespace SqlDsl.Mapper
 
             TryAddSelectStatementParameterToProperty(state, enumerable, mapper.Parameters[0]);
 
-            (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool) innerMap;
             var outerMap = BuildMapWithErrorHandling(state, enumerable, MapType.Select, toPrefix);
+
+            (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool) innerMap;
             using (state.SwitchContext(mapper.Parameters[0], DefaultOnContextNotFound))
                 innerMap = BuildMapWithErrorHandling(state, mapper.Body, MapType.ContextSwitch);
 
@@ -574,7 +569,7 @@ namespace SqlDsl.Mapper
             return (
                 innerMap.properties
                     .Select(m => m.With( 
-                        state.MappingContext.propertyName,
+                        prependMappingContext: state.MappingContext.propertyName,
                         fromParams: m.FromParams.MapParam(x => new StringBasedElement(
                             x.ParamRoot ?? outerMapProperties[0].FromParams.First.ParamRoot, 
                             x.ParamRoot != null || (x.Param?.StartsWith("@") ?? false)
@@ -644,7 +639,6 @@ namespace SqlDsl.Mapper
                         toPrefix,
                         outputType, 
                         state.MappingContext.propertyName,
-                        false,
                         xProps[0].PropertySegmentConstructors.Concat(yProps[0].PropertySegmentConstructors).ToArray()).ToEnumerable(),
                     x.tables.Concat(y.tables),
                     false);
@@ -693,8 +687,7 @@ namespace SqlDsl.Mapper
                         property.FromParams.MapParamName(x => CombineStrings(x, mem.name)), 
                         CombineStrings(property.To, mem.name), 
                         mem.type, 
-                        state.MappingContext.propertyName,
-                        false));
+                        state.MappingContext.propertyName));
             }
         }
 

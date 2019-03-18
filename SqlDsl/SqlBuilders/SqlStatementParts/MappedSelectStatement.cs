@@ -36,8 +36,11 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             return tables
                 // if mapping does not map to a specific property (e.g. q => q.Args.Select(a => new object()))
                 // To will be null
-                .Where(t => t.To != null && !t.TableResultsAreAggregated)
-                .Select(t => (resultClassProperty: t.To, t.From.RowNumberColumn))
+                .Where(t => !t.TableResultsAreAggregated)
+
+                // TODO: setting To to "" is wishful thinking, but no
+                // tests failing right now
+                .Select(t => (t.To ?? "", t.From.RowNumberColumn))
                 .Enumerate();
         }
     }
@@ -118,7 +121,8 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                 .Select(GetRowIdColumn)
                 .Select(TryGetTable)
                 .RemoveNulls()
-                .OrderByDescending(Identity, new TablePrecedenceOrderer(singleSelectPart.MappingContext))
+                .OrderByDescending(Identity, new TablePrecedenceOrderer(
+                    TablePrecedenceOrderer.GetSingleMappingContext(singleSelectPart)))
                 .Select(TryGetRowNumberColumnFromTable)
                 .FirstOrDefault();
         }
@@ -156,7 +160,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             public bool IsRowNumber => false;
 
             /// <inheritdoc />
-            public IQueryTable MappingContext { get; }
+            public IEnumerable<IQueryTable> MappingContext { get; }
 
             public SqlSelectColumn(QueryElementBasedMappedProperty prop, ISelectColumn rowIdSelectColumn)
                 : this(
@@ -168,7 +172,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             {
             }
 
-            public SqlSelectColumn(string alias, Type dataType, ConstructorInfo[] argConstructors, ISelectColumn rowNumberColumn, IQueryTable mappingContext)
+            public SqlSelectColumn(string alias, Type dataType, ConstructorInfo[] argConstructors, ISelectColumn rowNumberColumn, IEnumerable<IQueryTable> mappingContext)
             {
                 Alias = alias ?? throw new ArgumentNullException(nameof(alias));
                 ArgConstructors = argConstructors ?? throw new ArgumentNullException(nameof(argConstructors));

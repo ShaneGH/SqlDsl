@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SqlDsl.Mapper;
 using SqlDsl.SqlBuilders;
 
 namespace SqlDsl.Utils.EqualityComparers
@@ -55,6 +56,31 @@ namespace SqlDsl.Utils.EqualityComparers
                 yield return x.GetTableChain(Context, GetPathErrorHandling.ReturnNull);
                 yield return y.GetTableChain(Context, GetPathErrorHandling.ReturnNull);
             }
+        }
+
+        internal static IQueryTable GetSingleMappingContext(QueryElementBasedMappedProperty column)
+        {
+            var rowNumberTables = column.FromParams
+                .GetEnumerable()
+                .Where(c => !c.IsParameter)
+                .Select(c => c.Column.RowNumberColumn.IsRowNumberForTable)
+                .Distinct()
+                .ToList();
+
+            var mappingContext = column.MappingContext
+                .LastOrDefault(x => rowNumberTables.Contains(x)) ??
+                column.MappingContext.FirstOrDefault();
+
+            return mappingContext ?? throw new InvalidOperationException($"You must have at least one mapping context: {column.To}.");
+        }
+
+        internal static IQueryTable GetSingleMappingContext(ISelectColumn column)
+        {
+            var mappingContext = column.MappingContext
+                .LastOrDefault(x => x != column.RowNumberColumn.IsRowNumberForTable) ??
+                column.MappingContext.FirstOrDefault();
+
+            return mappingContext ?? throw new InvalidOperationException($"You must have at least one mapping context: {column.Alias}.");
         }
     }
 }

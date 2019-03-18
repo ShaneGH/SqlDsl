@@ -131,10 +131,18 @@ namespace SqlDsl.DataParser
         /// <summary>
         /// Get the rows for a simple property, given it's row number column ids
         /// </summary>
-        public IEnumerable<object[]> GetDataRowsForSimpleProperty(IEnumerable<object[]> rows, IEnumerable<int> simplePropPrimaryKeyColumns)
+        public IEnumerable<object[]> GetDataRowsForSimpleProperty(IEnumerable<object[]> rows, int[] simplePropPrimaryKeyColumns)
         {
+            var dataIsFromSameTableAsObjectContext = simplePropPrimaryKeyColumns.Length > 0;
+
+            // if there is only 1 row, it may have null primary keys
+            // in the case of an OUTER JOIN, however it is still a valid row
+            var rs = rows.ToArray();
+            if (rs.Length == 1 && !dataIsFromSameTableAsObjectContext)
+                return rs[0].ToEnumerable();
+
             // run a "Distinct" on the primary keys
-            return rows
+            return rs
                 // remove empty data created by OUTER JOINs
                 .Where(r => simplePropPrimaryKeyColumns.All(x => r[x] != null && r[x] != DBNull.Value))
                 .GroupBy(d => GetUniqueIdForSimpleProp(d, simplePropPrimaryKeyColumns))

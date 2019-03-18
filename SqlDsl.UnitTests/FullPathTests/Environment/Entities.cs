@@ -178,4 +178,19 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 table.Value == Value;
         }
     }
+
+    public class DataDump : EqComparer
+    {
+        public int Id { get; set; }
+        public string Value { get; set; }
+
+        public override int GetHashCode() => $"{Id}.{Value}".GetHashCode();
+        public override bool Equals(object t)
+        {
+            var dd = t as DataDump;
+            return dd != null && 
+                dd.Id == Id && 
+                dd.Value == Value;
+        }
+    }
 }

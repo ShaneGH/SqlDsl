@@ -24,6 +24,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         public static readonly ClassTags ClassTags = new ClassTags();
         public static readonly Purchases Purchases = new Purchases();
         public static readonly TableWithOneRowAndOneColumns TablesWithOneRowAndOneColumn = new TableWithOneRowAndOneColumns();
+        public static readonly DataDumpData DataDumpData = new DataDumpData();
     }
 
     public static class InitData
@@ -68,7 +69,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             IEnumerable<ClassTag> classTags = null,
             IEnumerable<Tag> tags = null,
             IEnumerable<Purchase> purchases = null,
-            IEnumerable<TableWithOneRowAndOneColumn> tablesWithOneColumn = null)
+            IEnumerable<TableWithOneRowAndOneColumn> tablesWithOneColumn = null,
+            IEnumerable<DataDump> dataDump = null)
         {
             var location = GetDbLocation();
             if (File.Exists(location)) File.Delete(location);
@@ -86,7 +88,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                     PopulatedTableSql(personClasses.OrEmpty(), paramaters),
                     PopulatedTableSql(classTags.OrEmpty(), paramaters),
                     PopulatedTableSql(purchases.OrEmpty(), paramaters),
-                    PopulatedTableSql(tablesWithOneColumn.OrEmpty(), paramaters)
+                    PopulatedTableSql(tablesWithOneColumn.OrEmpty(), paramaters),
+                    PopulatedTableSql(dataDump.OrEmpty(), paramaters)
                 }.JoinString("\n");
                 
                 Console.WriteLine($" * Adding data");
@@ -389,6 +392,43 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         { 
             Record
         } as IEnumerable<TableWithOneRowAndOneColumn>).GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+    
+    class DataDumpData : IEnumerable<DataDump>
+    {
+        public readonly DataDump Record1 = new DataDump
+        {
+            Value = "val 1",
+            Id = 10000
+        };
+        
+        public readonly DataDump Record2 = new DataDump
+        {
+            Value = "val 2",
+            Id = 10001
+        };
+        
+        public readonly DataDump Record3 = new DataDump
+        {
+            Value = "val 3",
+            Id = 10002
+        };
+        
+        public readonly DataDump Record4 = new DataDump
+        {
+            Value = "val 4",
+            Id = 10003
+        };
+
+        public IEnumerator<DataDump> GetEnumerator() => (new [] 
+        { 
+            Record1,
+            Record2,
+            Record3,
+            Record4
+        } as IEnumerable<DataDump>).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

@@ -7,6 +7,7 @@ using SqlDsl.Utils;
 using SqlDsl.DataParser;
 using SqlDsl.SqlBuilders.SqlStatementParts;
 using System.Reflection;
+using SqlDsl.Utils.EqualityComparers;
 
 namespace SqlDsl.Query
 {
@@ -63,7 +64,11 @@ namespace SqlDsl.Query
 
             (string name, int[] primaryKeyColumnMap, Type dataCellType, ConstructorInfo[] isConstructorArg) GetMappedColumn(ISelectColumn column) => (
                 column.Alias,
-                sqlBuilder.GetRowNumberColumnIndexes(column.Alias, column.MappingContext).ToArray(),
+                sqlBuilder
+                    .GetRowNumberColumnIndexes(
+                        column.Alias, 
+                        TablePrecedenceOrderer.GetSingleMappingContext(column))
+                    .ToArray(),
                 column.DataType,
                 column.ArgConstructors);
         }

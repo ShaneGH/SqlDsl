@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 
@@ -6,8 +8,86 @@ namespace SqlDsl.UnitTests.FullPathTests
     [TestFixture]
     public class SqlCaseTests : FullPathTestBase
     {
+        class ClassesByTag
+        {
+            public Tag TheTag;
+            public IEnumerable<Class> TheClasses;
+            public IEnumerable<ClassTag> TheClassTags;
+        }
+
         [Test]
-        public void SqlCase_ReturnsCorrectResult()
+        [Ignore("TODO")]
+        public void SqlCase_WithPlainExpressions_ReturnsCorrectResult()
+        {
+            // arrange
+            // act
+            var result = Sql.Query.Sqlite<ClassesByTag>()
+                .From(x => x.TheTag)
+                .LeftJoin(q => q.TheClassTags)
+                    .On((q, ct) => q.TheTag.Id == ct.TagId)
+                .LeftJoin(q => q.TheClasses)
+                    .On((q, ct) => q.TheClassTags.One().ClassId == ct.Id)
+                .Map(t => t.TheClasses
+                    .Select(c => new
+                    {
+                        n = t.TheTag.Name,
+                        r = t.TheTag.Name == Data.Tags.Sport.Name
+                            ? c.Name == Data.Classes.Tennis.Name
+                                ? 1
+                                : 10
+                            : t.TheTag.Name == Data.Tags.BallSport.Name
+                                ? 100
+                                : 1000
+                    }))
+                .ToArray(executor: Executor, logger: Logger)
+                .SelectMany(xs => xs);
+
+            // assert
+            CollectionAssert.AreEquivalent(new [] 
+            { 
+                new { n = Data.Tags.Sport.Name, r = 1 }, 
+                new { n = Data.Tags.Sport.Name, r = 10 }, 
+                new { n = Data.Tags.BallSport.Name, r = 100 }, 
+                new { n = Data.Tags.UnusedTag.Name, r = 1000 }
+            }, result);
+        }
+
+        class PersonsDataTwice
+        {
+            public Person ThePerson;
+            public PersonsData ThePersonsData1;
+            public PersonsData ThePersonsData2;
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public void SqlCase_WithCaseReturnsTable_ThrowsException()
+        {
+            // arrange
+            // act
+            var result = Sql.Query.Sqlite<PersonsDataTwice>()
+                .From(x => x.ThePerson)
+                .LeftJoin(q => q.ThePersonsData1)
+                    .On((q, ct) => q.ThePerson.Id == ct.PersonId)
+                .LeftJoin(q => q.ThePersonsData2)
+                    .On((q, ct) => q.ThePerson.Id == ct.PersonId)
+                .Map(t => (t.ThePerson.Name == "a"
+                    ? t.ThePersonsData1
+                    : t.ThePersonsData2).Data)
+                .ToArray(executor: Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEquivalent(new [] 
+            { 
+                new { n = Data.Tags.Sport.Name, r = 1 }, 
+                new { n = Data.Tags.Sport.Name, r = 10 }, 
+                new { n = Data.Tags.BallSport.Name, r = 100 }, 
+                new { n = Data.Tags.UnusedTag.Name, r = 1000 }
+            }, result);
+        }
+
+        [Test]
+        public void SqlCase_WithCaseDsl_ReturnsCorrectResult()
         {
             // arrange
             // act
@@ -31,6 +111,34 @@ namespace SqlDsl.UnitTests.FullPathTests
                 new { n = Data.Tags.BallSport.Name, cs = 1 }, 
                 new { n = Data.Tags.Sport.Name, cs = 10 }, 
                 new { n = Data.Tags.UnusedTag.Name, cs = 100 }
+            }, result);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public void SqlCase_WithCaseDslReturnsTable_ThrowsException()
+        {
+            // arrange
+            // act
+            var result = Sql.Query.Sqlite<PersonsDataTwice>()
+                .From(x => x.ThePerson)
+                .LeftJoin(q => q.ThePersonsData1)
+                    .On((q, ct) => q.ThePerson.Id == ct.PersonId)
+                .LeftJoin(q => q.ThePersonsData2)
+                    .On((q, ct) => q.ThePerson.Id == ct.PersonId)
+                .Map(t => Sql.Case
+                    .When(t.ThePerson.Name == "a")
+                    .Then(t.ThePersonsData1)
+                    .Else(t.ThePersonsData2).Data)
+                .ToArray(executor: Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEquivalent(new [] 
+            { 
+                new { n = Data.Tags.Sport.Name, r = 1 }, 
+                new { n = Data.Tags.Sport.Name, r = 10 }, 
+                new { n = Data.Tags.BallSport.Name, r = 100 }, 
+                new { n = Data.Tags.UnusedTag.Name, r = 1000 }
             }, result);
         }
         
@@ -60,6 +168,35 @@ namespace SqlDsl.UnitTests.FullPathTests
                 new { n = Data.Tags.BallSport.Name, cs = 1 }, 
                 new { n = Data.Tags.Sport.Name, cs = 10 }, 
                 new { n = Data.Tags.UnusedTag.Name, cs = 100 }
+            }, result);
+        }
+
+        [Test]
+        [Ignore("TODO")]
+        public void SimpleCase_WithCaseReturnsTable_ThrowsException()
+        {
+            // arrange
+            // act
+            var result = Sql.Query.Sqlite<PersonsDataTwice>()
+                .From(x => x.ThePerson)
+                .LeftJoin(q => q.ThePersonsData1)
+                    .On((q, ct) => q.ThePerson.Id == ct.PersonId)
+                .LeftJoin(q => q.ThePersonsData2)
+                    .On((q, ct) => q.ThePerson.Id == ct.PersonId)
+                .Map(t => Sql.Case
+                    .Simple(t.ThePerson.Name)
+                    .When("a")
+                    .Then(t.ThePersonsData1)
+                    .Else(t.ThePersonsData2).Data)
+                .ToArray(executor: Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEquivalent(new [] 
+            { 
+                new { n = Data.Tags.Sport.Name, r = 1 }, 
+                new { n = Data.Tags.Sport.Name, r = 10 }, 
+                new { n = Data.Tags.BallSport.Name, r = 100 }, 
+                new { n = Data.Tags.UnusedTag.Name, r = 1000 }
             }, result);
         }
     }

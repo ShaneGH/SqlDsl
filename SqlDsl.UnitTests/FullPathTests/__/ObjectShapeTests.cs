@@ -433,6 +433,25 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
+        public async Task ReturnMultipleSubPropsInComplexObjFromMap()
+        {
+            // arrange
+            // act
+            var data = await TestUtils
+                .FullyJoinedQuery()
+                .Map(p => p.ThePersonClasses.Select(pc => new { cid = pc.ClassId }))
+                .ToIEnumerableAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual(2, data.Count());
+            Assert.AreEqual(2, data.First().Count());
+            Assert.AreEqual(1, data.ElementAt(1).Count());
+            Assert.AreEqual(new { cid = Data.PersonClasses.JohnTennis.ClassId }, data.First().First());
+            Assert.AreEqual(new { cid = Data.PersonClasses.JohnArchery.ClassId }, data.First().ElementAt(1));
+            Assert.AreEqual(new { cid = Data.PersonClasses.MaryTennis.ClassId }, data.ElementAt(1).First());
+        }
+
+        [Test]
         public async Task ValueTuplesInQueryFirstPart()
         {
             // arrange

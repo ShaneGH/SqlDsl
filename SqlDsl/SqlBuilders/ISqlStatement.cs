@@ -113,9 +113,9 @@ namespace SqlDsl.SqlBuilders
         IQueryTable IsRowNumberForTable { get; }    // TODO: sub interface for this property
         
         /// <summary>
-        /// Refers to the table which provided context for the mapping of this property
+        /// Refers to the tables which provided context for the mapping of this property
         /// </summary>
-        IQueryTable MappingContext { get; }
+        IEnumerable<IQueryTable> MappingContext { get; }
         
         /// <summary>
         /// If true, this column is a row number

@@ -96,7 +96,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         }
 
         [Test]
-        public void MappedQuery_LeftJoinReturnsNull_ReturnsCorrectElements()
+        public void MappedQuery_LeftJoinReturnsNull_ReturnsCorrectElementsUTDUTDUTDUT()
         {
             // arrange
             // act
@@ -120,6 +120,37 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
 
             Assert.AreEqual(Data.People.Mary.Name, data[1].thePerson);
             Assert.IsEmpty(data[1].theClassTagIds);
+        }
+
+        class ClassesByTag
+        {
+            public Tag TheTag;
+            public IEnumerable<Class> TheClasses;
+            public IEnumerable<ClassTag> TheClassTags;
+        }
+
+        [Test]
+        public void MappedQuery_LeftJoinReturnsNullAndMappedToEnumerable_ReturnsCorrectElements()
+        {
+            // arrange
+            // act
+            var result = Sql.Query.Sqlite<ClassesByTag>()
+                .From(x => x.TheTag)
+                .LeftJoin(q => q.TheClassTags)
+                    .On((q, ct) => q.TheTag.Id == ct.TagId)
+                .LeftJoin(q => q.TheClasses)
+                    .On((q, ct) => q.TheClassTags.One().ClassId == ct.Id)
+                .Map(t => t.TheClasses
+                    .Select(c => t.TheTag.Name))
+                .ToArray(executor: Executor, logger: Logger);
+
+            // assert
+            CollectionAssert.AreEquivalent(new [] 
+            { 
+                Data.Tags.Sport.Name,
+                Data.Tags.Sport.Name,
+                Data.Tags.BallSport.Name
+            }, result.SelectMany(xs => xs));
         }
 
         [Test]

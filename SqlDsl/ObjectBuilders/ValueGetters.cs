@@ -56,7 +56,7 @@ namespace SqlDsl.ObjectBuilders
 
             T MultipleGetter(IEnumerable<object> objects, ILogger logger) => objGetter(objects, logger);
 
-            T Getter(IEnumerable<object> objects, ILogger logger) => objGetter(GetOne(objects), logger);
+            T Getter(IEnumerable<object> objects, ILogger logger) => objGetter(GetOne<T>(objects), logger);
         }
 
         /// <summary>
@@ -64,11 +64,11 @@ namespace SqlDsl.ObjectBuilders
         /// If the enumerable contains 1 item, return it.
         /// If the enumerable contains more than 1 item, throw an exception
         /// </summary>
-        static object GetOne(IEnumerable items, string propertyName = null)
+        static object GetOne<T>(IEnumerable items, string propertyName = null)
         {
             var enumerator = items.GetEnumerator();
             if (!enumerator.MoveNext())
-                return null;
+                return default(T);
 
             var result = enumerator.Current;
             if (enumerator.MoveNext())

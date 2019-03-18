@@ -1,5 +1,6 @@
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
@@ -13,20 +14,27 @@ namespace SqlDsl.Mapper
 {
     class StringBasedMappedProperty : MappedProperty<StringBasedElement>
     {
-        public readonly string MappingContext;
-        public readonly bool LockMappingContext;
+        public readonly IEnumerable<string> MappingContext;
 
         public StringBasedMappedProperty(
             ISqlExpression<StringBasedElement> fromParams, 
             string to, 
             Type mappedPropertyType, 
             string mappingContext, 
-            bool lockMappingContext, 
             ConstructorInfo[] constructorArgs = null)
+            : this(fromParams, to, mappedPropertyType, new [] { mappingContext }, constructorArgs)
+        {
+        }
+
+        private StringBasedMappedProperty(
+            ISqlExpression<StringBasedElement> fromParams, 
+            string to, 
+            Type mappedPropertyType, 
+            IEnumerable<string> mappingContext, 
+            ConstructorInfo[] constructorArgs)
             : base(fromParams, to, mappedPropertyType, constructorArgs)
         {
             MappingContext = mappingContext;
-            LockMappingContext = lockMappingContext;
         }
         
         public StringBasedMappedProperty(
@@ -34,20 +42,21 @@ namespace SqlDsl.Mapper
             string from, 
             string to, 
             Type mappedPropertyType, 
-            string mappingContext, 
-            bool lockMappingContext, 
+            string mappingContext,
             ConstructorInfo[] constructorArgs = null, 
             string aggregatedToTable = null)
 
             : this (new StringBasedSqlExpression(
                 new Accumulator<StringBasedElement, BinarySqlOperator>(
-                    new StringBasedElement(fromParamRoot, from, aggregatedToTable))), to, mappedPropertyType, mappingContext, lockMappingContext, constructorArgs)
+                    new StringBasedElement(fromParamRoot, from, aggregatedToTable))), to, mappedPropertyType, mappingContext, constructorArgs)
         {
         }
 
         public QueryElementBasedMappedProperty Convert(BuildMapState state)
         {
-            var mappingContext = state.WrappedSqlStatement.Tables[MappingContext];
+            var mappingContext = MappingContext
+                .Select(x => state.WrappedSqlStatement.Tables[x])
+                .ToArray();
 
             return new QueryElementBasedMappedProperty(
                 FromParams.Convert(state),
@@ -57,56 +66,31 @@ namespace SqlDsl.Mapper
                 PropertySegmentConstructors);
         }
 
-        private StringBasedMappedProperty With(
-            string mappingContext,
-            bool lockMappingContext,
+        public StringBasedMappedProperty With(
+            string prependMappingContext = null,
             ISqlExpression<StringBasedElement> fromParams = null, 
             string to = null, 
             Type mappedPropertyType = null,
             ConstructorInfo[] constructorArgs = null)
         {
+            var mappingCtxt = prependMappingContext == null
+                ? MappingContext
+                : MappingContext.Prepend(prependMappingContext);
+
             return new StringBasedMappedProperty(
                 fromParams ?? FromParams, 
                 to ?? To, 
                 mappedPropertyType ?? MappedPropertyType,
-                LockMappingContext ? MappingContext : mappingContext,
-                LockMappingContext || lockMappingContext, 
+                mappingCtxt,
                 constructorArgs ?? PropertySegmentConstructors);
-        }
-
-        /// <summary>
-        /// Create another mapped property with the option to lock
-        /// </summary>
-        public StringBasedMappedProperty WithLock(
-            string mappingContext,
-            bool lockMappingContext = true,
-            ISqlExpression<StringBasedElement> fromParams = null, 
-            string to = null, 
-            Type mappedPropertyType = null,
-            ConstructorInfo[] constructorArgs = null)
-        {
-            return With(mappingContext, lockMappingContext, fromParams, to, mappedPropertyType, constructorArgs);
-        }
-
-        /// <summary>
-        /// Create another mapped property with the the same lock as this object
-        /// </summary>
-        public StringBasedMappedProperty With(
-            string mappingContext,
-            ISqlExpression<StringBasedElement> fromParams = null, 
-            string to = null, 
-            Type mappedPropertyType = null,
-            ConstructorInfo[] constructorArgs = null)
-        {
-            return With(mappingContext, false, fromParams, to, mappedPropertyType, constructorArgs);
         }
     }
     
     class QueryElementBasedMappedProperty : MappedProperty<SelectColumnBasedElement>
     {
-        public readonly IQueryTable MappingContext;
+        public readonly IQueryTable[] MappingContext;
 
-        public QueryElementBasedMappedProperty(ISqlExpression<SelectColumnBasedElement> fromParams, string to, Type mappedPropertyType, IQueryTable mappingContext, ConstructorInfo[] constructorArgs = null)
+        public QueryElementBasedMappedProperty(ISqlExpression<SelectColumnBasedElement> fromParams, string to, Type mappedPropertyType, IQueryTable[] mappingContext, ConstructorInfo[] constructorArgs = null)
             : base(fromParams, to, mappedPropertyType, constructorArgs)
         {
             MappingContext = mappingContext;
