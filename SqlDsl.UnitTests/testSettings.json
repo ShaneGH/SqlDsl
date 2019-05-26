@@ -1,6 +1,6 @@
 {
     "environments": {
-        "sqlite": false,
+        "sqlite": true,
         "mysql": true
     }
 }

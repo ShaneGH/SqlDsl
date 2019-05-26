@@ -7,6 +7,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 namespace SqlDsl.UnitTests.FullPathTests
 {
     [SqlTestAttribute(SqlType.MySql)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class ExecutionMethodTests : FullPathTestBase
     {
         public ExecutionMethodTests(SqlType testFlavour)

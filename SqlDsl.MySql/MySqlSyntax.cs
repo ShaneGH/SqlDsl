@@ -52,7 +52,12 @@ namespace SqlDsl.MySql
         static int GetUniqueId()
         {
             lock (Lock)
+            {
+                if (TmpIdentifier > 1000000)
+                    TmpIdentifier = 0;
+
                 return ++TmpIdentifier;
+            }
         }
     }
 }

@@ -6,6 +6,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 namespace SqlDsl.UnitTests.FullPathTests
 {
     [SqlTestAttribute(SqlType.MySql)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     class MappingObjectWithNoTableDataTests : FullPathTestBase
     {
         public MappingObjectWithNoTableDataTests(SqlType testFlavour)

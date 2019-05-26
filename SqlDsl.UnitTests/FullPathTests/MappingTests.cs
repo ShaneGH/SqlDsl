@@ -10,6 +10,7 @@ using SqlDsl.Utils;
 namespace SqlDsl.UnitTests.FullPathTests
 {
     [SqlTestAttribute(SqlType.MySql)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class MappingTests : FullPathTestBase
     {
         public MappingTests(SqlType testFlavour)

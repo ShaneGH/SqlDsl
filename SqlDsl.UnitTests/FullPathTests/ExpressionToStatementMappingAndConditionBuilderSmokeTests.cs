@@ -11,6 +11,7 @@ using SqlDsl.Utils;
 namespace SqlDsl.UnitTests.FullPathTests
 {
     [SqlTestAttribute(SqlType.MySql)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class ExpressionToStatementMappingAndConditionBuilderSmokeTests : FullPathTestBase
     {
         public ExpressionToStatementMappingAndConditionBuilderSmokeTests(SqlType testFlavour)
