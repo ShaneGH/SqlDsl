@@ -6,9 +6,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class GroupByTests : FullPathTestBase
     {
+        public GroupByTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
 
         [Test]
         public async Task GroupBy_WithGroupOn1Table_UsingConstructorArgs()

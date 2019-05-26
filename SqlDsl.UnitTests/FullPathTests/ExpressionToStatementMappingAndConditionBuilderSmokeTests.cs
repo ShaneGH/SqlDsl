@@ -10,9 +10,14 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class ExpressionToStatementMappingAndConditionBuilderSmokeTests : FullPathTestBase
     {
+        public ExpressionToStatementMappingAndConditionBuilderSmokeTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         public class QueryClass
         {
             public Person ThePerson;

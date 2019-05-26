@@ -5,9 +5,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     class MappingObjectWithNoTableDataTests : FullPathTestBase
     {
+        public MappingObjectWithNoTableDataTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         class MappedResult 
         {
             public long ClassId;

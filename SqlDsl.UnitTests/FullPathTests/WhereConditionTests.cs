@@ -6,9 +6,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class WhereConditionTests : FullPathTestBase
     {
+        public WhereConditionTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         class QueryClass
         {
             public Person ThePerson { get; set; }

@@ -6,9 +6,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class CountTests : FullPathTestBase
     {
+        public CountTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         class JoinedQueryClassLists
         {
             public Person ThePerson { get; set; }

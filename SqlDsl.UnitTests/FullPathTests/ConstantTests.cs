@@ -4,8 +4,14 @@ using NUnit.Framework;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class ConstantTests : FullPathTestBase
     {
+        public ConstantTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
 
         [Test]
         public async Task MapAndReturnConstant()

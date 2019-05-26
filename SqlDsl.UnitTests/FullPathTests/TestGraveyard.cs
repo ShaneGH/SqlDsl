@@ -11,9 +11,14 @@ namespace SqlDsl.UnitTests.FullPathTests
     /// <summary>
     /// This is a place to put tests that don't really make sense anymore, rather than delete them.
     /// </summary>
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class TestGraveyard : FullPathTestBase
     {
+        public TestGraveyard(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         [Test]
         public async Task MapWithAddition()
         {

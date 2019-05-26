@@ -1,16 +1,25 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Data.Sqlite;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
+using NUnit.Framework.Internal;
 using SqlDsl.Sqlite;
 using SqlDsl.UnitTests.FullPathTests.Environment;
+using SqlDsl.UnitTests.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
     public class FullPathTestBase
     {
+        private readonly TestFlavour TestFlavour;
+
+        public FullPathTestBase(TestFlavour testFlavour)
+        {
+            TestFlavour = testFlavour;
+        }
+
         SqliteConnection Connection;
 
         [OneTimeSetUp]
@@ -85,6 +94,44 @@ namespace SqlDsl.UnitTests.FullPathTests
                 Console.WriteLine();
                 Console.WriteLine("WARNING:");
                 WarningMessages.ForEach(Console.WriteLine);
+            }
+        }
+    }
+    
+    public enum TestFlavour
+    {
+        Sqlite
+    }
+
+    [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
+    sealed class SqlTestAttribute : TestFixtureAttribute, IFixtureBuilder
+    {        
+        private readonly TestFlavour Language;
+        public SqlTestAttribute(TestFlavour language)
+            : base(language)
+        {
+            Language = language;
+        }
+
+        IEnumerable<TestSuite> IFixtureBuilder.BuildFrom(ITypeInfo typeInfo)
+        {
+            switch (Language)
+            {
+                case TestFlavour.Sqlite:
+                    return Run(TestSettings.Instance.Environments.Sqlite);
+
+                default:
+                    throw new Exception($"Invalid sql type {Language}");
+            }
+
+            IEnumerable<TestSuite> Run(bool run)
+            {
+                return run
+                    ? base.BuildFrom(typeInfo)
+                    : new []
+                    {
+                        new TestSuite($"Test {typeInfo.Name} disabled for {Language}")
+                    };
             }
         }
     }

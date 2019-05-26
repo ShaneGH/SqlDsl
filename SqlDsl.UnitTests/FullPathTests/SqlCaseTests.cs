@@ -6,9 +6,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class SqlCaseTests : FullPathTestBase
     {
+        public SqlCaseTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         class ClassesByTag
         {
             // warning CS0649: Field ... is never assigned to, and will always have its default value null

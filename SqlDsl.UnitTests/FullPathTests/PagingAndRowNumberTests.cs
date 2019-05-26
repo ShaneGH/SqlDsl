@@ -6,9 +6,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class PagingAndRowNumberTests : FullPathTestBase
     {
+        public PagingAndRowNumberTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         [Test]
         public void Take_UnmappedQuery_PagesResults()
         {

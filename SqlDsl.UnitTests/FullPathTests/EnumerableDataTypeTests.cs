@@ -10,9 +10,14 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class EnumerableDataTypeTests : FullPathTestBase
     {
+        public EnumerableDataTypeTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         class JoinedQueryClass
         {
             public Person ThePerson { get; set; }

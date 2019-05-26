@@ -6,9 +6,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class ExecutionMethodTests : FullPathTestBase
     {
+        public ExecutionMethodTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         [Test]
         public void ToIEnumerable_WithMultiple_ReturnsCorrectData()
         {

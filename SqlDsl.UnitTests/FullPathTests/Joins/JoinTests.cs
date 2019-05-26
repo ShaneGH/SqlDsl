@@ -7,9 +7,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.Joins
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class JoinTests : FullPathTestBase
     {
+        public JoinTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         public class QueryClass
         {
             public Person ThePerson { get; set; }

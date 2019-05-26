@@ -5,9 +5,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class MinTests : FullPathTestBase
     {
+        public MinTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         [Test]
         public async Task MinAndGroup_WithPureMin()
         {

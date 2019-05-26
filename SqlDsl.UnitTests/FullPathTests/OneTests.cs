@@ -7,9 +7,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class OneTestsWithFunLogic : FullPathTestBase
     {
+        public OneTestsWithFunLogic(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         [Test]
         public void GetOneTableAndMapProperty()
         {

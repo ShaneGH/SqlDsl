@@ -5,9 +5,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.Joins
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class UnmappedJoinTests : FullPathTestBase
     {
+        public UnmappedJoinTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         [Test]
         public async Task Select2Joins_DoesNotDuplicateRecords()
         {

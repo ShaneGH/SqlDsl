@@ -5,9 +5,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class PerformanceTests : FullPathTestBase
     {
+        public PerformanceTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         class Cls1
         {
             public string thename;

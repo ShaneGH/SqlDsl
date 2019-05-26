@@ -4,8 +4,13 @@ using NUnit.Framework;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class ArgTests : FullPathTestBase
     {
+        public ArgTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
 
         [Test]
         public async Task MapAndReturnArg()

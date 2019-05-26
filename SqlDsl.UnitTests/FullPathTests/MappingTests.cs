@@ -9,9 +9,14 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class MappingTests : FullPathTestBase
     {
+        public MappingTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         class DeepQueryContainer
         {
             public QueryContainer Query { get; set; }

@@ -8,9 +8,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class MappingObjectShapeTests : FullPathTestBase
     {
+        public MappingObjectShapeTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+
         public class TableWithOneColumnMapper1
         {
             public TableWithOneRowAndOneColumn Tab { get; set; }

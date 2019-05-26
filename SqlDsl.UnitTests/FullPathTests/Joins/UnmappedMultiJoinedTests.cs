@@ -6,9 +6,14 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.Joins
 {
-    [TestFixture]
+    [SqlTestAttribute(TestFlavour.Sqlite)]
     public class UnmappedMultiJoinedTests : FullPathTestBase
     {
+        public UnmappedMultiJoinedTests(TestFlavour testFlavour)
+            : base(testFlavour)
+        {
+        }
+        
         class JoinedQueryClass : QueryContainer
         {
             public List<Purchase> ThePurchasesByClass { get; set; }
