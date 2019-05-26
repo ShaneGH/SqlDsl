@@ -37,7 +37,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         static Dependencies BuildDependenciesTypes()
         {
             return new Dependencies(
-                new MySqlSyntax(),
+                new MySqlSyntax(MySqlSettings.Default),
                 new DataTypes
                 {
                     String =  "TEXT",

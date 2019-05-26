@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using SqlDsl.SqlBuilders;
@@ -10,10 +11,24 @@ namespace SqlDsl.MySql
     /// </summary>
     public class MySqlSyntax : SqlSyntaxBase
     {
+        readonly MySqlSettings Settings;
+
+        public MySqlSyntax(MySqlSettings settings)
+        {
+            Settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        }
+
         /// <summary>
         /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
         /// </summary>
         public override SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames)
+        {
+            return Settings.Version8OrHigher
+                ? GetSelectTableSqlWithRowIdV8(tableName, rowIdAlias, otherColumnNames)
+                : GetSelectTableSqlWithRowIdV7(tableName, rowIdAlias, otherColumnNames);
+        }
+
+        SelectTableSqlWithRowId GetSelectTableSqlWithRowIdV7(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames)
         {
             var id = "row_number" + GetUniqueId();
             var cols = otherColumnNames
@@ -23,6 +38,22 @@ namespace SqlDsl.MySql
 
             return new SelectTableSqlWithRowId(
                 $"SET @{id} = 0;",
+                $"SELECT {cols} FROM {WrapTable(tableName)}",
+                null,
+                false);
+        }
+
+        SelectTableSqlWithRowId GetSelectTableSqlWithRowIdV8(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames)
+        {
+            var oc = otherColumnNames.ToList();
+            var cols = otherColumnNames
+                .Select(WrapColumn)
+                // TODO: rownumber over columns should not be first, but rather primary key
+                .Prepend($"(ROW_NUMBER() OVER (ORDER BY {WrapColumn(oc[0])})) AS {WrapAlias(rowIdAlias)}")
+                .JoinString(",");
+
+            return new SelectTableSqlWithRowId(
+                null,
                 $"SELECT {cols} FROM {WrapTable(tableName)}",
                 null,
                 false);
