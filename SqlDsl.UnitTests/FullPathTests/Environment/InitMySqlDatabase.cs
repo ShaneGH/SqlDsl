@@ -1,23 +1,16 @@
+
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
-using Newtonsoft.Json;
-using SqlDsl.Sqlite;
-using SqlDsl.Utils;
+using MySql.Data.MySqlClient;
+using SqlDsl.MySql;
 
 namespace SqlDsl.UnitTests.FullPathTests.Environment
 {
-    public class InitSqliteDatabase : InitDatabaseBase
+    public class InitMySqlDatabase : InitDatabaseBase
     {
-        public InitSqliteDatabase(
+        public InitMySqlDatabase(
             IEnumerable<Person> people = null,
             IEnumerable<PersonsData> peoplesData = null,
             IEnumerable<PersonClass> personClasses = null,
@@ -44,26 +37,36 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         static Dependencies BuildDependenciesTypes()
         {
             return new Dependencies(
-                new SqliteSyntax(),
+                new MySqlSyntax(),
                 new DataTypes
                 {
                     String =  "TEXT",
-                    DateTime = "INTEGER",
-                    DateTime_Null = "INTEGER",
-                    Bool = "INTEGER",
-                    Bool_Null = "INTEGER",
-                    Int = "INTEGER",
-                    Int_Null = "INTEGER",
-                    Long = "INTEGER",
-                    Long_Null = "INTEGER",
-                    Float = "REAL",
-                    Float_Null = "REAL",
+                    DateTime = "DATETIME",
+                    DateTime_Null = "DATETIME",
+                    Bool = "BOOL",
+                    Bool_Null = "BOOL",
+                    Int = "INT",
+                    Int_Null = "INT",
+                    Long = "BIGINT",
+                    Long_Null = "BIGINT",
+                    Float = "FLOAT",
+                    Float_Null = "FLOAT",
                     ByteArray = "BLOB",
-                    Enum = "INTEGER",
+                    Enum = "SMALLINT",
                     
                     GetString =  (x, y) => x == null ? "NULL" : "'" + x + "'",
-                    GetDateTime = (x, y) => x.Ticks.ToString(),
-                    GetDateTime_Null = (x, y) => x == null ? "NULL" : x.Value.Ticks.ToString(),
+                    GetDateTime = (x, y) => 
+                    {
+                        y.Add(x);
+                        return "@p" + (y.Count - 1);   
+                    },
+                    GetDateTime_Null = (x, y) => 
+                    {
+                        if (x == null) return "NULL";
+
+                        y.Add(x);
+                        return "@p" + (y.Count - 1);   
+                    },
                     GetBool = (x, y) => x ? "1" : "0",
                     GetBool_Null = (x, y) => x == null ? "NULL" : x.Value ? "1" : "0",
                     GetInt = (x, y) => x.ToString(),
@@ -81,23 +84,33 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 },
                 () => 
                 {
-                    var location = GetDbLocation();
-                    if (File.Exists(location)) File.Delete(location);
+                    using (var conn = new MySqlConnection(MachineConnectionString))
+                    {
+                        conn.Open();
+
+                        using (var command = conn.CreateCommand())
+                        {
+                            command.CommandText = "DROP DATABASE IF Exists SqlDslTestDb;";
+                            command.ExecuteNonQuery();
+                        }
+
+                        using (var command = conn.CreateCommand())
+                        {
+                            command.CommandText = "CREATE DATABASE SqlDslTestDb;";
+                            command.ExecuteNonQuery();
+                        }
+                    }
                 },
                 () => new Connection());
         }
 
-        public static string GetDbLocation()
-        {
-            var locationParts = new Regex(@"\\|/").Split(typeof(InitData).Assembly.Location).ToArray();
-            return locationParts.Take(locationParts.Length - 1).JoinString(@"\") + @"\data.db";
-        }
+        private static string MachineConnectionString = "Server=127.0.0.1;Uid=root;Pwd=root;Allow User Variables=True;";
 
-        public static SqliteConnection CreateSqliteConnection() => new SqliteConnection($@"Data Source={GetDbLocation()}");
+        public static MySqlConnection CreateMySqlConnection() => new MySqlConnection(MachineConnectionString + @"Database=SqlDslTestDb;");
 
         class Connection : IConnection
         {
-            readonly SqliteConnection _connection = CreateSqliteConnection();
+            readonly MySqlConnection _connection = CreateMySqlConnection();
 
             public void Dispose()
             {
@@ -114,7 +127,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                     param.ParameterName = "p" + i;
                     param.Value = p == null ? DBNull.Value : p;
                     return param;
-                }));
+                }).ToArray());
                 
                 cmd.ExecuteNonQuery();
             }

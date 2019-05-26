@@ -6,7 +6,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(SqlType.Sqlite)]
+    [SqlTestAttribute(SqlType.MySql)]
     public class SqlCaseTests : FullPathTestBase
     {
         public SqlCaseTests(SqlType testFlavour)
@@ -93,8 +93,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var result = Sql.Query
-                .Sqlite<Tag>()
+            var result = Query<Tag>()
                 .Map(t => new
                 {
                     n = t.Name,
@@ -140,8 +139,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var result = Sql.Query
-                .Sqlite<Tag>()
+            var result = Query<Tag>()
                 .Map(t => new
                 {
                     n = t.Name,

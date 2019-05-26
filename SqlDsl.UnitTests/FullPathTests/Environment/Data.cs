@@ -58,6 +58,18 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                         purchases: Data.Purchases,
                         tablesWithOneColumn: Data.TablesWithOneRowAndOneColumn);
                     break;
+                    
+                case SqlType.MySql:
+                    worker = new InitMySqlDatabase(
+                        people: Data.People,
+                        peoplesData: Data.PeoplesData,
+                        classes: Data.Classes,
+                        tags: Data.Tags,
+                        personClasses: Data.PersonClasses,
+                        classTags: Data.ClassTags,
+                        purchases: Data.Purchases,
+                        tablesWithOneColumn: Data.TablesWithOneRowAndOneColumn);
+                    break;
 
                 default:
                     throw new Exception($"Invalid sql type {sqlType}");

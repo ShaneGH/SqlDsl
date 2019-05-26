@@ -35,7 +35,7 @@ namespace SqlDsl.SqlBuilders
         public virtual string BuildAlias(string lhs, string alias) => $"{lhs} AS {alias}";
 
         /// <inheritdoc />
-        public abstract SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias);
+        public abstract SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames);
 
         /// <inheritdoc />
         public abstract string WrapTable(string table);

@@ -1,12 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MySql.Data.MySqlClient;
 using NUnit.Framework;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(SqlType.Sqlite)]
+    [SqlTestAttribute(SqlType.MySql)]
     public class WhereConditionTests : FullPathTestBase
     {
         public WhereConditionTests(SqlType testFlavour)
@@ -157,19 +159,30 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereEmptyIn()
+        public Task Select1SimpleObject_WithWhereEmptyIn()
         {
-            // arrange
-            var inVals = new long[0];
-            
-            // act
-            var data = await Query<QueryClass>()
-                .From(result => result.ThePerson)
-                .Where(result => result.ThePerson.Id.In(inVals))
-                .ToIEnumerableAsync(Executor, logger: Logger);
+            if (SqlType == SqlType.MySql)
+            {
+                Assert.ThrowsAsync<MySqlException>(Worker);
+                return Task.CompletedTask;
+            }
 
-            // assert
-            Assert.AreEqual(0, data.Count());
+            return Worker();
+
+            async Task Worker()
+            {
+                // arrange
+                var inVals = new long[0];
+                
+                // act
+                var data = await Query<QueryClass>()
+                    .From(result => result.ThePerson)
+                    .Where(result => result.ThePerson.Id.In(inVals))
+                    .ToIEnumerableAsync(Executor, logger: Logger);
+
+                // assert
+                Assert.AreEqual(0, data.Count());
+            }
         }
 
         [Test]
@@ -248,17 +261,28 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        public async Task Select1SimpleObject_WithWhereEmptyIn_EmptyArrayAsArg()
+        public Task Select1SimpleObject_WithWhereEmptyIn_EmptyArrayAsArg()
         {
-            // arrange
-            // act
-            var data = await Query<long[], QueryClass>()
-                .From(result => result.ThePerson)
-                .Where((result, args) => result.ThePerson.Id.In(args))
-                .ToArrayAsync(Executor, new long[0], logger: Logger);
+            if (SqlType == SqlType.MySql)
+            {
+                Assert.ThrowsAsync<MySqlException>(Worker);
+                return Task.CompletedTask;
+            }
 
-            // assert
-            Assert.AreEqual(0, data.Count());
+            return Worker();
+
+            async Task Worker()
+            {
+                // arrange
+                // act
+                var data = await Query<long[], QueryClass>()
+                    .From(result => result.ThePerson)
+                    .Where((result, args) => result.ThePerson.Id.In(args))
+                    .ToArrayAsync(Executor, new long[0], logger: Logger);
+
+                // assert
+                Assert.AreEqual(0, data.Count());
+            }
         }
 
         [Test]
@@ -368,13 +392,19 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.People.John, data[0].ThePerson);
             Assert.AreEqual(Data.People.Mary, data[1].ThePerson);
             
-            CollectionAssert.AreEqual(new [] 
+            CollectionAssert.AreEquivalent(new [] 
+            { 
+                Data.People.John,
+                Data.People.Mary
+            }, data.Select(p => p.ThePerson));
+            
+            CollectionAssert.AreEquivalent(new [] 
             { 
                 Data.PersonClasses.JohnTennis,
                 Data.PersonClasses.JohnArchery
             }, data[0].ThePersonClasses);
 
-            CollectionAssert.AreEqual(new [] 
+            CollectionAssert.AreEquivalent(new [] 
             { 
                 Data.PersonClasses.JohnTennis,
                 Data.PersonClasses.JohnArchery

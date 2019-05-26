@@ -5,7 +5,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(SqlType.Sqlite)]
+    [SqlTestAttribute(SqlType.MySql)]
     public class OrderByTests : FullPathTestBase
     {
         public OrderByTests(SqlType testFlavour)
@@ -151,7 +151,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await Query<int, PersonClass>()
-                .OrderByDesc((x, a) => a)
+                .OrderByDesc((x, a) => x.PersonId + a)
                 .ToArrayAsync(Executor, 7, logger: Logger);
 
             // assert

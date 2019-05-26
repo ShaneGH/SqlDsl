@@ -5,7 +5,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(SqlType.Sqlite)]
+    [SqlTestAttribute(SqlType.MySql)]
     public class LogMessageTests : FullPathTestBase
     {
         public LogMessageTests(SqlType testFlavour)

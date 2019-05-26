@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(SqlType.Sqlite)]
+    [SqlTestAttribute(SqlType.MySql)]
     public class ArgTests : FullPathTestBase
     {
         public ArgTests(SqlType testFlavour)
@@ -73,7 +73,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             TestUtils
                 .FullyJoinedQueryWithArg<int>(SqlType)
-                .OrderBy((x, a) => a)
+                .OrderBy((x, a) => x.ThePerson.Id + a)
                 .ToArray(Executor, 77, logger: Logger);
 
             // no exception is good enough

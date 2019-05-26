@@ -16,6 +16,9 @@ namespace SqlDsl.UnitTests
             {
                 case SqlType.Sqlite:
                     return Sql.Query.Sqlite<TResult>(strictJoins);
+                    
+                case SqlType.MySql:
+                    return Sql.Query.MySql<TResult>(strictJoins);
 
                 default:
                     throw new Exception($"Invalid sql type {testType}");
@@ -28,6 +31,9 @@ namespace SqlDsl.UnitTests
             {
                 case SqlType.Sqlite:
                     return Sql.Query.Sqlite<TArgs, TResult>(strictJoins);
+                    
+                case SqlType.MySql:
+                    return Sql.Query.MySql<TArgs, TResult>(strictJoins);
 
                 default:
                     throw new Exception($"Invalid sql type {testType}");

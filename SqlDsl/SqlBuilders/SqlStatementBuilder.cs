@@ -6,6 +6,7 @@ using SqlDsl.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -57,16 +58,19 @@ namespace SqlDsl.SqlBuilders
         /// A list of columns in the SELECT statement
         /// </summary>
         public IEnumerable<(bool isRowId, SelectColumn col)> AllSelectColumns => GetAllSelectColumns();
+
+        private readonly ReadOnlyCollection<string> PrimaryTableColumns;
         
         /// <summary>If set to true, every join added to the SqlDsl query will also be added to the Sql query.
         /// If false, joins which are not used in a mapping, WHERE clause, ON clause etc... will be automatically removed</summary>
         private bool StrictJoins;
 
-        public SqlStatementBuilder(ISqlSyntax sqlFragmentBuilder, string primaryTable, string primaryTableAlias, bool strictJoins)
+        public SqlStatementBuilder(ISqlSyntax sqlFragmentBuilder, string primaryTable, string primaryTableAlias, IEnumerable<string> primaryTableColumnNames, bool strictJoins)
         {
             SqlSyntax = sqlFragmentBuilder ?? throw new ArgumentNullException(nameof(sqlFragmentBuilder));
             PrimaryTable = primaryTable ?? throw new ArgumentNullException(nameof(primaryTable));
             PrimaryTableAlias = primaryTableAlias ?? throw new ArgumentNullException(nameof(primaryTableAlias));
+            PrimaryTableColumns = primaryTableColumnNames?.ToList().AsReadOnly() ?? throw new ArgumentNullException(nameof(primaryTableColumnNames));
             StrictJoins = strictJoins;
         }
 
@@ -94,7 +98,8 @@ namespace SqlDsl.SqlBuilders
         /// <param name="joinTableAlias">The alias of the join statement</param>
         public void AddJoin(
             JoinType joinType, 
-            string joinTable, 
+            string joinTable,  
+            IEnumerable<string> joinTableColumnNames, 
             ParameterExpression queryRootParam, 
             ParameterExpression queryArgsParam,
             ParameterExpression joinTableParam,
@@ -126,7 +131,7 @@ namespace SqlDsl.SqlBuilders
                 queryObjectReferences = new [] { PrimaryTableAlias };
             }
 
-            var join = BuildJoin(joinType, joinTable, sql, joinTableAlias);
+            var join = BuildJoin(joinType, joinTable, joinTableColumnNames, sql, joinTableAlias);
 
             _Joins.Add((
                 joinTableAlias, 
@@ -155,7 +160,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Build JOIN sql
         /// </summary>
-        SelectTableSqlWithRowId BuildJoin(JoinType joinType, string joinTable, string equalityStatement, string joinTableAlias = null)
+        SelectTableSqlWithRowId BuildJoin(JoinType joinType, string joinTable, IEnumerable<string> allColumns, string equalityStatement, string joinTableAlias = null)
         {
             joinTableAlias = joinTableAlias == null ? "" : $" {SqlSyntax.WrapAlias(joinTableAlias)}";
 
@@ -173,7 +178,7 @@ namespace SqlDsl.SqlBuilders
                     throw new NotImplementedException($"Cannot use join type {joinType}");
             }
 
-            var sqlTable = SqlSyntax.GetSelectTableSqlWithRowId(joinTable, SqlStatementConstants.RowIdName);
+            var sqlTable = SqlSyntax.GetSelectTableSqlWithRowId(joinTable, SqlStatementConstants.RowIdName, allColumns);
             return new SelectTableSqlWithRowId(
                 sqlTable.SetupSql,
                 $"{join} JOIN ({sqlTable.Sql}){joinTableAlias} ON {equalityStatement}",
@@ -288,7 +293,7 @@ namespace SqlDsl.SqlBuilders
                 allTables.AddRange(Where.Value.queryObjectReferences);
 
             // build FROM part
-            var primaryTable = SqlSyntax.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName);
+            var primaryTable = SqlSyntax.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName, PrimaryTableColumns);
                 
             var orderByText = Ordering
                 // TODO: test in individual sql languages

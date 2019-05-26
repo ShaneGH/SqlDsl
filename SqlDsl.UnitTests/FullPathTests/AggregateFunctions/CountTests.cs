@@ -6,7 +6,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
 {
-    [SqlTestAttribute(SqlType.Sqlite)]
+    [SqlTestAttribute(SqlType.MySql)]
     public class CountTests : FullPathTestBase
     {
         public CountTests(SqlType testFlavour)

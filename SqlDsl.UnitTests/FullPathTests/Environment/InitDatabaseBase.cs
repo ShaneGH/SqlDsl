@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
+using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests.Environment
@@ -50,8 +51,10 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         public readonly DataTypes DataTypes;
         public readonly Action CleanupOldDatabase;
         public readonly Func<IConnection> CreateConnection;
+        public readonly ISqlSyntax SqlSyntax;
 
         public Dependencies(
+            ISqlSyntax sqlSyntax,
             DataTypes dataTypes,
             Action cleanupOldDatabase,
             Func<IConnection> createConnection)
@@ -59,6 +62,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             DataTypes = dataTypes;
             CleanupOldDatabase = cleanupOldDatabase;
             CreateConnection = createConnection;
+            SqlSyntax = sqlSyntax;
         }
     }
 
@@ -128,7 +132,14 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 
                 Console.WriteLine($" * Adding data");
 
-                conn.ExecuteCommand(sql, paramaters);
+                try 
+                {
+                    conn.ExecuteCommand(sql, paramaters);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception("Error executing query:\n" + sql, e);
+                }
 
                 Console.WriteLine($" * Data added");
             }
@@ -150,11 +161,11 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 .Select(e => props
                     .Select(p => 
                         SqlValue(p.GetMethod.Invoke(e, new object[0]), p.PropertyType, paramaters)).JoinString(", "))
-                .Select(v => $"INSERT INTO [{typeof(T).Name}]\nVALUES ({v});");
+                .Select(v => $"INSERT INTO {Dependencies.SqlSyntax.WrapTable(typeof(T).Name)}\nVALUES ({v});");
 
             return new [] 
             {
-                $"CREATE TABLE [{typeof(T).Name}] (",
+                $"CREATE TABLE {Dependencies.SqlSyntax.WrapTable(typeof(T).Name)} (",
                 columns.JoinString(",\n"),
                 ");",
                 data.JoinString("\n")

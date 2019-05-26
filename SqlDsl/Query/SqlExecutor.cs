@@ -147,30 +147,41 @@ namespace SqlDsl.Query
         public (SqlStatementBuilder builder, ParamBuilder paramaters) ToSqlStatement()
         {
             var (memberName, tableName, primaryTableMemberType) = PrimaryTableMember;
-            
-            // Set the SELECT table
-            var builder = new SqlStatementBuilder(SqlSyntax, tableName, memberName, StrictJoins);
 
             // get all columns from SELECT and JOINs
-            var selectColumns = Joins
-                .SelectMany((x, i) => ColumnsOf(x.JoinedTableProperty.type)
-                    .Select(y => (table: x.JoinedTableProperty.name, column: y)))
-                .Concat(ColumnsOf(primaryTableMemberType)
+            var primaryTableColumns = ColumnsOf(primaryTableMemberType);
+            var joinsWithColNames = Joins
+                .Select(j => (join: j, Columns: ColumnsOf(j.JoinedTableProperty.type)))
+                .ToList();
+
+            var selectColumns = joinsWithColNames
+                .SelectMany((x, i) => x.Columns
+                    .Select(y => (table: x.join.JoinedTableProperty.name, column: y)))
+                .Concat(primaryTableColumns
                     .Select(y => (table: memberName, column: y)));
+            
+            // Set the SELECT table
+            var builder = new SqlStatementBuilder(
+                SqlSyntax, 
+                tableName, 
+                memberName, 
+                primaryTableColumns.Select(c => c.name),
+                StrictJoins);
 
             // add each join
             var param = new ParamBuilder();
-            foreach (var join in Joins)
+            foreach (var join in joinsWithColNames)
             {
                 builder.AddJoin(
-                    join.JoinType, 
-                    join.TableName, 
-                    join.JoinExpression.rootObjectParam,
-                    join.JoinExpression.queryArgs,
-                    join.JoinExpression.joinParam,
-                    join.JoinExpression.joinExpression,
+                    join.join.JoinType, 
+                    join.join.TableName, 
+                    join.Columns.Select(c => c.name),
+                    join.join.JoinExpression.rootObjectParam,
+                    join.join.JoinExpression.queryArgs,
+                    join.join.JoinExpression.joinParam,
+                    join.join.JoinExpression.joinExpression,
                     param,
-                    join.JoinedTableProperty.name);
+                    join.join.JoinedTableProperty.name);
             }
 
             // Add select columns to builder

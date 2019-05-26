@@ -5,7 +5,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(SqlType.Sqlite)]
+    [SqlTestAttribute(SqlType.MySql)]
     public class SchemaAttributeTests : FullPathTestBase
     {
         public SchemaAttributeTests(SqlType testFlavour)
@@ -55,8 +55,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var john = Sql.Query
-                .Sqlite<PersonWithAttributes>()
+            var john = Query<PersonWithAttributes>()
                 .Where(p => p.TheId == Data.People.John.Id)
                 .OrderBy(x => x.TheId)
                 .Skip(0)
@@ -97,8 +96,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var john = Sql.Query
-                .Sqlite<PersonWithAttributes>()
+            var john = Query<PersonWithAttributes>()
                 .Where(p => p.TheId == Data.People.John.Id)
                 .OrderBy(x => x.TheId)
                 .Map(x => new
@@ -120,8 +118,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var john = Sql.Query
-                .Sqlite<PersonWithAttributes>()
+            var john = Query<PersonWithAttributes>()
                 .Where(p => p.TheId == Data.People.John.Id)
                 .OrderBy(x => x.TheId)
                 .Map(x => x.TheName)

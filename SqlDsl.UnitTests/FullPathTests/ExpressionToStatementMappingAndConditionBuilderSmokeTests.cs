@@ -10,7 +10,7 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(SqlType.Sqlite)]
+    [SqlTestAttribute(SqlType.MySql)]
     public class ExpressionToStatementMappingAndConditionBuilderSmokeTests : FullPathTestBase
     {
         public ExpressionToStatementMappingAndConditionBuilderSmokeTests(SqlType testFlavour)
@@ -74,8 +74,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                         .Parameter(typeof(TableWithOneRowAndOneColumn))));
 
             // act
-            var result = Sql.Query
-                .Sqlite<QueryClass>()
+            var result = Query<QueryClass>()
                 .From(x => x.ThePerson)
                 .InnerJoin(x => x.Other)
                 .On(joinCondition)
@@ -123,8 +122,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 new TestCaseData(statement, result, typeof(T)).SetName(name);
         }
 
-        static IQuery<QueryClass> JoinedQuery() => Sql.Query
-            .Sqlite<QueryClass>()
+        IQuery<QueryClass> JoinedQuery() => Query<QueryClass>()
             .From(x => x.ThePerson)
             .InnerJoin(x => x.Other)
             .On((q, x) => true);

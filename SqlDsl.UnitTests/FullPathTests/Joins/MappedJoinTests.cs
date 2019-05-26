@@ -5,7 +5,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.Joins
 {
-    [SqlTestAttribute(SqlType.Sqlite)]
+    [SqlTestAttribute(SqlType.MySql)]
     public class MappedJoinTests : FullPathTestBase
     {
         public MappedJoinTests(SqlType testFlavour)

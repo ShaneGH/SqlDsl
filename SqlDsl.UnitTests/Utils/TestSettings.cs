@@ -30,5 +30,6 @@ namespace SqlDsl.UnitTests.Utils
     public class Environments
     {
         public bool Sqlite { get; set; } = true;
+        public bool MySql { get; set; } = true;
     }
 }

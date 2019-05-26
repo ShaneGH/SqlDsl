@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Data.Sqlite;
+using MySql.Data.MySqlClient;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
+using SqlDsl.MySql;
 using SqlDsl.Sqlite;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 using SqlDsl.UnitTests.Utils;
@@ -21,16 +23,22 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         SqliteConnection SqliteConnection;
+        MySqlConnection MySqlConnection;
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
+            InitData.EnsureInit(SqlType);
             switch (SqlType)
             {
                 case SqlType.Sqlite:
-                    InitData.EnsureInit(SqlType);
                     SqliteConnection = InitSqliteDatabase.CreateSqliteConnection();
                     SqliteConnection.Open();
+                    break;
+                    
+                case SqlType.MySql:
+                    MySqlConnection = InitMySqlDatabase.CreateMySqlConnection();
+                    MySqlConnection.Open();
                     break;
 
                 default:
@@ -45,6 +53,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             {
                 case SqlType.Sqlite:
                     SqliteConnection.Dispose();
+                    break;
+                    
+                case SqlType.MySql:
+                    MySqlConnection.Dispose();
                     break;
 
                 default:
@@ -65,6 +77,10 @@ namespace SqlDsl.UnitTests.FullPathTests
                 case SqlType.Sqlite:
                     ex = new SqliteExecutor(SqliteConnection);
                     break;
+                    
+                case SqlType.MySql:
+                    ex = new MySqlExecutor(MySqlConnection);
+                    break;
 
                 default:
                     throw new Exception($"Invalid sql type {SqlType}");
@@ -78,9 +94,13 @@ namespace SqlDsl.UnitTests.FullPathTests
         [TearDown]
         public void TearDown()
         {
-            if (PrintStatusOnFailure && TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
+            if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
             {
-                Executor.PrintSqlStatements();
+                Console.WriteLine($"Sql type: {SqlType}");
+                if (PrintStatusOnFailure)
+                {
+                    Executor.PrintSqlStatements();
+                }
             }
         }
 
@@ -137,7 +157,8 @@ namespace SqlDsl.UnitTests.FullPathTests
     
     public enum SqlType
     {
-        Sqlite
+        Sqlite,
+        MySql
     }
 
     [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
@@ -156,6 +177,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             {
                 case SqlType.Sqlite:
                     return Run(TestSettings.Instance.Environments.Sqlite);
+                    
+                case SqlType.MySql:
+                    return Run(TestSettings.Instance.Environments.MySql);
 
                 default:
                     throw new Exception($"Invalid sql type {Language}");

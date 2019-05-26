@@ -45,7 +45,7 @@ namespace SqlDsl.SqlBuilders
         /// if teardownSqlCanBeInlined == true, the teardown sql will be executed in the same query as the select
         /// otherwise it will be executed immediately after the select
         /// </summary>
-        SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias);
+        SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames);
 
         /// <summary>
         /// Wrap a table name in parenthesis which protects against illegal characters: []

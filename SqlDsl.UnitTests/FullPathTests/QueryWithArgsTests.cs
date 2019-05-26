@@ -6,7 +6,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(SqlType.Sqlite)]
+    [SqlTestAttribute(SqlType.MySql)]
     public class QueryWithArgsTests : FullPathTestBase
     {
         public QueryWithArgsTests(SqlType testFlavour)
@@ -32,8 +32,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         public async Task QueryWithArgs_WithArgsInWhere_ExecutesCorrectly()
         {
             // arrange
-            var query = Sql.Query
-                .Sqlite<Arguments, JoinedQueryClass>()
+            var query = Query<Arguments, JoinedQueryClass>()
                 .From(x => x.ThePerson)
                 .LeftJoin(x => x.ThePersonClasses)
                     .On((q, x) => x.PersonId == q.ThePerson.Id)

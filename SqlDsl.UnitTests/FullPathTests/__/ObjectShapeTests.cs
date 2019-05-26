@@ -8,7 +8,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(SqlType.Sqlite)]
+    [SqlTestAttribute(SqlType.MySql)]
     public class MappingObjectShapeTests : FullPathTestBase
     {
         public MappingObjectShapeTests(SqlType testFlavour)
