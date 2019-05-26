@@ -13,7 +13,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 {
     public class FullPathTestBase
     {
-        private readonly TestFlavour TestFlavour;
+        public readonly TestFlavour TestFlavour;
 
         public FullPathTestBase(TestFlavour testFlavour)
         {
@@ -55,6 +55,16 @@ namespace SqlDsl.UnitTests.FullPathTests
             {
                 Executor.PrintSqlStatements();
             }
+        }
+
+        public Dsl.ISqlSelect<T> Query<T>(bool strictJoins = true)
+        {
+            return TestUtils.Query<T>(TestFlavour, strictJoins);
+        }
+
+        public Dsl.ISqlSelect<TArgs, T> Query<TArgs, T>(bool strictJoins = true)
+        {
+            return TestUtils.Query<TArgs, T>(TestFlavour, strictJoins);
         }
 
         public class TestLogger : ILogger

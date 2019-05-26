@@ -25,7 +25,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => p.ThePerson.Id + 1)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -41,7 +41,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => 1 + p.ThePerson.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -59,7 +59,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             var data = await TestUtils
-                .FullyJoinedQueryWithArg<int>()
+                .FullyJoinedQueryWithArg<int>(TestFlavour)
                 .Map((p, a) => p.ThePerson.Id + one + a)
                 .ToIEnumerableAsync(Executor, 10, logger: Logger);
 
@@ -74,7 +74,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<Person>()
+            var data = await Query<Person>()
                 .Where(p => p.Id + 1 == Data.People.John.Id + 1)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -87,7 +87,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<QueryContainer>()
+            var data = await Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id + 1 == pc.PersonId + 1)
@@ -118,7 +118,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             var data = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(mapper)
                 .ToIEnumerable(Executor, logger: Logger);
@@ -175,7 +175,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 exprInput);
 
             // act
-            var actual = await Sql.Query.Sqlite<Person>()
+            var actual = await Query<Person>()
                 .Where(where)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -219,7 +219,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 exprInput2);
                 
             // act
-            var data = await Sql.Query.Sqlite<QueryContainer>()
+            var data = await Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses).On(join)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
@@ -264,7 +264,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 exprInput);
 
             // act
-            var actual = await Sql.Query.Sqlite<Person>()
+            var actual = await Query<Person>()
                 .OrderBy(ob)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -291,7 +291,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => p.ThePersonClasses.Select(pc => new PreMapped { ClassId = pc.ClassId }))
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -310,7 +310,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => p.ThePersonClasses.Select(pc => new PreMapped(pc.PersonId)).ToList())
                 .ToListAsync(Executor, logger: Logger);
 
@@ -329,7 +329,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => p.ThePersonClasses
                     .Select(pc => new PreMapped(pc.PersonId)
                     { 

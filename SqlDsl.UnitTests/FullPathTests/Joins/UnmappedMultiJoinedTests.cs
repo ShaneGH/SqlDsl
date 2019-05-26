@@ -19,9 +19,9 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             public List<Purchase> ThePurchasesByClass { get; set; }
         }
 
-        static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
+        Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
         {
-            return SqlDsl.UnitTests.TestUtils.FullyJoinedQuery<JoinedQueryClass>()
+            return SqlDsl.UnitTests.TestUtils.FullyJoinedQuery<JoinedQueryClass>(TestFlavour)
                 .LeftJoin<Purchase>(q => q.ThePurchasesByClass)
                     .On((q, t) => q.ThePerson.Id == t.PersonId && q.ThePerson.Id == t.PurchaedForPersonId && q.TheClasses.One().Id == t.ClassId);
         }

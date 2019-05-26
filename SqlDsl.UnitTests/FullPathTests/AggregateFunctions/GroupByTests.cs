@@ -21,7 +21,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(false)
+                .FullyJoinedQuery(TestFlavour, false)
                 .Map(p => new 
                 {
                     person = p.ThePerson.Name,
@@ -57,7 +57,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(false)
+                .FullyJoinedQuery(TestFlavour, false)
                 .Map(p => new CountAndGroupTest
                 {
                     thePerson = p.ThePerson.Name,
@@ -79,7 +79,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -106,7 +106,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(p => new 
                 {
@@ -130,7 +130,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var result = TestUtils
-                .FullyJoinedQuery(false)
+                .FullyJoinedQuery(TestFlavour, false)
                 .Map(x => new
                 {
                     name = x.ThePerson.Name,
@@ -159,7 +159,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var result = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(x => new
                 {
                     name = x.ThePerson.Name,
@@ -187,7 +187,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // assert
             Assert.Throws(typeof(InvalidOperationException), 
                 () => TestUtils
-                    .FullyJoinedQuery()
+                    .FullyJoinedQuery(TestFlavour)
                     .Map(x => new
                     {
                         name = x.ThePerson.Name,
@@ -206,7 +206,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // assert
             Assert.Throws(typeof(InvalidOperationException), 
                 () => TestUtils
-                    .FullyJoinedQuery()
+                    .FullyJoinedQuery(TestFlavour)
                     .Map(x => new
                     {
                         name = x.ThePerson.Name,
@@ -225,7 +225,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // assert
             Assert.Throws(typeof(InvalidOperationException), 
                 () => TestUtils
-                    .FullyJoinedQuery()
+                    .FullyJoinedQuery(TestFlavour)
                     .Map(x => new
                     {
                         name = x.ThePerson.Name,
@@ -241,7 +241,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var result = TestUtils
-                .FullyJoinedQuery(false)
+                .FullyJoinedQuery(TestFlavour, false)
                 .Map(x => x.TheClasses.Count)
                 .ToList(Executor, logger: Logger);
 

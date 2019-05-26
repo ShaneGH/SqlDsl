@@ -41,7 +41,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<QueryClass>()
+            var data = await Query<QueryClass>()
                 .From(result => result.ThePerson)
                 .InnerJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
@@ -58,7 +58,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // act
             // assert
             Assert.ThrowsAsync(typeof(InvalidOperationException), () =>
-                Sql.Query.Sqlite<QueryClass>()
+                Query<QueryClass>()
                     .From<Person>(x => x.ThePerson)
                     .InnerJoin<ClassTag>(q => q.TheClassTags)
                         .On((q, ct) => q.ThePersonClasses.One().ClassId == ct.ClassId)
@@ -70,7 +70,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<QueryClass>()
+            var data = await Query<QueryClass>()
                 .From(result => result.ThePerson)
                 .LeftJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
@@ -85,7 +85,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<QueryContainer>()
+            var data = Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .LeftJoin<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.ThePerson.Id == ct.ClassId)
@@ -105,7 +105,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<QueryContainer>()
+            var data = Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .LeftJoin<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.ThePerson.Id == ct.ClassId)
@@ -142,7 +142,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         {
             // arrange
             // act
-            var result = Sql.Query.Sqlite<ClassesByTag>()
+            var result = Query<ClassesByTag>()
                 .From(x => x.TheTag)
                 .LeftJoin(q => q.TheClassTags)
                     .On((q, ct) => q.TheTag.Id == ct.TagId)
@@ -166,7 +166,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<QueryClass>()
+            var data = await Query<QueryClass>()
                 .From(result => result.ThePerson)
                 .InnerJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => c.ClassId == Data.Classes.Archery.Id)
@@ -189,7 +189,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<QueryClass>()
+            var data = await Query<QueryClass>()
                 .From(result => result.ThePerson)
                 .InnerJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => c.ClassId == Data.Classes.Tennis.Id)
@@ -213,7 +213,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<QueryClass>()
+            var data = await Query<QueryClass>()
                 .From(result => result.ThePerson)
                 .InnerJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId && c.ClassId == Data.Classes.Tennis.Id)

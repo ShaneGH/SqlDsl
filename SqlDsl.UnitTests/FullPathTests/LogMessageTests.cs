@@ -20,7 +20,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            await TestUtils.FullyJoinedQuery()
+            await TestUtils.FullyJoinedQuery(TestFlavour)
                 .Map(p => p.ThePersonsData.Data.ToList())
                 .ToListAsync(Executor, logger: Logger);
 
@@ -35,7 +35,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            await TestUtils.FullyJoinedQuery()
+            await TestUtils.FullyJoinedQuery(TestFlavour)
                 .Map(p => new { data = p.ThePersonsData.Data.ToList() })
                 .ToListAsync(Executor, logger: Logger);
 
@@ -50,7 +50,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            await Sql.Query.Sqlite<QueryContainer>()
+            await Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -68,7 +68,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            Sql.Query.Sqlite<QueryContainer>()
+            Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .ToList(Executor, logger: Logger);
 
@@ -86,7 +86,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            await Sql.Query.Sqlite<QueryContainer>()
+            await Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -103,7 +103,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            Sql.Query.Sqlite<QueryContainer>()
+            Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
                 .ToList(Executor, logger: Logger);
 
@@ -120,7 +120,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            TestUtils.FullyJoinedQuery()
+            TestUtils.FullyJoinedQuery(TestFlavour)
                 .ToList(Executor, logger: Logger);
 
             // assert
@@ -136,7 +136,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            TestUtils.FullyJoinedQuery()
+            TestUtils.FullyJoinedQuery(TestFlavour)
                 .Map(x => x.ThePerson.Name)
                 .ToList(Executor, logger: Logger);
 
@@ -153,7 +153,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            TestUtils.FullyJoinedQuery()
+            TestUtils.FullyJoinedQuery(TestFlavour)
                 .Map(x => new { val = x.TheClasses })
                 .ToList(Executor, logger: Logger);
 
@@ -170,7 +170,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            TestUtils.FullyJoinedQuery()
+            TestUtils.FullyJoinedQuery(TestFlavour)
                 .Map(x => new { val = x.TheClasses })
                 .ToList(Executor, logger: Logger);
 
@@ -187,7 +187,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            await TestUtils.FullyJoinedQuery()
+            await TestUtils.FullyJoinedQuery(TestFlavour)
                 .Map(x => new { val = x.TheClasses })
                 .ToListAsync(Executor, logger: Logger);
 
@@ -204,7 +204,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            TestUtils.FullyJoinedQuery()
+            TestUtils.FullyJoinedQuery(TestFlavour)
                 .Map(x => new { val = x.TheClasses })
                 .ToArray(Executor, logger: Logger);
 
@@ -221,7 +221,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            await TestUtils.FullyJoinedQuery()
+            await TestUtils.FullyJoinedQuery(TestFlavour)
                 .Map(x => new { val = x.TheClasses })
                 .ToArrayAsync(Executor, logger: Logger);
 

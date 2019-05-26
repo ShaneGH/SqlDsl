@@ -14,6 +14,8 @@ namespace SqlDsl
         /// <summary>
         /// Build a Sqlite query
         /// </summary>
+        /// <param name="strictJoins">If set to true, every join added to the SqlDsl query will also be added to the Sql query.
+        /// If false, joins which are not used in a mapping, WHERE clause, ON clause etc... will be automatically removed</param>
         public static ISqlSelect<TResult> Sqlite<TResult>(this QueryBuilder builder, bool strictJoins = true)
         {
             return new SqlSelect<TResult>(SqliteSyntax, strictJoins);

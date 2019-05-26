@@ -19,7 +19,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<Person>()
+            var data = Query<Person>()
                 .ToIEnumerable(Executor, logger: Logger);
 
             // assert
@@ -31,7 +31,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<Person>()
+            var data = await Query<Person>()
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
@@ -43,7 +43,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<Person>()
+            var data = Query<Person>()
                 .ToList(Executor, logger: Logger);
 
             // assert
@@ -55,7 +55,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<Person>()
+            var data = await Query<Person>()
                 .ToListAsync(Executor, logger: Logger);
 
             // assert
@@ -67,7 +67,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<Person>()
+            var data = Query<Person>()
                 .ToArray(Executor, logger: Logger);
 
             // assert
@@ -79,7 +79,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<Person>()
+            var data = await Query<Person>()
                 .ToArrayAsync(Executor, logger: Logger);
 
             // assert
@@ -91,7 +91,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<Person>()
+            var data = Query<Person>()
                 .OrderBy(x => x.Id)
                 .First(Executor, logger: Logger);
 
@@ -104,7 +104,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<Person>()
+            var data = await Query<Person>()
                 .OrderBy(x => x.Id)
                 .FirstAsync(Executor, logger: Logger);
 
@@ -119,7 +119,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             Assert.Throws(typeof(InvalidOperationException), () => 
-                Sql.Query.Sqlite<Person>()
+                Query<Person>()
                     .Where(x => x.Id == 999)
                     .First(Executor, logger: Logger));
         }
@@ -131,7 +131,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             Assert.ThrowsAsync(typeof(InvalidOperationException), () => 
-                Sql.Query.Sqlite<Person>()
+                Query<Person>()
                     .Where(x => x.Id == 999)
                     .FirstAsync(Executor, logger: Logger));
         }
@@ -141,7 +141,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<Person>()
+            var data = Query<Person>()
                 .OrderBy(x => x.Id)
                 .FirstOrDefault(Executor, logger: Logger);
 
@@ -154,7 +154,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<Person>()
+            var data = await Query<Person>()
                 .OrderBy(x => x.Id)
                 .FirstOrDefaultAsync(Executor, logger: Logger);
 
@@ -167,7 +167,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var result = Sql.Query.Sqlite<Person>()
+            var result = Query<Person>()
                 .Where(x => x.Id == 999)
                 .FirstOrDefault(Executor, logger: Logger);
 
@@ -180,7 +180,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var result = await Sql.Query.Sqlite<Person>()
+            var result = await Query<Person>()
                 .Where(x => x.Id == 999)
                 .FirstOrDefaultAsync(Executor, logger: Logger);
 
@@ -195,7 +195,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             Assert.Throws(typeof(InvalidOperationException), () =>
-                Sql.Query.Sqlite<Person>()
+                Query<Person>()
                     .OrderBy(x => x.Id)
                     .Single(Executor, logger: Logger));
         }
@@ -207,7 +207,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             Assert.ThrowsAsync(typeof(InvalidOperationException), () =>
-                Sql.Query.Sqlite<Person>()
+                Query<Person>()
                     .OrderBy(x => x.Id)
                     .SingleAsync(Executor, logger: Logger));
         }
@@ -217,7 +217,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<Person>()
+            var data = Query<Person>()
                 .Where(x => x.Id == Data.People.John.Id)
                 .Single(Executor, logger: Logger);
 
@@ -230,7 +230,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<Person>()
+            var data = await Query<Person>()
                 .Where(x => x.Id == Data.People.John.Id)
                 .SingleAsync(Executor, logger: Logger);
 
@@ -245,7 +245,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             Assert.Throws(typeof(InvalidOperationException), () => 
-                Sql.Query.Sqlite<Person>()
+                Query<Person>()
                     .Where(x => x.Id == 999)
                     .Single(Executor, logger: Logger));
         }
@@ -257,7 +257,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             Assert.ThrowsAsync(typeof(InvalidOperationException), () => 
-                Sql.Query.Sqlite<Person>()
+                Query<Person>()
                     .Where(x => x.Id == 999)
                     .SingleAsync(Executor, logger: Logger));
         }
@@ -269,7 +269,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             Assert.Throws(typeof(InvalidOperationException), () => 
-                Sql.Query.Sqlite<Person>()
+                Query<Person>()
                     .OrderBy(x => x.Id)
                     .SingleOrDefault(Executor, logger: Logger));
         }
@@ -281,7 +281,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             Assert.ThrowsAsync(typeof(InvalidOperationException), () => 
-                Sql.Query.Sqlite<Person>()
+                Query<Person>()
                     .OrderBy(x => x.Id)
                     .SingleOrDefaultAsync(Executor, logger: Logger));
         }
@@ -291,7 +291,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<Person>()
+            var data = Query<Person>()
                 .Where(x => x.Id == Data.People.John.Id)
                 .SingleOrDefault(Executor, logger: Logger);
 
@@ -304,7 +304,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<Person>()
+            var data = await Query<Person>()
                 .Where(x => x.Id == Data.People.John.Id)
                 .SingleOrDefaultAsync(Executor, logger: Logger);
 
@@ -317,7 +317,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var result = Sql.Query.Sqlite<Person>()
+            var result = Query<Person>()
                 .Where(x => x.Id == 999)
                 .SingleOrDefault(Executor, logger: Logger);
 
@@ -330,7 +330,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var result = await Sql.Query.Sqlite<Person>()
+            var result = await Query<Person>()
                 .Where(x => x.Id == 999)
                 .SingleOrDefaultAsync(Executor, logger: Logger);
 

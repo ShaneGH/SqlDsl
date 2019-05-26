@@ -41,9 +41,9 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             public HashSet<Tag> TheTags { get; set; }
         }
 
-        static Dsl.IQuery<JoinedQueryClassLists> FullyJoinedQueryLists(bool strictJoins = true)
+        Dsl.IQuery<JoinedQueryClassLists> FullyJoinedQueryLists(bool strictJoins = true)
         {
-            return Sql.Query.Sqlite<JoinedQueryClassLists>(strictJoins )
+            return Query<JoinedQueryClassLists>(strictJoins )
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
@@ -55,9 +55,9 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
 
-        static Dsl.IQuery<JoinedQueryClassArrays> FullyJoinedQueryArrays(bool strictJoins = true)
+        Dsl.IQuery<JoinedQueryClassArrays> FullyJoinedQueryArrays(bool strictJoins = true)
         {
-            return Sql.Query.Sqlite<JoinedQueryClassArrays>(strictJoins)
+            return Query<JoinedQueryClassArrays>(strictJoins)
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
@@ -69,9 +69,9 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
 
-        static Dsl.IQuery<JoinedQueryClassHashSets> FullyJoinedQueryHashSets(bool strictJoins = true)
+        Dsl.IQuery<JoinedQueryClassHashSets> FullyJoinedQueryHashSets(bool strictJoins = true)
         {
-            return Sql.Query.Sqlite<JoinedQueryClassHashSets>(strictJoins)
+            return Query<JoinedQueryClassHashSets>(strictJoins)
                 .From<Person>(x => x.ThePerson)
                 .InnerJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)

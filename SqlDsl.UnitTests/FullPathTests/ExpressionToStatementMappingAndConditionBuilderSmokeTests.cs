@@ -143,7 +143,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<Person>()
+            var data = Query<Person>()
                 .Map(p => p.Id + 1 == Data.People.John.Id + 1)
                 .ToList(Executor, logger: Logger);
 
@@ -157,7 +157,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => new
                 {
                     pid = p.ThePerson.Id + 1,
@@ -182,7 +182,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => new
                 {
                     name = p.ThePerson.Name,

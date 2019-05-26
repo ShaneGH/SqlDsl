@@ -17,7 +17,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(false)
+            var data = await TestUtils.FullyJoinedQuery(TestFlavour, false)
                 .OrderBy(x => x.TheTags.One().Id)
                 .Map(q => q.ThePerson.Name)
                 .ToArrayAsync(Executor, logger: Logger);
@@ -31,7 +31,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(false)
+            var data = await TestUtils.FullyJoinedQuery(TestFlavour, false)
                 .Where(x => x.TheClasses.One().Id == Data.Classes.Archery.Id)
                 .Map(q => q.ThePerson.Name)
                 .ToArrayAsync(Executor, logger: Logger);
@@ -45,7 +45,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<QueryContainer>(false)
+            var data = Query<QueryContainer>(false)
                 .From(x => x.ThePerson)
                 .InnerJoin(q => q.ThePersonsData)
                     .On((q, pc) => q.ThePerson.Id == 77)
@@ -61,7 +61,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<QueryContainer>()
+            var data = Query<QueryContainer>()
                 .From(x => x.ThePerson)
                 .InnerJoin(q => q.ThePersonsData)
                     .On((q, pc) => q.ThePerson.Id == 77)

@@ -18,7 +18,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQueryWithArg<int>()
+                .FullyJoinedQueryWithArg<int>(TestFlavour)
                 .Map((p, a) => a)
                 .ToIEnumerableAsync(Executor, 77, logger: Logger);
 
@@ -39,7 +39,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQueryWithArg<AnInt>()
+                .FullyJoinedQueryWithArg<AnInt>(TestFlavour)
                 .Map((p, a) => a.IntValue)
                 .ToIEnumerableAsync(Executor, new AnInt { IntValue = 77 }, logger: Logger);
 
@@ -54,7 +54,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<int, QueryContainer>()
+            var data = Query<int, QueryContainer>()
                 .From(x => x.ThePerson)
                 .InnerJoin(q => q.ThePersonsData)
                     .On((q, pc, a) => q.ThePerson.Id == a)
@@ -72,7 +72,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             TestUtils
-                .FullyJoinedQueryWithArg<int>()
+                .FullyJoinedQueryWithArg<int>(TestFlavour)
                 .OrderBy((x, a) => a)
                 .ToArray(Executor, 77, logger: Logger);
 
@@ -86,7 +86,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             TestUtils
-                .FullyJoinedQueryWithArg<int>()
+                .FullyJoinedQueryWithArg<int>(TestFlavour)
                 .Skip(a => a).Take(a => a)
                 .ToArray(Executor, 1, logger: Logger);
 

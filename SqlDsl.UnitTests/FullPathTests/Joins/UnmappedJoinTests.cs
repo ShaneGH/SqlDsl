@@ -18,7 +18,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<JoinTests.QueryClass>()
+            var data = await Query<JoinTests.QueryClass>()
                 .From(result => result.ThePerson)
                 .InnerJoin<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
@@ -44,7 +44,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<JoinTests.QueryClass>()
+            var data = await Query<JoinTests.QueryClass>()
                 .From(result => result.ThePerson)
                 .InnerJoin<ClassTag>(result => result.TheClassTags)
                     .On((q, c) => q.ThePersonClasses.Single().ClassId == c.ClassId)

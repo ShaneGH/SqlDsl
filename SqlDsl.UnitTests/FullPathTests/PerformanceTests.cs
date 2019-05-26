@@ -37,7 +37,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             await TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(x => new Cls1
                 {
                     thename = x.ThePerson.Name,
@@ -70,7 +70,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             await TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(x => new
                 {
                     name = x.ThePerson.Name,
@@ -103,7 +103,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data= await TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(x => x.ThePerson.Name)
                 .ToArrayAsync(Executor, logger: Logger);
 

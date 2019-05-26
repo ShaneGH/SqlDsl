@@ -18,12 +18,18 @@ using SqlDsl.DataParser;
 using SqlDsl.Query;
 using SqlDsl.Mapper;
 using SqlDsl.Schema;
+using SqlDsl.UnitTests.FullPathTests;
 
 namespace SqlDsl.UnitTests.DataParser
 {
     [TestFixture]
     public class RootObjectPropertyGraphTests
     {
+        /// <summary>
+        /// The value is not important. Needed to initialze a query builder
+        /// </summary>
+        public static readonly TestFlavour TestFlavour = TestFlavour.Sqlite;
+
         class JoinedQueryClass
         {
             public Person ThePerson { get; set; }
@@ -208,7 +214,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .BuildObjetPropertyGraph();
 
             // assert
@@ -297,7 +303,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(x => new MappedVersion
                 {
                     PersonName = x.ThePerson.Name
@@ -323,7 +329,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(x => new MappedVersion
                 {
                     PersonName = x.ThePerson.Name,
@@ -364,7 +370,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(x => new MappedVersion
                 {
                     PersonName = x.ThePerson.Name,
@@ -427,7 +433,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(x => new MappedVersion2
                 {
                     PersonName = x.ThePerson.Name,
@@ -491,7 +497,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(query => new DifficultScenario
                 { 
                     FavouriteClasses = query.TheClasses
@@ -536,7 +542,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(query => new DifficultScenario2
                 { 
                     TagIds = query.TheClassTags
@@ -576,7 +582,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(query => new DeepJoinedClass
                 { 
                     Inner = new DeepJoinedClass
@@ -866,7 +872,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(q => new Outer
                 {
                     classes1 = q.ThePersonClasses
@@ -914,7 +920,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(q => new Outer(q.ThePersonClasses
                     .Select(pc => new Inner(q.TheClasses.ToArray()))
                     .ToArray()))
@@ -963,7 +969,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => p.ThePersonClasses.Select(pc => new AnotherDifficultCase { ClassId = pc.ClassId }).ToList())
                 .BuildMappedObjetPropertyGraph();
 
@@ -993,7 +999,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => p.ThePerson)
                 .BuildMappedObjetPropertyGraph();
 
@@ -1026,7 +1032,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => p.ThePersonClasses.ToList())
                 .BuildMappedObjetPropertyGraph();
 
@@ -1057,7 +1063,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => p.ThePerson.Name)
                 .BuildMappedObjetPropertyGraph();
 
@@ -1080,7 +1086,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => p.TheClasses.Select(c => c.Name))
                 .BuildMappedObjetPropertyGraph();
 
@@ -1109,7 +1115,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => new CountAndGroupClass
                 {
                     person = p.ThePerson.Name,
@@ -1137,7 +1143,7 @@ namespace SqlDsl.UnitTests.DataParser
             // arrange
             // act
             var actual = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Map(p => new CountAndGroupClass
                 {
                     person = p.ThePerson.Name,

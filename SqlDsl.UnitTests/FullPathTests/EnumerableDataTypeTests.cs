@@ -33,7 +33,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await Sql.Query.Sqlite<Purchase>()
+            var data = await Query<Purchase>()
                 .Where(p => p.Id == Data.Purchases.JohnPurchasedHimselfShoes.Id)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -75,7 +75,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            var data = Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
                 .InnerJoin(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
@@ -97,7 +97,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         Task<List<ArrayDataType1Result>> ADT1()
         {
-            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
                 .InnerJoin(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
@@ -142,7 +142,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         Task<List<ArrayDataType1_1Result>> ADT1_ConvertArrayToList()
         {
-            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
                 .InnerJoin(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
@@ -188,7 +188,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         Task<List<ArrayDataType2Result>> ADT2()
         {
-            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
                 .InnerJoin(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
@@ -235,7 +235,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         Task<List<List<byte>>> ADT3()
         {
-            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
                 .InnerJoin(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
@@ -271,7 +271,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         Task<List<byte[]>> ADT4()
         {
-            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
                 .InnerJoin(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
@@ -315,7 +315,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
                 .InnerJoin(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
@@ -362,7 +362,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         Task<List<IEnumerable<byte[]>>> ADT8()
         {
-            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
                 .InnerJoin(x => x.ThePersonsData)
                     .On((q, pd) => pd.PersonId > -1)
@@ -403,7 +403,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         Task<List<IEnumerable<byte[]>>> ADT8_1()
         {
-            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
                 .InnerJoin(x => x.ThePersonsData)
                     .On((q, pd) => pd.PersonId == q.ThePerson.Id)
@@ -443,7 +443,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         Task<List<IEnumerable<List<byte>>>> ADT9()
         {
-            return Sql.Query.Sqlite<ArrayDataTypeQuery>()
+            return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
                 .InnerJoin(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
@@ -488,7 +488,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.ThrowsAsync(
                 typeof(ParsingException), 
-                () => Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                () => Query<ArrayDataTypeQuery>()
                     .From(x => x.ThePerson)
                     .InnerJoin(x => x.ThePersonsData)
                         .On((q, pd) => pd.PersonId < 100)
@@ -510,7 +510,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             Assert.Throws(typeof(SqlBuilderException), () =>
-                Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                Query<ArrayDataTypeQuery>()
                     .From(x => x.ThePerson)
                     .InnerJoin(x => x.ThePersonsData)
                         .On((q, pd) => q.ThePerson.Id == pd.PersonId)
@@ -526,7 +526,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             Assert.Throws(typeof(ParsingException), () =>
-                Sql.Query.Sqlite<ArrayDataTypeQuery>()
+                Query<ArrayDataTypeQuery>()
                     .From(x => x.ThePerson)
                     .InnerJoin(x => x.ThePersonsData)
                         .On((q, pd) => q.ThePerson.Id == pd.PersonId)

@@ -33,7 +33,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         // {
         //     // arrange
         //     // act
-        //     var data = await TestUtils.FullyJoinedQuery()
+        //     var data = await TestUtils.FullyJoinedQuery(TestFlavour)
         //         .Map(p => p.ThePersonClasses.Select(pc => new MappedResult { AnotherPreMapped = new MappedResult() }).ToList())
         //         .ToListAsync(Executor, logger: Logger);
 
@@ -53,7 +53,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         // {
         //     // arrange
         //     // act
-        //     var data = await TestUtils.FullyJoinedQuery()
+        //     var data = await TestUtils.FullyJoinedQuery(TestFlavour)
         //         .Map(p => p.ThePersonClasses.Select(pc => new MappedResult()).ToList())
         //         .ToListAsync(Executor, logger: Logger);
 
@@ -68,7 +68,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
                 .Map(p => p.ThePersonClasses.Select(pc => new MappedResult(pc.PersonId)).ToList())
                 .ToListAsync(Executor, logger: Logger);
 
@@ -88,7 +88,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery()
+            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
                 .Map(p => p.ThePersonClasses.Select(pc => new MappedResult(pc.PersonId) { ClassId = pc.ClassId }).ToList())
                 .ToListAsync(Executor, logger: Logger);
 

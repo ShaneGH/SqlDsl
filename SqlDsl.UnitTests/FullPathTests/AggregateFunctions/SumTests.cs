@@ -19,7 +19,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(false)
+                .FullyJoinedQuery(TestFlavour, false)
                 .Map(p => new 
                 {
                     person = p.ThePerson.Name,
@@ -49,7 +49,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(false)
+                .FullyJoinedQuery(TestFlavour, false)
                 .Map(p => new 
                 {
                     person = p.ThePerson.Name,

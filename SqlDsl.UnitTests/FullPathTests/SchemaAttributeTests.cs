@@ -41,9 +41,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             public List<PersonClassWithAttributes> ThePersonClasses { get; set; }
         }
 
-        static Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
+        Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
         {
-            return Sql.Query.Sqlite<JoinedQueryClass>()
+            return Query<JoinedQueryClass>()
                 .From<PersonWithAttributes>(x => x.ThePerson)
                 .InnerJoin<PersonClassWithAttributes>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.TheId == pc.ThePersonId);

@@ -29,7 +29,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var result = Sql.Query.Sqlite<ClassesByTag>()
+            var result = Query<ClassesByTag>()
                 .From(x => x.TheTag)
                 .LeftJoin(q => q.TheClassTags)
                     .On((q, ct) => q.TheTag.Id == ct.TagId)
@@ -75,7 +75,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             // assert
-            Assert.Throws(typeof(SqlBuilderException), () => Sql.Query.Sqlite<PersonsDataTwice>()
+            Assert.Throws(typeof(SqlBuilderException), () => Query<PersonsDataTwice>()
                 .From(x => x.ThePerson)
                 .LeftJoin(q => q.ThePersonsData1)
                     .On((q, ct) => q.ThePerson.Id == ct.PersonId)
@@ -122,7 +122,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             // assert
-            Assert.Throws(typeof(SqlBuilderException), () => Sql.Query.Sqlite<PersonsDataTwice>()
+            Assert.Throws(typeof(SqlBuilderException), () => Query<PersonsDataTwice>()
                 .From(x => x.ThePerson)
                 .LeftJoin(q => q.ThePersonsData1)
                     .On((q, ct) => q.ThePerson.Id == ct.PersonId)
@@ -170,7 +170,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             // assert
-            Assert.Throws(typeof(SqlBuilderException), () => Sql.Query.Sqlite<PersonsDataTwice>()
+            Assert.Throws(typeof(SqlBuilderException), () => Query<PersonsDataTwice>()
                 .From(x => x.ThePerson)
                 .LeftJoin(q => q.ThePersonsData1)
                     .On((q, ct) => q.ThePerson.Id == ct.PersonId)

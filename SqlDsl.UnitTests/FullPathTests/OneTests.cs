@@ -21,7 +21,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Where(q => q.ThePersonClasses.One().ClassId == Data.Classes.Tennis.Id)
                 .Map(p => p.ThePersonClasses.One().ClassId)
                 .ToArray(Executor, logger: Logger);
@@ -38,7 +38,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Where(q => q.ThePersonClasses.One().ClassId == Data.Classes.Tennis.Id)
                 .Map(p => p.ThePersonClasses.Select(x => x.ClassId).One())
                 .ToArray(Executor, logger: Logger);
@@ -55,7 +55,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Where(q => q.TheClasses.One().Id == Data.Classes.Tennis.Id)
                 .Map(p => p.TheClasses)
                 .ToArray(Executor, logger: Logger)
@@ -71,7 +71,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .Where(q => q.TheClasses.Select(x => x.Id).One() == Data.Classes.Tennis.Id)
                 .Map(p => p.TheClasses)
                 .ToArray(Executor, logger: Logger)
@@ -88,7 +88,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .OrderBy(q => q.TheClasses.One().Name)
                 .Map(p => p.TheClasses)
                 .ToArray(Executor, logger: Logger)
@@ -104,7 +104,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery()
+                .FullyJoinedQuery(TestFlavour)
                 .OrderBy(q => q.TheClasses.Select(x => x.Name).One())
                 .Map(p => p.TheClasses)
                 .ToArray(Executor, logger: Logger)
@@ -119,7 +119,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<QueryContainer>()
+            var data = Query<QueryContainer>()
                 .From(x => x.ThePerson)
                 .LeftJoin(q => q.ThePersonClasses)
                     .On((q, pcs) => q.ThePerson.Id == pcs.One().PersonId)
@@ -135,7 +135,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<QueryContainer>()
+            var data = Query<QueryContainer>()
                 .From(x => x.ThePerson)
                 .LeftJoin(q => q.ThePersonClasses)
                     .On((q, pcs) => q.ThePerson.Id == pcs.Select(pc => pc.PersonId).One())
@@ -151,7 +151,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<QueryContainer>()
+            var data = Query<QueryContainer>()
                 .From(x => x.ThePerson)
                 .LeftJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pcs) => q.ThePerson.Id == pcs.PersonId)
@@ -169,7 +169,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<QueryContainer>()
+            var data = Query<QueryContainer>()
                 .From(x => x.ThePerson)
                 .LeftJoin<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pcs) => q.ThePerson.Id == pcs.PersonId)
@@ -194,7 +194,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<LoadsOfData>()
+            var data = Query<LoadsOfData>()
                 .From(x => x.Data1)
                 .LeftJoin(q => q.Data2)
                     .On((q, d) => q.Data1.Data == d.One().Data)
@@ -213,7 +213,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = Sql.Query.Sqlite<LoadsOfData>()
+            var data = Query<LoadsOfData>()
                 .From(x => x.Data1)
                 .LeftJoin(q => q.Data2)
                     .On((q, d) => q.Data1.Data == d.Select(x => x.Data).One())
@@ -235,7 +235,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             // assert
-            Assert.Throws(typeof(SqlBuilderException), () => Sql.Query.Sqlite<Person>()
+            Assert.Throws(typeof(SqlBuilderException), () => Query<Person>()
                 .Map(x => somethingToOne.One())
                 .First(Executor, logger: Logger));
 
@@ -247,7 +247,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             // assert
-            Assert.Throws(typeof(SqlBuilderException), () => Sql.Query.Sqlite<List<int>, Person>()
+            Assert.Throws(typeof(SqlBuilderException), () => Query<List<int>, Person>()
                 .Map((x, a) => a.One())
                 .First(Executor, new List<int> { 1 }, logger: Logger));
         }
