@@ -4,10 +4,10 @@ using NUnit.Framework;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class ConstantTests : FullPathTestBase
     {
-        public ConstantTests(TestFlavour testFlavour)
+        public ConstantTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -19,7 +19,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(p => 77)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -42,7 +42,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(p => anInt.IntValue)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -75,7 +75,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .OrderBy(x => 77)
                 .ToArray(Executor, logger: Logger);
 
@@ -89,7 +89,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             // assert
             TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Skip(1).Take(1)
                 .ToArray(Executor, logger: Logger);
 

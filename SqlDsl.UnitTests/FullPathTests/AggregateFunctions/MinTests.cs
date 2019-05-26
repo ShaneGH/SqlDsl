@@ -5,10 +5,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class MinTests : FullPathTestBase
     {
-        public MinTests(TestFlavour testFlavour)
+        public MinTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -19,7 +19,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(p => new 
                 {
                     person = p.ThePerson.Name,
@@ -49,7 +49,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(p => new 
                 {
                     person = p.ThePerson.Name,

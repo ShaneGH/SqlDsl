@@ -81,7 +81,7 @@ namespace SqlDsl
             var logger = new FullPathTestBase.TestLogger();
             logger.SupressLogMessages.Add(LogMessages.ExecutingQuery);
 
-            using (var connection = InitData.CreateConnection())
+            using (var connection = InitData.CreateSqliteConnection())
             {
                 connection.Open();
                 var executor = new TestExecutor(new SqliteExecutor(connection));

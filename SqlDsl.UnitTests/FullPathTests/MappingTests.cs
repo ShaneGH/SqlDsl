@@ -9,10 +9,10 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class MappingTests : FullPathTestBase
     {
-        public MappingTests(TestFlavour testFlavour)
+        public MappingTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -161,7 +161,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .Map(p => new MapComplexObjectType2
                 { 
                     PersonName = p.ThePerson.Name,
@@ -459,7 +459,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .Map(query => new SmartJoinedClass3
                 { 
                     FavouriteClasses = query.TheClasses
@@ -503,7 +503,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .Map(query => new
                 { 
                     FavouriteClasses = query.TheClasses
@@ -556,7 +556,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             // assert
-            Assert.ThrowsAsync(typeof(ParsingException), () => TestUtils.FullyJoinedQuery(TestFlavour)
+            Assert.ThrowsAsync(typeof(ParsingException), () => TestUtils.FullyJoinedQuery(SqlType)
                 .Map(query => new SmartJoinedClass3_1
                 { 
                     FavouriteClasses = query.TheClasses
@@ -590,7 +590,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             PrintStatusOnFailure = false;
 
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .Map(query => new SmartJoinedClass3_2
                 { 
                     Inner = new SmartJoinedClass3_2
@@ -658,7 +658,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .Map(query => new SmartJoinedClass1
                 { 
                     PersonsName = query.ThePerson.Name,
@@ -709,7 +709,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .Map(query => new SmartJoinedClass1(query.ThePerson.Name)
                 { 
                     FavouriteClasses = query.TheClasses
@@ -770,7 +770,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .Where(q => q.TheTags.One().Name == Data.Tags.Sport.Name)
                 .Map(query => new SmartJoinedClass5
                 { 

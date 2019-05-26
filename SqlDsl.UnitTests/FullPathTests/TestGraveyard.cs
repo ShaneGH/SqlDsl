@@ -11,10 +11,10 @@ namespace SqlDsl.UnitTests.FullPathTests
     /// <summary>
     /// This is a place to put tests that don't really make sense anymore, rather than delete them.
     /// </summary>
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class TestGraveyard : FullPathTestBase
     {
-        public TestGraveyard(TestFlavour testFlavour)
+        public TestGraveyard(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -25,7 +25,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(p => p.ThePerson.Id + 1)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -41,7 +41,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(p => 1 + p.ThePerson.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -59,7 +59,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             var data = await TestUtils
-                .FullyJoinedQueryWithArg<int>(TestFlavour)
+                .FullyJoinedQueryWithArg<int>(SqlType)
                 .Map((p, a) => p.ThePerson.Id + one + a)
                 .ToIEnumerableAsync(Executor, 10, logger: Logger);
 
@@ -118,7 +118,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(mapper)
                 .ToIEnumerable(Executor, logger: Logger);
@@ -291,7 +291,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(p => p.ThePersonClasses.Select(pc => new PreMapped { ClassId = pc.ClassId }))
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -310,7 +310,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(p => p.ThePersonClasses.Select(pc => new PreMapped(pc.PersonId)).ToList())
                 .ToListAsync(Executor, logger: Logger);
 
@@ -329,7 +329,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(p => p.ThePersonClasses
                     .Select(pc => new PreMapped(pc.PersonId)
                     { 

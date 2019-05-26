@@ -5,10 +5,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class OrderByTests : FullPathTestBase
     {
-        public OrderByTests(TestFlavour testFlavour)
+        public OrderByTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -18,7 +18,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .OrderBy(x => x.ThePerson.Id)
                 .Map(q => q.ThePerson.Name)
                 .ToArrayAsync(Executor, logger: Logger);
@@ -32,7 +32,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .OrderByDesc(x => x.ThePerson.Id)
                 .Map(q => q.ThePerson.Name)
                 .ToArrayAsync(Executor, logger: Logger);
@@ -46,7 +46,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .OrderBy(x => x.ThePerson.Id)
                 .ThenBy(x => x.TheClasses.One().Id)
                 .Map(q => new 
@@ -67,7 +67,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .OrderByDesc(x => x.ThePerson.Id)
                 .ThenBy(x => x.TheClasses.One().Id)
                 .Map(q => new 
@@ -88,7 +88,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .OrderByDesc(x => x.ThePerson.Id)
                 .ThenByDesc(x => x.TheClasses.One().Id)
                 .Map(q => new 
@@ -109,7 +109,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .OrderBy(x => x.ThePerson.Id)
                 .ThenByDesc(x => x.TheClasses.Select(y => y.Id))
                 .Map(q => new 

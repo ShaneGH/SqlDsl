@@ -13,27 +13,43 @@ namespace SqlDsl.UnitTests.FullPathTests
 {
     public class FullPathTestBase
     {
-        public readonly TestFlavour TestFlavour;
+        public readonly SqlType SqlType;
 
-        public FullPathTestBase(TestFlavour testFlavour)
+        public FullPathTestBase(SqlType testFlavour)
         {
-            TestFlavour = testFlavour;
+            SqlType = testFlavour;
         }
 
-        SqliteConnection Connection;
+        SqliteConnection SqliteConnection;
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
-            InitData.EnsureInit();
-            Connection = InitData.CreateConnection();
-            Connection.Open();
+            switch (SqlType)
+            {
+                case SqlType.Sqlite:
+                    InitData.EnsureInit(SqlType);
+                    SqliteConnection = InitSqliteDatabase.CreateSqliteConnection();
+                    SqliteConnection.Open();
+                    break;
+
+                default:
+                    throw new Exception($"Invalid sql type {SqlType}");
+            }
         }
 
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
-            Connection.Dispose();
+            switch (SqlType)
+            {
+                case SqlType.Sqlite:
+                    SqliteConnection.Dispose();
+                    break;
+
+                default:
+                    throw new Exception($"Invalid sql type {SqlType}");
+            }
         }
 
         protected bool PrintStatusOnFailure;
@@ -43,8 +59,19 @@ namespace SqlDsl.UnitTests.FullPathTests
         [SetUp]
         public void SetUp()
         {
+            IExecutor ex;
+            switch (SqlType)
+            {
+                case SqlType.Sqlite:
+                    ex = new SqliteExecutor(SqliteConnection);
+                    break;
+
+                default:
+                    throw new Exception($"Invalid sql type {SqlType}");
+            }
+
+            Executor = new TestExecutor(ex);
             PrintStatusOnFailure = true;
-            Executor = new TestExecutor(new SqliteExecutor(Connection));
             Logger = new TestLogger();
         }
 
@@ -59,12 +86,12 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         public Dsl.ISqlSelect<T> Query<T>(bool strictJoins = true)
         {
-            return TestUtils.Query<T>(TestFlavour, strictJoins);
+            return TestUtils.Query<T>(SqlType, strictJoins);
         }
 
         public Dsl.ISqlSelect<TArgs, T> Query<TArgs, T>(bool strictJoins = true)
         {
-            return TestUtils.Query<TArgs, T>(TestFlavour, strictJoins);
+            return TestUtils.Query<TArgs, T>(SqlType, strictJoins);
         }
 
         public class TestLogger : ILogger
@@ -108,7 +135,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
     }
     
-    public enum TestFlavour
+    public enum SqlType
     {
         Sqlite
     }
@@ -116,8 +143,8 @@ namespace SqlDsl.UnitTests.FullPathTests
     [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
     sealed class SqlTestAttribute : TestFixtureAttribute, IFixtureBuilder
     {        
-        private readonly TestFlavour Language;
-        public SqlTestAttribute(TestFlavour language)
+        private readonly SqlType Language;
+        public SqlTestAttribute(SqlType language)
             : base(language)
         {
             Language = language;
@@ -127,7 +154,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             switch (Language)
             {
-                case TestFlavour.Sqlite:
+                case SqlType.Sqlite:
                     return Run(TestSettings.Instance.Environments.Sqlite);
 
                 default:

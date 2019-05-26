@@ -10,11 +10,11 @@ namespace SqlDsl.UnitTests
 {
     static class TestUtils
     {
-        public static Dsl.ISqlSelect<TResult> Query<TResult>(TestFlavour testType, bool strictJoins = true)
+        public static Dsl.ISqlSelect<TResult> Query<TResult>(SqlType testType, bool strictJoins = true)
         {
             switch (testType)
             {
-                case TestFlavour.Sqlite:
+                case SqlType.Sqlite:
                     return Sql.Query.Sqlite<TResult>(strictJoins);
 
                 default:
@@ -22,11 +22,11 @@ namespace SqlDsl.UnitTests
             }
         }
         
-        public static Dsl.ISqlSelect<TArgs, TResult> Query<TArgs, TResult>(TestFlavour testType, bool strictJoins = true)
+        public static Dsl.ISqlSelect<TArgs, TResult> Query<TArgs, TResult>(SqlType testType, bool strictJoins = true)
         {
             switch (testType)
             {
-                case TestFlavour.Sqlite:
+                case SqlType.Sqlite:
                     return Sql.Query.Sqlite<TArgs, TResult>(strictJoins);
 
                 default:
@@ -34,10 +34,10 @@ namespace SqlDsl.UnitTests
             }
         }
 
-        public static Dsl.IQuery<TArg, QueryContainer> FullyJoinedQueryWithArg<TArg>(TestFlavour testType, bool strictJoins = true) 
+        public static Dsl.IQuery<TArg, QueryContainer> FullyJoinedQueryWithArg<TArg>(SqlType testType, bool strictJoins = true) 
             => FullyJoinedQueryWithArg<QueryContainer, TArg>(testType, strictJoins);
 
-        public static Dsl.IQuery<TArg, T> FullyJoinedQueryWithArg<T, TArg>(TestFlavour testType, bool strictJoins = true)
+        public static Dsl.IQuery<TArg, T> FullyJoinedQueryWithArg<T, TArg>(SqlType testType, bool strictJoins = true)
             where T : QueryContainer
         {
             return Query<TArg, T>(testType, strictJoins)
@@ -54,7 +54,7 @@ namespace SqlDsl.UnitTests
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
 
-        public static Dsl.IQuery<TArg, T> FullyLeftJoinedQueryWithArg<T, TArg>(TestFlavour testType, bool strictJoins = true)
+        public static Dsl.IQuery<TArg, T> FullyLeftJoinedQueryWithArg<T, TArg>(SqlType testType, bool strictJoins = true)
             where T : QueryContainer
         {
             return Query<TArg, T>(testType, strictJoins)
@@ -71,7 +71,7 @@ namespace SqlDsl.UnitTests
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
         
-        public static Dsl.IQuery<T> FullyJoinedQuery<T>(TestFlavour testType, bool strictJoins = true)
+        public static Dsl.IQuery<T> FullyJoinedQuery<T>(SqlType testType, bool strictJoins = true)
             where T : QueryContainer
         {
             return Query<T>(testType, strictJoins)
@@ -88,7 +88,7 @@ namespace SqlDsl.UnitTests
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
         
-        public static Dsl.IQuery<T> FullyLeftJoinedQuery<T>(TestFlavour testType, bool strictJoins = true)
+        public static Dsl.IQuery<T> FullyLeftJoinedQuery<T>(SqlType testType, bool strictJoins = true)
             where T : QueryContainer
         {
             return Query<T>(testType, strictJoins)
@@ -105,9 +105,9 @@ namespace SqlDsl.UnitTests
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
         
-        public static Dsl.IQuery<QueryContainer> FullyJoinedQuery(TestFlavour testType, bool strictJoins = true) => FullyJoinedQuery<QueryContainer>(testType, strictJoins);
+        public static Dsl.IQuery<QueryContainer> FullyJoinedQuery(SqlType testType, bool strictJoins = true) => FullyJoinedQuery<QueryContainer>(testType, strictJoins);
         
-        public static Dsl.IQuery<QueryContainer> FullyLeftJoinedQuery(TestFlavour testType, bool strictJoins = true) => FullyLeftJoinedQuery<QueryContainer>(testType, strictJoins);
+        public static Dsl.IQuery<QueryContainer> FullyLeftJoinedQuery(SqlType testType, bool strictJoins = true) => FullyLeftJoinedQuery<QueryContainer>(testType, strictJoins);
         
         public static RootObjectPropertyGraph BuildMappedObjetPropertyGraph<TResult>(this Dsl.IPager<TResult> builder)
         {

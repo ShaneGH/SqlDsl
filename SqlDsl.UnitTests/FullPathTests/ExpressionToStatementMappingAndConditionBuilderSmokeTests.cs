@@ -10,10 +10,10 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class ExpressionToStatementMappingAndConditionBuilderSmokeTests : FullPathTestBase
     {
-        public ExpressionToStatementMappingAndConditionBuilderSmokeTests(TestFlavour testFlavour)
+        public ExpressionToStatementMappingAndConditionBuilderSmokeTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -157,7 +157,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(p => new
                 {
                     pid = p.ThePerson.Id + 1,
@@ -182,7 +182,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(p => new
                 {
                     name = p.ThePerson.Name,

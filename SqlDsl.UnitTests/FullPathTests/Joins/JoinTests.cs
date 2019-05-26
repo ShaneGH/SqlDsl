@@ -7,10 +7,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.Joins
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class JoinTests : FullPathTestBase
     {
-        public JoinTests(TestFlavour testFlavour)
+        public JoinTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }

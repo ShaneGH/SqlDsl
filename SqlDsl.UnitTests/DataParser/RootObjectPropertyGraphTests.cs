@@ -28,7 +28,7 @@ namespace SqlDsl.UnitTests.DataParser
         /// <summary>
         /// The value is not important. Needed to initialze a query builder
         /// </summary>
-        public static readonly TestFlavour TestFlavour = TestFlavour.Sqlite;
+        public static readonly SqlType TestFlavour = SqlType.Sqlite;
 
         class JoinedQueryClass
         {

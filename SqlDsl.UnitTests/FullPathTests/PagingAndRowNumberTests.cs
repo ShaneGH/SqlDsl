@@ -6,10 +6,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class PagingAndRowNumberTests : FullPathTestBase
     {
-        public PagingAndRowNumberTests(TestFlavour testFlavour)
+        public PagingAndRowNumberTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -72,7 +72,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour, false)
+                .FullyJoinedQuery(SqlType, false)
                 .Skip(1)
                 .Take(1)
                 .First(Executor, logger: Logger);
@@ -92,7 +92,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour, false)
+                .FullyJoinedQuery(SqlType, false)
                 .Map(x => new
                 {
                     person = x.ThePerson.Name,
@@ -133,7 +133,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQueryWithArg<(int skip, int take)>(TestFlavour, false)
+                .FullyJoinedQueryWithArg<(int skip, int take)>(SqlType, false)
                 .Map(x => new
                 {
                     person = x.ThePerson.Name,
@@ -156,7 +156,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour, false)
+                .FullyJoinedQuery(SqlType, false)
                 .Where(x => x.RowNumber() == 2)
                 .Map(x => new
                 {
@@ -178,7 +178,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(x => new
                 {
                     person = x.ThePerson,
@@ -200,7 +200,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(x => new
                 {
                     person = x.ThePerson,
@@ -222,7 +222,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(x => new
                 {
                     person = x.ThePerson,
@@ -260,7 +260,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(x => x.RowNumber())
                 .ToArray(Executor, logger: Logger);
 
@@ -277,7 +277,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.Throws(
                 typeof(SqlBuilderException), 
                 () => TestUtils
-                    .FullyJoinedQuery(TestFlavour)
+                    .FullyJoinedQuery(SqlType)
                     .Map(x => x.ThePerson.Name.RowNumber())
                     .ToArray(Executor, logger: Logger));
         }
@@ -288,7 +288,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(x => x.ThePersonsData.RowNumber())
                 .ToArray(Executor, logger: Logger);
 
@@ -302,7 +302,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(x => x.TheClasses.Select(c => c.RowNumber()))
                 .First(Executor, logger: Logger);
 
@@ -319,7 +319,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.Throws(
                 typeof(SqlBuilderException), 
                 () => TestUtils
-                    .FullyLeftJoinedQuery(TestFlavour)
+                    .FullyLeftJoinedQuery(SqlType)
                     .Map(x => new
                     {
                         person = x.ThePerson,

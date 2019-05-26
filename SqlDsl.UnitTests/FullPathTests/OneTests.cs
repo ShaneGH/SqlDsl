@@ -7,10 +7,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class OneTestsWithFunLogic : FullPathTestBase
     {
-        public OneTestsWithFunLogic(TestFlavour testFlavour)
+        public OneTestsWithFunLogic(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -21,7 +21,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Where(q => q.ThePersonClasses.One().ClassId == Data.Classes.Tennis.Id)
                 .Map(p => p.ThePersonClasses.One().ClassId)
                 .ToArray(Executor, logger: Logger);
@@ -38,7 +38,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Where(q => q.ThePersonClasses.One().ClassId == Data.Classes.Tennis.Id)
                 .Map(p => p.ThePersonClasses.Select(x => x.ClassId).One())
                 .ToArray(Executor, logger: Logger);
@@ -55,7 +55,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Where(q => q.TheClasses.One().Id == Data.Classes.Tennis.Id)
                 .Map(p => p.TheClasses)
                 .ToArray(Executor, logger: Logger)
@@ -71,7 +71,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Where(q => q.TheClasses.Select(x => x.Id).One() == Data.Classes.Tennis.Id)
                 .Map(p => p.TheClasses)
                 .ToArray(Executor, logger: Logger)
@@ -88,7 +88,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .OrderBy(q => q.TheClasses.One().Name)
                 .Map(p => p.TheClasses)
                 .ToArray(Executor, logger: Logger)
@@ -104,7 +104,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .OrderBy(q => q.TheClasses.Select(x => x.Name).One())
                 .Map(p => p.TheClasses)
                 .ToArray(Executor, logger: Logger)

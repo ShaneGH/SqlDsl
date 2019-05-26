@@ -6,10 +6,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class CountTests : FullPathTestBase
     {
-        public CountTests(TestFlavour testFlavour)
+        public CountTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }

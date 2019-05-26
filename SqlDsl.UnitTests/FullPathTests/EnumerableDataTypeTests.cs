@@ -10,10 +10,10 @@ using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class EnumerableDataTypeTests : FullPathTestBase
     {
-        public EnumerableDataTypeTests(TestFlavour testFlavour)
+        public EnumerableDataTypeTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }

@@ -6,10 +6,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.Joins
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class UnmappedMultiJoinedTests : FullPathTestBase
     {
-        public UnmappedMultiJoinedTests(TestFlavour testFlavour)
+        public UnmappedMultiJoinedTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -21,7 +21,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
 
         Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
         {
-            return SqlDsl.UnitTests.TestUtils.FullyJoinedQuery<JoinedQueryClass>(TestFlavour)
+            return SqlDsl.UnitTests.TestUtils.FullyJoinedQuery<JoinedQueryClass>(SqlType)
                 .LeftJoin<Purchase>(q => q.ThePurchasesByClass)
                     .On((q, t) => q.ThePerson.Id == t.PersonId && q.ThePerson.Id == t.PurchaedForPersonId && q.TheClasses.One().Id == t.ClassId);
         }

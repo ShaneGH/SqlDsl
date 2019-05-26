@@ -29,156 +29,42 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
 
     public static class InitData
     {
-        static bool _Init = false;
+        static HashSet<SqlType> _Init = new HashSet<SqlType>();
         static readonly object Lock = new object();
 
-        public static void EnsureInit()
+        public static void EnsureInit(SqlType sqlType)
         {
             lock (Lock)
             {
-                if (_Init) return;
-                Init();
-                _Init = true;
+                if (_Init.Contains(sqlType)) return;
+                Init(sqlType);
+                _Init.Add(sqlType);
             }
         }
 
-        public static string GetDbLocation()
+        static void Init(SqlType sqlType)
         {
-            var locationParts = new Regex(@"\\|/").Split(typeof(InitData).Assembly.Location).ToArray();
-            return locationParts.Take(locationParts.Length - 1).JoinString(@"\") + @"\data.db";
-        }
-
-        public static SqliteConnection CreateConnection() => new SqliteConnection($@"Data Source={GetDbLocation()}");
-
-        static void Init() =>
-            InitWithData(
-                people: Data.People,
-                peoplesData: Data.PeoplesData,
-                classes: Data.Classes,
-                tags: Data.Tags,
-                personClasses: Data.PersonClasses,
-                classTags: Data.ClassTags,
-                purchases: Data.Purchases,
-                tablesWithOneColumn: Data.TablesWithOneRowAndOneColumn);
-
-        public static void InitWithData(
-            IEnumerable<Person> people = null,
-            IEnumerable<PersonsData> peoplesData = null,
-            IEnumerable<PersonClass> personClasses = null,
-            IEnumerable<Class> classes = null,
-            IEnumerable<ClassTag> classTags = null,
-            IEnumerable<Tag> tags = null,
-            IEnumerable<Purchase> purchases = null,
-            IEnumerable<TableWithOneRowAndOneColumn> tablesWithOneColumn = null,
-            IEnumerable<DataDump> dataDump = null)
-        {
-            var location = GetDbLocation();
-            if (File.Exists(location)) File.Delete(location);
-
-            using (var conn = CreateConnection())
-            {   
-                conn.Open();
-                var paramaters = new List<object>();
-                var sql = new[]
-                {
-                    PopulatedTableSql(people.OrEmpty(), paramaters),
-                    PopulatedTableSql(peoplesData.OrEmpty(), paramaters),
-                    PopulatedTableSql(classes.OrEmpty(), paramaters),
-                    PopulatedTableSql(tags.OrEmpty(), paramaters),
-                    PopulatedTableSql(personClasses.OrEmpty(), paramaters),
-                    PopulatedTableSql(classTags.OrEmpty(), paramaters),
-                    PopulatedTableSql(purchases.OrEmpty(), paramaters),
-                    PopulatedTableSql(tablesWithOneColumn.OrEmpty(), paramaters),
-                    PopulatedTableSql(dataDump.OrEmpty(), paramaters)
-                }.JoinString("\n");
-                
-                Console.WriteLine($" * Adding data");
-
-                var cmd = conn.CreateCommand();
-                cmd.CommandText = sql;
-                cmd.Parameters.AddRange(paramaters.Select((p, i) => 
-                {
-                    var param = cmd.CreateParameter();
-                    param.ParameterName = "p" + i;
-                    param.Value = p == null ? DBNull.Value : p;
-                    return param;
-                }));
-                
-                cmd.ExecuteNonQuery();
-
-                Console.WriteLine($" * Data added");
-            }
-        }
-
-        public static string PopulatedTableSql<T>(IEnumerable<T> entities, List<object> paramaters)
-        {
-            var createSql = new List<string>();
-            var insertSql = new List<string>();
-
-            var props = typeof(T)
-                .GetProperties()
-                .ToList();
-
-            var columns = props
-                .Select(prop => $"{prop.Name} {GetColType(prop.PropertyType)} {GetPrimaryKey(prop.Name)} {GetNullable(prop.PropertyType)}");
-
-            var data = entities
-                .Select(e => props
-                    .Select(p => 
-                        SqlValue(p.GetMethod.Invoke(e, new object[0]), p.PropertyType, paramaters)).JoinString(", "))
-                .Select(v => $"INSERT INTO [{typeof(T).Name}]\nVALUES ({v});");
-
-            return new [] 
+            InitDatabaseBase worker;
+            switch (sqlType)
             {
-                $"CREATE TABLE [{typeof(T).Name}] (",
-                columns.JoinString(",\n"),
-                ");",
-                data.JoinString("\n")
-            }.JoinString("\n");
-        }
+                case SqlType.Sqlite:
+                    worker = new InitSqliteDatabase(
+                        people: Data.People,
+                        peoplesData: Data.PeoplesData,
+                        classes: Data.Classes,
+                        tags: Data.Tags,
+                        personClasses: Data.PersonClasses,
+                        classTags: Data.ClassTags,
+                        purchases: Data.Purchases,
+                        tablesWithOneColumn: Data.TablesWithOneRowAndOneColumn);
+                    break;
 
-        static string GetColType(Type t)
-        {
-            if (t == typeof(string)) return "TEXT";
-            if (t == typeof(bool)) return "INTEGER";
-            if (t == typeof(DateTime)) return "INTEGER";
-            if (t == typeof(bool?)) return "INTEGER";
-            if (t == typeof(int)) return "INTEGER";
-            if (t == typeof(int?)) return "INTEGER";
-            if (t == typeof(long)) return "INTEGER";
-            if (t == typeof(long?)) return "INTEGER";
-            if (t == typeof(float)) return "REAL";
-            if (t == typeof(byte[])) return "BLOB";
-            if (t.IsEnum) return "INTEGER";
-
-            throw new NotSupportedException($"Invalid database data type: {t}");
-        }
-
-        static string GetPrimaryKey(string name) => name.ToLowerInvariant() == "id" ? " PRIMARY KEY" : "";
-
-        static string SqlValue(object val, Type t, List<object> parameters)
-        {
-            if (t == typeof(int)) return val.ToString();
-            if (t == typeof(DateTime)) return ((DateTime)val).Ticks.ToString();
-            if (t == typeof(int?)) return val == null ? "NULL" : val.ToString();
-            if (t == typeof(bool)) return ((bool)val ? 1 : 0).ToString();
-            if (t == typeof(bool?)) return val == null ? "NULL" : ((bool)val ? 1 : 0).ToString();
-            if (t == typeof(long)) return val.ToString();
-            if (t == typeof(long?)) return val == null ? "NULL" : val.ToString();
-            if (t == typeof(float)) return val.ToString();
-            if (t == typeof(string)) return val == null ? "NULL" : ("'" + val.ToString() + "'");
-            if (t == typeof(byte[])) 
-            {
-                parameters.Add(val);
-                return "@p" + (parameters.Count - 1);
+                default:
+                    throw new Exception($"Invalid sql type {sqlType}");
             }
 
-            if (t.IsEnum) return ((int)val).ToString();
-
-            throw new NotSupportedException($"Unsupported sql value {val}, {t}");
+            worker.Execute();
         }
-
-        static string GetNullable(Type t) => t.IsClass || t.FullName.StartsWith("System.Nullable`1[") ? " NULL" : " NOT NULL";
     }
 
     class People : IEnumerable<Person>

@@ -6,10 +6,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class GroupByTests : FullPathTestBase
     {
-        public GroupByTests(TestFlavour testFlavour)
+        public GroupByTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -21,7 +21,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour, false)
+                .FullyJoinedQuery(SqlType, false)
                 .Map(p => new 
                 {
                     person = p.ThePerson.Name,
@@ -57,7 +57,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour, false)
+                .FullyJoinedQuery(SqlType, false)
                 .Map(p => new CountAndGroupTest
                 {
                     thePerson = p.ThePerson.Name,
@@ -79,7 +79,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var data = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(q => new
                 {
@@ -106,7 +106,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var data = await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Where(x => x.ThePerson.Id == Data.People.John.Id)
                 .Map(p => new 
                 {
@@ -130,7 +130,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var result = TestUtils
-                .FullyJoinedQuery(TestFlavour, false)
+                .FullyJoinedQuery(SqlType, false)
                 .Map(x => new
                 {
                     name = x.ThePerson.Name,
@@ -159,7 +159,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var result = TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(x => new
                 {
                     name = x.ThePerson.Name,
@@ -187,7 +187,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // assert
             Assert.Throws(typeof(InvalidOperationException), 
                 () => TestUtils
-                    .FullyJoinedQuery(TestFlavour)
+                    .FullyJoinedQuery(SqlType)
                     .Map(x => new
                     {
                         name = x.ThePerson.Name,
@@ -206,7 +206,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // assert
             Assert.Throws(typeof(InvalidOperationException), 
                 () => TestUtils
-                    .FullyJoinedQuery(TestFlavour)
+                    .FullyJoinedQuery(SqlType)
                     .Map(x => new
                     {
                         name = x.ThePerson.Name,
@@ -225,7 +225,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // assert
             Assert.Throws(typeof(InvalidOperationException), 
                 () => TestUtils
-                    .FullyJoinedQuery(TestFlavour)
+                    .FullyJoinedQuery(SqlType)
                     .Map(x => new
                     {
                         name = x.ThePerson.Name,
@@ -241,7 +241,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // arrange
             // act
             var result = TestUtils
-                .FullyJoinedQuery(TestFlavour, false)
+                .FullyJoinedQuery(SqlType, false)
                 .Map(x => x.TheClasses.Count)
                 .ToList(Executor, logger: Logger);
 

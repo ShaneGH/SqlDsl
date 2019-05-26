@@ -4,10 +4,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class RemoveValuesFromInnerQueryTests : FullPathTestBase
     {
-        public RemoveValuesFromInnerQueryTests(TestFlavour testFlavour)
+        public RemoveValuesFromInnerQueryTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -17,7 +17,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour, false)
+            var data = await TestUtils.FullyJoinedQuery(SqlType, false)
                 .OrderBy(x => x.TheTags.One().Id)
                 .Map(q => q.ThePerson.Name)
                 .ToArrayAsync(Executor, logger: Logger);
@@ -31,7 +31,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour, false)
+            var data = await TestUtils.FullyJoinedQuery(SqlType, false)
                 .Where(x => x.TheClasses.One().Id == Data.Classes.Archery.Id)
                 .Map(q => q.ThePerson.Name)
                 .ToArrayAsync(Executor, logger: Logger);

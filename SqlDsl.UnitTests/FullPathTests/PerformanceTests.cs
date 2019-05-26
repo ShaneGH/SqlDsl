@@ -5,10 +5,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class PerformanceTests : FullPathTestBase
     {
-        public PerformanceTests(TestFlavour testFlavour)
+        public PerformanceTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -37,7 +37,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(x => new Cls1
                 {
                     thename = x.ThePerson.Name,
@@ -70,7 +70,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(x => new
                 {
                     name = x.ThePerson.Name,
@@ -103,7 +103,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data= await TestUtils
-                .FullyJoinedQuery(TestFlavour)
+                .FullyJoinedQuery(SqlType)
                 .Map(x => x.ThePerson.Name)
                 .ToArrayAsync(Executor, logger: Logger);
 

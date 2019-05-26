@@ -6,10 +6,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class WhereConditionTests : FullPathTestBase
     {
-        public WhereConditionTests(TestFlavour testFlavour)
+        public WhereConditionTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }

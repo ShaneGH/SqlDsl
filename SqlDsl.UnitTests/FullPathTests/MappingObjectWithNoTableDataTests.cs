@@ -5,10 +5,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     class MappingObjectWithNoTableDataTests : FullPathTestBase
     {
-        public MappingObjectWithNoTableDataTests(TestFlavour testFlavour)
+        public MappingObjectWithNoTableDataTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }
@@ -68,7 +68,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .Map(p => p.ThePersonClasses.Select(pc => new MappedResult(pc.PersonId)).ToList())
                 .ToListAsync(Executor, logger: Logger);
 
@@ -88,7 +88,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             // arrange
             // act
-            var data = await TestUtils.FullyJoinedQuery(TestFlavour)
+            var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .Map(p => p.ThePersonClasses.Select(pc => new MappedResult(pc.PersonId) { ClassId = pc.ClassId }).ToList())
                 .ToListAsync(Executor, logger: Logger);
 

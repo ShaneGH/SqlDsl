@@ -5,10 +5,10 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.Joins
 {
-    [SqlTestAttribute(TestFlavour.Sqlite)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class UnmappedJoinTests : FullPathTestBase
     {
-        public UnmappedJoinTests(TestFlavour testFlavour)
+        public UnmappedJoinTests(SqlType testFlavour)
             : base(testFlavour)
         {
         }
