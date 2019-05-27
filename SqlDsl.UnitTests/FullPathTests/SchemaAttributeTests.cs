@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using SqlDsl.Schema;
 using SqlDsl.UnitTests.FullPathTests.Environment;
@@ -85,11 +86,12 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.People.John.Name, john.ThePerson.TheName);
             Assert.AreEqual(2, john.ThePersonClasses.Count);
 
-            Assert.AreEqual(Data.People.John.Id, john.ThePersonClasses[0].ThePersonId);
-            Assert.AreEqual(Data.Classes.Tennis.Id, john.ThePersonClasses[0].TheClassId);
-            
-            Assert.AreEqual(Data.People.John.Id, john.ThePersonClasses[1].ThePersonId);
-            Assert.AreEqual(Data.Classes.Archery.Id, john.ThePersonClasses[1].TheClassId);
+            CollectionAssert.AreEquivalent(new []
+            {
+                new { p = Data.People.John.Id, c = Data.Classes.Tennis.Id },
+                new { p = Data.People.John.Id, c = Data.Classes.Archery.Id }
+             }, john.ThePersonClasses
+                .Select(x => new { p = x.ThePersonId, c = x.TheClassId }));
         }
 
         [Test]

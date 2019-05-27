@@ -134,7 +134,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             ReflectionUtils.GetMethod(() =>
                 MappingOnlyParts_Executor<object>(null, null), resultType)
-                .Invoke(this, new[] { mapper, result });
+                    .Invoke(this, new[] { mapper, result });
         }
 
         [Test]

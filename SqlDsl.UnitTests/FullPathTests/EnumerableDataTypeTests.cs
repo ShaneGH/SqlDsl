@@ -93,7 +93,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.AreEqual(1, data.Count);
             Assert.AreEqual(Data.PeoplesData.JohnsData.Data, data[0].Data);
-            Assert.AreEqual(new [] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery }, data[0].Classes);
+            CollectionAssert.AreEquivalent(new [] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery }, data[0].Classes);
         }
 
         Task<List<ArrayDataType1Result>> ADT1()
@@ -126,8 +126,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.TheData);
 
             Assert.AreEqual(2, john.ClassIds.Length);
-            Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);
-            Assert.AreEqual(Data.Classes.Archery.Id, john.ClassIds[1]);
+            CollectionAssert.AreEquivalent(new []
+            {
+                Data.Classes.Tennis.Id,
+                Data.Classes.Archery.Id
+            }, john.ClassIds);
         }
 
         [Test]
@@ -171,8 +174,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.TheData.ToArray());
 
             Assert.AreEqual(2, john.ClassIds.Length);
-            Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);
-            Assert.AreEqual(Data.Classes.Archery.Id, john.ClassIds[1]);
+            CollectionAssert.AreEquivalent(new []
+            {
+                Data.Classes.Tennis.Id,
+                Data.Classes.Archery.Id
+            }, john.ClassIds);
         }
 
         [Test]
@@ -219,8 +225,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.TheData[0]);
 
             Assert.AreEqual(2, john.ClassIds.Length);
-            Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);
-            Assert.AreEqual(Data.Classes.Archery.Id, john.ClassIds[1]);
+            CollectionAssert.AreEquivalent(new []
+            {
+                Data.Classes.Tennis.Id,
+                Data.Classes.Archery.Id
+            }, john.ClassIds);
         }
 
         [Test]
@@ -346,8 +355,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(Data.PeoplesData.JohnsData.Data, john.TheData[0]);
 
             Assert.AreEqual(2, john.ClassIds.Length);
-            Assert.AreEqual(Data.Classes.Tennis.Id, john.ClassIds[0]);
-            Assert.AreEqual(Data.Classes.Archery.Id, john.ClassIds[1]);
+            CollectionAssert.AreEquivalent(new []
+            {
+                Data.Classes.Tennis.Id,
+                Data.Classes.Archery.Id
+            }, john.ClassIds);
         }
 
         [Test]

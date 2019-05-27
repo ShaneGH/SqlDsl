@@ -128,7 +128,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(data.ThePerson, Data.People.John);
-            CollectionAssert.AreEqual(data.ThePersonClasses, new [] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery });
+            CollectionAssert.AreEquivalent(data.ThePersonClasses, new [] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery });
         }
 
         [Test]
@@ -144,7 +144,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(data.ThePerson, Data.People.John);
-            CollectionAssert.AreEqual(data.ThePersonClasses, new [] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery });
+            CollectionAssert.AreEquivalent(data.ThePersonClasses, new [] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery });
         }
 
         [Test]

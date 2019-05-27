@@ -51,7 +51,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             Assert.AreEqual(1, data.Count);
             
             Assert.AreEqual(Data.People.John.Name, data[0].Person);
-            CollectionAssert.AreEqual(new [] 
+            CollectionAssert.AreEquivalent(new [] 
             { 
                 new { Name = Data.Classes.Tennis.Name, Price = (float?)Data.Purchases.JohnPurchasedHimselfTennis.Amount },
                 new { Name = Data.Classes.Archery.Name, Price = (float?)null } 

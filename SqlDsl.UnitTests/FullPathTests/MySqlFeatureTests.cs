@@ -15,7 +15,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         
         [Test]
         public void LegacyRowNumber_SmokeTest()
-        {
+        {            
             // arrange
             // act
             // assert
@@ -45,6 +45,56 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .InnerJoin<PersonClass>(x => x.ThePersonClasses)
                     .On((x, pc) => x.ThePerson.Id == pc.PersonId)
                 .ToArray(Executor, logger: Logger);
+        }
+        
+        [Test]
+        [Ignore("TODO: re-enable and order correctly when a decision has been made on ROW_NUMBER() OVER ORDER BY")]
+        public void LegacyRowNumber_OrderingIsConsistent()
+        {
+            // arrange
+            // act
+            var data = Sql.Query
+                .MySql<ClassTag>(settings: new MySqlSettings
+                {
+                    Version8OrHigher = false
+                })
+                .OrderBy(t => t.ClassId)
+                .ThenBy(t => t.TagId)
+                .ToArray(Executor, logger: Logger);
+                
+                Assert.Fail();
+
+            // assert
+            CollectionAssert.AreEqual(new[] 
+            { 
+                Data.ClassTags.TennisSport,
+                Data.ClassTags.TennisBallSport
+            }, data);
+        }
+        
+        [Test]
+        [Ignore("TODO: re-enable and order correctly when a decision has been made on ROW_NUMBER() OVER ORDER BY")]
+        public void V8RowNumber_OrderingIsConsistent()
+        {
+            // arrange
+            // act
+            var data = Sql.Query
+                .MySql<ClassTag>(settings: new MySqlSettings
+                {
+                    Version8OrHigher = true
+                })
+                .OrderBy(t => t.ClassId)
+                .ThenBy(t => t.TagId)
+                .ToArray(Executor, logger: Logger);
+
+                Assert.Fail();
+                
+            // assert
+            CollectionAssert.AreEqual(new[] 
+            { 
+                Data.ClassTags.TennisSport,
+                Data.ClassTags.TennisBallSport
+            }, data);
         }
     }
 }

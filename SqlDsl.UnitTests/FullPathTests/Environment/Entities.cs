@@ -142,6 +142,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             var person = p as ClassTag;
             return person != null && person.ClassId == ClassId && person.TagId == TagId;
         }
+        
+        public override string ToString() => $"class: {ClassId}, tag: {TagId}";
     }
     
     public class Purchase : EqComparer

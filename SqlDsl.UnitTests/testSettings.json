@@ -1,7 +1,7 @@
 {
     "environments": {
-        "sqlite": false,
+        "sqlite": true,
         "mysql": true
     },
-    "mySqlConnectionString": "Server=127.0.0.1;Uid=root;Pwd=root;Allow User Variables=True;"
+    "mySqlConnectionString": "enter locally"
 }

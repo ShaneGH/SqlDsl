@@ -373,9 +373,12 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.Classes.Archery.Name, john.TheClassNamesArray.ElementAt(1));
 
             Assert.AreEqual(3, john.TheTagNames.Count(), john.TheTagNames.JoinString(","));
-            Assert.AreEqual(Data.Tags.Sport.Name, john.TheTagNames.ElementAt(0));
-            Assert.AreEqual(Data.Tags.BallSport.Name, john.TheTagNames.ElementAt(1));
-            Assert.AreEqual(Data.Tags.Sport.Name, john.TheTagNames.ElementAt(2));
+            CollectionAssert.AreEquivalent(new []
+            {
+                Data.Tags.Sport.Name,
+                Data.Tags.BallSport.Name,
+                Data.Tags.Sport.Name
+            }, john.TheTagNames);
             
             // Mary
             Assert.AreEqual(Data.People.Mary.Name, mary.TheName);

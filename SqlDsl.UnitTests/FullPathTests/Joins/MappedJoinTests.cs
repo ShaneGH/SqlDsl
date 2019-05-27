@@ -206,9 +206,12 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             Assert.AreEqual(1, data.Count());
             var john = data.First();
             Assert.AreEqual(3, john.tags.Length);
-            Assert.AreEqual(Data.ClassTags.TennisSport, john.tags[0].tag);
-            Assert.AreEqual(Data.ClassTags.TennisBallSport, john.tags[1].tag);
-            Assert.AreEqual(Data.ClassTags.ArcherySport, john.tags[2].tag);
+            CollectionAssert.AreEquivalent(new []
+            {
+                Data.ClassTags.TennisSport,
+                Data.ClassTags.TennisBallSport,
+                Data.ClassTags.ArcherySport
+            }, john.tags.Select(t => t.tag));
         }
 
         class Cls1
@@ -242,9 +245,12 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // assert
             Assert.AreEqual(1, data.Count);
             Assert.AreEqual(3, data[0].classesWhichAreTagged.Length);
-            Assert.AreEqual(Data.Classes.Tennis, data[0].classesWhichAreTagged[0].cls);
-            Assert.AreEqual(Data.Classes.Tennis, data[0].classesWhichAreTagged[1].cls);
-            Assert.AreEqual(Data.Classes.Archery, data[0].classesWhichAreTagged[2].cls);
+            CollectionAssert.AreEquivalent(new []
+            {
+                Data.Classes.Tennis,
+                Data.Classes.Tennis,
+                Data.Classes.Archery
+            }, data[0].classesWhichAreTagged.Select(c => c.cls));
         }
 
         [Test]
@@ -268,9 +274,12 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // assert
             Assert.AreEqual(1, data.Count);
             Assert.AreEqual(3, data[0].tags.Length);
-            Assert.AreEqual(Data.Classes.Tennis, data[0].tags[0].cls);
-            Assert.AreEqual(Data.Classes.Tennis, data[0].tags[1].cls);
-            Assert.AreEqual(Data.Classes.Archery, data[0].tags[2].cls);
+            CollectionAssert.AreEquivalent(new []
+            {
+                Data.Classes.Tennis,
+                Data.Classes.Tennis,
+                Data.Classes.Archery
+            }, data[0].tags.Select(t => t.cls));
         }
 
         [Test]
@@ -294,9 +303,12 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // assert
             Assert.AreEqual(1, data.Count);
             Assert.AreEqual(3, data[0].classesWithTags.Length);
-            Assert.AreEqual(Data.Classes.Tennis.Name, data[0].classesWithTags[0].cls);
-            Assert.AreEqual(Data.Classes.Tennis.Name, data[0].classesWithTags[1].cls);
-            Assert.AreEqual(Data.Classes.Archery.Name, data[0].classesWithTags[2].cls);
+            CollectionAssert.AreEquivalent(new []
+            {
+                Data.Classes.Tennis.Name,
+                Data.Classes.Tennis.Name,
+                Data.Classes.Archery.Name
+            }, data[0].classesWithTags.Select(c => c.cls));
         }
 
         [Test]
