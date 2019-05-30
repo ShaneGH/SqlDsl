@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
+using SqlDsl.UnitTests.Utils;
 using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests.Environment
@@ -32,17 +33,17 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         static HashSet<SqlType> _Init = new HashSet<SqlType>();
         static readonly object Lock = new object();
 
-        public static void EnsureInit(SqlType sqlType)
+        public static void EnsureInit(SqlType sqlType, Settings settings)
         {
             lock (Lock)
             {
                 if (_Init.Contains(sqlType)) return;
-                Init(sqlType);
+                Init(sqlType, settings);
                 _Init.Add(sqlType);
             }
         }
 
-        static void Init(SqlType sqlType)
+        static void Init(SqlType sqlType, Settings settings)
         {
             InitDatabaseBase worker;
             switch (sqlType)
@@ -75,7 +76,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                     throw new Exception($"Invalid sql type {sqlType}");
             }
 
-            worker.Execute();
+            worker.Execute(settings);
         }
     }
 

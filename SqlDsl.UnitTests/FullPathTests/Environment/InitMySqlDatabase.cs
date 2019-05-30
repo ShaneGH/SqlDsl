@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using MySql.Data.MySqlClient;
 using SqlDsl.MySql;
+using SqlDsl.UnitTests.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests.Environment
 {
@@ -82,9 +83,9 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                     },
                     GetEnum = (x, y) => x.ToString()
                 },
-                () => 
+                (Settings settings) => 
                 {
-                    using (var conn = new MySqlConnection(MachineConnectionString))
+                    using (var conn = new MySqlConnection(settings.MySqlConnectionString))
                     {
                         conn.Open();
 
@@ -101,16 +102,19 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                         }
                     }
                 },
-                () => new Connection());
+                (Settings settings) => new Connection(settings));
         }
 
-        private static string MachineConnectionString = "Server=127.0.0.1;Uid=root;Pwd=root;Allow User Variables=True;";
-
-        public static MySqlConnection CreateMySqlConnection() => new MySqlConnection(MachineConnectionString + @"Database=SqlDslTestDb;");
+        public static MySqlConnection CreateMySqlConnection(Settings settings) => new MySqlConnection(settings.MySqlConnectionString + @"Database=SqlDslTestDb;");
 
         class Connection : IConnection
         {
-            readonly MySqlConnection _connection = CreateMySqlConnection();
+            readonly MySqlConnection _connection;
+
+            public Connection(Settings settings)
+            {
+                _connection = CreateMySqlConnection(settings);
+            }
 
             public void Dispose()
             {

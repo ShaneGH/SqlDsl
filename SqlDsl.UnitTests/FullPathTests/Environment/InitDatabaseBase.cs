@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 using SqlDsl.SqlBuilders;
+using SqlDsl.UnitTests.Utils;
 using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests.Environment
@@ -49,15 +50,15 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
     public class Dependencies
     {
         public readonly DataTypes DataTypes;
-        public readonly Action CleanupOldDatabase;
-        public readonly Func<IConnection> CreateConnection;
+        public readonly Action<Settings> CleanupOldDatabase;
+        public readonly Func<Settings, IConnection> CreateConnection;
         public readonly ISqlSyntax SqlSyntax;
 
         public Dependencies(
             ISqlSyntax sqlSyntax,
             DataTypes dataTypes,
-            Action cleanupOldDatabase,
-            Func<IConnection> createConnection)
+            Action<Settings> cleanupOldDatabase,
+            Func<Settings, IConnection> createConnection)
         {
             DataTypes = dataTypes;
             CleanupOldDatabase = cleanupOldDatabase;
@@ -109,11 +110,11 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             DataDump = dataDump;
         }
 
-        public void Execute()
+        public void Execute(Settings settings)
         {
-            Dependencies.CleanupOldDatabase();
+            Dependencies.CleanupOldDatabase(settings);
 
-            using (var conn = Dependencies.CreateConnection())
+            using (var conn = Dependencies.CreateConnection(settings))
             {   
                 conn.Open();
                 var paramaters = new List<object>();

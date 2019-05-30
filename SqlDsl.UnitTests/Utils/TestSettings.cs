@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
@@ -13,11 +15,23 @@ namespace SqlDsl.UnitTests.Utils
 
         public static Settings LoadSettings()
         {
-            // TODO: relative path
-            using (var file = new FileStream(@"C:\Dev\SqlDsl\SqlDsl.UnitTests\testSettings.json", FileMode.OpenOrCreate, FileAccess.Read))
-            using (var reader = new StreamReader(file))
+            var settingsDir = Directory.GetCurrentDirectory();
+
+            using (var baseFile = new FileStream(Path.Combine(settingsDir, "testSettings.json"), FileMode.OpenOrCreate, FileAccess.Read))
+            using (var baseReader = new StreamReader(baseFile))
+            using (var userFile = new FileStream(Path.Combine(settingsDir, "testSettings.user.json"), FileMode.OpenOrCreate, FileAccess.Read))
+            using (var userReader = new StreamReader(userFile))
             {
-                return JsonConvert.DeserializeObject<Settings>(reader.ReadToEnd());
+                JObject bs = JObject.Parse(baseReader.ReadToEnd());
+                JObject ur = JObject.Parse(userReader.ReadToEnd());
+
+                bs.Merge(ur, new JsonMergeSettings
+                {
+                    // union array values together to avoid duplicates
+                    MergeArrayHandling = MergeArrayHandling.Union
+                });
+
+                return JsonConvert.DeserializeObject<Settings>(bs.ToString());
             }
         }
     }
@@ -25,6 +39,7 @@ namespace SqlDsl.UnitTests.Utils
     public class Settings
     {
         public Environments Environments { get; set;}
+        public string MySqlConnectionString { get; set; }
     }
 
     public class Environments

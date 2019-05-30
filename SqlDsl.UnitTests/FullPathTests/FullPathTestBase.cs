@@ -28,7 +28,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
-            InitData.EnsureInit(SqlType);
+            InitData.EnsureInit(SqlType, TestSettings.Instance);
             switch (SqlType)
             {
                 case SqlType.Sqlite:
@@ -37,7 +37,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     break;
                     
                 case SqlType.MySql:
-                    MySqlConnection = InitMySqlDatabase.CreateMySqlConnection();
+                    MySqlConnection = InitMySqlDatabase.CreateMySqlConnection(TestSettings.Instance);
                     MySqlConnection.Open();
                     break;
 

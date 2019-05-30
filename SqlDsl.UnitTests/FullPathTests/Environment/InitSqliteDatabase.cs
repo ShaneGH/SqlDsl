@@ -79,12 +79,12 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                     },
                     GetEnum = (x, y) => x.ToString()
                 },
-                () => 
+                _ => 
                 {
                     var location = GetDbLocation();
                     if (File.Exists(location)) File.Delete(location);
                 },
-                () => new Connection());
+                _ => new Connection());
         }
 
         public static string GetDbLocation()

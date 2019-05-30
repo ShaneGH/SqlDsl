@@ -2,5 +2,6 @@
     "environments": {
         "sqlite": false,
         "mysql": true
-    }
+    },
+    "mySqlConnectionString": "Server=127.0.0.1;Uid=root;Pwd=root;Allow User Variables=True;"
 }

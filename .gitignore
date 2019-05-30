@@ -2,3 +2,4 @@ bin/
 obj/
 .vscode/
 /Messing/data.db
+testSettings.user.json

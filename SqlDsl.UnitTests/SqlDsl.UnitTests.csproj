@@ -3,6 +3,10 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <None Update="testSettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="testSettings.user.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\SqlDsl.Sqlite\SqlDsl.Sqlite.csproj" />
     <ProjectReference Include="..\SqlDsl.MySql\SqlDsl.MySql.csproj" />
   </ItemGroup>
