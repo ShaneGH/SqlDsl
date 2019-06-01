@@ -54,18 +54,18 @@ namespace SqlDsl.UnitTests.FullPathTests
             yield return TC("constant", x => x.ThePerson.Id == 1 && true);
             yield return TC("row number", x => x.RowNumber() == 1);
             yield return TC("nullable row number", x => x.NullableRowNumber() == 1);
-            yield return TC("One", x => x.Other.One().Value != -99, 2);
-            yield return TC("Single", x => x.Other.Single().Value != -99, 2);
-            yield return TC("ToArray", x => x.Other.ToArray().One().Value != -99, 2);
-            yield return TC("ToList", x => x.Other.ToList().One().Value != -99, 2);
+            yield return TC("One", x => x.Other.One().Value != -99, 2, true);
+            yield return TC("Single", x => x.Other.Single().Value != -99, 2, true);
+            yield return TC("ToArray", x => x.Other.ToArray().One().Value != -99, 2, true);
+            yield return TC("ToList", x => x.Other.ToList().One().Value != -99, 2, true);
 
-            TestCaseData TC(string name, Expression<Func<QueryClass, bool>> statement, int expectedElements = 1) =>
-                new TestCaseData(statement, expectedElements).SetName(name);
+            TestCaseData TC(string name, Expression<Func<QueryClass, bool>> statement, int expectedElements = 1, bool skipOrderBy = false) =>
+                new TestCaseData(statement, expectedElements, skipOrderBy).SetName(name);
         }
 
         [Test]
         [TestCaseSource("GetConditionAndMappingParts")]
-        public void ConditionAndMappingParts(Expression<Func<QueryClass, bool>> condition, int expectedElements)
+        public void ConditionAndMappingParts(Expression<Func<QueryClass, bool>> condition, int expectedElements, bool skipOrderBy)
         {
             // arrange
             var joinCondition = Expression
@@ -75,12 +75,17 @@ namespace SqlDsl.UnitTests.FullPathTests
                         .Parameter(typeof(TableWithOneRowAndOneColumn))));
 
             // act
-            var result = Query<QueryClass>()
+            var preOrderBy = Query<QueryClass>()
                 .From(x => x.ThePerson)
                 .InnerJoin(x => x.Other)
                 .On(joinCondition)
-                .Where(condition)
-                .OrderBy(condition)
+                .Where(condition);
+
+            var afterOrderBy = skipOrderBy 
+                ? preOrderBy
+                : preOrderBy.OrderBy(condition);
+
+            var result = afterOrderBy
                 .Map(condition)
                 .ToList(Executor, logger: Logger);
 

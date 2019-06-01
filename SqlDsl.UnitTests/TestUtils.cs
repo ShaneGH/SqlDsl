@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using SqlDsl.DataParser;
 using SqlDsl.Mapper;
 using SqlDsl.Query;
@@ -139,6 +140,11 @@ namespace SqlDsl.UnitTests
                 .Compile();
 
             return compiled.PropertyGraph;
+        }
+
+        public static void WriteJson<T>(T value)
+        {
+            Console.WriteLine(JsonConvert.SerializeObject(value));
         }
     }
 

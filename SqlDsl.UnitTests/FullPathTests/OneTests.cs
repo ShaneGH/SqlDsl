@@ -83,7 +83,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(new [] { Data.Classes.Tennis, Data.Classes.Tennis }, data);
         }
 
-        [Test]
+        /// <summary>
+        /// Do Not Delete. May be used in later incarnations
+        /// <summary/>
         public void GetOneTableAndOrderByOnProperty()
         {
             // arrange
@@ -99,7 +101,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             CollectionAssert.AreEqual(data, new [] { Data.Classes.Archery, Data.Classes.Tennis, Data.Classes.Tennis });
         }
 
-        [Test]
+        /// <summary>
+        /// Do Not Delete. May be used in later incarnations
+        /// <summary/>
         public void SelectFromTableAndOrderByResult()
         {
             // arrange

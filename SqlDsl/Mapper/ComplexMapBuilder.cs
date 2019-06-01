@@ -166,8 +166,7 @@ namespace SqlDsl.Mapper
                         
                     var oneExpr = ReflectionUtils.IsOne(exprMethod);
                     if (oneExpr != null)
-                        // .One(...) is invisible as far as nextMap is concerned
-                        return BuildMapWithErrorHandling(state, oneExpr, nextMap, toPrefix);
+                        return BuildMapForOne(state, oneExpr, nextMap, toPrefix);
                         
                     var (isToList, enumerableL) = ReflectionUtils.IsToList(exprMethod);
                     if (isToList)
@@ -490,6 +489,21 @@ namespace SqlDsl.Mapper
             Expression enumerable, 
             LambdaExpression averageMapper, 
             string toPrefix = null) => BuildMapForMin(state, AddSelectToEnunmerable(state, enumerable, averageMapper), toPrefix);
+
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables, bool isConstant) BuildMapForOne(
+            BuildMapState state, 
+            Expression expr, 
+            MapType nextMap,
+            string toPrefix = null)
+        {
+            // if relaxing this condition, re-enable test: GetOneTableAndOrderByOnProperty
+            // also look at the skipOrderBy parameter in ConditionAndMappingParts test
+            if (state.MappingPurpose == MappingPurpose.OrderBy)
+                throw BuildMappingError(state.MappingPurpose, "You cannot order by a column in a one to many relatiionship.");
+
+            // .One(...) is invisible as far as nextMap is concerned
+            return BuildMapWithErrorHandling(state, expr, nextMap, toPrefix: toPrefix);
+        }
         
         /// <summary>
         /// convert xs
@@ -515,6 +529,9 @@ namespace SqlDsl.Mapper
             UnarySqlOperator function,
             string toPrefix = null)
         {
+            if (state.MappingPurpose == MappingPurpose.OrderBy)
+                throw BuildMappingError(state.MappingPurpose, "You cannot use aggregate functions in an order by clause.");
+
             var (properties, tables, _) = BuildMapWithErrorHandling(state, enumerable, MapType.AggregateFunction, toPrefix);
 
             // if aggregate is on a table, change to aggregate row id
@@ -544,6 +561,11 @@ namespace SqlDsl.Mapper
 
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForSelect(BuildMapState state, Expression enumerable, MapType nextMap, LambdaExpression mapper, string toPrefix)
         {
+            // if relaxing this condition, re-enable test: SelectFromTableAndOrderByResult
+            // also look at the skipOrderBy parameter in ConditionAndMappingParts test
+            if (state.MappingPurpose == MappingPurpose.OrderBy)
+                throw BuildMappingError(state.MappingPurpose, "You cannot order by a column in a one to many relationship.");
+
             if (mapper.Body == mapper.Parameters[0])
             {
                 throw BuildMappingError(state.MappingPurpose, mapper);
