@@ -44,7 +44,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // act
             var data = await Query<QueryClass>()
                 .From(result => result.ThePerson)
-                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -61,7 +61,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             Assert.ThrowsAsync(typeof(InvalidOperationException), () =>
                 Query<QueryClass>()
                     .From<Person>(x => x.ThePerson)
-                    .InnerJoin<ClassTag>(q => q.TheClassTags)
+                    .InnerJoinMany<ClassTag>(q => q.TheClassTags)
                         .On((q, ct) => q.ThePersonClasses.One().ClassId == ct.ClassId)
                     .ToIEnumerableAsync(Executor));
         }
@@ -73,7 +73,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // act
             var data = await Query<QueryClass>()
                 .From(result => result.ThePerson)
-                .LeftJoin<PersonClass>(result => result.ThePersonClasses)
+                .LeftJoinMany<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -88,7 +88,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // act
             var data = Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
-                .LeftJoin<ClassTag>(q => q.TheClassTags)
+                .LeftJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.ThePerson.Id == ct.ClassId)
                 .ToArray(Executor, logger: Logger);
 
@@ -108,7 +108,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // act
             var data = Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
-                .LeftJoin<ClassTag>(q => q.TheClassTags)
+                .LeftJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.ThePerson.Id == ct.ClassId)
                 .Map(x => new
                 {
@@ -145,9 +145,9 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // act
             var result = Query<ClassesByTag>()
                 .From(x => x.TheTag)
-                .LeftJoin(q => q.TheClassTags)
+                .LeftJoinMany(q => q.TheClassTags)
                     .On((q, ct) => q.TheTag.Id == ct.TagId)
-                .LeftJoin(q => q.TheClasses)
+                .LeftJoinMany(q => q.TheClasses)
                     .On((q, ct) => q.TheClassTags.One().ClassId == ct.Id)
                 .Map(t => t.TheClasses
                     .Select(c => t.TheTag.Name))
@@ -169,7 +169,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // act
             var data = await Query<QueryClass>()
                 .From(result => result.ThePerson)
-                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => c.ClassId == Data.Classes.Archery.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -192,7 +192,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // act
             var data = await Query<QueryClass>()
                 .From(result => result.ThePerson)
-                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => c.ClassId == Data.Classes.Tennis.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -216,7 +216,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // act
             var data = await Query<QueryClass>()
                 .From(result => result.ThePerson)
-                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId && c.ClassId == Data.Classes.Tennis.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 

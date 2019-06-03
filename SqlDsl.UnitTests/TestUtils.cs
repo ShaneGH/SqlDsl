@@ -49,15 +49,15 @@ namespace SqlDsl.UnitTests
         {
             return Query<TArg, T>(testType, strictJoins)
                 .From(x => x.ThePerson)
-                .InnerJoin(q => q.ThePersonsData)
+                .InnerJoinOne(q => q.ThePersonsData)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.TheClasses)
+                .InnerJoinMany<Class>(q => q.TheClasses)
                     .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                .InnerJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.TheTags)
+                .InnerJoinMany<Tag>(q => q.TheTags)
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
 
@@ -66,15 +66,15 @@ namespace SqlDsl.UnitTests
         {
             return Query<TArg, T>(testType, strictJoins)
                 .From(x => x.ThePerson)
-                .LeftJoin(q => q.ThePersonsData)
+                .LeftJoinOne(q => q.ThePersonsData)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .LeftJoin<PersonClass>(q => q.ThePersonClasses)
+                .LeftJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .LeftJoin<Class>(q => q.TheClasses)
+                .LeftJoinMany<Class>(q => q.TheClasses)
                     .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .LeftJoin<ClassTag>(q => q.TheClassTags)
+                .LeftJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .LeftJoin<Tag>(q => q.TheTags)
+                .LeftJoinMany<Tag>(q => q.TheTags)
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
         
@@ -83,15 +83,15 @@ namespace SqlDsl.UnitTests
         {
             return Query<T>(testType, strictJoins)
                 .From(x => x.ThePerson)
-                .InnerJoin(q => q.ThePersonsData)
+                .InnerJoinOne(q => q.ThePersonsData)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.TheClasses)
+                .InnerJoinMany<Class>(q => q.TheClasses)
                     .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                .InnerJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.TheTags)
+                .InnerJoinMany<Tag>(q => q.TheTags)
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
         
@@ -100,15 +100,15 @@ namespace SqlDsl.UnitTests
         {
             return Query<T>(testType, strictJoins)
                 .From(x => x.ThePerson)
-                .LeftJoin(q => q.ThePersonsData)
+                .LeftJoinOne(q => q.ThePersonsData)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .LeftJoin<PersonClass>(q => q.ThePersonClasses)
+                .LeftJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .LeftJoin<Class>(q => q.TheClasses)
+                .LeftJoinMany<Class>(q => q.TheClasses)
                     .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .LeftJoin<ClassTag>(q => q.TheClassTags)
+                .LeftJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .LeftJoin<Tag>(q => q.TheTags)
+                .LeftJoinMany<Tag>(q => q.TheTags)
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
         

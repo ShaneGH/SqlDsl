@@ -90,7 +90,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id + 1 == pc.PersonId + 1)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .ToListAsync(Executor, logger: Logger);
@@ -224,7 +224,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses).On(join)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses).On(join)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .ToListAsync(Executor, logger: Logger);
 

@@ -89,10 +89,10 @@ namespace SqlDsl
                 Sql.Query
                     .Sqlite<(Person person, IEnumerable<PersonClass> personClass, IEnumerable<Class> cls, IEnumerable<ClassTag> classTags, IEnumerable<Tag> tags)>()
                     .From(x => x.person)
-                    .InnerJoin(x => x.personClass).On((q, x) => q.person.Id == x.PersonId)
-                    .InnerJoin(x => x.cls).On((q, x) => q.personClass.One().ClassId == x.Id)
-                    .InnerJoin(x => x.classTags).On((q, x) => q.cls.One().Id == x.ClassId)
-                    .InnerJoin(x => x.tags).On((q, x) => q.classTags.One().TagId == x.Id)
+                    .InnerJoinMany(x => x.personClass).On((q, x) => q.person.Id == x.PersonId)
+                    .InnerJoinMany(x => x.cls).On((q, x) => q.personClass.One().ClassId == x.Id)
+                    .InnerJoinMany(x => x.classTags).On((q, x) => q.cls.One().Id == x.ClassId)
+                    .InnerJoinMany(x => x.tags).On((q, x) => q.classTags.One().TagId == x.Id)
                     .Map(x => new 
                     {
                         name = x.person.Name,
@@ -111,10 +111,10 @@ namespace SqlDsl
                 var results = Sql.Query
                     .Sqlite<(Person person, IEnumerable<PersonClass> personClass, IEnumerable<Class> cls, IEnumerable<ClassTag> classTags, IEnumerable<Tag> tags)>()
                     .From(x => x.person)
-                    .InnerJoin(x => x.personClass).On((q, x) => q.person.Id == x.PersonId)
-                    .InnerJoin(x => x.cls).On((q, x) => q.personClass.One().ClassId == x.Id)
-                    .InnerJoin(x => x.classTags).On((q, x) => q.cls.One().Id == x.ClassId)
-                    .InnerJoin(x => x.tags).On((q, x) => q.classTags.One().TagId == x.Id)
+                    .InnerJoinMany(x => x.personClass).On((q, x) => q.person.Id == x.PersonId)
+                    .InnerJoinMany(x => x.cls).On((q, x) => q.personClass.One().ClassId == x.Id)
+                    .InnerJoinMany(x => x.classTags).On((q, x) => q.cls.One().Id == x.ClassId)
+                    .InnerJoinMany(x => x.tags).On((q, x) => q.classTags.One().TagId == x.Id)
                     .Map(x => new { x.person })
                     .ToArray(executor, logger);
 

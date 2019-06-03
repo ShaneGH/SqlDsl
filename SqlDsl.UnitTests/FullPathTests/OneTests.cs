@@ -126,7 +126,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = Query<QueryContainer>()
                 .From(x => x.ThePerson)
-                .LeftJoin(q => q.ThePersonClasses)
+                .LeftJoinOne(q => q.ThePersonClasses)
                     .On((q, pcs) => q.ThePerson.Id == pcs.One().PersonId)
                 .First(Executor, logger: Logger);
 
@@ -142,7 +142,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = Query<QueryContainer>()
                 .From(x => x.ThePerson)
-                .LeftJoin(q => q.ThePersonClasses)
+                .LeftJoinOne(q => q.ThePersonClasses)
                     .On((q, pcs) => q.ThePerson.Id == pcs.Select(pc => pc.PersonId).One())
                 .First(Executor, logger: Logger);
 
@@ -158,9 +158,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = Query<QueryContainer>()
                 .From(x => x.ThePerson)
-                .LeftJoin<PersonClass>(q => q.ThePersonClasses)
+                .LeftJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pcs) => q.ThePerson.Id == pcs.PersonId)
-                .LeftJoin<Class>(q => q.TheClasses)
+                .LeftJoinMany<Class>(q => q.TheClasses)
                     .On((q, cl) => q.ThePersonClasses.One().ClassId == cl.Id)
                 .First(Executor, logger: Logger);
 
@@ -176,9 +176,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = Query<QueryContainer>()
                 .From(x => x.ThePerson)
-                .LeftJoin<PersonClass>(q => q.ThePersonClasses)
+                .LeftJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pcs) => q.ThePerson.Id == pcs.PersonId)
-                .LeftJoin<Class>(q => q.TheClasses)
+                .LeftJoinMany<Class>(q => q.TheClasses)
                     .On((q, cl) => q.ThePersonClasses.Select(x => x.ClassId).One() == cl.Id)
                 .First(Executor, logger: Logger);
 
@@ -201,9 +201,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = Query<LoadsOfData>()
                 .From(x => x.Data1)
-                .LeftJoin(q => q.Data2)
+                .LeftJoinOne(q => q.Data2)
                     .On((q, d) => q.Data1.Data == d.One().Data)
-                .LeftJoin(q => q.Data3)
+                .LeftJoinOne(q => q.Data3)
                     .On((q, d) => q.Data2.One().Data == d.One().Data)
                 .First(Executor, logger: Logger);
 
@@ -220,9 +220,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = Query<LoadsOfData>()
                 .From(x => x.Data1)
-                .LeftJoin(q => q.Data2)
+                .LeftJoinOne(q => q.Data2)
                     .On((q, d) => q.Data1.Data == d.Select(x => x.Data).One())
-                .LeftJoin(q => q.Data3)
+                .LeftJoinOne(q => q.Data3)
                     .On((q, d) => q.Data2.Select(x => x.Data).One() == d.Select(x => x.Data).One())
                 .First(Executor, logger: Logger);
 

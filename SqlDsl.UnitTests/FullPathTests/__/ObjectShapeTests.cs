@@ -49,7 +49,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = Query<TableWithOneColumnMapper2>()
                 .From(x => x.ThePerson)
-                .InnerJoin(q => q.Tabs).On((q, t) => q.ThePerson.Id == Data.People.John.Id)
+                .InnerJoinMany(q => q.Tabs).On((q, t) => q.ThePerson.Id == Data.People.John.Id)
                 .Where(q => q.ThePerson.Id == Data.People.John.Id)
                 .Map(x => x.Tabs)
                 .ToIEnumerable(Executor, logger: Logger)
@@ -214,7 +214,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<QueryClass1>()
                 .From(result => result.ThePerson)
-                .InnerJoin(x => x.ThePersonsData).On((q, d) => q.ThePerson.Id == d.PersonId)
+                .InnerJoinOne(x => x.ThePersonsData).On((q, d) => q.ThePerson.Id == d.PersonId)
                 .Map(x => x.ThePersonsData.Data)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -261,7 +261,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<QueryClass2>()
                 .From(result => result.Inner.ThePerson)
-                .LeftJoin<PersonClass>(result => result.Inner.ThePersonClasses)
+                .LeftJoinMany<PersonClass>(result => result.Inner.ThePersonClasses)
                     .On((r, pc) => r.Inner.ThePerson.Id == pc.PersonId)
                 .Where(result => result.Inner.ThePerson.Id == Data.People.Mary.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
@@ -280,7 +280,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<QueryClass3>()
                 .From(result => result.Inner.SingleOrDefault().ThePerson)
-                .LeftJoin<PersonClass>(result => result.Inner.One().ThePersonClasses)
+                .LeftJoinMany<PersonClass>(result => result.Inner.One().ThePersonClasses)
                     .On((r, pc) => r.Inner.FirstOrDefault().ThePerson.Id == pc.PersonId)
                 .Where(result => result.Inner.One().ThePerson.Id == Data.People.Mary.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
@@ -306,7 +306,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<QueryClass5>()
                 .From(result => result.ThePerson)
-                .LeftJoin<PersonClass>(result => result.ThePersonClass)
+                .LeftJoinOne<PersonClass>(result => result.ThePersonClass)
                     .On((r, pc) => r.ThePerson.Id == pc.PersonId)
                 .Where(result => result.ThePerson.Id == Data.People.Mary.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);
@@ -325,7 +325,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.ThrowsAsync(typeof(InvalidOperationException), () => Query<QueryClass5>()
                 .From(result => result.ThePerson)
-                .LeftJoin<PersonClass>(result => result.ThePersonClass)
+                .LeftJoinOne<PersonClass>(result => result.ThePersonClass)
                     .On((r, pc) => r.ThePerson.Id == pc.PersonId)
                 .Where(result => result.ThePerson.Id == Data.People.John.Id)
                 .ToListAsync(Executor));
@@ -352,7 +352,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.ThrowsAsync(typeof(SqlBuilderException), () =>
                 Query<WhereErrorQueryClass>()
                     .From(result => result.Person1)
-                    .InnerJoin(result => result.Person2)
+                    .InnerJoinOne(result => result.Person2)
                         .On((q, p) => q.Person1.Id == p.Id)
                     .Where(q => q.Person1 == q.Person2)
                     .ToIEnumerableAsync(Executor));
@@ -464,9 +464,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<(Person person, PersonClass[] personClasses, Class[] classes)>()
                 .From(result => result.person)
-                .LeftJoin<PersonClass>(result => result.personClasses)
+                .LeftJoinMany<PersonClass>(result => result.personClasses)
                     .On((r, pc) => r.person.Id == pc.PersonId)
-                .LeftJoin<Class>(result => result.classes)
+                .LeftJoinMany<Class>(result => result.classes)
                     .On((r, pc) => r.personClasses.One().ClassId == pc.Id)
                 .Where(result => result.person.Id == Data.People.John.Id)
                 .Map(q => new
@@ -837,9 +837,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<(IEnumerable<Person> thePerson, IEnumerable<PersonClass> thePersonClass, Class theClass)>()
                 .From(x => x.theClass)
-                .LeftJoin(q => q.thePersonClass)
+                .LeftJoinMany(q => q.thePersonClass)
                     .On((q, pc) => q.theClass.Id == pc.ClassId)
-                .LeftJoin(q => q.thePerson)
+                .LeftJoinMany(q => q.thePerson)
                     .On((q, c) => q.thePersonClass.One().PersonId == c.Id)
                 .Map(x => new
                 {
@@ -861,13 +861,13 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             await Query<QueryContainer>()
                 .From(x => x.ThePerson)
-                .InnerJoin<Tag>(q => q.TheTags)
+                .InnerJoinMany<Tag>(q => q.TheTags)
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id)
-                .InnerJoin<Class>(q => q.TheClasses)
+                .InnerJoinMany<Class>(q => q.TheClasses)
                     .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                .InnerJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .Map(x => new
                 {

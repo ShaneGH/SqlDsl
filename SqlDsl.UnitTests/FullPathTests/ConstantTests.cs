@@ -60,7 +60,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = Query<QueryContainer>()
                 .From(x => x.ThePerson)
-                .InnerJoin(q => q.ThePersonsData)
+                .InnerJoinOne(q => q.ThePersonsData)
                     .On((q, pc) => q.ThePerson.Id == 77)
                 .Map((p) => 7)
                 .ToArray(Executor, logger: Logger);

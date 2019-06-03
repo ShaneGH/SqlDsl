@@ -106,7 +106,7 @@ namespace SqlDsl.UnitTests.SqlFlavours
             // act
             var values = StartTest<One2One>()
                 .From(x => x.T1)
-                .InnerJoin(x => x.T2).On((q, t2) => q.T1.PrimaryKey == t2.PrimaryKey)
+                .InnerJoinOne(x => x.T2).On((q, t2) => q.T1.PrimaryKey == t2.PrimaryKey)
                 .ToIEnumerable(Executor)
                 .ToList();
 

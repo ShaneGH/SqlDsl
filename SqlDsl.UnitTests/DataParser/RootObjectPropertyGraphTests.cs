@@ -170,7 +170,7 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.PersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.PersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .BuildObjetPropertyGraph();
 
@@ -648,7 +648,7 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(result => result.PersonClasses)
+                .InnerJoinMany<PersonClass>(result => result.PersonClasses)
                     .On((q, c) => c.ClassId == Data.Classes.Tennis.Id)
                 .BuildObjetPropertyGraph();
 
@@ -707,9 +707,9 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query.Sqlite<DataCellTypeIsArray1>()
                 .From<Person>(x => x.Person)
-                .InnerJoin<PersonClass>(result => result.PersonClasses)
+                .InnerJoinMany<PersonClass>(result => result.PersonClasses)
                     .On((q, c) => c.PersonId == q.Person.Id)
-                .InnerJoin<PersonsData>(result => result.PersonsData)
+                .InnerJoinOne<PersonsData>(result => result.PersonsData)
                     .On((q, c) => c.PersonId == q.Person.Id)
                 .Map(x => new DataCellTypeIsArray1Result
                 {
@@ -757,9 +757,9 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query.Sqlite<DataCellTypeIsArray2>()
                 .From<Person>(x => x.Person)
-                .InnerJoin<PersonClass>(result => result.PersonClasses)
+                .InnerJoinMany<PersonClass>(result => result.PersonClasses)
                     .On((q, c) => c.PersonId == q.Person.Id)
-                .InnerJoin<PersonsData>(result => result.PersonsData)
+                .InnerJoinMany<PersonsData>(result => result.PersonsData)
                     .On((q, c) => c.PersonId == q.Person.Id)
                 .Map(x => new DataCellTypeIsArray2Result
                 {
@@ -1219,15 +1219,15 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query.Sqlite<JoinedQueryClass>()
                 .From<Person>(x => x.ThePerson)
-                .LeftJoin<PersonClass>(q => q.PersonClasses)
+                .LeftJoinMany<PersonClass>(q => q.PersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .LeftJoin<Class>(q => q.Classes)
+                .LeftJoinMany<Class>(q => q.Classes)
                     .On((q, c) => q.PersonClasses.One().ClassId == c.Id)
-                .LeftJoin<ClassTag>(q => q.ClassTags)
+                .LeftJoinMany<ClassTag>(q => q.ClassTags)
                     .On((q, ct) => q.Classes.One().Id == ct.ClassId)
-                .LeftJoin<Tag>(q => q.Tags)
+                .LeftJoinMany<Tag>(q => q.Tags)
                     .On((q, t) => q.ClassTags.One().TagId == t.Id)
-                .LeftJoin<Purchase>(q => q.PurchasesByClass)
+                .LeftJoinMany<Purchase>(q => q.PurchasesByClass)
                     .On((q, t) => q.ThePerson.Id == t.PersonId && q.ThePerson.Id == t.PurchaedForPersonId && q.Classes.One().Id == t.ClassId)
                 .Where(x => x.ThePerson.Id == Data.People.Mary.Id)
                 .Map(p => new SimpleMapOn1Table_WithMultipleResultsResult
@@ -1293,9 +1293,9 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query.Sqlite<ClassesByTag>()
                 .From(x => x.TheTag)
-                .LeftJoin(q => q.TheClassTags)
+                .LeftJoinMany(q => q.TheClassTags)
                     .On((q, ct) => q.TheTag.Id == ct.TagId)
-                .LeftJoin(q => q.TheClasses)
+                .LeftJoinMany(q => q.TheClasses)
                     .On((q, ct) => q.TheClassTags.One().ClassId == ct.Id)
                 .Map(t => new { y = t.TheClasses
                     .Select(c => new ClassesByTagResult { name = t.TheTag.Name }) })
@@ -1330,9 +1330,9 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query.Sqlite<ClassesByTag>()
                 .From(x => x.TheTag)
-                .LeftJoin(q => q.TheClassTags)
+                .LeftJoinMany(q => q.TheClassTags)
                     .On((q, ct) => q.TheTag.Id == ct.TagId)
-                .LeftJoin(q => q.TheClasses)
+                .LeftJoinMany(q => q.TheClasses)
                     .On((q, ct) => q.TheClassTags.One().ClassId == ct.Id)
                 .Map(t => t.TheClasses
                     .Select(c => new ClassesByTagResult { name = t.TheTag.Name }))
@@ -1371,9 +1371,9 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query.Sqlite<ClassesByTag>()
                 .From(x => x.TheTag)
-                .LeftJoin(q => q.TheClassTags)
+                .LeftJoinMany(q => q.TheClassTags)
                     .On((q, ct) => q.TheTag.Id == ct.TagId)
-                .LeftJoin(q => q.TheClasses)
+                .LeftJoinMany(q => q.TheClasses)
                     .On((q, ct) => q.TheClassTags.One().ClassId == ct.Id)
                 .Map(t => t.TheClasses
                     .Select(c => t.TheTag.Name))
@@ -1401,9 +1401,9 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query.Sqlite<ClassesByTag>()
                 .From(x => x.TheTag)
-                .LeftJoin(q => q.TheClassTags)
+                .LeftJoinMany(q => q.TheClassTags)
                     .On((q, ct) => q.TheTag.Id == ct.TagId)
-                .LeftJoin(q => q.TheClasses)
+                .LeftJoinMany(q => q.TheClasses)
                     .On((q, ct) => q.TheClassTags.One().ClassId == ct.Id)
                 .Map(t => t.TheClasses
                     .Select(c => new
@@ -1451,7 +1451,7 @@ namespace SqlDsl.UnitTests.DataParser
             // act
             var actual = Sql.Query.Sqlite<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
-                .LeftJoin<ClassTag>(q => q.TheClassTags)
+                .LeftJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.ThePerson.Id == ct.ClassId)
                 .Map(x => new
                 {

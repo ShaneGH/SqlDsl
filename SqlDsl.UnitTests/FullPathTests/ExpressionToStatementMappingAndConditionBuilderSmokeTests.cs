@@ -77,7 +77,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var preOrderBy = Query<QueryClass>()
                 .From(x => x.ThePerson)
-                .InnerJoin(x => x.Other)
+                .InnerJoinMany(x => x.Other)
                 .On(joinCondition)
                 .Where(condition);
 
@@ -130,7 +130,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         IQuery<QueryClass> JoinedQuery() => Query<QueryClass>()
             .From(x => x.ThePerson)
-            .InnerJoin(x => x.Other)
+            .InnerJoinMany(x => x.Other)
             .On((q, x) => true);
 
         [Test]

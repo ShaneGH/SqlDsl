@@ -339,7 +339,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<QueryClass>()
                 .From(result => result.ThePerson)
-                .InnerJoin(x => x.ThePersonClasses).On((q, pc) => pc.PersonId.In(new [] { Data.People.Mary.Id }))
+                .InnerJoinMany(x => x.ThePersonClasses).On((q, pc) => pc.PersonId.In(new [] { Data.People.Mary.Id }))
                 .Where(result => result.ThePerson.Id == Data.People.Mary.Id)
                 .ToListAsync(Executor, logger: Logger);
 
@@ -385,7 +385,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = Query<QueryClass>()
                 .From(result => result.ThePerson)
-                .InnerJoin(x => x.ThePersonClasses).On((q, pc) => pc.PersonId.In(new [] { Data.People.John.Id }))
+                .InnerJoinMany(x => x.ThePersonClasses).On((q, pc) => pc.PersonId.In(new [] { Data.People.John.Id }))
                 .ToArray(Executor, logger: Logger);
 
             // assert
@@ -419,7 +419,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<QueryClass>()
                 .From(result => result.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
                 .Where(result => result.ThePersonClasses.One().ClassId == Data.Classes.Archery.Id)
                 .ToIEnumerableAsync(Executor, logger: Logger);

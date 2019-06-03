@@ -21,9 +21,9 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // act
             var data = await Query<JoinTests.QueryClass>()
                 .From(result => result.ThePerson)
-                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
-                .InnerJoin<ClassTag>(result => result.TheClassTags)
+                .InnerJoinMany<ClassTag>(result => result.TheClassTags)
                     .On((q, c) => q.ThePersonClasses.First().ClassId == c.ClassId)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
@@ -48,9 +48,9 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // act
             var data = await Query<JoinTests.QueryClass>()
                 .From(result => result.ThePerson)
-                .InnerJoin<ClassTag>(result => result.TheClassTags)
+                .InnerJoinMany<ClassTag>(result => result.TheClassTags)
                     .On((q, c) => q.ThePersonClasses.Single().ClassId == c.ClassId)
-                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c) => q.ThePerson.Id == c.PersonId)
                 .ToIEnumerableAsync(Executor, logger: Logger);
 

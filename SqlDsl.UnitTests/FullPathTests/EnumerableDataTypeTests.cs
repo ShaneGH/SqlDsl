@@ -78,9 +78,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
-                .InnerJoin(x => x.ThePersonsData)
+                .InnerJoinMany(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
-                .InnerJoin(x => x.TheClasses)
+                .InnerJoinMany(x => x.TheClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(x => new
@@ -100,9 +100,9 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
-                .InnerJoin(x => x.ThePersonsData)
+                .InnerJoinMany(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
-                .InnerJoin(x => x.TheClasses)
+                .InnerJoinMany(x => x.TheClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(x => new ArrayDataType1Result
@@ -148,9 +148,9 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
-                .InnerJoin(x => x.ThePersonsData)
+                .InnerJoinMany(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
-                .InnerJoin(x => x.TheClasses)
+                .InnerJoinMany(x => x.TheClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(x => new ArrayDataType1_1Result
@@ -197,9 +197,9 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
-                .InnerJoin(x => x.ThePersonsData)
+                .InnerJoinMany(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
-                .InnerJoin(x => x.TheClasses)
+                .InnerJoinMany(x => x.TheClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(x => new ArrayDataType2Result
@@ -247,7 +247,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
-                .InnerJoin(x => x.ThePersonsData)
+                .InnerJoinMany(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(p => p.ThePersonsData.One().Data.ToList())
@@ -283,7 +283,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
-                .InnerJoin(x => x.ThePersonsData)
+                .InnerJoinMany(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(p => p.ThePersonsData.One().Data.ToArray())
@@ -327,9 +327,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
-                .InnerJoin(x => x.ThePersonsData)
+                .InnerJoinMany(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
-                .InnerJoin(x => x.TheClasses)
+                .InnerJoinMany(x => x.TheClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(x => new ArrayDataType3Result
@@ -377,7 +377,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
-                .InnerJoin(x => x.ThePersonsData)
+                .InnerJoinMany(x => x.ThePersonsData)
                     .On((q, pd) => pd.PersonId > -1)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(p => p.ThePersonsData.Select(pd => pd.Data))
@@ -418,7 +418,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
-                .InnerJoin(x => x.ThePersonsData)
+                .InnerJoinMany(x => x.ThePersonsData)
                     .On((q, pd) => pd.PersonId == q.ThePerson.Id)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(p => p.ThePersonsData.Select(pd => pd.Data))
@@ -458,7 +458,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             return Query<ArrayDataTypeQuery>()
                 .From(x => x.ThePerson)
-                .InnerJoin(x => x.ThePersonsData)
+                .InnerJoinMany(x => x.ThePersonsData)
                     .On((q, pd) => q.ThePerson.Id == pd.PersonId)
                 .Where(p => p.ThePerson.Id == Data.People.John.Id)
                 .Map(p => p.ThePersonsData.Select(pd => pd.Data.ToList()))
@@ -503,9 +503,9 @@ namespace SqlDsl.UnitTests.FullPathTests
                 typeof(ParsingException), 
                 () => Query<ArrayDataTypeQuery>()
                     .From(x => x.ThePerson)
-                    .InnerJoin(x => x.ThePersonsData)
+                    .InnerJoinMany(x => x.ThePersonsData)
                         .On((q, pd) => pd.PersonId < 100)
-                    .InnerJoin(x => x.TheClasses)
+                    .InnerJoinMany(x => x.TheClasses)
                         .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                     .Where(p => p.ThePerson.Id == Data.People.John.Id)
                     .Map(x => new ArrayDataType1Result
@@ -525,7 +525,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.Throws(typeof(SqlBuilderException), () =>
                 Query<ArrayDataTypeQuery>()
                     .From(x => x.ThePerson)
-                    .InnerJoin(x => x.ThePersonsData)
+                    .InnerJoinMany(x => x.ThePersonsData)
                         .On((q, pd) => q.ThePerson.Id == pd.PersonId)
                     .Where(p => p.ThePerson.Id == Data.People.John.Id)
                     .Map(p => p.ThePersonsData.One().Data.Select(pd => (int)pd))
@@ -541,7 +541,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.Throws(typeof(ParsingException), () =>
                 Query<ArrayDataTypeQuery>()
                     .From(x => x.ThePerson)
-                    .InnerJoin(x => x.ThePersonsData)
+                    .InnerJoinMany(x => x.ThePersonsData)
                         .On((q, pd) => q.ThePerson.Id == pd.PersonId)
                     .Where(p => p.ThePerson.Id == Data.People.John.Id)
                     .Map(p => p.ThePersonsData.One().Data.One())

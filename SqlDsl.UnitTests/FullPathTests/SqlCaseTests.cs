@@ -32,9 +32,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var result = Query<ClassesByTag>()
                 .From(x => x.TheTag)
-                .LeftJoin(q => q.TheClassTags)
+                .LeftJoinMany(q => q.TheClassTags)
                     .On((q, ct) => q.TheTag.Id == ct.TagId)
-                .LeftJoin(q => q.TheClasses)
+                .LeftJoinMany(q => q.TheClasses)
                     .On((q, ct) => q.TheClassTags.One().ClassId == ct.Id)
                 .Map(t => t.TheClasses
                     .Select(c => new
@@ -78,9 +78,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.Throws(typeof(SqlBuilderException), () => Query<PersonsDataTwice>()
                 .From(x => x.ThePerson)
-                .LeftJoin(q => q.ThePersonsData1)
+                .LeftJoinOne(q => q.ThePersonsData1)
                     .On((q, ct) => q.ThePerson.Id == ct.PersonId)
-                .LeftJoin(q => q.ThePersonsData2)
+                .LeftJoinOne(q => q.ThePersonsData2)
                     .On((q, ct) => q.ThePerson.Id == ct.PersonId)
                 .Map(t => (t.ThePerson.Name == "a"
                     ? t.ThePersonsData1
@@ -124,9 +124,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.Throws(typeof(SqlBuilderException), () => Query<PersonsDataTwice>()
                 .From(x => x.ThePerson)
-                .LeftJoin(q => q.ThePersonsData1)
+                .LeftJoinOne(q => q.ThePersonsData1)
                     .On((q, ct) => q.ThePerson.Id == ct.PersonId)
-                .LeftJoin(q => q.ThePersonsData2)
+                .LeftJoinOne(q => q.ThePersonsData2)
                     .On((q, ct) => q.ThePerson.Id == ct.PersonId)
                 .Map(t => Sql.Case
                     .When(t.ThePerson.Name == "a")
@@ -171,9 +171,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.Throws(typeof(SqlBuilderException), () => Query<PersonsDataTwice>()
                 .From(x => x.ThePerson)
-                .LeftJoin(q => q.ThePersonsData1)
+                .LeftJoinOne(q => q.ThePersonsData1)
                     .On((q, ct) => q.ThePerson.Id == ct.PersonId)
-                .LeftJoin(q => q.ThePersonsData2)
+                .LeftJoinOne(q => q.ThePersonsData2)
                     .On((q, ct) => q.ThePerson.Id == ct.PersonId)
                 .Map(t => Sql.Case
                     .Simple(t.ThePerson.Name)

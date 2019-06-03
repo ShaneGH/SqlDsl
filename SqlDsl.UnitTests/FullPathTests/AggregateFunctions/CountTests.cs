@@ -46,13 +46,13 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             return Query<JoinedQueryClassLists>(strictJoins )
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.TheClasses)
+                .InnerJoinMany<Class>(q => q.TheClasses)
                     .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                .InnerJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.TheTags)
+                .InnerJoinMany<Tag>(q => q.TheTags)
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
 
@@ -60,13 +60,13 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             return Query<JoinedQueryClassArrays>(strictJoins)
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.TheClasses)
+                .InnerJoinMany<Class>(q => q.TheClasses)
                     .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                .InnerJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.TheTags)
+                .InnerJoinMany<Tag>(q => q.TheTags)
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
 
@@ -74,13 +74,13 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
         {
             return Query<JoinedQueryClassHashSets>(strictJoins)
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.TheClasses)
+                .InnerJoinMany<Class>(q => q.TheClasses)
                     .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                .InnerJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.TheTags)
+                .InnerJoinMany<Tag>(q => q.TheTags)
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id);
         }
 

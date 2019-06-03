@@ -47,7 +47,7 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             return Query<JoinedQueryClass>()
                 .From<PersonWithAttributes>(x => x.ThePerson)
-                .InnerJoin<PersonClassWithAttributes>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClassWithAttributes>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.TheId == pc.ThePersonId);
         }
 

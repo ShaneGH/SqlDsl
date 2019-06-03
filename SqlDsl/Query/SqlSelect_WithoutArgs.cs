@@ -62,17 +62,17 @@ namespace SqlDsl.Query
         IQuery<TResult> ISqlSelect<TResult>.From<TTable>(Expression<Func<TResult, TTable>> resultProperty) =>
             (SqlSelect<TResult>)base.From(resultProperty);
 
-        IJoinBuilder<TResult, TJoin> IQuery<TResult>.InnerJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
-            new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(joinProperty));
+        IJoinBuilder<TResult, TJoin> IQuery<TResult>.InnerJoinMany<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
+            new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoinMany(joinProperty));
 
-        IJoinBuilder<TResult, TJoin> IQuery<TResult>.InnerJoin<TJoin>(Expression<Func<TResult, TJoin>> joinProperty) =>
-            new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoin(joinProperty));
+        IJoinBuilder<TResult, TJoin> IQuery<TResult>.InnerJoinOne<TJoin>(Expression<Func<TResult, TJoin>> joinProperty) =>
+            new JoinBuilder_WithoutArgs<TJoin>(base.InnerJoinOne(joinProperty));
 
-        IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
-            new JoinBuilder_WithoutArgs<TJoin>(base.LeftJoin(joinProperty));
+        IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoinMany<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty) =>
+            new JoinBuilder_WithoutArgs<TJoin>(base.LeftJoinMany(joinProperty));
 
-        IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoin<TJoin>(Expression<Func<TResult, TJoin>> joinProperty) =>
-            new JoinBuilder_WithoutArgs<TJoin>(base.LeftJoin(joinProperty));
+        IJoinBuilder<TResult, TJoin> IQuery<TResult>.LeftJoinOne<TJoin>(Expression<Func<TResult, TJoin>> joinProperty) =>
+            new JoinBuilder_WithoutArgs<TJoin>(base.LeftJoinOne(joinProperty));
 
         IPager<TMapped> IResultMapper<TResult>.Map<TMapped>(Expression<Func<TResult, TMapped>> mapper) =>
             new QueryMapper<TMapped>(base.Map(mapper));

@@ -16,7 +16,7 @@ namespace SqlDsl.Dsl
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
+        IJoinBuilder<TResult, TJoin> InnerJoinMany<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
         
         /// <summary>
         /// Join another table to the query using INNER JOIN. Uses the name of the TJoin class as the join table name
@@ -24,7 +24,7 @@ namespace SqlDsl.Dsl
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        IJoinBuilder<TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, TJoin>> joinProperty);
+        IJoinBuilder<TResult, TJoin> InnerJoinOne<TJoin>(Expression<Func<TResult, TJoin>> joinProperty);
         
         /// <summary>
         /// Join another table to the query using LEFT JOIN. Uses the name of the TJoin class as the join table name
@@ -32,7 +32,7 @@ namespace SqlDsl.Dsl
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        IJoinBuilder<TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
+        IJoinBuilder<TResult, TJoin> LeftJoinMany<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
         
         /// <summary>
         /// Join another table to the query using LEFT JOIN. Uses the name of the TJoin class as the join table name
@@ -40,7 +40,7 @@ namespace SqlDsl.Dsl
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        IJoinBuilder<TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, TJoin>> joinProperty);
+        IJoinBuilder<TResult, TJoin> LeftJoinOne<TJoin>(Expression<Func<TResult, TJoin>> joinProperty);
     }
     
     /// <summary>
@@ -54,7 +54,7 @@ namespace SqlDsl.Dsl
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
+        IJoinBuilder<TArgs, TResult, TJoin> InnerJoinMany<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
         
         /// <summary>
         /// Join another table to the query using INNER JOIN. Uses the name of the TJoin class as the join table name
@@ -62,7 +62,7 @@ namespace SqlDsl.Dsl
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, TJoin>> joinProperty);
+        IJoinBuilder<TArgs, TResult, TJoin> InnerJoinOne<TJoin>(Expression<Func<TResult, TJoin>> joinProperty);
         
         /// <summary>
         /// Join another table to the query using LEFT JOIN. Uses the name of the TJoin class as the join table name
@@ -70,7 +70,7 @@ namespace SqlDsl.Dsl
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
+        IJoinBuilder<TArgs, TResult, TJoin> LeftJoinMany<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinProperty);
         
         /// <summary>
         /// Join another table to the query using LEFT JOIN. Uses the name of the TJoin class as the join table name
@@ -78,6 +78,6 @@ namespace SqlDsl.Dsl
         /// <param name="joinProperty">
         /// The property of TResult to append the joined table to
         /// </param>
-        IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, TJoin>> joinProperty);
+        IJoinBuilder<TArgs, TResult, TJoin> LeftJoinOne<TJoin>(Expression<Func<TResult, TJoin>> joinProperty);
     }
 }

@@ -23,7 +23,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
         {
             return SqlDsl.UnitTests.TestUtils.FullyJoinedQuery<JoinedQueryClass>(SqlType)
-                .LeftJoin<Purchase>(q => q.ThePurchasesByClass)
+                .LeftJoinMany<Purchase>(q => q.ThePurchasesByClass)
                     .On((q, t) => q.ThePerson.Id == t.PersonId && q.ThePerson.Id == t.PurchaedForPersonId && q.TheClasses.One().Id == t.ClassId);
         }
 

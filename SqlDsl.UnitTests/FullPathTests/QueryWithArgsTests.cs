@@ -35,7 +35,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             var query = Query<Arguments, JoinedQueryClass>()
                 .From(x => x.ThePerson)
-                .LeftJoin(x => x.ThePersonClasses)
+                .LeftJoinMany(x => x.ThePersonClasses)
                     .On((q, x) => x.PersonId == q.ThePerson.Id)
                 .Where((x, args) => x.ThePersonClasses.One().ClassId == args.AValue)
                 .Compile();
@@ -62,7 +62,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<Arguments, JoinedQueryClass>()
                 .From(result => result.ThePerson)
-                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
+                .InnerJoinMany(result => result.ThePersonClasses)
                     .On((q, c, a) => c.ClassId == a.AValue)
                 .ToIEnumerableAsync(Executor, new Arguments { AValue = Data.Classes.Archery.Id });
 
@@ -85,7 +85,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<Arguments, JoinedQueryClass>()
                 .From(result => result.ThePerson)
-                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c, a) => c.ClassId == a.AValue)
                 .ToIEnumerableAsync(Executor, new Arguments { AValue = Data.Classes.Tennis.Id });
 
@@ -109,7 +109,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<Arguments, JoinedQueryClass>()
                 .From(result => result.ThePerson)
-                .InnerJoin<PersonClass>(result => result.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(result => result.ThePersonClasses)
                     .On((q, c, a) => q.ThePerson.Id == c.PersonId && c.ClassId == a.AValue)
                 .ToIEnumerableAsync(Executor, new Arguments { AValue = Data.Classes.Tennis.Id });
 

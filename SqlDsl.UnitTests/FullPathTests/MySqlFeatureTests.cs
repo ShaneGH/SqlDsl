@@ -25,7 +25,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Version8OrHigher = false
                 })
                 .From(x => x.ThePerson)
-                .InnerJoin<PersonClass>(x => x.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(x => x.ThePersonClasses)
                     .On((x, pc) => x.ThePerson.Id == pc.PersonId)
                 .ToArray(Executor, logger: Logger);
         }
@@ -42,7 +42,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Version8OrHigher = true
                 })
                 .From(x => x.ThePerson)
-                .InnerJoin<PersonClass>(x => x.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(x => x.ThePersonClasses)
                     .On((x, pc) => x.ThePerson.Id == pc.PersonId)
                 .ToArray(Executor, logger: Logger);
         }

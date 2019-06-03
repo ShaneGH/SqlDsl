@@ -27,13 +27,13 @@ namespace SqlDsl.UnitTests.FullPathTests
         {
             return Query<DeepQueryContainer>()
                 .From<Person>(x => x.Query.ThePerson)
-                .InnerJoin<PersonClass>(q => q.Query.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.Query.ThePersonClasses)
                     .On((q, pc) => q.Query.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.Query.TheClasses)
+                .InnerJoinMany<Class>(q => q.Query.TheClasses)
                     .On((q, c) => q.Query.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.Query.TheClassTags)
+                .InnerJoinMany<ClassTag>(q => q.Query.TheClassTags)
                     .On((q, ct) => q.Query.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.Query.TheTags)
+                .InnerJoinMany<Tag>(q => q.Query.TheTags)
                     .On((q, t) => q.Query.TheClassTags.One().TagId == t.Id);
         }
 
@@ -264,7 +264,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .Where(q => q.ThePerson.Id == 1)
                 .Map(p => new SimpleMapClass
@@ -291,9 +291,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                .InnerJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.ThePersonClasses.One().ClassId == ct.ClassId)
                 .Where(q => q.ThePerson.Id == 1)
                 .Map(p => new SimpleMapClass
@@ -326,7 +326,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
                 .Where(q => q.ThePerson.Id == 1)
                 .Map(p => new SimpleMapClass
@@ -404,13 +404,13 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<QueryContainer>()
                 .From<Person>(x => x.ThePerson)
-                .InnerJoin<PersonClass>(q => q.ThePersonClasses)
+                .InnerJoinMany<PersonClass>(q => q.ThePersonClasses)
                     .On((q, pc) => q.ThePerson.Id == pc.PersonId)
-                .InnerJoin<Class>(q => q.TheClasses)
+                .InnerJoinMany<Class>(q => q.TheClasses)
                     .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
-                .InnerJoin<ClassTag>(q => q.TheClassTags)
+                .InnerJoinMany<ClassTag>(q => q.TheClassTags)
                     .On((q, ct) => q.TheClasses.One().Id == ct.ClassId)
-                .InnerJoin<Tag>(q => q.TheTags)
+                .InnerJoinMany<Tag>(q => q.TheTags)
                     .On((q, t) => q.TheClassTags.One().TagId == t.Id)
                 .Map(p => new JoinedMapClass
                 { 

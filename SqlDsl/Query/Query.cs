@@ -33,7 +33,7 @@ namespace SqlDsl.Query
         }
         
         /// <inheritdoc />
-        public IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
+        public IJoinBuilder<TArgs, TResult, TJoin> InnerJoinMany<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
             new JoinBuilder<TJoin>(this, JoinType.Inner, null, joinResult);
             
         /// <inheritdoc />
@@ -41,7 +41,7 @@ namespace SqlDsl.Query
             new JoinBuilder<TJoin>(this, JoinType.Inner, tableName, joinResult);
         
         /// <inheritdoc />
-        public IJoinBuilder<TArgs, TResult, TJoin> InnerJoin<TJoin>(Expression<Func<TResult, TJoin>> joinResult) =>
+        public IJoinBuilder<TArgs, TResult, TJoin> InnerJoinOne<TJoin>(Expression<Func<TResult, TJoin>> joinResult) =>
             InnerJoin<TJoin>(null, joinResult);
         
         /// <inheritdoc />
@@ -49,7 +49,7 @@ namespace SqlDsl.Query
             new JoinBuilder<TJoin>(this, JoinType.Left, tableName, joinResult);
         
         /// <inheritdoc />
-        public IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
+        public IJoinBuilder<TArgs, TResult, TJoin> LeftJoinMany<TJoin>(Expression<Func<TResult, IEnumerable<TJoin>>> joinResult) =>
             LeftJoin<TJoin>(null, joinResult);
         
         /// <inheritdoc />
@@ -57,7 +57,7 @@ namespace SqlDsl.Query
             new JoinBuilder<TJoin>(this, JoinType.Left, tableName, joinResult);
         
         /// <inheritdoc />
-        public IJoinBuilder<TArgs, TResult, TJoin> LeftJoin<TJoin>(Expression<Func<TResult, TJoin>> joinResult) =>
+        public IJoinBuilder<TArgs, TResult, TJoin> LeftJoinOne<TJoin>(Expression<Func<TResult, TJoin>> joinResult) =>
             LeftJoin<TJoin>(null, joinResult);
 
         /// <summary>
