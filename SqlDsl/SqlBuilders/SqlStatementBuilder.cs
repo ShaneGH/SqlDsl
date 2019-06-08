@@ -234,7 +234,7 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <inheritdoc />
-        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql, string queryTeardownSql, bool teardownSqlCanBeInlined) ToSqlString(IEnumerable<string> selectColumnAliases = null)
+        public SqlString ToSqlString(IEnumerable<string> selectColumnAliases = null)
         {
             var rowIds = GetRowIdSelectColumns(selectColumnAliases).Enumerate();
             if (!rowIds.Any())
@@ -283,7 +283,7 @@ namespace SqlDsl.SqlBuilders
         }    
 
         /// <inheritdoc />
-        (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql, string teardownSql, bool teardownSqlCanBeInlined) ToSqlString(IEnumerable<string> selectColumns, IEnumerable<string> selectTables)
+        SqlString ToSqlString(IEnumerable<string> selectColumns, IEnumerable<string> selectTables)
         {
             var allTables = selectTables.ToHashSet();
 
@@ -348,7 +348,7 @@ namespace SqlDsl.SqlBuilders
             .Where(x => !string.IsNullOrEmpty(x))
             .JoinString("\n");
 
-            return (setupSql, query, $"\n{where}", $"\n{orderBy}", teardownSql, !newQueryForTeardown);
+            return new SqlString(setupSql, query, $"\n{where}", $"\n{orderBy}", teardownSql, !newQueryForTeardown);
         }
 
         // TODO: this function was copy pasted

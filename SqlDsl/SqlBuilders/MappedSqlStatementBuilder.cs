@@ -47,17 +47,23 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <inheritdoc />
-        public (string querySetupSql, string beforeWhereSql, string whereSql, string afterWhereSql, string queryTeardownSql, bool teardownSqlCanBeInlined) ToSqlString(IEnumerable<string> selectColumnAliases = null)
+        public SqlString ToSqlString(IEnumerable<string> selectColumnAliases = null)
         {
             // if a table is used as part of a mapping, but none of it's fields are used, we might need
             // to tell the inner query builder
             var usedColumns = GetUsedColumns().Select(t => t.Alias);
-            var (querySetupSql, beforeWhereSql, whereSql, afterWhereSql, tearDown, teardownSqlCanBeInlined) = InnerSqlString.ToSqlString(usedColumns);
+            var innerResult = InnerSqlString.ToSqlString(usedColumns);
 
-            beforeWhereSql = $"SELECT {GetSelectColumns(selectColumnAliases).JoinString(",")}\nFROM ({beforeWhereSql}";
-            afterWhereSql = $"{afterWhereSql}) {SqlSyntax.WrapAlias(InnerQueryAlias)}{BuildGroupByStatement("\n")}";
+            var beforeWhereSql = $"SELECT {GetSelectColumns(selectColumnAliases).JoinString(",")}\nFROM ({innerResult.BeforeWhereSql}";
+            var afterWhereSql = $"{innerResult.AfterWhereSql}) {SqlSyntax.WrapAlias(InnerQueryAlias)}{BuildGroupByStatement("\n")}";
 
-            return (querySetupSql, beforeWhereSql, whereSql, afterWhereSql, tearDown, teardownSqlCanBeInlined);
+            return new SqlString(
+                innerResult.QuerySetupSql, 
+                beforeWhereSql, 
+                innerResult.WhereSql, 
+                afterWhereSql, 
+                innerResult.QueryTeardownSql, 
+                innerResult.TeardownSqlCanBeInlined);
         }
 
         IEnumerable<string> GetSelectColumns(IEnumerable<string> selectColumnAliases)
