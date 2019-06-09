@@ -181,7 +181,8 @@ namespace SqlDsl.Query
                     join.join.JoinExpression.joinParam,
                     join.join.JoinExpression.joinExpression,
                     param,
-                    join.join.JoinedTableProperty.name);
+                    join.join.JoinedTableProperty.name,
+                    join.join.JoinParent);
             }
 
             // Add select columns to builder
@@ -192,29 +193,29 @@ namespace SqlDsl.Query
             }
 
             // add a where clause if specified
-            SetWhereClauseWithPaging(builder, param);
+            if (WhereClause != null)
+                builder.SetWhere(WhereClause.Value.queryRoot, WhereClause.Value.args, WhereClause.Value.where, param);
 
             // add order by if specified
             foreach (var (queryRoot, args, orderExpression, direction) in Ordering)
                 builder.AddOrderBy(queryRoot, args, orderExpression, direction, param);
 
+            // add paging if necessary
+            SetPaging(builder, param);
+
             return (builder, param);
         }
 
-        void SetWhereClauseWithPaging(SqlStatementBuilder builder, ParamBuilder param)
+        void SetPaging(SqlStatementBuilder builder, ParamBuilder param)
         {
-            var argsParam = WhereClause != null
-                ? WhereClause.Value.args
-                : Paging.skip != null
-                    ? Paging.skip.Parameters[0]
-                    : Paging.take != null
-                        ? Paging.take.Parameters[0]
-                        : null;
+            var argsParam = Paging.skip != null
+                ? Paging.skip.Parameters[0]
+                : Paging.take != null
+                    ? Paging.take.Parameters[0]
+                    : null;
 
             if (argsParam == null)
                 return;
-
-            var queryObjectParam = WhereClause?.queryRoot ?? ParameterExpression.Parameter(typeof(TResult));
 
             Expression skipWithParametersReplaced = null;
             Expression skip = null;
@@ -224,8 +225,7 @@ namespace SqlDsl.Query
                 skip = Expression.LessThan(
                     skipWithParametersReplaced, 
                     Expression.Call(
-                        ReflectionUtils.GetRowNumberMethod(queryObjectParam.Type),
-                        queryObjectParam));
+                        ReflectionUtils.GetOrderByRowNumberMethod()));
             }
 
             Expression take = null;
@@ -237,21 +237,19 @@ namespace SqlDsl.Query
 
                 take = Expression.LessThanOrEqual(
                     Expression.Call(
-                        ReflectionUtils.GetRowNumberMethod(queryObjectParam.Type),
-                        queryObjectParam), 
+                        ReflectionUtils.GetOrderByRowNumberMethod()), 
                     take);
             }
 
-            var where = new[]
+            var paging = new[]
             {
                 skip, 
-                take,
-                WhereClause?.where 
+                take
             }
             .RemoveNulls()
-            .Aggregate((x, y) => Expression.AndAlso(x, y));
+            .Aggregate(Expression.AndAlso);
 
-            builder.SetWhere(queryObjectParam, argsParam, where, param);
+            builder.AddPaging(paging, argsParam, param);
         }
         
         /// <summary>

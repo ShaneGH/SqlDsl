@@ -139,8 +139,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, data.Count());
             Assert.AreEqual(2, data.First().Count());
             Assert.AreEqual(1, data.ElementAt(1).Count());
-            Assert.AreEqual(Data.PersonClasses.JohnTennis, data.First().First());
-            Assert.AreEqual(Data.PersonClasses.JohnArchery, data.First().ElementAt(1));
+            Assert.AreEqual(Data.PersonClasses.JohnArchery, data.First().First());
+            Assert.AreEqual(Data.PersonClasses.JohnTennis, data.First().ElementAt(1));
             Assert.AreEqual(Data.PersonClasses.MaryTennis, data.ElementAt(1).First());
         }
 
@@ -433,8 +433,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, data.Count());
             Assert.AreEqual(2, data.First().Count());
             Assert.AreEqual(1, data.ElementAt(1).Count());
-            Assert.AreEqual(Data.PersonClasses.JohnTennis.ClassId, data.First().First());
-            Assert.AreEqual(Data.PersonClasses.JohnArchery.ClassId, data.First().ElementAt(1));
+            Assert.AreEqual(Data.PersonClasses.JohnArchery.ClassId, data.First().First());
+            Assert.AreEqual(Data.PersonClasses.JohnTennis.ClassId, data.First().ElementAt(1));
             Assert.AreEqual(Data.PersonClasses.MaryTennis.ClassId, data.ElementAt(1).First());
         }
 
@@ -452,8 +452,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, data.Count());
             Assert.AreEqual(2, data.First().Count());
             Assert.AreEqual(1, data.ElementAt(1).Count());
-            Assert.AreEqual(new { cid = Data.PersonClasses.JohnTennis.ClassId }, data.First().First());
-            Assert.AreEqual(new { cid = Data.PersonClasses.JohnArchery.ClassId }, data.First().ElementAt(1));
+            Assert.AreEqual(new { cid = Data.PersonClasses.JohnArchery.ClassId }, data.First().ElementAt(0));
+            Assert.AreEqual(new { cid = Data.PersonClasses.JohnTennis.ClassId }, data.First().ElementAt(1));
             Assert.AreEqual(new { cid = Data.PersonClasses.MaryTennis.ClassId }, data.ElementAt(1).First());
         }
 
@@ -918,6 +918,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await TestUtils
                 .FullyJoinedQuery(SqlType)
                 .Where(x => x.ThePerson.Id == 1)
+                .OrderBy(x => x.ThePersonsData.PersonId + x.ThePerson.Id)
                 .Map(x => new
                 {
                     person = x.ThePerson.Name,

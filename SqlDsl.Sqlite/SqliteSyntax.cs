@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using SqlDsl.Query;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 
@@ -42,6 +43,12 @@ namespace SqlDsl.Sqlite
         /// Wrap a table or column alias in parenthesis which protects against illegal characters: []
         /// </summary>
         public override string WrapAlias(string alias) => $"[{alias}]";
+
+        /// <inheritdoc />
+        public override string AddDenseRank(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
+        {
+            throw new System.NotImplementedException();
+        }
 
         static readonly object Lock = new object();
         static int TmpIdentifier = 0;

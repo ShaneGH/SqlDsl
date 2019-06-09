@@ -46,6 +46,15 @@ namespace SqlDsl
         }
 
         /// <summary>
+        /// When used in a query expression, represents the row number used to page and sort
+        /// records
+        /// </summary>
+        internal static int OrderByRowNumber()
+        {
+            throw new SqlBuilderException(string.Format(InvalidMessageString, "OrderByRowNumber"));
+        }
+
+        /// <summary>
         /// When used in a query expression, represents the row number of the primary table. Can be used for paging
         /// This method should only be used on tables joined with a left join.
         /// </summary>

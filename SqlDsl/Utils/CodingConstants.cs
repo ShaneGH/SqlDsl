@@ -18,6 +18,8 @@ namespace SqlDsl.Utils
                 .Empty<(string, object)>()
                 .ToArray();
                 
+            public static readonly string[] String = new string[0];
+                
             public static readonly ConstructorInfo[] ConstructorInfo = new ConstructorInfo[0];
                 
             public static readonly int[] Int = new int[0];

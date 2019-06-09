@@ -47,14 +47,15 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <inheritdoc />
-        public SqlString ToSqlString(IEnumerable<string> selectColumnAliases = null)
+        public SqlString ToSqlString((IEnumerable<string> selectColumnAliases, IEnumerable<IQueryTable> mappedTables)? limitSelectColumns = null)
         {
             // if a table is used as part of a mapping, but none of it's fields are used, we might need
             // to tell the inner query builder
-            var usedColumns = GetUsedColumns().Select(t => t.Alias);
-            var innerResult = InnerSqlString.ToSqlString(usedColumns);
+            var usedColumns = GetSelectColumns().Select(t => t.Alias);
+            var mappedColumnTables = GetMappedColumnTables();
+            var innerResult = InnerSqlString.ToSqlString((usedColumns, mappedColumnTables));
 
-            var beforeWhereSql = $"SELECT {GetSelectColumns(selectColumnAliases).JoinString(",")}\nFROM ({innerResult.BeforeWhereSql}";
+            var beforeWhereSql = $"SELECT {GetSelectColumns(limitSelectColumns?.selectColumnAliases).JoinString(",")}\nFROM ({innerResult.BeforeWhereSql}";
             var afterWhereSql = $"{innerResult.AfterWhereSql}) {SqlSyntax.WrapAlias(InnerQueryAlias)}{BuildGroupByStatement("\n")}";
 
             return new SqlString(
@@ -89,12 +90,19 @@ namespace SqlDsl.SqlBuilders
                 el.To);
         }
 
-        IEnumerable<ISelectColumn> GetUsedColumns()
+        IEnumerable<ISelectColumn> GetSelectColumns()
         {
             return AllNonParametersInAllProperties
                 .SelectMany(c => new [] { c.Column, c.RowIdColumn })
                 .RemoveNulls()
                 .Concat(Statement.SelectColumns.Where(c => c.IsRowNumber))
+                .Distinct();
+        }
+
+        IEnumerable<IQueryTable> GetMappedColumnTables()
+        {
+            return AllNonParametersInAllProperties
+                .Select(c => c.RowIdColumn.IsRowNumberForTable)
                 .Distinct();
         }
 

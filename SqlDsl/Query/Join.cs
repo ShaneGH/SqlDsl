@@ -30,16 +30,23 @@ namespace SqlDsl.Query
         /// </summary>
         public readonly (string name, Type type) JoinedTableProperty;
 
+        /// <summary>
+        /// Defines whether a join contains a one to one relationship with the primary table
+        /// </summary>
+        public readonly JoinParent JoinParent;
+
         public Join(
             JoinType joinType,
             string tableName,
             (ParameterExpression rootObjectParam, ParameterExpression queryArgs, ParameterExpression joinParam, Expression joinExpression) joinExpression,
-            (string name, Type type) joinedTableProperty)
+            (string name, Type type) joinedTableProperty,
+            JoinParent joinParent)
         {
             JoinType = joinType;
             TableName = tableName;
             JoinExpression = joinExpression;
             JoinedTableProperty = joinedTableProperty;
+            JoinParent = joinParent;
         }
     }
     
@@ -50,5 +57,14 @@ namespace SqlDsl.Query
     {
         Inner = 1,
         Left
+    }
+
+    /// <summary>
+    /// Defines whether a join contains a one to one relationship with the primary table
+    /// </summary>
+    public enum JoinParent
+    {
+        PrimaryTableOneToOne,
+        Other
     }
 }

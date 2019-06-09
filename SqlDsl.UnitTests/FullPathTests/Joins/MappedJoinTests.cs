@@ -31,7 +31,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // assert
             Assert.AreEqual(1, data.Count());
             var john = data.First();
-            CollectionAssert.AreEqual(new[] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery }, john.personClasses);
+            CollectionAssert.AreEquivalent(new[] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery }, john.personClasses);
         }
 
         [Test]
@@ -51,7 +51,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // assert
             Assert.AreEqual(1, data.Count());
             var john = data.First();
-            CollectionAssert.AreEqual(new[] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery }, john.personClasses);
+            CollectionAssert.AreEquivalent(new[] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery }, john.personClasses);
         }
 
         [Test]
@@ -70,7 +70,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
             // assert
             Assert.AreEqual(1, data.Count());
             var john = data.First();
-            CollectionAssert.AreEqual(new[] { Data.PersonClasses.JohnTennis, Data.PersonClasses.JohnArchery }, john.personClasses);
+            CollectionAssert.AreEqual(new[] { Data.PersonClasses.JohnArchery, Data.PersonClasses.JohnTennis }, john.personClasses);
         }
 
         [Test]

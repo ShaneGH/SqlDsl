@@ -247,6 +247,14 @@ namespace SqlDsl.Utils
         }
 
         /// <summary>
+        /// If the input expression represents a call to Sql.OrderByRowNumber()
+        /// </summary>
+        public static bool IsOrderByRowNumber(MethodCallExpression e)
+        {
+            return e.Method == OrderByRowNumberMethod;
+        }
+
+        /// <summary>
         /// If the input expression represents a call to Sql.In([inner expr]), Enumerable.Contains([inner expr])
         /// or return [success, lhs (val), rhs (collection)]; otherwise return (false, null, null)
         /// </summary>
@@ -310,6 +318,9 @@ namespace SqlDsl.Utils
                 case ExpressionType.Call:
                     var call = expr as MethodCallExpression;
                     if (IsRowNumber(call).isRowNumber)
+                        return (false, false);
+
+                    if (IsOrderByRowNumber(call))
                         return (false, false);
                     
                     var ra2 = false;
@@ -745,6 +756,13 @@ namespace SqlDsl.Utils
             }
 
             return result;
+        }
+
+        static MethodInfo OrderByRowNumberMethod;
+        
+        public static MethodInfo GetOrderByRowNumberMethod()
+        {
+            return OrderByRowNumberMethod ?? (OrderByRowNumberMethod = GetMethod(() => Sql.OrderByRowNumber()));
         }
 
         static readonly ConcurrentDictionary<Type, Type> IsPropMapValueCache = new ConcurrentDictionary<Type, Type>();

@@ -20,6 +20,11 @@ namespace SqlDsl.SqlBuilders
         public const string RowIdName = "#rowid";
         
         /// <summary>
+        /// The column name for master row id for the query
+        /// </summary>
+        public const string OrderByRowIdName = "#ob";
+        
+        /// <summary>
         /// A column prefix to use internally if the resulting columns should actually not have a prefix
         /// (prevents naming clashes)
         /// </summary>

@@ -27,7 +27,9 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         public static IEnumerable<TestCaseData> GetConditionAndMappingParts()
         {
-            yield return TC("constant", x => true, 2);
+            // TODO: only skip order by for "constant" if MySql and V >= 8
+
+            yield return TC("constant", x => true, 2, skipOrderBy: true);
             yield return TC("convert", x => x.ThePerson.Id == (long)1);
             yield return TC("and", x => x.ThePerson.Id == 1 && x.ThePerson.Id == 1);
             yield return TC("or", x => x.ThePerson.Id == 1 || x.ThePerson.Id == 1);
@@ -174,10 +176,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.AreEqual(2, data.Count());
             Assert.AreEqual(Data.People.John.Id + 1, data[0].pid);
-            CollectionAssert.AreEqual(new [] {Data.Classes.Tennis.Id * 2, Data.Classes.Archery.Id * 2}, data[0].classes);
+            CollectionAssert.AreEquivalent(new [] {Data.Classes.Tennis.Id * 2, Data.Classes.Archery.Id * 2}, data[0].classes);
 
             Assert.AreEqual(Data.People.Mary.Id + 1, data[1].pid);
-            CollectionAssert.AreEqual(new [] {Data.Classes.Tennis.Id * 2}, data[1].classes);
+            CollectionAssert.AreEquivalent(new [] {Data.Classes.Tennis.Id * 2}, data[1].classes);
         }
 
         [Test]

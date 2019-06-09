@@ -42,7 +42,9 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         {
             var results = "[\n" + statement.results
                 .Select(row => "  {\n" + row
+                    .Where((_, i) => i < statement.colNames.Length)
                     .Select((cell, i) => $"    {statement.colNames[i]}: {cell}")
+                    .RemoveNulls()
                     .JoinString(",\n") + 
                 "\n  }")
                 .JoinString(",\n") + "\n]\n";
@@ -52,7 +54,17 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
 
         public void PrintSqlStatements() => Console.WriteLine("\n" + GetSqlStatements());
 
-        public string GetSqlStatements() => $"{SqlStatements.Count} SQL statement(s):\n" + SqlStatements.Select(SqlStatementString).JoinString("\n\n");
+        public string GetSqlStatements() 
+        {
+            try
+            {
+                return $"{SqlStatements.Count} SQL statement(s):\n" + SqlStatements.Select(SqlStatementString).JoinString("\n\n");
+            }
+            catch (Exception e)
+            {
+                return $"Error getting sql statement(s):\n{e}";
+            }
+        }
 
         public void RecordRow(int index, object[] row)
         {

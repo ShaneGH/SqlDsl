@@ -132,6 +132,10 @@ namespace SqlDsl.Mapper
                     if (isRowNumber)
                         return BuildMapForRowNumber(state, exprMethod, isRowNumberNullable, toPrefix).AddT(false);
 
+                    var isOrderByRowNumber = ReflectionUtils.IsOrderByRowNumber(exprMethod);
+                    if (isOrderByRowNumber)
+                        return BuildMapForOrderByRowNumber(state, exprMethod, toPrefix).AddT(false);
+
                     var (isIn, inLhs, inRhs) = ReflectionUtils.IsIn(exprMethod);
                     if (isIn)
                         return BuildMapForIn(state, inLhs, inRhs, toPrefix).AddT(false);
@@ -389,6 +393,20 @@ namespace SqlDsl.Mapper
                     mappedPropertyType: rowNumberExpression.Type,
                     fromParams: p.FromParams.MapParamName(x => CombineStrings(x, SqlStatementConstants.RowIdName)))),
                 tables);
+        }
+
+        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForOrderByRowNumber(BuildMapState state, MethodCallExpression rowNumberExpression, string toPrefix)
+        {
+            var result = new StringBasedMappedProperty(
+                null, 
+                SqlStatementConstants.OrderByRowIdName, 
+                toPrefix, 
+                rowNumberExpression.Type, 
+                state.MappingContext.propertyName);
+
+            return (
+                result.ToEnumerable(),
+                CodingConstants.Empty.MappedTable);
         }
 
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForIn(

@@ -19,6 +19,7 @@ namespace SqlDsl.SqlBuilders
     public class SqlStatementBuilder : ISqlString
     {
         static readonly (string, string) Select1 = ("1", CodingConstants.Null.String);
+        static readonly IEnumerable<string> OrderByRowIdNameAsEnumerable = new[]{ SqlStatementConstants.OrderByRowIdName }.Skip(0);
 
         public readonly ISqlSyntax SqlSyntax;
 
@@ -42,17 +43,22 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         (string sql, IEnumerable<string> queryObjectReferences)? Where = null;
 
+        /// <summary>
+        /// The user defined order of the query
+        /// </summary>
         readonly List<(string sql, IEnumerable<string> queryObjectReferences, OrderDirection direction)> Ordering = new List<(string, IEnumerable<string>, OrderDirection)>();
 
-        /// <summary>
-        /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join
-        /// </summary>
-        readonly List<(string alias, JoinType joinType, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences)> _Joins = new List<(string, JoinType, SelectTableSqlWithRowId, IEnumerable<string>)>();
+        string PagingSql;
 
         /// <summary>
         /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join
         /// </summary>
-        public IEnumerable<(string alias, JoinType joinType, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences)> Joins => _Joins.Skip(0);
+        readonly List<(string alias, JoinType joinType, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences, JoinParent joinParent)> _Joins = new List<(string, JoinType, SelectTableSqlWithRowId, IEnumerable<string>, JoinParent)>();
+
+        /// <summary>
+        /// A list of joins including their name, sql and any sql which must be run before the query to facilitate the join
+        /// </summary>
+        public IEnumerable<(string alias, JoinType joinType, SelectTableSqlWithRowId table, IEnumerable<string> queryObjectReferences, JoinParent joinParent)> Joins => _Joins.Skip(0);
 
         /// <summary>
         /// A list of columns in the SELECT statement
@@ -85,6 +91,12 @@ namespace SqlDsl.SqlBuilders
             var (sql, queryObjectReferences) = BuildCondition(queryRootParam, argsParam, orderBy, parameters, MappingPurpose.OrderBy);
             Ordering.Add((sql, queryObjectReferences, direction));
         }
+        
+        private static readonly ParameterExpression IntParameter = Expression.Parameter(typeof(int));
+        public void AddPaging(Expression expression, ParameterExpression argsParam, ParamBuilder parameters)
+        {
+            PagingSql = BuildCondition(IntParameter, argsParam, expression, parameters, MappingPurpose.Paging).sql;
+        }
 
         /// <summary>
         /// Add a JOIN to the query
@@ -105,7 +117,8 @@ namespace SqlDsl.SqlBuilders
             ParameterExpression joinTableParam,
             Expression equalityStatement, 
             ParamBuilder parameters, 
-            string joinTableAlias)
+            string joinTableAlias, 
+            JoinParent joinParent)
         {
             // convert (q, j) => q.Table1.Id == j.Table1Id - or -
             // convert (q, j) => q.Table1.Id == j.One().Table1Id
@@ -137,7 +150,8 @@ namespace SqlDsl.SqlBuilders
                 joinTableAlias, 
                 joinType,
                 join,
-                queryObjectReferences.Where(r => r != joinTableAlias)));
+                queryObjectReferences.Where(r => r != joinTableAlias),
+                joinParent));
 
             Expression AddJoinProperty(Expression rootExpression, string property)
             {
@@ -234,9 +248,9 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <inheritdoc />
-        public SqlString ToSqlString(IEnumerable<string> selectColumnAliases = null)
+        public SqlString ToSqlString((IEnumerable<string> selectColumnAliases, IEnumerable<IQueryTable> mappedTables)? limitSelectColumns = null)
         {
-            var rowIds = GetRowIdSelectColumns(selectColumnAliases).Enumerate();
+            var rowIds = GetRowIdSelectColumns(limitSelectColumns?.selectColumnAliases).Enumerate();
             if (!rowIds.Any())
             {
                 // there must be at least 1 row id
@@ -246,9 +260,9 @@ namespace SqlDsl.SqlBuilders
             }
 
             IEnumerable<SelectColumn> selects = _Select;
-            if (selectColumnAliases != null)
+            if (limitSelectColumns != null)
             {
-                var sca = selectColumnAliases.ToHashSet();
+                var sca = limitSelectColumns.Value.selectColumnAliases.ToHashSet();
                 selects = selects.Where(c => sca.Contains(c.Alias));
             }
 
@@ -262,12 +276,17 @@ namespace SqlDsl.SqlBuilders
             if (sels.Count == 0)
                 sels.Add(Select1);
 
+            var resultStructureColumnAliases = Joins.Where(j => j.joinParent == JoinParent.Other).Any()
+                ? GetResultStructureColumnAliases(limitSelectColumns?.mappedTables)
+                : Enumerable.Empty<string>();
+
             return ToSqlString(
                 sels.Select(c => c.sql), 
                 sels
                     .Select(c => c.table)
                     .RemoveNulls()
-                    .Distinct());
+                    .Distinct(),
+                resultStructureColumnAliases);
 
             string BuildSqlForRid((string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias) rid)
             {
@@ -283,21 +302,21 @@ namespace SqlDsl.SqlBuilders
         }    
 
         /// <inheritdoc />
-        SqlString ToSqlString(IEnumerable<string> selectColumns, IEnumerable<string> selectTables)
+        SqlString ToSqlString(IEnumerable<string> selectColumns, IEnumerable<string> selectTables, IEnumerable<string> resultStructureColumnAliases)
         {
             var allTables = selectTables.ToHashSet();
 
             // build WHERE part
-            var where = Where == null ? "" : $"WHERE {Where.Value.sql}";
+            var where = Where == null ? "" : $"\nWHERE {Where.Value.sql}";
             if (Where != null)
                 allTables.AddRange(Where.Value.queryObjectReferences);
 
             // build FROM part
             var primaryTable = SqlSyntax.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.RowIdName, PrimaryTableColumns);
-                
-            var orderByText = Ordering
-                // TODO: test in individual sql languages
-                .Select(o => o.sql + (o.direction == OrderDirection.Ascending ? "" : $" {SqlSyntax.Descending}"))
+
+            var orderByText = (Ordering.Any() ? OrderByRowIdNameAsEnumerable : CodingConstants.Empty.String)
+                .Concat(resultStructureColumnAliases)
+                .Select(SqlSyntax.WrapAlias)
                 .ToArray();
 
             allTables.AddRange(Ordering.SelectMany(o => o.queryObjectReferences));
@@ -308,7 +327,7 @@ namespace SqlDsl.SqlBuilders
                 orderByText.Aggregate(SqlSyntax.BuildCommaCondition);
 
             if (orderBy.Length > 0)
-                orderBy = "ORDER BY " + orderBy;
+                orderBy = "\nORDER BY " + orderBy;
 
             // add tables needed to bridge joins
             foreach (var t in allTables.ToArray())
@@ -339,16 +358,67 @@ namespace SqlDsl.SqlBuilders
                 .Append(primaryTable.TeardownSqlCanBeInlined)
                 .Any(x => !x);
 
-            var query = new[]
+            var query = Ordering.Any() || PagingSql != null
+                ? BuildQueryWithDenseRank(selectColumns, primaryTable.Sql, joins.Select(j => j.table.Sql))
+                : BuildQuery(selectColumns, primaryTable.Sql, joins.Select(j => j.table.Sql));
+
+            if (PagingSql != null)
             {
-                $"\nSELECT {selectColumns.JoinString(",")}",
-                $"FROM ({primaryTable.Sql}) " + SqlSyntax.WrapAlias(PrimaryTableAlias),
-                $"{joins.Select(j => j.table.Sql).JoinString("\n")}"
+                // TODO: this select * might return one extra column
+                // at the end. This is not a problem right now, but may 
+                // be in the future
+                query = "SELECT * FROM (" + query;
+                orderBy += 
+                    $") {SqlSyntax.WrapAlias(SqlStatementConstants.InnerQueryAlias)}\n" +
+                    $"WHERE {PagingSql}";
+            }
+
+            return new SqlString(setupSql, query, where, orderBy, teardownSql, !newQueryForTeardown);
+        }
+
+        string BuildQuery(IEnumerable<string> selectColumns, string primaryTableSql, IEnumerable<string> joinClauses)
+        {
+            return new[]
+            {
+                $"\nSELECT {selectColumns.Aggregate(SqlSyntax.BuildCommaCondition)}",
+                $"FROM ({primaryTableSql}) " + SqlSyntax.WrapAlias(PrimaryTableAlias),
+                $"{joinClauses.JoinString("\n")}"
+            }
+            .Where(x => !string.IsNullOrEmpty(x))
+            .JoinString("\n");
+        }
+
+        string BuildQueryWithDenseRank(IEnumerable<string> selectColumns, string primaryTableSql, IEnumerable<string> joinClauses)
+        {
+            var restOfQuery = new[]
+            {
+                $"FROM ({primaryTableSql}) " + SqlSyntax.WrapAlias(PrimaryTableAlias),
+                $"{joinClauses.JoinString("\n")}"
             }
             .Where(x => !string.IsNullOrEmpty(x))
             .JoinString("\n");
 
-            return new SqlString(setupSql, query, $"\n{where}", $"\n{orderBy}", teardownSql, !newQueryForTeardown);
+            var ordering = Ordering.Any()
+                ? Ordering
+                    .Select(o => (o.sql, o.direction))
+                : ($"{SqlSyntax.WrapTable(PrimaryTableAlias)}.{SqlSyntax.WrapColumn(SqlStatementConstants.RowIdName)}", OrderDirection.Ascending)
+                    .ToEnumerableStruct();
+
+            return SqlSyntax.AddDenseRank(selectColumns, SqlStatementConstants.OrderByRowIdName, ordering, restOfQuery);
+        }
+
+        IEnumerable<string> GetResultStructureColumnAliases(IEnumerable<IQueryTable> mappedTables)
+        {
+            var mappedTableNames = 
+                mappedTables?.Select(t => t.Alias)
+                ?? Joins.Select(j => j.alias).Prepend(PrimaryTableAlias);
+
+            // TODO: assuming that if any column is ordered by it will be from the primary
+            // table or in a 1 -> 1 relationship. If this rule changes there is a bug here
+            if (Ordering.SelectMany(o => o.queryObjectReferences).Any())
+                mappedTableNames = mappedTableNames.Where(n => n != PrimaryTableAlias);
+
+            return mappedTableNames.Select(x => $"{x}.{SqlStatementConstants.RowIdName}");
         }
 
         // TODO: this function was copy pasted

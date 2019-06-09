@@ -104,6 +104,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             }
         }
 
+        public Dsl.IQuery<QueryContainer> FullyJoinedQuery(bool strictJoins = true)
+        {
+            return TestUtils.FullyJoinedQuery(SqlType, strictJoins);
+        }
+
         public Dsl.ISqlSelect<T> Query<T>(bool strictJoins = true)
         {
             return TestUtils.Query<T>(SqlType, strictJoins);

@@ -17,7 +17,8 @@ namespace SqlDsl
 
         public static readonly MySqlSettings Default = new MySqlSettings
         {
-            Version8OrHigher = false
+            // TODO: test only
+            Version8OrHigher = true
         };
     }
 }

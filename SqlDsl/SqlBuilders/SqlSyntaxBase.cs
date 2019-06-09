@@ -38,6 +38,9 @@ namespace SqlDsl.SqlBuilders
         public abstract SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames);
 
         /// <inheritdoc />
+        public abstract string AddDenseRank(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery);
+
+        /// <inheritdoc />
         public abstract string WrapTable(string table);
 
         /// <inheritdoc />

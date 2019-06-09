@@ -142,8 +142,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             CollectionAssert.AreEqual(new[] 
             { 
-                Data.PersonClasses.JohnArchery,
                 Data.PersonClasses.MaryTennis,
+                Data.PersonClasses.JohnArchery,
                 Data.PersonClasses.JohnTennis
             }, data);
         }

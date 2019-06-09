@@ -26,18 +26,18 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
                 .InnerJoinMany<ClassTag>(result => result.TheClassTags)
                     .On((q, c) => q.ThePersonClasses.First().ClassId == c.ClassId)
                 .ToIEnumerableAsync(Executor, logger: Logger);
-
+                
             // assert
             JoinTests.AssertSelect1SimpleJoin(data);
             
             Assert.AreEqual(3, data.First().TheClassTags.Count());
-            Assert.AreEqual(Data.ClassTags.TennisSport, data.First().TheClassTags.ElementAt(0));
-            Assert.AreEqual(Data.ClassTags.TennisBallSport, data.First().TheClassTags.ElementAt(1));
-            Assert.AreEqual(Data.ClassTags.ArcherySport, data.First().TheClassTags.ElementAt(2));
+            Assert.AreEqual(Data.ClassTags.ArcherySport, data.First().TheClassTags.ElementAt(0));
+            Assert.AreEqual(Data.ClassTags.TennisSport, data.First().TheClassTags.ElementAt(1));
+            Assert.AreEqual(Data.ClassTags.TennisBallSport, data.First().TheClassTags.ElementAt(2));
 
             Assert.AreEqual(2, data.ElementAt(1).TheClassTags.Count());
-            Assert.AreEqual(Data.ClassTags.TennisSport, data.First().TheClassTags.ElementAt(0));
-            Assert.AreEqual(Data.ClassTags.TennisBallSport, data.First().TheClassTags.ElementAt(1));
+            Assert.AreEqual(Data.ClassTags.TennisSport, data.ElementAt(1).TheClassTags.ElementAt(0));
+            Assert.AreEqual(Data.ClassTags.TennisBallSport, data.ElementAt(1).TheClassTags.ElementAt(1));
         }
 
         [Test]

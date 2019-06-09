@@ -11,6 +11,7 @@ namespace SqlDsl.Mapper
         JoinOn,
         Where,
         OrderBy,
+        Paging,
         Mapping
     }
 }

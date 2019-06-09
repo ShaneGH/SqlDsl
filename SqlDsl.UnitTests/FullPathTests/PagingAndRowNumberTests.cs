@@ -72,8 +72,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             CollectionAssert.AreEqual(new[] 
             { 
-                Data.ClassTags.TennisSport,
                 Data.ClassTags.TennisBallSport,
+                Data.ClassTags.ArcherySport,
             }, data);
         }
 
@@ -133,8 +133,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             CollectionAssert.AreEqual(new[] 
             { 
-                Data.ClassTags.TennisSport,
                 Data.ClassTags.TennisBallSport,
+                Data.ClassTags.ArcherySport,
             }, data);
         }
 

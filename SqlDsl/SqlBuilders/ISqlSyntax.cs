@@ -41,6 +41,11 @@ namespace SqlDsl.SqlBuilders
         string MinFunctionName { get; }
 
         /// <summary>
+        /// Add a dense rank column to a query
+        /// </summary>
+        string AddDenseRank(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery);
+
+        /// <summary>
         /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}.
         /// if teardownSqlCanBeInlined == true, the teardown sql will be executed in the same query as the select
         /// otherwise it will be executed immediately after the select

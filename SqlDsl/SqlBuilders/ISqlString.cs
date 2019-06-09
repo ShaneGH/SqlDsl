@@ -13,7 +13,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Generate sql. Setup sql will be executd before querySql, but in the same sql script
         /// </summary>
-        SqlString ToSqlString(IEnumerable<string> selectColumnAliases = null);
+        SqlString ToSqlString((IEnumerable<string> selectColumnAliases, IEnumerable<IQueryTable> mappedTables)? limitSelectColumns = null);
     }
 
     public class SqlString

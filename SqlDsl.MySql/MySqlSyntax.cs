@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SqlDsl.Query;
 using SqlDsl.SqlBuilders;
 using SqlDsl.Utils;
 
@@ -89,6 +90,24 @@ namespace SqlDsl.MySql
 
                 return ++TmpIdentifier;
             }
+        }
+
+        /// <inheritdoc />
+        public override string AddDenseRank(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
+        {
+            var denseRank = orderByClauses
+                .Select(AddOrdering)
+                .Aggregate(BuildCommaCondition);
+                
+            var selectCols = selectColumns
+                .Append($"DENSE_RANK() OVER (ORDER BY {denseRank}) AS {WrapAlias(denseRankAlias)}")
+                .Aggregate(BuildCommaCondition);
+
+            return $"SELECT {selectCols}\n{restOfQuery}";
+
+            string AddOrdering((string, OrderDirection) p) => p.Item2 == OrderDirection.Descending 
+                ? $"{p.Item1} {Descending}"
+                : p.Item1; 
         }
     }
 }

@@ -99,10 +99,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, data.Count, "1");
             Assert.AreEqual(2, data[0].Count(), "2");
             Assert.AreEqual(1, data[1].Count(), "3");
-            Assert.AreEqual(Data.PersonClasses.JohnTennis.ClassId, data[0][0].ClassId, "4 1");
-            Assert.AreEqual(Data.PersonClasses.JohnTennis.PersonId, data[0][0].PersonId, "4 2");
-            Assert.AreEqual(Data.PersonClasses.JohnArchery.ClassId, data[0][1].ClassId, "5 1");
-            Assert.AreEqual(Data.PersonClasses.JohnArchery.PersonId, data[0][1].PersonId, "5 2");
+            Assert.AreEqual(Data.PersonClasses.JohnArchery.ClassId, data[0][0].ClassId, "4 1");
+            Assert.AreEqual(Data.PersonClasses.JohnArchery.PersonId, data[0][0].PersonId, "4 2");
+            Assert.AreEqual(Data.PersonClasses.JohnTennis.ClassId, data[0][1].ClassId, "5 1");
+            Assert.AreEqual(Data.PersonClasses.JohnTennis.PersonId, data[0][1].PersonId, "5 2");
             Assert.AreEqual(Data.PersonClasses.MaryTennis.ClassId, data[1][0].ClassId, "6 1");
             Assert.AreEqual(Data.PersonClasses.MaryTennis.PersonId, data[1][0].PersonId, "6 2");
         }

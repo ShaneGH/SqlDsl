@@ -112,7 +112,8 @@ namespace SqlDsl.Query
                     JoinType,
                     TableName,
                     (joinExpression.Parameters[0], joinExpression.Parameters[2], joinExpression.Parameters[1], joinExpression.Body),
-                    CheckMemberExpression(JoinResultBody, JoinResultQueryParam)));
+                    CheckMemberExpression(JoinResultBody, JoinResultQueryParam),
+                    JoinParent.Other));
 
                 return Query;
             }
