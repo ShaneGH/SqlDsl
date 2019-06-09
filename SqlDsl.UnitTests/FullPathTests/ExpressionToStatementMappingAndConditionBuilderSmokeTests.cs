@@ -199,10 +199,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             // assert
             Assert.AreEqual(2, data.Count);
             Assert.AreEqual(Data.People.John.Name, data[0].name);
-            CollectionAssert.AreEqual(new[] { 4, 5 }, data[0].classes);
+            CollectionAssert.AreEquivalent(new[] { 4, 5 }, data[0].classes);
             
             Assert.AreEqual(Data.People.Mary.Name, data[1].name);
-            CollectionAssert.AreEqual(new[] { 5 }, data[1].classes);
+            CollectionAssert.AreEquivalent(new[] { 5 }, data[1].classes);
         }
 
         void MappingOnlyParts_Executor<T>(Expression<Func<QueryClass, T>> mapper, T result)

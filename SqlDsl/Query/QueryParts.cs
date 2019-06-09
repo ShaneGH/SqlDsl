@@ -14,16 +14,12 @@ namespace SqlDsl.Query
     {
         static readonly Func<string, string> Identity = x => x;
 
-        readonly string BeforeWhereSql;
-        readonly string WhereSql;
-        readonly string AfterWhereSql;
+        readonly string Sql;
         readonly string TeardownSql;
 
-        public QueryParts(string beforeWhereSql, string whereSql, string afterWhereSql, string teardownSql)
+        public QueryParts(string sql, string teardownSql)
         {
-            BeforeWhereSql = beforeWhereSql;
-            WhereSql = whereSql;
-            AfterWhereSql = afterWhereSql;
+            Sql = sql;
             TeardownSql = teardownSql;
         }
 
@@ -31,9 +27,7 @@ namespace SqlDsl.Query
         {
             if (map == null) map = Identity;
 
-            return (map(BeforeWhereSql) +
-                map(WhereSql) +
-                map(AfterWhereSql), TeardownSql);
+            return (map(Sql), TeardownSql);
         }
     }
 }

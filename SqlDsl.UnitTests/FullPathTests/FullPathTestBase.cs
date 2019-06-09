@@ -86,7 +86,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                     throw new Exception($"Invalid sql type {SqlType}");
             }
 
-            Executor = new TestExecutor(ex);
+            Executor = new TestExecutor(ex, SqlType);
             PrintStatusOnFailure = true;
             Logger = new TestLogger();
         }

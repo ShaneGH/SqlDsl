@@ -62,7 +62,8 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             CollectionAssert.AreEqual(new[] { Data.People.John.Name, Data.People.Mary.Name }, data.Select(x => x.name));
-            CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Name, Data.Classes.Archery.Name, Data.Classes.Tennis.Name }, data.SelectMany(x => x.classes));
+            CollectionAssert.AreEquivalent(new[] { Data.Classes.Tennis.Name, Data.Classes.Archery.Name }, data[0].classes);
+            CollectionAssert.AreEquivalent(new[] { Data.Classes.Tennis.Name }, data[1].classes);
         }
 
         [Test]
@@ -83,7 +84,8 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             CollectionAssert.AreEqual(new[] { Data.People.Mary.Name, Data.People.John.Name }, data.Select(x => x.name));
-            CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Name, Data.Classes.Tennis.Name, Data.Classes.Archery.Name }, data.SelectMany(x => x.classes));
+            CollectionAssert.AreEquivalent(new[] { Data.Classes.Tennis.Name }, data[0].classes);
+            CollectionAssert.AreEquivalent(new[] { Data.Classes.Tennis.Name, Data.Classes.Archery.Name }, data[1].classes);
         }
 
         [Test]
@@ -104,7 +106,8 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             CollectionAssert.AreEqual(new[] { Data.People.Mary.Name, Data.People.John.Name }, data.Select(x => x.name));
-            CollectionAssert.AreEqual(new[] { Data.Classes.Tennis.Name, Data.Classes.Tennis.Name, Data.Classes.Archery.Name }, data.SelectMany(x => x.classes));
+            CollectionAssert.AreEquivalent(new[] { Data.Classes.Tennis.Name }, data[0].classes);
+            CollectionAssert.AreEquivalent(new[] { Data.Classes.Tennis.Name, Data.Classes.Archery.Name }, data[1].classes);
         }
 
         [Test]
@@ -125,9 +128,12 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             CollectionAssert.AreEqual(new[] { Data.People.John.Name, Data.People.Mary.Name }, data.Select(x => x.name));
-            CollectionAssert.AreEqual(
-                new[] { Data.Classes.Tennis.Name, Data.Classes.Archery.Name, Data.Classes.Tennis.Name }, 
-                data.SelectMany(x => x.classes));
+            CollectionAssert.AreEquivalent(
+                new[] { Data.Classes.Tennis.Name, Data.Classes.Archery.Name }, 
+                data[0].classes);
+            CollectionAssert.AreEquivalent(
+                new[] { Data.Classes.Tennis.Name }, 
+                data[1].classes);
         }
 
         [Test]

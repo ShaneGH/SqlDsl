@@ -55,14 +55,12 @@ namespace SqlDsl.SqlBuilders
             var mappedColumnTables = GetMappedColumnTables();
             var innerResult = InnerSqlString.ToSqlString((usedColumns, mappedColumnTables));
 
-            var beforeWhereSql = $"SELECT {GetSelectColumns(limitSelectColumns?.selectColumnAliases).JoinString(",")}\nFROM ({innerResult.BeforeWhereSql}";
-            var afterWhereSql = $"{innerResult.AfterWhereSql}) {SqlSyntax.WrapAlias(InnerQueryAlias)}{BuildGroupByStatement("\n")}";
+            var beforeInner = $"SELECT {GetSelectColumns(limitSelectColumns?.selectColumnAliases).JoinString(",")}\nFROM (";
+            var afterInner = $") {SqlSyntax.WrapAlias(InnerQueryAlias)}{BuildGroupByStatement("\n")}";
 
             return new SqlString(
                 innerResult.QuerySetupSql, 
-                beforeWhereSql, 
-                innerResult.WhereSql, 
-                afterWhereSql, 
+                beforeInner + innerResult.Sql + afterInner, 
                 innerResult.QueryTeardownSql, 
                 innerResult.TeardownSqlCanBeInlined);
         }

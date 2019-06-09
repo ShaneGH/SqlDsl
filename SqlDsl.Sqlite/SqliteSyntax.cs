@@ -45,7 +45,7 @@ namespace SqlDsl.Sqlite
         public override string WrapAlias(string alias) => $"[{alias}]";
 
         /// <inheritdoc />
-        public override string AddDenseRank(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
+        public override (string setupSql, string sql) AddDenseRank(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
         {
             throw new System.NotImplementedException();
         }

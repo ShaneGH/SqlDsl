@@ -3,6 +3,7 @@ using NUnit.Framework.Interfaces;
 using SqlDsl.Dsl;
 using SqlDsl.Query;
 using SqlDsl.SqlBuilders;
+using SqlDsl.UnitTests.FullPathTests;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 using SqlDsl.Utils;
 using System;
@@ -19,6 +20,11 @@ namespace SqlDsl.UnitTests.SqlFlavours
         protected bool PrintStatusOnFailure;        
         protected TestExecutor Executor;
 
+        public SqlFragmentBuilderTestBase(SqlType sqlType)
+        {
+            SqlType = sqlType;
+        }
+
         [OneTimeSetUp]
         public virtual void FixtureSetup()
         {
@@ -30,10 +36,13 @@ namespace SqlDsl.UnitTests.SqlFlavours
         public void SetUp()
         {
             PrintStatusOnFailure = true;
-            Executor = new TestExecutor(CreateExecutor());
+            Executor = new TestExecutor(CreateExecutor(), SqlType);
         }
 
         readonly object Lock = new object();
+
+        public SqlType SqlType { get; }
+
         void DisposeAndRemoveExecutor()
         {
             TestExecutor ex;

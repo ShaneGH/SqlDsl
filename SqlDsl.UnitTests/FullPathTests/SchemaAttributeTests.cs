@@ -59,7 +59,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var john = Query<PersonWithAttributes>()
                 .Where(p => p.TheId == Data.People.John.Id)
-                .OrderBy(x => x.TheId)
+                .OrderByDesc(x => x.TheId)
                 .Skip(0)
                 .Take(1)
                 .First(Executor, logger: Logger);

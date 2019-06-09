@@ -278,7 +278,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         class PreMapped 
         {
             public long PersonId;
-            public PreMapped AnotherPreMapped;
 
             public PreMapped(){}
 

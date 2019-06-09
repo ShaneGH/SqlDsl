@@ -11,11 +11,14 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
     public class TestExecutor : IDebugExecutor
     {
         public readonly IExecutor Executor;
+        private readonly SqlType _sqlType;
+
         readonly List<(string sql, string[] colNames, List<object[]> results)> SqlStatements = new List<(string, string[], List<object[]>)>();
 
-        public TestExecutor(IExecutor executor)
+        public TestExecutor(IExecutor executor, SqlType sqlType)
         {
             Executor = executor;
+            this._sqlType = sqlType;
         }
 
         public async Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters, string[] colNames)
@@ -33,9 +36,20 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         {
             SqlStatements.Add((paramaters
                 .OrEmpty()
-                .Select((p, i) => $"{p.name} = {p.value}")
+                .Select(BuildParam)
                 .JoinString("\n") + "\n\n" +
                 sql, colNames, new List<object[]>()));
+
+            string BuildParam((string name, object value) p, int i)
+            {
+                switch (_sqlType)
+                {
+                    case SqlType.MySql:
+                        return $"SET {p.name} = {p.value};";
+                }
+
+                return $"{p.name} = {p.value}";
+            }
         }
 
         string SqlStatementString((string sql, string[] colNames, List<object[]> results) statement)

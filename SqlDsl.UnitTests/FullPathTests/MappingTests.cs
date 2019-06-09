@@ -179,32 +179,21 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(2, data.Count());
-            var john = data.First();
-            var mary = data.ElementAt(1);
-
-            Assert.AreEqual(Data.People.John.Name, john.PersonName);            
+            var john = data.First(x => x.PersonName == Data.People.John.Name);
+  
             Assert.AreEqual(2, john.TheClasses.Length);
 
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.TheClasses[0].TheName);
-            Assert.AreEqual(2, john.TheClasses[0].TheTags.Length);
+            var tennis = john.TheClasses.First(c => c.TheName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new [] { Data.Tags.BallSport, Data.Tags.Sport }, tennis.TheTags);
 
-            Assert.AreEqual(Data.Tags.Sport, john.TheClasses[0].TheTags[0]);
-            Assert.AreEqual(Data.Tags.BallSport, john.TheClasses[0].TheTags[1]);
+            var archery = john.TheClasses.First(c => c.TheName == Data.Classes.Archery.Name);
+            CollectionAssert.AreEquivalent(new [] { Data.Tags.Sport }, archery.TheTags);
 
-            Assert.AreEqual(Data.Classes.Archery.Name, john.TheClasses[1].TheName);
-            Assert.AreEqual(1, john.TheClasses[1].TheTags.Length);
-
-            Assert.AreEqual(Data.Tags.Sport, john.TheClasses[1].TheTags[0]);
-            
-
-            Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);            
+            var mary = data.First(x => x.PersonName == Data.People.Mary.Name);  
             Assert.AreEqual(1, mary.TheClasses.Length);
-
-            Assert.AreEqual(Data.Classes.Tennis.Name, mary.TheClasses[0].TheName);
-            Assert.AreEqual(2, mary.TheClasses[0].TheTags.Length);
-
-            Assert.AreEqual(Data.Tags.Sport, mary.TheClasses[0].TheTags[0]);
-            Assert.AreEqual(Data.Tags.BallSport, mary.TheClasses[0].TheTags[1]);
+            
+            tennis = mary.TheClasses.First(c => c.TheName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new [] { Data.Tags.BallSport, Data.Tags.Sport }, tennis.TheTags);
         }
 
         [Test]
@@ -229,32 +218,21 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(2, data.Count());
-            var john = data.First();
-            var mary = data.ElementAt(1);
-
-            Assert.AreEqual(Data.People.John.Name, john.PersonName);            
+            var john = data.First(x => x.PersonName == Data.People.John.Name);
+  
             Assert.AreEqual(2, john.TheClasses.Length);
 
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.TheClasses[0].TheName);
-            Assert.AreEqual(2, john.TheClasses[0].TheTags.Length);
+            var tennis = john.TheClasses.First(c => c.TheName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new [] { Data.Tags.BallSport, Data.Tags.Sport }, tennis.TheTags);
 
-            Assert.AreEqual(Data.Tags.Sport, john.TheClasses[0].TheTags[0]);
-            Assert.AreEqual(Data.Tags.BallSport, john.TheClasses[0].TheTags[1]);
+            var archery = john.TheClasses.First(c => c.TheName == Data.Classes.Archery.Name);
+            CollectionAssert.AreEquivalent(new [] { Data.Tags.Sport }, archery.TheTags);
 
-            Assert.AreEqual(Data.Classes.Archery.Name, john.TheClasses[1].TheName);
-            Assert.AreEqual(1, john.TheClasses[1].TheTags.Length);
-
-            Assert.AreEqual(Data.Tags.Sport, john.TheClasses[1].TheTags[0]);
-            
-
-            Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);            
+            var mary = data.First(x => x.PersonName == Data.People.Mary.Name);  
             Assert.AreEqual(1, mary.TheClasses.Length);
-
-            Assert.AreEqual(Data.Classes.Tennis.Name, mary.TheClasses[0].TheName);
-            Assert.AreEqual(2, mary.TheClasses[0].TheTags.Length);
-
-            Assert.AreEqual(Data.Tags.Sport, mary.TheClasses[0].TheTags[0]);
-            Assert.AreEqual(Data.Tags.BallSport, mary.TheClasses[0].TheTags[1]);
+            
+            tennis = mary.TheClasses.First(c => c.TheName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new [] { Data.Tags.BallSport, Data.Tags.Sport }, tennis.TheTags);
         }
 
         [Test]
@@ -362,15 +340,9 @@ namespace SqlDsl.UnitTests.FullPathTests
             // John
             Assert.AreEqual(Data.People.John.Name, john.TheName);
             
-            Assert.AreEqual(2, john.TheClassNames.Count());
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.TheClassNames.ElementAt(0));
-            Assert.AreEqual(Data.Classes.Archery.Name, john.TheClassNames.ElementAt(1));
-            Assert.AreEqual(2, john.TheClassNamesList.Count());
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.TheClassNamesList.ElementAt(0));
-            Assert.AreEqual(Data.Classes.Archery.Name, john.TheClassNamesList.ElementAt(1));
-            Assert.AreEqual(2, john.TheClassNamesArray.Count());
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.TheClassNamesArray.ElementAt(0));
-            Assert.AreEqual(Data.Classes.Archery.Name, john.TheClassNamesArray.ElementAt(1));
+            CollectionAssert.AreEquivalent(new [] {Data.Classes.Tennis.Name, Data.Classes.Archery.Name}, john.TheClassNames);
+            CollectionAssert.AreEquivalent(new [] {Data.Classes.Tennis.Name, Data.Classes.Archery.Name}, john.TheClassNamesList);
+            CollectionAssert.AreEquivalent(new [] {Data.Classes.Tennis.Name, Data.Classes.Archery.Name}, john.TheClassNamesArray);
 
             Assert.AreEqual(3, john.TheTagNames.Count(), john.TheTagNames.JoinString(","));
             CollectionAssert.AreEquivalent(new []
@@ -448,11 +420,13 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class SmartJoinedClass3
         {
+            public string PersonName { get; set; }
             public SmartJoinedClass4[] FavouriteClasses;
         }
 
         class SmartJoinedClass4
         {
+            public string ClassName { get; set; }
             public long[] TagIds;
         }
 
@@ -466,9 +440,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .Map(query => new SmartJoinedClass3
                 { 
+                    PersonName = query.ThePerson.Name,
                     FavouriteClasses = query.TheClasses
                         .Select(c => new SmartJoinedClass4
                         {
+                            ClassName = c.Name,
                             TagIds = query.TheClassTags
                                 .Select(t => t.TagId)
                                 .ToArray()
@@ -478,26 +454,21 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
-            Assert.AreEqual(2, data.Count());
-            var john = data.ElementAt(0);
-            var mary = data.ElementAt(1);
+            var john = data.First(x => x.PersonName == Data.People.John.Name);
+            var mary = data.First(x => x.PersonName == Data.People.Mary.Name);
 
             // John
             Assert.AreEqual(2, john.FavouriteClasses.Length);
+            var tennis = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Id, Data.Tags.BallSport.Id }, tennis.TagIds);
             
-            Assert.AreEqual(2, john.FavouriteClasses[0].TagIds.Length);
-            Assert.AreEqual(Data.Tags.Sport.Id, john.FavouriteClasses[0].TagIds[0]);
-            Assert.AreEqual(Data.Tags.BallSport.Id, john.FavouriteClasses[0].TagIds[1]);
-            
-            Assert.AreEqual(1, john.FavouriteClasses[1].TagIds.Length);
-            Assert.AreEqual(Data.Tags.Sport.Id, john.FavouriteClasses[1].TagIds[0]);
+            var archery = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Archery.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Id }, archery.TagIds);
             
             // Mary
             Assert.AreEqual(1, mary.FavouriteClasses.Length);
-            
-            Assert.AreEqual(2, mary.FavouriteClasses[0].TagIds.Length);
-            Assert.AreEqual(Data.Tags.Sport.Id, mary.FavouriteClasses[0].TagIds[0]);
-            Assert.AreEqual(Data.Tags.BallSport.Id, mary.FavouriteClasses[0].TagIds[1]);
+            tennis = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Id, Data.Tags.BallSport.Id }, tennis.TagIds);
         }
 
         [Test]
@@ -510,9 +481,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .Map(query => new
                 { 
+                    PersonsName = query.ThePerson.Name,
                     FavouriteClasses = query.TheClasses
                         .Select(c => new
                         {
+                            ClassName = c.Name,
                             TagIds = query.TheClassTags
                                 .Select(t => t.TagId)
                                 .ToArray()
@@ -522,26 +495,21 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
-            Assert.AreEqual(2, data.Count());
-            var john = data.ElementAt(0);
-            var mary = data.ElementAt(1);
+            var john = data.First(x => x.PersonsName == Data.People.John.Name);
+            var mary = data.First(x => x.PersonsName == Data.People.Mary.Name);
 
             // John
             Assert.AreEqual(2, john.FavouriteClasses.Length);
+            var tennis = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Id, Data.Tags.BallSport.Id }, tennis.TagIds);
             
-            Assert.AreEqual(2, john.FavouriteClasses[0].TagIds.Length);
-            Assert.AreEqual(Data.Tags.Sport.Id, john.FavouriteClasses[0].TagIds[0]);
-            Assert.AreEqual(Data.Tags.BallSport.Id, john.FavouriteClasses[0].TagIds[1]);
-            
-            Assert.AreEqual(1, john.FavouriteClasses[1].TagIds.Length);
-            Assert.AreEqual(Data.Tags.Sport.Id, john.FavouriteClasses[1].TagIds[0]);
+            var archery = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Archery.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Id }, archery.TagIds);
             
             // Mary
             Assert.AreEqual(1, mary.FavouriteClasses.Length);
-            
-            Assert.AreEqual(2, mary.FavouriteClasses[0].TagIds.Length);
-            Assert.AreEqual(Data.Tags.Sport.Id, mary.FavouriteClasses[0].TagIds[0]);
-            Assert.AreEqual(Data.Tags.BallSport.Id, mary.FavouriteClasses[0].TagIds[1]);
+            tennis = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Id, Data.Tags.BallSport.Id }, tennis.TagIds);
         }
 
         class SmartJoinedClass3_1
@@ -577,6 +545,8 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class SmartJoinedClass3_2
         {
+            public string PersonName { get; set; }
+
             public SmartJoinedClass3_2 Inner;
 
             public SmartJoinedClass4_2[] FavouriteClasses;
@@ -584,6 +554,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         class SmartJoinedClass4_2
         {
+            public string ClasName { get; set; }
             public long[] TagIds;
         }
 
@@ -597,6 +568,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             var data = await TestUtils.FullyJoinedQuery(SqlType)
                 .Map(query => new SmartJoinedClass3_2
                 { 
+                    PersonName = query.ThePerson.Name,
                     Inner = new SmartJoinedClass3_2
                     {
                         Inner = new SmartJoinedClass3_2
@@ -604,6 +576,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                             FavouriteClasses = query.TheClasses
                                 .Select(c => new SmartJoinedClass4_2
                                 {
+                                    ClasName = c.Name,
                                     TagIds = query.TheClassTags
                                         .Select(t => t.TagId)
                                         .ToArray()
@@ -616,25 +589,21 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(2, data.Count());
-            var john = data.ElementAt(0).Inner.Inner;
-            var mary = data.ElementAt(1).Inner.Inner;
+            var john = data.First(x => x.PersonName == Data.People.John.Name).Inner.Inner;
+            var mary = data.First(x => x.PersonName == Data.People.Mary.Name).Inner.Inner;
 
             // John
             Assert.AreEqual(2, john.FavouriteClasses.Length);
+            var tennis = john.FavouriteClasses.First(x => x.ClasName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Id, Data.Tags.BallSport.Id }, tennis.TagIds);
             
-            Assert.AreEqual(2, john.FavouriteClasses[0].TagIds.Length);
-            Assert.AreEqual(Data.Tags.Sport.Id, john.FavouriteClasses[0].TagIds[0]);
-            Assert.AreEqual(Data.Tags.BallSport.Id, john.FavouriteClasses[0].TagIds[1]);
-            
-            Assert.AreEqual(1, john.FavouriteClasses[1].TagIds.Length);
-            Assert.AreEqual(Data.Tags.Sport.Id, john.FavouriteClasses[1].TagIds[0]);
+            var archery = john.FavouriteClasses.First(x => x.ClasName == Data.Classes.Archery.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Id }, archery.TagIds);
             
             // Mary
             Assert.AreEqual(1, mary.FavouriteClasses.Length);
-            
-            Assert.AreEqual(2, mary.FavouriteClasses[0].TagIds.Length);
-            Assert.AreEqual(Data.Tags.Sport.Id, mary.FavouriteClasses[0].TagIds[0]);
-            Assert.AreEqual(Data.Tags.BallSport.Id, mary.FavouriteClasses[0].TagIds[1]);
+            tennis = john.FavouriteClasses.First(x => x.ClasName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Id, Data.Tags.BallSport.Id }, tennis.TagIds);
         }
 
         class SmartJoinedClass1
@@ -679,33 +648,21 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
-            Assert.AreEqual(2, data.Count());
-            var john = data.ElementAt(0);
-            var mary = data.ElementAt(1);
+            var john = data.First(x => x.PersonsName == Data.People.John.Name);
+            var mary = data.First(x => x.PersonsName == Data.People.Mary.Name);
 
             // John
-            Assert.AreEqual(Data.People.John.Name, john.PersonsName);
-            
             Assert.AreEqual(2, john.FavouriteClasses.Length);
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.FavouriteClasses[0].ClassName);
-            Assert.AreEqual(Data.Classes.Archery.Name, john.FavouriteClasses[1].ClassName);
+            var tennis = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Name, Data.Tags.BallSport.Name }, tennis.TagNames);
             
-            Assert.AreEqual(2, john.FavouriteClasses[0].TagNames.Length);
-            Assert.AreEqual(Data.Tags.Sport.Name, john.FavouriteClasses[0].TagNames[0]);
-            Assert.AreEqual(Data.Tags.BallSport.Name, john.FavouriteClasses[0].TagNames[1]);
-            
-            Assert.AreEqual(1, john.FavouriteClasses[1].TagNames.Length);
-            Assert.AreEqual(Data.Tags.Sport.Name, john.FavouriteClasses[1].TagNames[0]);
+            var archery = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Archery.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Name }, archery.TagNames);
             
             // Mary
-            Assert.AreEqual(Data.People.Mary.Name, mary.PersonsName);
-            
             Assert.AreEqual(1, mary.FavouriteClasses.Length);
-            Assert.AreEqual(Data.Classes.Tennis.Name, mary.FavouriteClasses[0].ClassName);
-            
-            Assert.AreEqual(2, mary.FavouriteClasses[0].TagNames.Length);
-            Assert.AreEqual(Data.Tags.Sport.Name, mary.FavouriteClasses[0].TagNames[0]);
-            Assert.AreEqual(Data.Tags.BallSport.Name, mary.FavouriteClasses[0].TagNames[1]);
+            tennis = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Name, Data.Tags.BallSport.Name }, tennis.TagNames);
         }
 
         [Test]
@@ -728,33 +685,21 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
-            Assert.AreEqual(2, data.Count());
-            var john = data.ElementAt(0);
-            var mary = data.ElementAt(1);
+            var john = data.First(x => x.PersonsName == Data.People.John.Name);
+            var mary = data.First(x => x.PersonsName == Data.People.Mary.Name);
 
             // John
-            Assert.AreEqual(Data.People.John.Name, john.PersonsName);
-            
             Assert.AreEqual(2, john.FavouriteClasses.Length);
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.FavouriteClasses[0].ClassName);
-            Assert.AreEqual(Data.Classes.Archery.Name, john.FavouriteClasses[1].ClassName);
+            var tennis = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Name, Data.Tags.BallSport.Name }, tennis.TagNames);
             
-            Assert.AreEqual(2, john.FavouriteClasses[0].TagNames.Length);
-            Assert.AreEqual(Data.Tags.Sport.Name, john.FavouriteClasses[0].TagNames[0]);
-            Assert.AreEqual(Data.Tags.BallSport.Name, john.FavouriteClasses[0].TagNames[1]);
-            
-            Assert.AreEqual(1, john.FavouriteClasses[1].TagNames.Length);
-            Assert.AreEqual(Data.Tags.Sport.Name, john.FavouriteClasses[1].TagNames[0]);
+            var archery = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Archery.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Name }, archery.TagNames);
             
             // Mary
-            Assert.AreEqual(Data.People.Mary.Name, mary.PersonsName);
-            
             Assert.AreEqual(1, mary.FavouriteClasses.Length);
-            Assert.AreEqual(Data.Classes.Tennis.Name, mary.FavouriteClasses[0].ClassName);
-            
-            Assert.AreEqual(2, mary.FavouriteClasses[0].TagNames.Length);
-            Assert.AreEqual(Data.Tags.Sport.Name, mary.FavouriteClasses[0].TagNames[0]);
-            Assert.AreEqual(Data.Tags.BallSport.Name, mary.FavouriteClasses[0].TagNames[1]);
+            tennis = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Tennis.Name);
+            CollectionAssert.AreEquivalent(new[] {Data.Tags.Sport.Name, Data.Tags.BallSport.Name }, tennis.TagNames);
         }
 
         class SmartJoinedClass5
@@ -792,25 +737,21 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .ToIEnumerableAsync(Executor, logger: Logger);
 
             // assert
-            Assert.AreEqual(2, data.Count());
-            var john = data.ElementAt(0);
-            var mary = data.ElementAt(1);
+            var john = data.First(x => x.PersonName == Data.People.John.Name);
+            var mary = data.First(x => x.PersonName == Data.People.Mary.Name);
 
             // John
-            Assert.AreEqual(Data.People.John.Name, john.PersonName);
-            
             Assert.AreEqual(2, john.FavouriteClasses.Length);
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.FavouriteClasses[0].ClassName);
-            Assert.AreEqual(Data.Tags.Sport.Name, john.FavouriteClasses[0].TagName);
-            Assert.AreEqual(Data.Classes.Archery.Name, john.FavouriteClasses[1].ClassName);
-            Assert.AreEqual(Data.Tags.Sport.Name, john.FavouriteClasses[1].TagName);
+            var tennis = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Tennis.Name);
+            Assert.AreEqual(Data.Tags.Sport.Name, tennis.TagName);
+            
+            var archery = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Archery.Name);
+            Assert.AreEqual(Data.Tags.Sport.Name, archery.TagName);
             
             // Mary
-            Assert.AreEqual(Data.People.Mary.Name, mary.PersonName);
-            
             Assert.AreEqual(1, mary.FavouriteClasses.Length);
-            Assert.AreEqual(Data.Classes.Tennis.Name, mary.FavouriteClasses[0].ClassName);
-            Assert.AreEqual(Data.Tags.Sport.Name, mary.FavouriteClasses[0].TagName);
+            tennis = john.FavouriteClasses.First(x => x.ClassName == Data.Classes.Tennis.Name);
+            Assert.AreEqual(Data.Tags.Sport.Name, tennis.TagName);
         }
     }
 }

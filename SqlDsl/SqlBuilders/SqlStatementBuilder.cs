@@ -88,14 +88,14 @@ namespace SqlDsl.SqlBuilders
 
         public void AddOrderBy(ParameterExpression queryRootParam, ParameterExpression argsParam, Expression orderBy, OrderDirection direction, ParamBuilder parameters)
         {
-            var (sql, queryObjectReferences) = BuildCondition(queryRootParam, argsParam, orderBy, parameters, MappingPurpose.OrderBy);
+            var (sql, queryObjectReferences) = BuildCondition(queryRootParam, argsParam, orderBy, parameters, MappingPurpose.OrderBy, false);
             Ordering.Add((sql, queryObjectReferences, direction));
         }
         
         private static readonly ParameterExpression IntParameter = Expression.Parameter(typeof(int));
         public void AddPaging(Expression expression, ParameterExpression argsParam, ParamBuilder parameters)
         {
-            PagingSql = BuildCondition(IntParameter, argsParam, expression, parameters, MappingPurpose.Paging).sql;
+            PagingSql = BuildCondition(IntParameter, argsParam, expression, parameters, MappingPurpose.Paging, false).sql;
         }
 
         /// <summary>
@@ -132,7 +132,7 @@ namespace SqlDsl.SqlBuilders
                     AddJoinProperty);
             
             equalityStatement = ParameterReplacer.ReplaceParameter(equalityStatement, joinTableParam, joinTableProp);
-            var (sql, queryObjectReferences) = BuildCondition(queryRootParam, queryArgsParam, equalityStatement, parameters, MappingPurpose.JoinOn);
+            var (sql, queryObjectReferences) = BuildCondition(queryRootParam, queryArgsParam, equalityStatement, parameters, MappingPurpose.JoinOn, false);
             queryObjectReferences = queryObjectReferences.Where(x => x != joinTableAlias);
 
             // if there are no query object references, add a reference to
@@ -210,7 +210,7 @@ namespace SqlDsl.SqlBuilders
         /// <param name="parameters">A list of parameters which will be added to if a constant is found in the equalityStatement</param>
         public void SetWhere(ParameterExpression queryRoot, ParameterExpression args, Expression equality, ParamBuilder parameters)
         {
-            var (whereSql, queryObjectReferences) = BuildCondition(queryRoot, args, equality, parameters, MappingPurpose.Where);
+            var (whereSql, queryObjectReferences) = BuildCondition(queryRoot, args, equality, parameters, MappingPurpose.Where, false);
             Where = (whereSql, queryObjectReferences);
         }
 
@@ -219,10 +219,11 @@ namespace SqlDsl.SqlBuilders
             ParameterExpression queryArgsParam,
             Expression conditionStatement, 
             ParamBuilder parameters,
-            MappingPurpose mapping)
+            MappingPurpose mapping,
+            bool useColumnAliases)
         {
             var stat = new SqlStatementParts.SqlStatement(this);
-            var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRootParam, queryArgsParam, stat, SqlSyntax, false, mapping);
+            var state = new Mapper.BuildMapState(PrimaryTableAlias, parameters, queryRootParam, queryArgsParam, stat, SqlSyntax, useColumnAliases, mapping);
 
             var (mp, _) = ComplexMapBuilder.BuildMap(state, conditionStatement);
             var map = mp.ToArray();
@@ -307,7 +308,7 @@ namespace SqlDsl.SqlBuilders
             var allTables = selectTables.ToHashSet();
 
             // build WHERE part
-            var where = Where == null ? "" : $"\nWHERE {Where.Value.sql}";
+            var where = Where == null ? "" : $"WHERE {Where.Value.sql}";
             if (Where != null)
                 allTables.AddRange(Where.Value.queryObjectReferences);
 
@@ -338,11 +339,16 @@ namespace SqlDsl.SqlBuilders
                 : _Joins
                     .Where(j => allTables.Contains(j.alias))
                     .ToList();
+
+            var (denseRankSetup, query) = Ordering.Any() || PagingSql != null
+                ? BuildQueryWithDenseRank(selectColumns, primaryTable.Sql, joins.Select(j => j.table.Sql), where)
+                : BuildQuery(selectColumns, primaryTable.Sql, joins.Select(j => j.table.Sql), where);
                 
             // concat all setup sql from all other parts
             var setupSql = joins
                 .Select(j => j.table.SetupSql)
                 .Append(primaryTable.SetupSql)
+                .Append(denseRankSetup)
                 .RemoveNulls()
                 .JoinString("\n");
                 
@@ -358,10 +364,6 @@ namespace SqlDsl.SqlBuilders
                 .Append(primaryTable.TeardownSqlCanBeInlined)
                 .Any(x => !x);
 
-            var query = Ordering.Any() || PagingSql != null
-                ? BuildQueryWithDenseRank(selectColumns, primaryTable.Sql, joins.Select(j => j.table.Sql))
-                : BuildQuery(selectColumns, primaryTable.Sql, joins.Select(j => j.table.Sql));
-
             if (PagingSql != null)
             {
                 // TODO: this select * might return one extra column
@@ -373,27 +375,29 @@ namespace SqlDsl.SqlBuilders
                     $"WHERE {PagingSql}";
             }
 
-            return new SqlString(setupSql, query, where, orderBy, teardownSql, !newQueryForTeardown);
+            return new SqlString(setupSql, $"{query}{orderBy}", teardownSql, !newQueryForTeardown);
         }
 
-        string BuildQuery(IEnumerable<string> selectColumns, string primaryTableSql, IEnumerable<string> joinClauses)
+        (string setupSql, string sql) BuildQuery(IEnumerable<string> selectColumns, string primaryTableSql, IEnumerable<string> joinClauses, string where)
         {
-            return new[]
+            return (null, new[]
             {
                 $"\nSELECT {selectColumns.Aggregate(SqlSyntax.BuildCommaCondition)}",
                 $"FROM ({primaryTableSql}) " + SqlSyntax.WrapAlias(PrimaryTableAlias),
-                $"{joinClauses.JoinString("\n")}"
+                $"{joinClauses.JoinString("\n")}",
+                where
             }
             .Where(x => !string.IsNullOrEmpty(x))
-            .JoinString("\n");
+            .JoinString("\n"));
         }
 
-        string BuildQueryWithDenseRank(IEnumerable<string> selectColumns, string primaryTableSql, IEnumerable<string> joinClauses)
+        (string setupSql, string sql) BuildQueryWithDenseRank(IEnumerable<string> selectColumns, string primaryTableSql, IEnumerable<string> joinClauses, string where)
         {
             var restOfQuery = new[]
             {
                 $"FROM ({primaryTableSql}) " + SqlSyntax.WrapAlias(PrimaryTableAlias),
-                $"{joinClauses.JoinString("\n")}"
+                $"{joinClauses.JoinString("\n")}",
+                where
             }
             .Where(x => !string.IsNullOrEmpty(x))
             .JoinString("\n");
@@ -409,16 +413,57 @@ namespace SqlDsl.SqlBuilders
 
         IEnumerable<string> GetResultStructureColumnAliases(IEnumerable<IQueryTable> mappedTables)
         {
-            var mappedTableNames = 
-                mappedTables?.Select(t => t.Alias)
-                ?? Joins.Select(j => j.alias).Prepend(PrimaryTableAlias);
+            if (mappedTables == null)
+            {
+                return AddRowIds(
+                    RemovePrimaryTableIfNecessary(
+                        Joins.Select(j => j.alias).Prepend(PrimaryTableAlias)));
+            }
+
+            var allMappedTableAliases = mappedTables
+                .Select(t => t.RowNumberColumn)
+                .FillOutRIDSelectColumns()
+                .Select(c => c.IsRowNumberForTable.Alias)
+                .Prepend(PrimaryTableAlias)
+                .Distinct();
+
+            return AddRowIds(
+                RemovePrimaryTableIfNecessary(allMappedTableAliases));
 
             // TODO: assuming that if any column is ordered by it will be from the primary
             // table or in a 1 -> 1 relationship. If this rule changes there is a bug here
-            if (Ordering.SelectMany(o => o.queryObjectReferences).Any())
-                mappedTableNames = mappedTableNames.Where(n => n != PrimaryTableAlias);
+            IEnumerable<string> RemovePrimaryTableIfNecessary(IEnumerable<string> tableAliases) =>
+                Ordering.SelectMany(o => o.queryObjectReferences).Any() || PagingSql != null
+                    ? tableAliases.Where(IsNotOneToOneWithPrimaryTable).Where(n => n != PrimaryTableAlias)
+                    : tableAliases.Where(IsNotOneToOneWithPrimaryTable);
 
-            return mappedTableNames.Select(x => $"{x}.{SqlStatementConstants.RowIdName}");
+            IEnumerable<string> AddRowIds(IEnumerable<string> tableNames) => tableNames.Select(x => $"{x}.{SqlStatementConstants.RowIdName}");
+
+            // one to one joins on the primary table do not need to be included in the 
+            // structure
+            bool IsNotOneToOneWithPrimaryTable(string tableAlias)
+            {
+                if (tableAlias == PrimaryTableAlias)
+                    return true;
+
+                var joins = Joins
+                    .Where(j => j.alias == tableAlias)
+                    .ToList();
+
+                if (joins.Count == 0)
+                {
+                    var joinNames = Joins.Select(j => j.alias).JoinString(", ");
+                    throw new InvalidOperationException($"Could not find join with name \"{tableAlias}\", ({joinNames}).");
+                }
+
+                if (joins.Count > 1)
+                {
+                    var joinNames = Joins.Select(j => j.alias).JoinString(", ");
+                    throw new InvalidOperationException($"Could not find unique join with name \"{tableAlias}\", ({joinNames}).");
+                }
+
+                return joins[0].joinParent != JoinParent.PrimaryTableOneToOne;
+            }
         }
 
         // TODO: this function was copy pasted

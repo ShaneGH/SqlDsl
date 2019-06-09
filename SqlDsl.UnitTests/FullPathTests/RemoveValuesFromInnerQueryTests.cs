@@ -15,7 +15,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
         
         [Test]
-        [Ignore("Does not work in mysql")]
         public async Task OrderByTableNotInMap()
         {
             // arrange
@@ -26,14 +25,21 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .ToArrayAsync(Executor, logger: Logger);
 
             // assert
-            CollectionAssert.AreEqual(new[] 
+            var john = data[0];
+            var mary = data[1];
+
+            CollectionAssert.AreEquivalent(new[] 
             {
                 Data.Tags.Sport.Name,
                 Data.Tags.BallSport.Name,
-                Data.Tags.Sport.Name,
+                Data.Tags.Sport.Name 
+            }, john);
+
+            CollectionAssert.AreEquivalent(new[] 
+            {
                 Data.Tags.Sport.Name,
                 Data.Tags.BallSport.Name 
-            }, data.SelectMany(x => x));
+            }, mary);
         }
 
         [Test]

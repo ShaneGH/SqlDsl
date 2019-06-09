@@ -18,7 +18,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
         
         [Test]
-        [Ignore("Broken test. Order by and skip/take don't play nicely with one another")]
         public void Take_UnmappedQuery_PagesResults()
         {
             // arrange
@@ -38,7 +37,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
 
         [Test]
-        [Ignore("Broken test. Order by and skip/take don't play nicely with one another")]
         public void SkipAndTake_UnmappedQuery_PagesResults()
         {
             // arrange
@@ -253,13 +251,13 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.People.John, data[0].person);
             Assert.AreEqual(Data.People.Mary, data[1].person);
 
-            CollectionAssert.AreEqual(new[] 
+            CollectionAssert.AreEquivalent(new[] 
             { 
                 new { name = Data.Classes.Tennis.Name, rowNumber1 = 1, rowNumber2 = 1 },
                 new { name = Data.Classes.Archery.Name, rowNumber1 = 1, rowNumber2 = 2 }
             }, data[0].classes);
 
-            CollectionAssert.AreEqual(new[] 
+            CollectionAssert.AreEquivalent(new[] 
             { 
                 new { name = Data.Classes.Tennis.Name, rowNumber1 = 2, rowNumber2 = 1 }
             }, data[1].classes);
@@ -318,7 +316,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .First(Executor, logger: Logger);
 
             // assert
-            CollectionAssert.AreEqual(new[]{1,2}, data);
+            CollectionAssert.AreEquivalent(new[]{1,2}, data);
         }
 
         [Test]

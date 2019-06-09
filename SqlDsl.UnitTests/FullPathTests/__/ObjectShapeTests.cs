@@ -402,21 +402,27 @@ namespace SqlDsl.UnitTests.FullPathTests
                         })
                         .ToArray()
                 })
-                .ToIEnumerableAsync(Executor, logger: Logger);
+                .ToArrayAsync(Executor, logger: Logger);
 
             // assert
             Assert.AreEqual(1, data.Count());
-            var john = data.First();
-            Assert.AreEqual(Data.People.John.Name, john.name);
-            Assert.AreEqual(Data.People.John, john.person);
+            Assert.AreEqual(Data.People.John.Name, data[0].name);
+            Assert.AreEqual(Data.People.John, data[0].person);
+
+            Assert.AreEqual(2, data[0].classes.Count());
+            var tennis = data[0].classes.First(x => x.className == Data.Classes.Tennis.Name);
+            var archery = data[0].classes.First(x => x.className == Data.Classes.Archery.Name);
             
-            Assert.AreEqual(2, john.classes.Length);
+            CollectionAssert.AreEquivalent(new []
+            {
+                Data.Tags.Sport.Name,
+                Data.Tags.BallSport.Name
+            }, tennis.tags);
             
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.classes[0].className);
-            CollectionAssert.AreEqual(new [] { Data.Tags.Sport.Name, Data.Tags.BallSport.Name }, john.classes[0].tags);
-            
-            Assert.AreEqual(Data.Classes.Archery.Name, john.classes[1].className);
-            CollectionAssert.AreEqual(new [] { Data.Tags.Sport.Name }, john.classes[1].tags);
+            CollectionAssert.AreEquivalent(new []
+            {
+                Data.Tags.Sport.Name
+            }, archery.tags);
         }
 
         [Test]
@@ -488,11 +494,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(Data.People.John.Name, john.name);
             Assert.AreEqual(Data.People.John, john.person);
             
-            Assert.AreEqual(2, john.classes.Length);
-            
-            Assert.AreEqual(Data.Classes.Tennis.Name, john.classes[0].className);
-            
-            Assert.AreEqual(Data.Classes.Archery.Name, john.classes[1].className);
+            CollectionAssert.AreEquivalent(new[] 
+            { 
+                new { className = Data.Classes.Tennis.Name },
+                new { className = Data.Classes.Archery.Name }
+            }, john.classes);
         }
 
         [Test]
@@ -669,10 +675,10 @@ namespace SqlDsl.UnitTests.FullPathTests
             Assert.AreEqual(2, data.Count());
             
             Assert.AreEqual(Data.People.John.Name, data.First().personName);
-            CollectionAssert.AreEqual(new [] { Data.Classes.Tennis, Data.Classes.Archery }, data.First().classes.TheClasses);
+            CollectionAssert.AreEquivalent(new [] { Data.Classes.Tennis, Data.Classes.Archery }, data.First().classes.TheClasses);
             
             Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).personName);
-            CollectionAssert.AreEqual(new [] { Data.Classes.Tennis }, data.ElementAt(1).classes.TheClasses);
+            CollectionAssert.AreEquivalent(new [] { Data.Classes.Tennis }, data.ElementAt(1).classes.TheClasses);
         }
 
         class ObjectWithConstructorArgs_InnerSelectTest : EqComparer
@@ -709,19 +715,19 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(2, data.Count());
+            var john = data.First(x => x.personName == Data.People.John.Name);
+            var mary = data.First(x => x.personName == Data.People.Mary.Name);
             
-            Assert.AreEqual(Data.People.John.Name, data.First().personName);
-            CollectionAssert.AreEqual(new [] 
+            CollectionAssert.AreEquivalent(new []
             {
-                new ObjectWithConstructorArgs_InnerSelectTest(Data.Classes.Tennis), 
+                new ObjectWithConstructorArgs_InnerSelectTest(Data.Classes.Tennis),
                 new ObjectWithConstructorArgs_InnerSelectTest(Data.Classes.Archery)
-            }, data.First().classes);
+            }, john.classes);
             
-            Assert.AreEqual(Data.People.Mary.Name, data.ElementAt(1).personName);
-            CollectionAssert.AreEqual(new [] 
-            { 
+            CollectionAssert.AreEquivalent(new []
+            {
                 new ObjectWithConstructorArgs_InnerSelectTest(Data.Classes.Tennis)
-            }, data.ElementAt(1).classes);
+            }, mary.classes);
         }
 
         [Test]
@@ -932,13 +938,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             Assert.AreEqual(1, data.Count);
-            Assert.AreEqual(2, data[0].classes.Count);
-            
-            Assert.AreEqual(Data.Classes.Tennis.Name, data[0].classes[0].className);
-            Assert.AreEqual(new [] { Data.Tags.Sport.Name, Data.Tags.BallSport.Name }, data[0].classes[0].tags);
-            
-            Assert.AreEqual(Data.Classes.Archery.Name, data[0].classes[1].className);
-            Assert.AreEqual(new [] { Data.Tags.Sport.Name }, data[0].classes[1].tags);
+            Assert.AreEqual(Data.People.John.Name, data[0].person);
         }
     }
 }

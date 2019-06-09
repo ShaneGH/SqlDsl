@@ -93,7 +93,14 @@ namespace SqlDsl.MySql
         }
 
         /// <inheritdoc />
-        public override string AddDenseRank(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
+        public override (string setupSql, string sql) AddDenseRank(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
+        {
+            return Settings.Version8OrHigher
+                ? AddDenseRankV8(selectColumns, denseRankAlias, orderByClauses, restOfQuery)
+                : AddDenseRankV7(selectColumns, denseRankAlias, orderByClauses, restOfQuery);
+        }
+
+        (string setupSql, string sql) AddDenseRankV8(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
         {
             var denseRank = orderByClauses
                 .Select(AddOrdering)
@@ -103,11 +110,43 @@ namespace SqlDsl.MySql
                 .Append($"DENSE_RANK() OVER (ORDER BY {denseRank}) AS {WrapAlias(denseRankAlias)}")
                 .Aggregate(BuildCommaCondition);
 
-            return $"SELECT {selectCols}\n{restOfQuery}";
-
-            string AddOrdering((string, OrderDirection) p) => p.Item2 == OrderDirection.Descending 
-                ? $"{p.Item1} {Descending}"
-                : p.Item1; 
+            return (null, $"SELECT {selectCols}\n{restOfQuery}");
         }
+
+        (string setupSql, string sql) AddDenseRankV7(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
+        {
+            selectColumns = selectColumns.Enumerate();
+            orderByClauses = orderByClauses.Enumerate();
+
+            var orderBy = orderByClauses
+                .Select(AddOrdering)
+                .Aggregate(BuildCommaCondition);
+
+            var rowId = "@drp" + GetUniqueId();
+            var drParams = orderByClauses
+                .Select(_ => "@drp" + GetUniqueId())
+                .ToList();
+                
+            var drCondition = orderByClauses
+                .Select((c, i) => $"{rowId}<>0 AND {drParams[i]}=({drParams[i]}:={c.Item1})")
+                .Aggregate(BuildAndCondition);
+
+            var drSelect = $"IF({drCondition}, {rowId}, {rowId}:={rowId}+1) AS {WrapAlias(denseRankAlias)}";
+
+            var selCols = selectColumns.Append(drSelect).Aggregate(BuildCommaCondition);
+
+            var originalQuery = $"SELECT {selCols}\n{restOfQuery}\nORDER BY {orderBy}";
+
+            return (
+                drParams.Select(p => $"SET {p} = NULL;").Prepend($"SET {rowId} = 0;").JoinString("\n"),
+                $"SELECT * FROM (\n{originalQuery}) {WrappedInnerQuery}");
+        }
+
+        string _WrappedInnerQuery;
+        string WrappedInnerQuery => _WrappedInnerQuery ?? (_WrappedInnerQuery = WrapAlias(SqlDsl.SqlBuilders.SqlStatementConstants.InnerQueryAlias));
+
+        string AddOrdering((string, OrderDirection) p) => p.Item2 == OrderDirection.Descending 
+            ? $"{p.Item1} {Descending}"
+            : p.Item1; 
     }
 }

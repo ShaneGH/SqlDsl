@@ -30,6 +30,38 @@ namespace SqlDsl.SqlBuilders
             // context of one of its child properties
             return context.GetPrimaryKeyColumns(col.IsRowNumberForTable);
         }
+
+        /// <summary>
+        /// Go through a list of select columns and insert any row ids which other row ids depend on
+        /// in the correct places
+        /// </summary>
+        public static IEnumerable<ISelectColumn> FillOutRIDSelectColumns(this IEnumerable<ISelectColumn> cols)
+        {
+            return Execute(cols).Distinct();
+
+            IEnumerable<ISelectColumn> Execute(IEnumerable<ISelectColumn> columns)
+            {
+                columns = columns.Enumerate();
+                if (!columns.Any())
+                    return Enumerable.Empty<ISelectColumn>();
+
+                var head = columns.First();
+                if (head.IsRowNumberForTable == null)
+                    return Execute(columns.Skip(1)).Prepend(head);
+
+                return FillOutJoins(head.IsRowNumberForTable)
+                    .Select(x => x.RowNumberColumn)
+                    .Concat(Execute(columns.Skip(1)));
+            }
+
+            IEnumerable<IQueryTable> FillOutJoins(IQueryTable t)
+            {
+                return t.JoinedFrom
+                    .Select(FillOutJoins)
+                    .SelectMany()
+                    .Append(t);
+            }
+        }
         
         public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlSelectStatement sqlStatement, string columnAlias, IQueryTable context)
         {

@@ -85,39 +85,11 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                 .Prepend(primaryTableRowId)
                 .Distinct();
 
-            foreach (var rid in FillOutRIDSelectColumns(rids))
+            foreach (var rid in rids.FillOutRIDSelectColumns())
                 yield return rid;
                 
             foreach (var prop in ridsForEachColumn)
                 yield return new SqlSelectColumn(prop.Item1, prop.Item2 ?? primaryTableRowId);
-        }
-
-        static IEnumerable<ISelectColumn> FillOutRIDSelectColumns(IEnumerable<ISelectColumn> cols)
-        {
-            return Execute(cols).Distinct();
-
-            IEnumerable<ISelectColumn> Execute(IEnumerable<ISelectColumn> columns)
-            {
-                columns = columns.Enumerate();
-                if (!columns.Any())
-                    return Enumerable.Empty<ISelectColumn>();
-
-                var head = columns.First();
-                if (head.IsRowNumberForTable == null)
-                    return Execute(columns.Skip(1)).Prepend(head);
-
-                return FillOutJoins(head.IsRowNumberForTable)
-                    .Select(x => x.RowNumberColumn)
-                    .Concat(Execute(columns.Skip(1)));
-            }
-
-            IEnumerable<IQueryTable> FillOutJoins(IQueryTable t)
-            {
-                return t.JoinedFrom
-                    .Select(FillOutJoins)
-                    .SelectMany()
-                    .Append(t);
-            }
         }
 
         static readonly Func<QueryElementBasedMappedProperty, (QueryElementBasedMappedProperty, ISelectColumn)> TryCombineWithRowNumberColumn = singleSelectPart =>

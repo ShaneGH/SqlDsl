@@ -80,19 +80,17 @@ namespace SqlDsl.Query
         public static QueryParts ToSql(this ISqlString builder)
         {
             var builderResult = builder.ToSqlString();
-            var afterWhereSql = builderResult.AfterWhereSql;
+            var sql = builderResult.Sql;
             var queryTeardownSql = builderResult.QueryTeardownSql;
 
             if (builderResult.TeardownSqlCanBeInlined)
             {
-                afterWhereSql += $";\n\n{queryTeardownSql}";
+                sql += $";\n\n{queryTeardownSql}";
                 queryTeardownSql = null;
             }
 
             return new QueryParts(
-                $"{builderResult.QuerySetupSql}\n\n{builderResult.BeforeWhereSql}",
-                builderResult.WhereSql,
-                afterWhereSql,
+                $"{builderResult.QuerySetupSql}\n\n{sql}",
                 queryTeardownSql);
         }  
     }
