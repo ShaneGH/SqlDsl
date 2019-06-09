@@ -104,8 +104,6 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
 
             public void ExecuteCommand(string sql, IEnumerable<object> paramaters)
             {
-                File.WriteAllText(@"C:\Dev\SqlDsl\xx.txt", sql);
-
                 var cmd = _connection.CreateCommand();
                 cmd.CommandText = sql;
                 cmd.Parameters.AddRange(paramaters.Select((p, i) => 
