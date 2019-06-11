@@ -121,7 +121,7 @@ namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
             // assert
             Assert.AreEqual(1, data.Length);
             Assert.AreEqual(Data.People.John.Name, data[0].person);
-            Assert.AreEqual(new [] { new { tags = 2 }, new { tags = 1 } }, data[0].classes);
+            CollectionAssert.AreEquivalent(new [] { new { tags = 2 }, new { tags = 1 } }, data[0].classes);
         }
 
         [Test]

@@ -94,17 +94,30 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
         static IEnumerable<ISelectColumn> FillOutRIDSelectColumns(IEnumerable<ISelectColumn> cols)
         {
-            var cs = cols.ToList();
-            for (var i = 0; i < cs.Count; i++)
-                AddParentRowIdIfAvailable(cs[i]);
+            return Execute(cols).Distinct();
 
-            void AddParentRowIdIfAvailable(ISelectColumn col)
+            IEnumerable<ISelectColumn> Execute(IEnumerable<ISelectColumn> columns)
             {
-                if (col.IsRowNumberForTable?.JoinedFrom != null)
-                    cs.AddRange(col.IsRowNumberForTable.JoinedFrom.Select(jf => jf.RowNumberColumn));
+                columns = columns.Enumerate();
+                if (!columns.Any())
+                    return Enumerable.Empty<ISelectColumn>();
+
+                var head = columns.First();
+                if (head.IsRowNumberForTable == null)
+                    return Execute(columns.Skip(1)).Prepend(head);
+
+                return FillOutJoins(head.IsRowNumberForTable)
+                    .Select(x => x.RowNumberColumn)
+                    .Concat(Execute(columns.Skip(1)));
             }
 
-            return cs.Distinct();
+            IEnumerable<IQueryTable> FillOutJoins(IQueryTable t)
+            {
+                return t.JoinedFrom
+                    .Select(FillOutJoins)
+                    .SelectMany()
+                    .Append(t);
+            }
         }
 
         static readonly Func<QueryElementBasedMappedProperty, (QueryElementBasedMappedProperty, ISelectColumn)> TryCombineWithRowNumberColumn = singleSelectPart =>
