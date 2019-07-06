@@ -25,7 +25,7 @@ namespace SqlDsl.MySql
         public override SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames)
         {
             return Settings.Version8OrHigher
-                ? GetSelectTableSqlWithRowIdV8(tableName, rowIdAlias, otherColumnNames)
+                ? base.GetSelectTableSqlWithRowId(tableName, rowIdAlias, otherColumnNames)
                 : GetSelectTableSqlWithRowIdV7(tableName, rowIdAlias, otherColumnNames);
         }
 
@@ -39,22 +39,6 @@ namespace SqlDsl.MySql
 
             return new SelectTableSqlWithRowId(
                 $"SET @{id}=0;",
-                $"SELECT {cols} FROM {WrapTable(tableName)}",
-                null,
-                false);
-        }
-
-        SelectTableSqlWithRowId GetSelectTableSqlWithRowIdV8(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames)
-        {
-            var oc = otherColumnNames.ToList();
-            var cols = otherColumnNames
-                .Select(WrapColumn)
-                // TODO: rownumber over columns should not be first, but rather primary key
-                .Prepend($"(ROW_NUMBER() OVER (ORDER BY {WrapColumn(oc[0])})) AS {WrapAlias(rowIdAlias)}")
-                .JoinString(",");
-
-            return new SelectTableSqlWithRowId(
-                null,
                 $"SELECT {cols} FROM {WrapTable(tableName)}",
                 null,
                 false);
@@ -96,26 +80,8 @@ namespace SqlDsl.MySql
         public override (string setupSql, string sql) AddDenseRank(IEnumerable<(string sql, string columnAlias)> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
         {
             return Settings.Version8OrHigher
-                ? AddDenseRankV8(selectColumns, denseRankAlias, orderByClauses, restOfQuery)
+                ? base.AddDenseRank(selectColumns, denseRankAlias, orderByClauses, restOfQuery)
                 : AddDenseRankV7(selectColumns, denseRankAlias, orderByClauses, restOfQuery);
-        }
-
-        (string setupSql, string sql) AddDenseRankV8(IEnumerable<(string sql, string columnAlias)> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
-        {
-            var denseRank = orderByClauses
-                .Select(AddOrdering)
-                .Aggregate(BuildCommaCondition);
-                
-            var selectCols = selectColumns
-                .Select(x => x.sql)
-                .Append($"DENSE_RANK() OVER (ORDER BY {denseRank}) AS {WrapAlias(denseRankAlias)}")
-                .Aggregate(BuildCommaCondition);
-
-            return (null, $"SELECT {selectCols}\n{restOfQuery}");
-
-            string AddOrdering((string, OrderDirection) p) => p.Item2 == OrderDirection.Descending 
-                ? $"{p.Item1} {Descending}"
-                : p.Item1; 
         }
 
         /// <summary>

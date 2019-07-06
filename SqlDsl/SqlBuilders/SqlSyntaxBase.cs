@@ -35,12 +35,6 @@ namespace SqlDsl.SqlBuilders
         public virtual string BuildAlias(string lhs, string alias) => $"{lhs} AS {alias}";
 
         /// <inheritdoc />
-        public abstract SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames);
-
-        /// <inheritdoc />
-        public abstract (string setupSql, string sql) AddDenseRank(IEnumerable<(string sql, string columnAlias)> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery);
-
-        /// <inheritdoc />
         public abstract string WrapTable(string table);
 
         /// <inheritdoc />
@@ -99,5 +93,41 @@ namespace SqlDsl.SqlBuilders
         public virtual string BuildDivideCondition(string lhs, string rhs) => $"{lhs} / {rhs}";
 
         // TODO: other operators (e.g. OR)
+
+        /// <inheritdoc />
+        public virtual (string setupSql, string sql) AddDenseRank(IEnumerable<(string sql, string columnAlias)> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
+        {
+            var denseRank = orderByClauses
+                .Select(AddOrdering)
+                .Aggregate(BuildCommaCondition);
+                
+            var selectCols = selectColumns
+                .Select(x => x.sql)
+                .Append($"DENSE_RANK() OVER (ORDER BY {denseRank}) AS {WrapAlias(denseRankAlias)}")
+                .Aggregate(BuildCommaCondition);
+
+            return (null, $"SELECT {selectCols}\n{restOfQuery}");
+
+            string AddOrdering((string, OrderDirection) p) => p.Item2 == OrderDirection.Descending 
+                ? $"{p.Item1} {Descending}"
+                : p.Item1; 
+        }
+
+        /// <inheritdoc />
+        public virtual SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames)
+        {
+            var oc = otherColumnNames.ToList();
+            var cols = otherColumnNames
+                .Select(WrapColumn)
+                // TODO: rownumber over columns should not be first, but rather primary key
+                .Prepend($"(ROW_NUMBER() OVER (ORDER BY {WrapColumn(oc[0])})) AS {WrapAlias(rowIdAlias)}")
+                .JoinString(",");
+
+            return new SelectTableSqlWithRowId(
+                null,
+                $"SELECT {cols} FROM {WrapTable(tableName)}",
+                null,
+                false);
+        }
     }
 }

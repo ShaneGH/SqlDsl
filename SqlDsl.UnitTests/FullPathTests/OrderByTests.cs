@@ -143,13 +143,15 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = await Query<PersonClass>()
                 .OrderByDesc(x => x.PersonId + x.ClassId)
+                // make results consistent among sql types
+                .ThenBy(x => x.PersonId)
                 .ToArrayAsync(Executor, logger: Logger);
 
             // assert
             CollectionAssert.AreEqual(new[] 
             { 
-                Data.PersonClasses.MaryTennis,
                 Data.PersonClasses.JohnArchery,
+                Data.PersonClasses.MaryTennis,
                 Data.PersonClasses.JohnTennis
             }, data);
         }

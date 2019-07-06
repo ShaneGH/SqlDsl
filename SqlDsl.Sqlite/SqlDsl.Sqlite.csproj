@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
-    <PackageReference Include="Microsoft.Data.SQLite" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Data.SQLite" Version="2.2.4" />
   </ItemGroup>
 
 </Project>

@@ -12,24 +12,6 @@ namespace SqlDsl.Sqlite
     public class SqliteSyntax : SqlSyntaxBase
     {
         /// <summary>
-        /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}
-        /// </summary>
-        public override SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames)
-        {
-            var id = "tmp" + GetUniqueId();
-            var cols = otherColumnNames
-                .Select(WrapColumn)
-                .Prepend($"rowid AS {WrapAlias(rowIdAlias)}")
-                .JoinString(",");
-
-            return new SelectTableSqlWithRowId(
-                $"CREATE TEMP TABLE {id} AS SELECT * FROM {WrapTable(tableName)};",
-                $"SELECT {cols} FROM {WrapTable(id)}",
-                $"DROP TABLE {id};",
-                false);
-        }
-
-        /// <summary>
         /// Wrap a table name in parenthesis which protects against illegal characters: []
         /// </summary>
         public override string WrapTable(string table) => $"[{table}]";
@@ -43,12 +25,6 @@ namespace SqlDsl.Sqlite
         /// Wrap a table or column alias in parenthesis which protects against illegal characters: []
         /// </summary>
         public override string WrapAlias(string alias) => $"[{alias}]";
-
-        /// <inheritdoc />
-        public override (string setupSql, string sql) AddDenseRank(IEnumerable<(string sql, string columnAlias)> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
-        {
-            throw new System.NotImplementedException();
-        }
 
         static readonly object Lock = new object();
         static int TmpIdentifier = 0;

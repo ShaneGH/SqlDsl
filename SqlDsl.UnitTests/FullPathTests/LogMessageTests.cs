@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -56,7 +57,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"SELECT [ThePerson].[#rowid] AS [ThePerson.#rowid],[ThePerson].[Id] AS [ThePerson.Id],[ThePerson].[Name] AS [ThePerson.Name],[ThePerson].[Gender] AS [ThePerson.Gender]") &&
+                m.Contains(@"SELECT [ThePerson].[#rowid] AS [ThePerson.#rowid], [ThePerson].[Id] AS [ThePerson.Id], [ThePerson].[Name] AS [ThePerson.Name], [ThePerson].[Gender] AS [ThePerson.Gender], [ThePerson].[IsMember] AS [ThePerson.IsMember]") &&
                 m.Contains("[SqlDsl, 20001] Executing sql:")).Count();
             Assert.True(sql > 0);
         }
@@ -72,9 +73,11 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From<Person>(x => x.ThePerson)
                 .ToList(Executor, logger: Logger);
 
+Logger.InfoMessages.ForEach(x => Console.WriteLine(x));
+
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"SELECT [ThePerson].[#rowid] AS [ThePerson.#rowid],[ThePerson].[Id] AS [ThePerson.Id],[ThePerson].[Name] AS [ThePerson.Name],[ThePerson].[Gender] AS [ThePerson.Gender]") &&
+                m.Contains(@"SELECT [ThePerson].[#rowid] AS [ThePerson.#rowid], [ThePerson].[Id] AS [ThePerson.Id], [ThePerson].[Name] AS [ThePerson.Name], [ThePerson].[Gender] AS [ThePerson.Gender], [ThePerson].[IsMember] AS [ThePerson.IsMember]") &&
                 m.Contains("[SqlDsl, 20001] Executing sql:")).Count();
             Assert.True(sql > 0);
         }
