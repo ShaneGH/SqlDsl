@@ -48,7 +48,6 @@ namespace SqlDsl.UnitTests.FullPathTests
         }
         
         [Test]
-        [Ignore("TODO: re-enable and order correctly when a decision has been made on ROW_NUMBER() OVER ORDER BY")]
         public void LegacyRowNumber_OrderingIsConsistent()
         {
             // arrange
@@ -61,14 +60,13 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .OrderBy(t => t.ClassId)
                 .ThenBy(t => t.TagId)
                 .ToArray(Executor, logger: Logger);
-                
-                Assert.Fail();
 
             // assert
             CollectionAssert.AreEqual(new[] 
             { 
                 Data.ClassTags.TennisSport,
-                Data.ClassTags.TennisBallSport
+                Data.ClassTags.TennisBallSport,
+                Data.ClassTags.ArcherySport
             }, data);
         }
         

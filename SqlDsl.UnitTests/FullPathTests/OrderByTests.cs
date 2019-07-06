@@ -202,5 +202,22 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .OrderByDesc(x => x.ThePersonClasses.One().ClassId)
                     .ToArray(Executor, logger: Logger));
         }
+
+        [Test]
+        public void OrderBy_OrderByNotInMappedValues_WorksCorrectly()
+        {
+            // arrange
+            // act
+            var data = TestUtils
+                .FullyJoinedQuery(SqlType, false)
+                .OrderBy(x => x.ThePerson.Id)
+                .Map(x => x.ThePerson.Name)
+                .Skip(1)
+                .Take(1)
+                .First(Executor, logger: Logger);
+                
+            // assert
+            Assert.AreEqual(Data.People.Mary.Name, data);
+        }
     }
 }

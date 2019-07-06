@@ -82,6 +82,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = TestUtils
                 .FullyJoinedQuery(SqlType, false)
+                .OrderBy(x => x.ThePerson.Id)
                 .Skip(1)
                 .Take(1)
                 .First(Executor, logger: Logger);
@@ -124,6 +125,8 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             var data = Query<(int skip, int take), ClassTag>()
+                .OrderBy(x => x.ClassId)
+                .ThenBy(x => x.TagId)
                 .Skip(a => a.skip)
                 .Take(a => a.take)
                 .ToArray(Executor, (1, 2), logger: Logger);

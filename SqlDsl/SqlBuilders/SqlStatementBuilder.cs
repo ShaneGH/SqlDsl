@@ -18,7 +18,7 @@ namespace SqlDsl.SqlBuilders
     /// </summary>
     public class SqlStatementBuilder : ISqlString
     {
-        static readonly (string, string) Select1 = ("1", CodingConstants.Null.String);
+        static readonly (string, string, string) Select1 = ("1", CodingConstants.Null.String, "x");
         static readonly IEnumerable<string> OrderByRowIdNameAsEnumerable = new[]{ SqlStatementConstants.OrderByRowIdName }.Skip(0);
 
         public readonly ISqlSyntax SqlSyntax;
@@ -269,8 +269,15 @@ namespace SqlDsl.SqlBuilders
 
             // TODO: look at $"{rid.tableAlias}.{rid.rowIdColumnName}". What if tableAlias is null or #root
             var sels = rowIds
-                .Select(rid => (sql: BuildSqlForRid(rid), table: rid.tableAlias))
-                .Concat(selects.Select(sel => (sql: SqlSyntax.AddAliasColumn(SqlSyntax.BuildSelectColumn(sel.Table, sel.Column), sel.Alias), table: sel.Table)))
+                .Select(rid => (
+                    sql: BuildSqlForRid(rid), 
+                    table: rid.tableAlias, 
+                    columnAlias: rid.rowIdColumnNameAlias))
+                .Concat(selects
+                    .Select(sel => (
+                        sql: SqlSyntax.AddAliasColumn(SqlSyntax.BuildSelectColumn(sel.Table, sel.Column), sel.Alias), 
+                        table: sel.Table, 
+                        columnAlias: sel.Alias)))
                 .ToList();
 
             // if there is absolutely nothing to select, prevent error by selecting 1
@@ -282,7 +289,7 @@ namespace SqlDsl.SqlBuilders
                 : Enumerable.Empty<string>();
 
             return ToSqlString(
-                sels.Select(c => c.sql), 
+                sels.Select(c => (c.sql, c.columnAlias)), 
                 sels
                     .Select(c => c.table)
                     .RemoveNulls()
@@ -303,7 +310,7 @@ namespace SqlDsl.SqlBuilders
         }    
 
         /// <inheritdoc />
-        SqlString ToSqlString(IEnumerable<string> selectColumns, IEnumerable<string> selectTables, IEnumerable<string> resultStructureColumnAliases)
+        SqlString ToSqlString(IEnumerable<(string sql, string columnAlias)> selectColumns, IEnumerable<string> selectTables, IEnumerable<string> resultStructureColumnAliases)
         {
             var allTables = selectTables.ToHashSet();
 
@@ -342,7 +349,7 @@ namespace SqlDsl.SqlBuilders
 
             var (denseRankSetup, query) = Ordering.Any() || PagingSql != null
                 ? BuildQueryWithDenseRank(selectColumns, primaryTable.Sql, joins.Select(j => j.table.Sql), where)
-                : BuildQuery(selectColumns, primaryTable.Sql, joins.Select(j => j.table.Sql), where);
+                : BuildQuery(selectColumns.Select(x => x.sql), primaryTable.Sql, joins.Select(j => j.table.Sql), where);
                 
             // concat all setup sql from all other parts
             var setupSql = joins
@@ -391,7 +398,7 @@ namespace SqlDsl.SqlBuilders
             .JoinString("\n"));
         }
 
-        (string setupSql, string sql) BuildQueryWithDenseRank(IEnumerable<string> selectColumns, string primaryTableSql, IEnumerable<string> joinClauses, string where)
+        (string setupSql, string sql) BuildQueryWithDenseRank(IEnumerable<(string sql, string columnAlias)> selectColumns, string primaryTableSql, IEnumerable<string> joinClauses, string where)
         {
             var restOfQuery = new[]
             {

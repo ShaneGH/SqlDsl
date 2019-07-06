@@ -43,7 +43,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// Add a dense rank column to a query
         /// </summary>
-        (string setupSql, string sql) AddDenseRank(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery);
+        (string setupSql, string sql) AddDenseRank(IEnumerable<(string sql, string columnAlias)> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery);
 
         /// <summary>
         /// Build a sql statement which selects * from a table and adds a unique row id named {rowIdAlias}.

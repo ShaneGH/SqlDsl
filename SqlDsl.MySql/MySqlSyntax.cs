@@ -34,11 +34,11 @@ namespace SqlDsl.MySql
             var id = "row_number" + GetUniqueId();
             var cols = otherColumnNames
                 .Select(WrapColumn)
-                .Prepend($"(@{id}:=@{id} + 1) AS {WrapAlias(rowIdAlias)}")
+                .Prepend($"(@{id}:=@{id}+1) AS {WrapAlias(rowIdAlias)}")
                 .JoinString(",");
 
             return new SelectTableSqlWithRowId(
-                $"SET @{id} = 0;",
+                $"SET @{id}=0;",
                 $"SELECT {cols} FROM {WrapTable(tableName)}",
                 null,
                 false);
@@ -93,60 +93,107 @@ namespace SqlDsl.MySql
         }
 
         /// <inheritdoc />
-        public override (string setupSql, string sql) AddDenseRank(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
+        public override (string setupSql, string sql) AddDenseRank(IEnumerable<(string sql, string columnAlias)> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
         {
             return Settings.Version8OrHigher
                 ? AddDenseRankV8(selectColumns, denseRankAlias, orderByClauses, restOfQuery)
                 : AddDenseRankV7(selectColumns, denseRankAlias, orderByClauses, restOfQuery);
         }
 
-        (string setupSql, string sql) AddDenseRankV8(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
+        (string setupSql, string sql) AddDenseRankV8(IEnumerable<(string sql, string columnAlias)> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
         {
             var denseRank = orderByClauses
                 .Select(AddOrdering)
                 .Aggregate(BuildCommaCondition);
                 
             var selectCols = selectColumns
+                .Select(x => x.sql)
                 .Append($"DENSE_RANK() OVER (ORDER BY {denseRank}) AS {WrapAlias(denseRankAlias)}")
                 .Aggregate(BuildCommaCondition);
 
             return (null, $"SELECT {selectCols}\n{restOfQuery}");
+
+            string AddOrdering((string, OrderDirection) p) => p.Item2 == OrderDirection.Descending 
+                ? $"{p.Item1} {Descending}"
+                : p.Item1; 
         }
 
-        (string setupSql, string sql) AddDenseRankV7(IEnumerable<string> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
+        /// <summary>
+        /// Convert an order by clause from an inner statement into one from an outer statement
+        /// </summary>
+        IEnumerable<(OrderDirection direction, string orderByAlias, string orderBySelectSql)> BuildOrderByAliases(IEnumerable<(string sql, string columnAlias)> selectColumns, IEnumerable<(string sql , OrderDirection direction)> orderByClauses)
+        {
+            var i = 0;
+            selectColumns = selectColumns.Enumerate();
+            foreach (var orderBy in orderByClauses)
+            {
+                var col = selectColumns
+                    .AsNullable()
+                    .FirstOrDefault(c => c.Value.sql == orderBy.sql);
+
+                if (col != null)
+                {
+                    yield return (
+                        orderBy.direction,
+                        col.Value.columnAlias,
+                        null);
+                }
+                else
+                {
+                    var alias = $"{SqlStatementConstants.OrderByAlias}{++i}";
+                    yield return (
+                        orderBy.direction,
+                        alias,
+                        orderBy.sql);
+                }
+            }
+        }
+
+        (string setupSql, string sql) AddDenseRankV7(IEnumerable<(string sql, string columnAlias)> selectColumns, string denseRankAlias, IEnumerable<(string, OrderDirection)> orderByClauses, string restOfQuery)
         {
             selectColumns = selectColumns.Enumerate();
-            orderByClauses = orderByClauses.Enumerate();
+            var orderByWithAlias = BuildOrderByAliases(selectColumns, orderByClauses).Enumerate();
 
-            var orderBy = orderByClauses
+            var orderBy = orderByWithAlias
                 .Select(AddOrdering)
                 .Aggregate(BuildCommaCondition);
 
             var rowId = "@drp" + GetUniqueId();
-            var drParams = orderByClauses
+            var drParams = orderByWithAlias
                 .Select(_ => "@drp" + GetUniqueId())
                 .ToList();
-                
-            var drCondition = orderByClauses
-                .Select((c, i) => $"{rowId}<>0 AND {drParams[i]}=({drParams[i]}:={c.Item1})")
+
+            var drCondition = orderByWithAlias
+                .Select((c, i) => BuildAndCondition($"{drParams[i]}=({drParams[i]}:={WrapAlias(c.orderByAlias)})", $"{rowId}<>0"))
                 .Aggregate(BuildAndCondition);
 
-            var drSelect = $"IF({drCondition}, {rowId}, {rowId}:={rowId}+1) AS {WrapAlias(denseRankAlias)}";
+            var drSelect = BuildAlias($"IF({drCondition},{rowId},{rowId}:={rowId}+1)", WrapAlias(denseRankAlias));
 
-            var selCols = selectColumns.Append(drSelect).Aggregate(BuildCommaCondition);
+            var orderBySels = orderByWithAlias
+                .Where(x => x.orderBySelectSql != null)
+                .Select(x => BuildAlias(x.orderBySelectSql, WrapAlias(x.orderByAlias)));
 
-            var originalQuery = $"SELECT {selCols}\n{restOfQuery}\nORDER BY {orderBy}";
+            var innerSelCols = selectColumns
+                .Select(x => x.sql)
+                .Concat(orderBySels)
+                .Aggregate(BuildCommaCondition);
+
+            var outerSelCols = BuildCommaCondition("*", drSelect);
+
+            var originalQuery = $"SELECT {innerSelCols}\n{restOfQuery}\nORDER BY {orderBy}";
 
             return (
-                drParams.Select(p => $"SET {p} = NULL;").Prepend($"SET {rowId} = 0;").JoinString("\n"),
-                $"SELECT * FROM (\n{originalQuery}) {WrappedInnerQuery}");
+                // p might not be an int data type, mysql is able to switch types.
+                // for some reason it cannot switch types if SET p = NULL
+                drParams.Select(p => $"SET {p} = 0;").Prepend($"SET {rowId} = 0;").JoinString("\n"),
+                $"SELECT {outerSelCols} FROM (\n{originalQuery}) {WrappedInnerQuery}");
+
+            string AddOrdering((OrderDirection, string alias, string sql) p) => p.Item1 == OrderDirection.Descending 
+                ? $"{WrapAlias(p.alias)} {Descending}"
+                : WrapAlias(p.alias); 
         }
 
         string _WrappedInnerQuery;
         string WrappedInnerQuery => _WrappedInnerQuery ?? (_WrappedInnerQuery = WrapAlias(SqlDsl.SqlBuilders.SqlStatementConstants.InnerQueryAlias));
-
-        string AddOrdering((string, OrderDirection) p) => p.Item2 == OrderDirection.Descending 
-            ? $"{p.Item1} {Descending}"
-            : p.Item1; 
     }
 }

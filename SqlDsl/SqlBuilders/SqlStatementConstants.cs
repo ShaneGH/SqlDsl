@@ -44,6 +44,11 @@ namespace SqlDsl.SqlBuilders
         /// The alias of a wrapped query
         /// </summary>
         public const string InnerQueryAlias = "#wq";
+        
+        /// <summary>
+        /// The alias of an order by column
+        /// </summary>
+        public const string OrderByAlias = "#obc";
 
         public static class ConstructorArgs
         {
