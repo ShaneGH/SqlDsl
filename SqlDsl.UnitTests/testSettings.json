@@ -3,5 +3,6 @@
         "sqlite": true,
         "mysql": true
     },
+    "mySqlV8": false,
     "mySqlConnectionString": "enter locally"
 }

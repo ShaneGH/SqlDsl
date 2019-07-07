@@ -40,6 +40,7 @@ namespace SqlDsl.UnitTests.Utils
     {
         public Environments Environments { get; set;}
         public string MySqlConnectionString { get; set; }
+        public bool MySqlV8 { get; set; }
     }
 
     public class Environments

@@ -6,6 +6,7 @@ using SqlDsl.Mapper;
 using SqlDsl.Query;
 using SqlDsl.UnitTests.FullPathTests;
 using SqlDsl.UnitTests.FullPathTests.Environment;
+using SqlDsl.UnitTests.Utils;
 
 namespace SqlDsl.UnitTests
 {
@@ -19,7 +20,7 @@ namespace SqlDsl.UnitTests
                     return Sql.Query.Sqlite<TResult>(strictJoins);
                     
                 case SqlType.MySql:
-                    return Sql.Query.MySql<TResult>(strictJoins);
+                    return Sql.Query.MySql<TResult>(strictJoins, BuildMySqlSettings());
 
                 default:
                     throw new Exception($"Invalid sql type {testType}");
@@ -34,11 +35,19 @@ namespace SqlDsl.UnitTests
                     return Sql.Query.Sqlite<TArgs, TResult>(strictJoins);
                     
                 case SqlType.MySql:
-                    return Sql.Query.MySql<TArgs, TResult>(strictJoins);
+                    return Sql.Query.MySql<TArgs, TResult>(strictJoins, BuildMySqlSettings());
 
                 default:
                     throw new Exception($"Invalid sql type {testType}");
             }
+        }
+
+        static MySqlSettings BuildMySqlSettings()
+        {
+            return new MySqlSettings
+            {
+                Version8OrHigher = TestSettings.Instance.MySqlV8
+            };
         }
 
         public static Dsl.IQuery<TArg, QueryContainer> FullyJoinedQueryWithArg<TArg>(SqlType testType, bool strictJoins = true) 

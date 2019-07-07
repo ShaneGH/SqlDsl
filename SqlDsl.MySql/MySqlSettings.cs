@@ -1,7 +1,3 @@
-using SqlDsl.Dsl;
-using SqlDsl.Query;
-using SqlDsl.MySql;
-
 namespace SqlDsl
 {
     /// <summary>
@@ -11,13 +7,16 @@ namespace SqlDsl
     {
         /// <summary>
         /// True if the version of MySql >= 8.
-        /// If true, will provide some minor performace enhancements
+        /// If true, will provide some minor performace enhancements.
+        /// Default false
         /// </summary>
         public bool Version8OrHigher { get; set; }
 
-        public static readonly MySqlSettings Default = new MySqlSettings
+        public MySqlSettings()
         {
-            Version8OrHigher = true
-        };
+            Version8OrHigher = false;
+        }
+
+        public static readonly MySqlSettings Default = new MySqlSettings();
     }
 }
