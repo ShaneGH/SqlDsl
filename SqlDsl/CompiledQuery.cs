@@ -86,6 +86,7 @@ namespace SqlDsl
                 results = results.Enumerate();
             }
 
+            // TODO: try catch to give any exceptions some context
             if (!string.IsNullOrWhiteSpace(teardown))
                 await executor
                     .ExecuteCommandAsync(teardown, CodingConstants.Empty.StringObject)

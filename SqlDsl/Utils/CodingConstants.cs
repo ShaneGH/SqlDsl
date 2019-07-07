@@ -1,5 +1,5 @@
+using System;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using SqlDsl.Mapper;
 using SqlDsl.SqlBuilders;
@@ -14,21 +14,19 @@ namespace SqlDsl.Utils
         
         public class Empty
         {
-            public static readonly (string, object)[] StringObject = Enumerable
-                .Empty<(string, object)>()
-                .ToArray();
+            public static readonly (string, object)[] StringObject = Array.Empty<(string, object)>();
                 
-            public static readonly string[] String = new string[0];
+            public static readonly string[] String = Array.Empty<string>();
                 
-            public static readonly ConstructorInfo[] ConstructorInfo = new ConstructorInfo[0];
+            public static readonly ConstructorInfo[] ConstructorInfo = Array.Empty<ConstructorInfo>();
                 
-            public static readonly int[] Int = new int[0];
+            public static readonly int[] Int = Array.Empty<int>();
                 
-            public static readonly IQueryTable[] IQueryTable = new IQueryTable[0];
+            public static readonly IQueryTable[] IQueryTable = Array.Empty<IQueryTable>();
 
-            internal static readonly MappedTable[] MappedTable = new MappedTable[0];
+            internal static readonly MappedTable[] MappedTable = Array.Empty<MappedTable>();
 
-            internal static readonly (StringBasedMappedProperty, StringBasedMappedProperty)[] Case = new (StringBasedMappedProperty, StringBasedMappedProperty)[0];
+            internal static readonly (StringBasedMappedProperty, StringBasedMappedProperty)[] Case = Array.Empty<(StringBasedMappedProperty, StringBasedMappedProperty)>();
         }
         
         public class Null
