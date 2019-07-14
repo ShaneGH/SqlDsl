@@ -68,9 +68,9 @@ namespace SqlDsl.SqlExpressions
                 var tableName = GetTableName(fullName);
                 var col = state.WrappedSqlStatement.SelectColumns[fullName];
                 var tab = state.WrappedSqlStatement.Tables[overrideTable ?? tableName];
-                var rid = tab.RowNumberColumn;
+                var pk = tab.PrimaryKey;
 
-                return new SelectColumnBasedElement(col, rid);
+                return new SelectColumnBasedElement(col, pk);
             }
 
             SelectColumnBasedElement MapParameter(StringBasedElement el, string fullName, string overrideTable)
@@ -88,7 +88,7 @@ namespace SqlDsl.SqlExpressions
                     aggregatedToTable = primaryTable;
                 }
 
-                return new SelectColumnBasedElement(fullName, aggregatedToTable.RowNumberColumn);
+                return new SelectColumnBasedElement(fullName, aggregatedToTable.PrimaryKey);
             }
         }
 

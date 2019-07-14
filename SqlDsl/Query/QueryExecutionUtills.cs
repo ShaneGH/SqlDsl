@@ -48,7 +48,7 @@ namespace SqlDsl.Query
         public static RootObjectPropertyGraph BuildObjetPropertyGraph(this ISqlSelectStatement sqlBuilder, Type objectType, QueryParseType queryParseType) 
         {
             // row id's for each mapped table
-            var mappedTableProperties = sqlBuilder.MappedPropertiesToRowNumbers
+            var mappedTableProperties = sqlBuilder.MappedPropertiesToPrimaryKeys
                 .Select(GetMappedTable);
 
             // map each column to a chain of row id column numbers
@@ -58,9 +58,9 @@ namespace SqlDsl.Query
                 
             return ObjectPropertyGraphBuilder.Build(objectType, mappedTableProperties, columnWithPrimaryKeys, queryParseType);
 
-            (string name, int[] primaryKeyColumnMap) GetMappedTable((string columnGroupPrefix, ISelectColumn rowNumberColumn) map) => (
+            (string name, int[] primaryKeyColumnMap) GetMappedTable((string columnGroupPrefix, ICompositeKey key) map) => (
                 map.columnGroupPrefix,
-                sqlBuilder.GetRowNumberColumnIndexes(map.rowNumberColumn.Alias, map.rowNumberColumn.IsRowNumberForTable).ToArray());
+                sqlBuilder.GetRowNumberColumnIndexes(singleAlias(map.key), map.key.Table).ToArray());
 
             (string name, int[] primaryKeyColumnMap, Type dataCellType, ConstructorInfo[] isConstructorArg) GetMappedColumn(ISelectColumn column) => (
                 column.Alias,
@@ -71,6 +71,14 @@ namespace SqlDsl.Query
                     .ToArray(),
                 column.DataType,
                 column.ArgConstructors);
+
+            string singleAlias(ICompositeKey key)
+            {
+                var k = key.ToList();
+                if (k.Count != 1) throw new InvalidOperationException("#############");
+
+                return k[0].Alias;
+            }
         }
 
         /// <summary>

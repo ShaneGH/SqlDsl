@@ -1,12 +1,10 @@
 using SqlDsl.Mapper;
-using SqlDsl.Query;
 using SqlDsl.Utils;
 using SqlDsl.Utils.EqualityComparers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 
 namespace SqlDsl.SqlBuilders.SqlStatementParts
@@ -17,21 +15,21 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     class MappedSelectStatement : ISqlSelectStatement
     {
         /// <inheritdoc />
-        public IEnumerable<(string mappedPropertyName, ISelectColumn rowNumberColumn)> MappedPropertiesToRowNumbers { get; }
+        public IEnumerable<(string mappedPropertyName, ICompositeKey primaryKey)> MappedPropertiesToPrimaryKeys { get; }
 
         /// <inheritdoc />
         public ISelectColumns SelectColumns { get; }
 
-        public MappedSelectStatement(IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables, ISelectColumn primaryTableRowId)
+        public MappedSelectStatement(IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables, ICompositeKey primaryTableKey)
         {
-            SelectColumns = new SqlSelectColumns(properties, tables, primaryTableRowId);
-            MappedPropertiesToRowNumbers = GetMappedPropertiesToRowNumbers(tables).Enumerate();
+            SelectColumns = new SqlSelectColumns(properties, tables, primaryTableKey);
+            MappedPropertiesToPrimaryKeys = GetMappedPropertiesToRowNumbers(tables).Enumerate();
         }
 
         /// <summary>
         /// Get a list of column name prefixes which are bound to a specific table, along with an index to reference that table
         /// </summary>
-        static IEnumerable<(string mappedPropertyName, ISelectColumn rowNumberColumn)> GetMappedPropertiesToRowNumbers(IEnumerable<StrongMappedTable> tables)
+        static IEnumerable<(string mappedPropertyName, ICompositeKey primaryKey)> GetMappedPropertiesToRowNumbers(IEnumerable<StrongMappedTable> tables)
         {
             return tables
                 // if mapping does not map to a specific property (e.g. q => q.Args.Select(a => new object()))
@@ -40,7 +38,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
                 // TODO: setting To to "" is wishful thinking, but no
                 // tests failing right now
-                .Select(t => (t.To ?? "", t.From.RowNumberColumn))
+                .Select(t => (t.To ?? "", t.From.PrimaryKey))
                 .Enumerate();
         }
     }
@@ -49,9 +47,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
     {
         readonly IEnumerable<ISelectColumn> Columns;
 
-        public SqlSelectColumns(IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables, ISelectColumn primaryTableRowId)
+        public SqlSelectColumns(IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables, ICompositeKey primaryTableKey)
         {
-            Columns = BuildColumns(properties, tables, primaryTableRowId).Enumerate();
+            Columns = BuildColumns(properties, tables, primaryTableKey).Enumerate();
         }
 
         public ISelectColumn this[string alias] => TryGetColumn(alias) ??
@@ -70,7 +68,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
         IEnumerator IEnumerable.GetEnumerator() => (Columns as IEnumerable).GetEnumerator();
 
-        static IEnumerable<ISelectColumn> BuildColumns(IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables, ISelectColumn primaryTableRowId)
+        static IEnumerable<ISelectColumn> BuildColumns(IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables, ICompositeKey primaryTableKey)
         {
             var ridsForEachColumn = properties
                 .Select(TryCombineWithRowNumberColumn)
@@ -81,30 +79,30 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                 .RemoveNulls()
                 .Concat(tables
                     .Where(t => !t.TableResultsAreAggregated)
-                    .Select(t => t.From.RowNumberColumn))
-                .Prepend(primaryTableRowId)
+                    .Select(t => t.From.PrimaryKey))
+                .Prepend(primaryTableKey)
                 .Distinct();
 
-            foreach (var rid in rids.FillOutRIDSelectColumns())
+            foreach (var rid in rids.FillOutRIDSelectColumns().SelectMany())
                 yield return rid;
                 
             foreach (var prop in ridsForEachColumn)
-                yield return new SqlSelectColumn(prop.Item1, prop.Item2 ?? primaryTableRowId);
+                yield return new SqlSelectColumn(prop.Item1, prop.Item2 ?? primaryTableKey);
         }
 
-        static readonly Func<QueryElementBasedMappedProperty, (QueryElementBasedMappedProperty, ISelectColumn)> TryCombineWithRowNumberColumn = singleSelectPart =>
+        static readonly Func<QueryElementBasedMappedProperty, (QueryElementBasedMappedProperty, ICompositeKey)> TryCombineWithRowNumberColumn = singleSelectPart =>
         {
-            return (singleSelectPart, TryGetRowNumberColumn(singleSelectPart));
+            return (singleSelectPart, TryGetPrimaryKey(singleSelectPart));
         };
 
-        static ISelectColumn TryGetRowNumberColumn(QueryElementBasedMappedProperty singleSelectPart)
+        static ICompositeKey TryGetPrimaryKey(QueryElementBasedMappedProperty singleSelectPart)
         {
             return singleSelectPart.FromParams
                 .GetAggregatedEnumerable()
                 .Where(FilterOutAggregated)
                 .Select(SelectElement)
                 .Select(GetRowIdColumn)
-                .Select(TryGetTable)
+                .Select(GetTable)
                 .RemoveNulls()
                 .OrderByDescending(Identity, new TablePrecedenceOrderer(
                     TablePrecedenceOrderer.GetSingleMappingContext(singleSelectPart)))
@@ -116,11 +114,11 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
         static readonly Func<(bool, SelectColumnBasedElement element), SelectColumnBasedElement> SelectElement = x => x.element;
 
-        static readonly Func<SelectColumnBasedElement, ISelectColumn> GetRowIdColumn = x => x.RowIdColumn;
+        static readonly Func<SelectColumnBasedElement, ICompositeKey> GetRowIdColumn = x => x.PrimaryKey;
 
-        static readonly Func<IQueryTable, ISelectColumn> TryGetRowNumberColumnFromTable = x => x.RowNumberColumn;
+        static readonly Func<IQueryTable, ICompositeKey> TryGetRowNumberColumnFromTable = x => x.PrimaryKey;
 
-        static readonly Func<ISelectColumn, IQueryTable> TryGetTable = x => x.IsRowNumberForTable;
+        static readonly Func<ICompositeKey, IQueryTable> GetTable = x => x.Table;
 
         static readonly Func<IQueryTable, IQueryTable> Identity = x => x;
 
@@ -136,7 +134,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             public ConstructorInfo[] ArgConstructors { get; }
 
             /// <inheritdoc />
-            public ISelectColumn RowNumberColumn { get; }
+            public ICompositeKey PrimaryKey { get; }
 
             /// <inheritdoc />
             public IQueryTable IsRowNumberForTable => null;
@@ -147,22 +145,22 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             /// <inheritdoc />
             public IEnumerable<IQueryTable> MappingContext { get; }
 
-            public SqlSelectColumn(QueryElementBasedMappedProperty prop, ISelectColumn rowIdSelectColumn)
+            public SqlSelectColumn(QueryElementBasedMappedProperty prop, ICompositeKey columnKey)
                 : this(
                     prop.To,
                     prop.MappedPropertyType,
                     prop.PropertySegmentConstructors,
-                    rowIdSelectColumn,
+                    columnKey,
                     prop.MappingContext)
             {
             }
 
-            public SqlSelectColumn(string alias, Type dataType, ConstructorInfo[] argConstructors, ISelectColumn rowNumberColumn, IEnumerable<IQueryTable> mappingContext)
+            public SqlSelectColumn(string alias, Type dataType, ConstructorInfo[] argConstructors, ICompositeKey columnKey, IEnumerable<IQueryTable> mappingContext)
             {
                 Alias = alias ?? throw new ArgumentNullException(nameof(alias));
                 ArgConstructors = argConstructors ?? throw new ArgumentNullException(nameof(argConstructors));
                 DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
-                RowNumberColumn = rowNumberColumn ?? throw new ArgumentNullException(nameof(rowNumberColumn));
+                PrimaryKey = columnKey ?? throw new ArgumentNullException(nameof(columnKey));
                 MappingContext = mappingContext ?? throw new ArgumentNullException(nameof(mappingContext));
             }
         }

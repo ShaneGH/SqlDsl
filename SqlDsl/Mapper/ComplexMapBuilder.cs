@@ -391,7 +391,7 @@ namespace SqlDsl.Mapper
             return (
                 properties.Select(p => p.With(
                     mappedPropertyType: rowNumberExpression.Type,
-                    fromParams: p.FromParams.MapParamName(x => CombineStrings(x, SqlStatementConstants.RowIdName)))),
+                    fromParams: p.FromParams.MapParamName(x => CombineStrings(x, SqlStatementConstants.PrimaryKeyName)))),
                 tables);
         }
 
@@ -556,7 +556,7 @@ namespace SqlDsl.Mapper
             properties = properties.Select(arg => arg.With( 
                 fromParams: PropertyRepresentsTable(state, arg)
                     ? canSubstituteRowNumberForTable
-                        ? arg.FromParams.MapParamName(x => $"{x}.{SqlStatementConstants.RowIdName}")
+                        ? arg.FromParams.MapParamName(x => $"{x}.{SqlStatementConstants.PrimaryKeyName}")
                         : ThrowMappingError<ISqlExpression<StringBasedElement>>(state.MappingPurpose, $". Cannot apply {function.ToString()} function to table \"{enumerable}\".")
                     : arg.FromParams,
                 mappedPropertyType: typeof(int)));

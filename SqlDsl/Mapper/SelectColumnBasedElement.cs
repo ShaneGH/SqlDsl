@@ -13,20 +13,20 @@ namespace SqlDsl.Mapper
         public string ParameterName => EnsureParam(_ParameterName);
         readonly ISelectColumn _Column;
         public ISelectColumn Column => EnsureCol(_Column);
-        public ISelectColumn RowIdColumn { get; }
+        public ICompositeKey PrimaryKey { get; }
 
-        public SelectColumnBasedElement(ISelectColumn column, ISelectColumn rowIdColumn)
+        public SelectColumnBasedElement(ISelectColumn column, ICompositeKey primaryKey)
         {
             _Column = column ?? throw new ArgumentNullException(nameof(column));
-            RowIdColumn = rowIdColumn ?? throw new ArgumentNullException(nameof(rowIdColumn));
+            PrimaryKey = primaryKey ?? throw new ArgumentNullException(nameof(primaryKey));
             
             _ParameterName = null;
         }
 
-        public SelectColumnBasedElement(string parameterName, ISelectColumn rowIdColumn)
+        public SelectColumnBasedElement(string parameterName, ICompositeKey primaryKey)
         {
             _ParameterName = parameterName ?? throw new ArgumentNullException(nameof(parameterName));
-            RowIdColumn = rowIdColumn ?? throw new ArgumentNullException(nameof(rowIdColumn));
+            PrimaryKey = primaryKey ?? throw new ArgumentNullException(nameof(primaryKey));
             
             _Column = null;
         }

@@ -374,7 +374,7 @@ namespace SqlDsl.UnitTests.DataParser
                 .BuildMappedObjetPropertyGraph();
 
             // assert
-            // [0-ThePerson.#rowid, 1-TheClasses.#rowid, 2-TheTags.#rowid, 3-ThePersonClasses.#rowid, 4-TheClassTags.#rowid, 5-PersonName, 6-MappedClasses.ClassName, 7-MappedClasses.TagNames]
+            // [0-ThePerson.#pk, 1-TheClasses.#pk, 2-TheTags.#pk, 3-ThePersonClasses.#pk, 4-TheClassTags.#pk, 5-PersonName, 6-MappedClasses.ClassName, 7-MappedClasses.TagNames]
             var expected = new ObjectPropertyGraph(
                 typeof(MappedVersion),
                 new[]
@@ -800,7 +800,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(SemiPerson),
                 new[]
                 {
-                    (0, "#rowid", new int[0], (Type)null, (Type)null)
+                    (0, "#pk", new int[0], (Type)null, (Type)null)
                 }, 
                 null, 
                 new[] { 0 },
@@ -1177,7 +1177,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(PersonWithAttributes),
                 new []
                 {
-                    (0, "#rowid", new int[0], (Type)null, (Type)null),
+                    (0, "#pk", new int[0], (Type)null, (Type)null),
                     (1, "TheId", new int[0], typeof(long), typeof(long)),   
                     (2, "TheName", new int[0], typeof(string), typeof(string))   
                 },
@@ -1232,7 +1232,7 @@ namespace SqlDsl.UnitTests.DataParser
                 .BuildMappedObjetPropertyGraph();
 
             // assert
-            // [0-ThePerson.#rowid, 1-Classes.#rowid, 2-PurchasesByClass.#rowid, 3-PersonClasses.#rowid, 4-ThePerson, 5-TheClasses.Name, 6-TheClasses.Prices]
+            // [0-ThePerson.#pk, 1-Classes.#pk, 2-PurchasesByClass.#pk, 3-PersonClasses.#pk, 4-ThePerson, 5-TheClasses.Name, 6-TheClasses.Prices]
             var expected = new ObjectPropertyGraph(
                 typeof(SimpleMapOn1Table_WithMultipleResultsResult),
                 new []
@@ -1290,7 +1290,7 @@ namespace SqlDsl.UnitTests.DataParser
                 .BuildMappedObjetPropertyGraph();
 
             // assert
-            // [0-TheTag.#rowid, 1-TheClasses.#rowid, 2-TheClassTags.#rowid, 3-name]
+            // [0-TheTag.#pk, 1-TheClasses.#pk, 2-TheClassTags.#pk, 3-name]
             var expected = new ObjectPropertyGraph(
                 typeof(DontCompareType),
                 null,
@@ -1327,7 +1327,7 @@ namespace SqlDsl.UnitTests.DataParser
                 .BuildMappedObjetPropertyGraph();
 
             // assert
-            // [0-TheTag.#rowid, 1-TheClasses.#rowid, 2-TheClassTags.#rowid, 3-name]
+            // [0-TheTag.#pk, 1-TheClasses.#pk, 2-TheClassTags.#pk, 3-name]
             var expected = new ObjectPropertyGraph(
                 typeof(PropMapValue<IEnumerable<ClassesByTagResult>>),
                 null,
@@ -1368,7 +1368,7 @@ namespace SqlDsl.UnitTests.DataParser
                 .BuildMappedObjetPropertyGraph();
 
             // assert
-            // [0-TheTag.#rowid, 1-TheClasses.#rowid, 2-TheClassTags.#rowid, 3-Value]
+            // [0-TheTag.#pk, 1-TheClasses.#pk, 2-TheClassTags.#pk, 3-Value]
             var expected = new ObjectPropertyGraph(
                 typeof(PropMapValue<IEnumerable<string>>),
                 new []
@@ -1408,7 +1408,7 @@ namespace SqlDsl.UnitTests.DataParser
                 .BuildMappedObjetPropertyGraph();
 
             // assert
-            // [0-TheTag.#rowid, 1-TheClasses.#rowid, 2-TheClassTags.#rowid, 3-Value.#ca0, 4-Value.#ca1]
+            // [0-TheTag.#pk, 1-TheClasses.#pk, 2-TheClassTags.#pk, 3-Value.#ca0, 4-Value.#ca1]
             var expected = new ObjectPropertyGraph(
                 typeof(DontCompareType),
                 null,
@@ -1451,7 +1451,7 @@ namespace SqlDsl.UnitTests.DataParser
                 .BuildMappedObjetPropertyGraph();
 
             // assert
-            // [0-ThePerson.#rowid, 1-TheClassTags.#rowid, 2-#ca0, 3-#ca1]
+            // [0-ThePerson.#pk, 1-TheClassTags.#pk, 2-#ca0, 3-#ca1]
             var expected = new ObjectPropertyGraph(
                 typeof(DontCompareType),
                 null,

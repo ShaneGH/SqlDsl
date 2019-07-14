@@ -91,16 +91,24 @@ namespace SqlDsl.SqlBuilders
         IEnumerable<ISelectColumn> GetSelectColumns()
         {
             return AllNonParametersInAllProperties
-                .SelectMany(c => new [] { c.Column, c.RowIdColumn })
+                .SelectMany(c => new [] { c.Column, singleCol(c.PrimaryKey) })
                 .RemoveNulls()
                 .Concat(Statement.SelectColumns.Where(c => c.IsRowNumber))
                 .Distinct();
+
+            ISelectColumn singleCol(ICompositeKey key)
+            {
+                var k = key.ToList();
+                if (k.Count != 1) throw new InvalidOperationException("#############");
+
+                return k[0];
+            }
         }
 
         IEnumerable<IQueryTable> GetMappedColumnTables()
         {
             return AllNonParametersInAllProperties
-                .Select(c => c.RowIdColumn.IsRowNumberForTable)
+                .Select(c => c.PrimaryKey.Table)
                 .Distinct();
         }
 
@@ -134,7 +142,7 @@ namespace SqlDsl.SqlBuilders
             var columnsByTable = SelectProperties
                 .SelectMany(p => p.Value.FromParams.GetAggregatedEnumerable())
                 .Where(p => !p.element.IsParameter)
-                .GroupBy(p => p.element.Column.RowNumberColumn.IsRowNumberForTable)
+                .GroupBy(p => p.element.Column.PrimaryKey.Table)
                 .OrderBy(p => p.Key, new TablePrecedenceOrderer(State.WrappedSqlStatement.Tables[State.PrimarySelectTableAlias]));
 
             string aggregatedTable = null;
@@ -146,7 +154,7 @@ namespace SqlDsl.SqlBuilders
                 foreach (var column in columns)
                 {
                     if (currentTable == null)
-                        currentTable = column.element.Column.RowNumberColumn.IsRowNumberForTable.Alias;
+                        currentTable = column.element.Column.PrimaryKey.Table.Alias;
 
                     if (column.isAggregated)
                         aggregatedColumn = aggregatedColumn ?? column.element.Column.Alias;

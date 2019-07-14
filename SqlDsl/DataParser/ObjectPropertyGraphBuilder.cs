@@ -138,7 +138,7 @@ namespace SqlDsl.DataParser
                         // The typedColNames check will give a false positive 
                         // and the result will be an attempt to create a complex
                         // object from something like a string or int
-                        && col.name[col.name.Length - 1] != SqlStatementConstants.RowIdName)
+                        && col.name[col.name.Length - 1] != SqlStatementConstants.PrimaryKeyName)
                     {
                         // unwrap from IEnumerable    
                         var colType = 

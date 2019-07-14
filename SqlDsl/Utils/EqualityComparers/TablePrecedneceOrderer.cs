@@ -63,7 +63,7 @@ namespace SqlDsl.Utils.EqualityComparers
             var rowNumberTables = column.FromParams
                 .GetEnumerable()
                 .Where(c => !c.IsParameter)
-                .Select(c => c.Column.RowNumberColumn.IsRowNumberForTable)
+                .Select(c => c.Column.PrimaryKey.Table)
                 .Distinct()
                 .ToList();
 
@@ -77,7 +77,7 @@ namespace SqlDsl.Utils.EqualityComparers
         internal static IQueryTable GetSingleMappingContext(ISelectColumn column)
         {
             var mappingContext = column.MappingContext
-                .LastOrDefault(x => x != column.RowNumberColumn.IsRowNumberForTable) ??
+                .LastOrDefault(x => x != column.PrimaryKey.Table) ??
                 column.MappingContext.FirstOrDefault();
 
             return mappingContext ?? throw new InvalidOperationException($"You must have at least one mapping context: {column.Alias}.");

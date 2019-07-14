@@ -53,6 +53,13 @@ namespace SqlDsl.SqlBuilders
         SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames);
 
         /// <summary>
+        /// Build a sql statement which selects * from a table and adds duplicated selects named {rowIdAlias}.
+        /// if teardownSqlCanBeInlined == true, the teardown sql will be executed in the same query as the select
+        /// otherwise it will be executed immediately after the select
+        /// </summary>
+        SelectTableSqlWithRowId GetSelectTableSqlWithPrimaryKey(string tableName, string primaryKeyColumn, string rowIdAlias, IEnumerable<string> otherColumnNames);
+
+        /// <summary>
         /// Wrap a table name in parenthesis which protects against illegal characters: []
         /// </summary>
         string WrapTable(string table);

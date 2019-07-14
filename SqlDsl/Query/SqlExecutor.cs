@@ -28,7 +28,12 @@ namespace SqlDsl.Query
         /// <summary>
         /// A cache of column names for a given type
         /// </summary>
-        static readonly ConcurrentDictionary<Type, IEnumerable<(string nameX, string alias, Type dataType)>> Columns = new ConcurrentDictionary<Type, IEnumerable<(string, string, Type)>>();
+        static readonly ConcurrentDictionary<Type, IEnumerable<(string name, string alias, Type dataType)>> Columns = new ConcurrentDictionary<Type, IEnumerable<(string, string, Type)>>();
+
+        /// <summary>
+        /// A cache of key names for a given type
+        /// </summary>
+        static readonly ConcurrentDictionary<Type, string> Keys = new ConcurrentDictionary<Type, string>();
 
         /// <summary>
         /// The name of the member on the TResult which the primary table is appended to
@@ -165,6 +170,7 @@ namespace SqlDsl.Query
                 SqlSyntax, 
                 tableName, 
                 memberName, 
+                KeyOf(primaryTableMemberType),
                 primaryTableColumns.Select(c => c.name),
                 StrictJoins);
 
@@ -174,7 +180,8 @@ namespace SqlDsl.Query
             {
                 builder.AddJoin(
                     join.join.JoinType, 
-                    join.join.TableName, 
+                    join.join.TableName,
+                    KeyOf(join.join.JoinExpression.joinParam.Type), 
                     join.Columns.Select(c => c.name),
                     join.join.JoinExpression.rootObjectParam,
                     join.join.JoinExpression.queryArgs,
@@ -266,6 +273,19 @@ namespace SqlDsl.Query
                 
             return Columns.GetOrAdd(t, value);
         }
+        
+        /// <summary>
+        /// Get all of the column names for a given type
+        /// </summary>
+        static string KeyOf(Type t)
+        {
+            if (Keys.TryGetValue(t, out var value))
+                return value;
+
+            value = GetKey(t);
+                
+            return Keys.GetOrAdd(t, value);
+        }
 
         /// <summary>
         /// Return all of the property and field names of a type as column names
@@ -277,6 +297,38 @@ namespace SqlDsl.Query
                 
             foreach (var col in t.GetFields(BindingFlags.Public | BindingFlags.Instance))
                 yield return ColumnAttribute.GetColumnName(col).AddT(col.FieldType);
+        }
+
+        /// <summary>
+        /// Return the column name for the key, if any
+        /// </summary>
+        static string GetKey(Type t)
+        {
+            foreach (var keyColumn in GetKeyProps().Where(x => x.Item2.HasValue))
+            {
+                var c = ColumnsOf(t)
+                    .Where(x => x.alias == keyColumn.Item1)
+                    .ToList();
+
+                if (c.Count == 0)
+                    throw new InvalidOperationException($"Could not find column for key {keyColumn.Item1}");
+                    
+                if (c.Count != 1)
+                    throw new InvalidOperationException($"Multiple columns found for key {keyColumn.Item1}");
+
+                return c[0].name;
+            }
+
+            return null;
+
+            IEnumerable<(string, int?)> GetKeyProps()
+            {
+                foreach (var col in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                    yield return (col.Name, KeyAttribute.GetKeyIndex(col));
+                    
+                foreach (var col in t.GetFields(BindingFlags.Public | BindingFlags.Instance))
+                    yield return (col.Name, KeyAttribute.GetKeyIndex(col));
+            }
         }
     }
 }

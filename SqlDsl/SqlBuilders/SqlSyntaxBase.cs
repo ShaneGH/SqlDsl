@@ -103,7 +103,7 @@ namespace SqlDsl.SqlBuilders
                 
             var selectCols = selectColumns
                 .Select(x => x.sql)
-                .Append($"DENSE_RANK() OVER (ORDER BY {denseRank}) AS {WrapAlias(denseRankAlias)}")
+                .Append(BuildAlias($"DENSE_RANK() OVER (ORDER BY {denseRank})", WrapAlias(denseRankAlias)))
                 .Aggregate(BuildCommaCondition);
 
             return (null, $"SELECT {selectCols}\n{restOfQuery}");
@@ -117,10 +117,25 @@ namespace SqlDsl.SqlBuilders
         public virtual SelectTableSqlWithRowId GetSelectTableSqlWithRowId(string tableName, string rowIdAlias, IEnumerable<string> otherColumnNames)
         {
             var oc = otherColumnNames.ToList();
+            var cols = oc
+                .Select(WrapColumn)
+                // TODO: rownumber over columns should not be first column, but rather primary key
+                .Prepend(BuildAlias($"(ROW_NUMBER() OVER (ORDER BY {WrapColumn(oc[0])}))", WrapAlias(rowIdAlias)))
+                .JoinString(",");
+
+            return new SelectTableSqlWithRowId(
+                null,
+                $"SELECT {cols} FROM {WrapTable(tableName)}",
+                null,
+                false);
+        }
+
+        /// <inheritdoc />
+        public virtual SelectTableSqlWithRowId GetSelectTableSqlWithPrimaryKey(string tableName, string primaryKeyColumn, string rowIdAlias, IEnumerable<string> otherColumnNames)
+        {
             var cols = otherColumnNames
                 .Select(WrapColumn)
-                // TODO: rownumber over columns should not be first, but rather primary key
-                .Prepend($"(ROW_NUMBER() OVER (ORDER BY {WrapColumn(oc[0])})) AS {WrapAlias(rowIdAlias)}")
+                .Prepend(BuildAlias(WrapColumn(primaryKeyColumn), WrapAlias(rowIdAlias)))
                 .JoinString(",");
 
             return new SelectTableSqlWithRowId(

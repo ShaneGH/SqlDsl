@@ -25,7 +25,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// A list of property names on the mapper output along with the row number which index them.
         /// </summary>
-        IEnumerable<(string mappedPropertyName, ISelectColumn rowNumberColumn)> MappedPropertiesToRowNumbers { get; }
+        IEnumerable<(string mappedPropertyName, ICompositeKey primaryKey)> MappedPropertiesToPrimaryKeys { get; }
 
         /// <summary>
         /// The columns in the SELECT part of the query
@@ -66,6 +66,14 @@ namespace SqlDsl.SqlBuilders
     }
 
     /// <summary>
+    /// A composite key which uniquely identifies a record
+    /// </summary>
+    public interface ICompositeKey : IEnumerable<ISelectColumn>
+    {
+        IQueryTable Table { get; }
+    }
+
+    /// <summary>
     /// A table within a query
     /// </summary>
     public interface IQueryTable
@@ -84,7 +92,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The primary key of this table
         /// </summary>
-        ISelectColumn RowNumberColumn { get; }
+        ICompositeKey PrimaryKey { get; }
 
         /// <summary>
         /// The type of the join, or null if this table is the FROM table
@@ -98,9 +106,9 @@ namespace SqlDsl.SqlBuilders
     public interface ISelectColumn
     {        
         /// <summary>
-        /// The row which acts as a primary key for this column
+        /// The rows which act as a primary key for this column
         /// </summary>
-        ISelectColumn RowNumberColumn { get; }
+        ICompositeKey PrimaryKey { get; }
         
         /// <summary>
         /// The alias of the column

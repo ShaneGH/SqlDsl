@@ -1,18 +1,10 @@
-using SqlDsl.DataParser;
 using SqlDsl.Dsl;
 using SqlDsl.Query;
 using SqlDsl.SqlBuilders;
 using SqlDsl.SqlBuilders.SqlStatementParts;
 using SqlDsl.Utils;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace SqlDsl.Mapper
 {
@@ -36,7 +28,7 @@ namespace SqlDsl.Mapper
             var (properties, tables) = MapBuilder.BuildMapFromRoot(state, mapper.Body);
 
             properties = properties.Enumerate();
-            var statement = new MappedSelectStatement(properties, tables, wrappedStatement.Tables.First().RowNumberColumn);
+            var statement = new MappedSelectStatement(properties, tables, wrappedStatement.Tables.First().PrimaryKey);
             var builder = new MappedSqlStatementBuilder(state, properties, statement, wrappedBuilder, sqlSyntax);
             return builder.Compile<TArgs, TMapped>(statement, parameters.Parameters, sqlSyntax, QueryParseType.ORM, requiresPropertyUnwrap);
         }

@@ -15,11 +15,11 @@ namespace SqlDsl.UnitTests.FullPathTests
             : base(testFlavour)
         {
         }
-        
     
         [Table("Person")]
         public class PersonWithAttributes
         {
+            [Key]
             [Column("Id")]
             public long TheId { get; set; }
             

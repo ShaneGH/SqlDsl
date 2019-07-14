@@ -20,8 +20,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         readonly IQueryTables Tables;
         IQueryTable _Table;
 
+        // TODO: allocation
         /// <inheritdoc />
-        public IQueryTable IsRowNumberForTable => Table.RowNumberColumn == this ? Table : null;
+        public IQueryTable IsRowNumberForTable => Table.PrimaryKey.Contains(this) ? Table : null;
 
         /// <inheritdoc />
         public Type DataType { get; }
@@ -30,7 +31,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public ConstructorInfo[] ArgConstructors { get; }
 
         /// <inheritdoc />
-        public ISelectColumn RowNumberColumn => Table.RowNumberColumn;
+        public ICompositeKey PrimaryKey => Table.PrimaryKey;
 
         /// <inheritdoc />
         public bool IsRowNumber => IsRowNumberForTable != null;

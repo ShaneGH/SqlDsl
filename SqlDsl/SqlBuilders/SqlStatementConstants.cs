@@ -1,14 +1,7 @@
-using SqlDsl.Query;
-using SqlDsl.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace SqlDsl.SqlBuilders
-{    
+{
     /// <summary>
     /// Constants for use in sql queries
     /// </summary>
@@ -17,7 +10,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The column name for table row ids
         /// </summary>
-        public const string RowIdName = "#rowid";
+        public const string PrimaryKeyName = "#pk";
         
         /// <summary>
         /// The column name for master row id for the query

@@ -21,9 +21,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public ISelectColumns SelectColumns { get; }
 
         /// <inheritdoc />
-        IEnumerable<(string mappedPropertyName, ISelectColumn rowNumberColumn)> ISqlSelectStatement.MappedPropertiesToRowNumbers => MappedPropertiesToRowNumbers;
+        IEnumerable<(string mappedPropertyName, ICompositeKey primaryKey)> ISqlSelectStatement.MappedPropertiesToPrimaryKeys => MappedPropertiesToPrimaryKeys;
 
-        static readonly IEnumerable<(string, ISelectColumn)> MappedPropertiesToRowNumbers = Enumerable.Empty<(string, ISelectColumn)>();
+        static readonly IEnumerable<(string, ICompositeKey)> MappedPropertiesToPrimaryKeys = Enumerable.Empty<(string, ICompositeKey)>();
 
         public SqlStatement(SqlStatementBuilder builder)
         {

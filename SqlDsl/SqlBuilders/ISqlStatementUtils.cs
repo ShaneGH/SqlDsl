@@ -1,57 +1,53 @@
-using SqlDsl.Query;
 using SqlDsl.Utils;
-using SqlDsl.Utils.EqualityComparers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace SqlDsl.SqlBuilders
 {
     public static class ISqlSelectStatementUtils
     {
-        public static IEnumerable<ISelectColumn> GetRowNumberColumns(this ISqlSelectStatement sqlStatement, string columnAlias, IQueryTable context)
+        // TODO: rename GetPrimaryKeyColumns
+        public static IEnumerable<ICompositeKey> GetRowNumberColumns(this ISqlSelectStatement sqlStatement, string columnAlias, IQueryTable context)
         {
-            var col = sqlStatement.SelectColumns[columnAlias].RowNumberColumn;
+            var pk = sqlStatement.SelectColumns[columnAlias].PrimaryKey;
 
             // if the piece is a parameter, Table will be null
-            if (col == null)
-                return Enumerable.Empty<ISelectColumn>();
+            if (pk == null)
+                return Enumerable.Empty<ICompositeKey>();
 
-            var path = col.IsRowNumberForTable
+            var path = pk.Table
                 .GetPrimaryKeyColumns(context)
                 .ToArray();
 
-            if (path.Contains(context.RowNumberColumn))
+            if (path.Contains(context.PrimaryKey))
                 return path;
                 
             // in this case a column is being used in the
             // context of one of its child properties
-            return context.GetPrimaryKeyColumns(col.IsRowNumberForTable);
+            return context.GetPrimaryKeyColumns(pk.Table);
         }
 
         /// <summary>
         /// Go through a list of select columns and insert any row ids which other row ids depend on
         /// in the correct places
         /// </summary>
-        public static IEnumerable<ISelectColumn> FillOutRIDSelectColumns(this IEnumerable<ISelectColumn> cols)
+        public static IEnumerable<ICompositeKey> FillOutRIDSelectColumns(this IEnumerable<ICompositeKey> cols)
         {
             return Execute(cols).Distinct();
 
-            IEnumerable<ISelectColumn> Execute(IEnumerable<ISelectColumn> columns)
+            IEnumerable<ICompositeKey> Execute(IEnumerable<ICompositeKey> columns)
             {
                 columns = columns.Enumerate();
                 if (!columns.Any())
-                    return Enumerable.Empty<ISelectColumn>();
+                    return Enumerable.Empty<ICompositeKey>();
 
                 var head = columns.First();
-                if (head.IsRowNumberForTable == null)
-                    return Execute(columns.Skip(1)).Prepend(head);
+                var tail = columns.Skip(1);
 
-                return FillOutJoins(head.IsRowNumberForTable)
-                    .Select(x => x.RowNumberColumn)
-                    .Concat(Execute(columns.Skip(1)));
+                return FillOutJoins(head.Table)
+                    .Select(x => x.PrimaryKey)
+                    .Concat(Execute(tail));
             }
 
             IEnumerable<IQueryTable> FillOutJoins(IQueryTable t)
@@ -67,9 +63,17 @@ namespace SqlDsl.SqlBuilders
         {
             var result = sqlStatement
                 .GetRowNumberColumns(columnAlias, context)
-                .Select(c => sqlStatement.SelectColumns.IndexOf(c));
+                .Select(GetIndex);
 
             return RemoveTrailingMinusOnes(result, columnAlias);
+
+            int GetIndex(ICompositeKey key)
+            {
+                var k = key.ToList();
+                if (k.Count != 1) throw new InvalidOperationException("#############");
+
+                return sqlStatement.SelectColumns.IndexOf(k[0]);
+            }
         }
 
         // /// <summary>
@@ -121,9 +125,9 @@ namespace SqlDsl.SqlBuilders
             return table.GetPath(context, errorHandling);
         }
         
-        public static IEnumerable<ISelectColumn> GetPrimaryKeyColumns(this IQueryTable table, IQueryTable context)
+        public static IEnumerable<ICompositeKey> GetPrimaryKeyColumns(this IQueryTable table, IQueryTable context)
         {
-            return table.GetTableChain(context).Select(t => t.RowNumberColumn);
+            return table.GetTableChain(context).Select(t => t.PrimaryKey);
         }
         
         public static IEnumerable<IQueryTable> GetAllReferencedTables(this IQueryTable table)
@@ -131,9 +135,9 @@ namespace SqlDsl.SqlBuilders
             return table.GetTablesInPath();
         }
         
-        public static IEnumerable<ISelectColumn> GetAllPrimaryKeyColumns(this IQueryTable table)
+        public static IEnumerable<ICompositeKey> GetAllPrimaryKeyColumns(this IQueryTable table)
         {
-            return table.GetAllReferencedTables().Select(t => t.RowNumberColumn);
+            return table.GetAllReferencedTables().Select(t => t.PrimaryKey);
         }
         
         public static bool ContainsTable(this ISqlStatement sqlStatement, string tableAlias)
