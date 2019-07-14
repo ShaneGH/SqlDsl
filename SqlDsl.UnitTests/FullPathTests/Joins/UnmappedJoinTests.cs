@@ -5,6 +5,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.Joins
 {
+    [SqlTestAttribute(SqlType.TSql)]
     [SqlTestAttribute(SqlType.MySql)]
     [SqlTestAttribute(SqlType.Sqlite)]
     public class UnmappedJoinTests : FullPathTestBase
@@ -43,9 +44,9 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         [Test]
         public async Task Select2Joins_Backwards_DoesNotDuplicateRecords()
         {
-            if (SqlType == SqlType.MySql)
+            if (SqlType != SqlType.Sqlite)
             {
-                Assert.Pass("TODO is this a case we should support in mysql");
+                Assert.Pass("TODO is this a case we should support in other sqls");
             }
 
             // arrange

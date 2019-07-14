@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SqlDsl.Sqlite\SqlDsl.Sqlite.csproj" />
     <ProjectReference Include="..\SqlDsl.MySql\SqlDsl.MySql.csproj" />
+    <ProjectReference Include="..\SqlDsl.TSql\SqlDsl.TSql.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit3TestAdapter" Version="3.8.0" />

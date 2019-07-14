@@ -5,6 +5,7 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.AggregateFunctions
 {
+    [SqlTestAttribute(SqlType.TSql)]
     [SqlTestAttribute(SqlType.MySql)]
     [SqlTestAttribute(SqlType.Sqlite)]
     public class MinTests : FullPathTestBase

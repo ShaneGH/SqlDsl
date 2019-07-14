@@ -4,6 +4,7 @@ using NUnit.Framework;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
+    [SqlTestAttribute(SqlType.TSql)]
     [SqlTestAttribute(SqlType.MySql)]
     [SqlTestAttribute(SqlType.Sqlite)]
     public class ConstantTests : FullPathTestBase

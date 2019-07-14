@@ -1,13 +1,11 @@
-using System;
 using System.Linq;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using SqlDsl.Mapper;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
+    [SqlTestAttribute(SqlType.TSql)]
     [SqlTestAttribute(SqlType.MySql)]
     [SqlTestAttribute(SqlType.Sqlite)]
     public class PagingAndRowNumberTests : FullPathTestBase

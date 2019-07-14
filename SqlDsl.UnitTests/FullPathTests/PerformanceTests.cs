@@ -1,10 +1,10 @@
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
+    [SqlTestAttribute(SqlType.TSql)]
     [SqlTestAttribute(SqlType.MySql)]
     [SqlTestAttribute(SqlType.Sqlite)]
     public class PerformanceTests : FullPathTestBase

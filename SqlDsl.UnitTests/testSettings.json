@@ -1,8 +1,10 @@
 {
     "environments": {
         "sqlite": true,
-        "mysql": true
+        "mysql": true,
+        "tsql": false
     },
     "mySqlV8": false,
-    "mySqlConnectionString": "enter locally"
+    "mySqlConnectionString": "enter locally",
+    "tSqlConnectionString": "enter locally"
 }

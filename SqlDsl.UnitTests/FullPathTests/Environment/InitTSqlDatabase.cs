@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MySql.Data.MySqlClient;
-using SqlDsl.MySql;
 using SqlDsl.UnitTests.Utils;
+using SqlDsl.TSql;
+using System.Data.SqlClient;
 
 namespace SqlDsl.UnitTests.FullPathTests.Environment
 {
-    public class InitMySqlDatabase : InitDatabaseBase
+    public class InitTSqlDatabase : InitDatabaseBase
     {
-        public InitMySqlDatabase(
+        public InitTSqlDatabase(
             IEnumerable<Person> people = null,
             IEnumerable<PersonsData> peoplesData = null,
             IEnumerable<PersonClass> personClasses = null,
@@ -36,21 +36,21 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         static Dependencies BuildDependenciesTypes()
         {
             return new Dependencies(
-                new MySqlSyntax(MySqlSettings.Default),
+                new TSqlSyntax(),
                 new DataTypes
                 {
                     String =  "TEXT",
                     DateTime = "DATETIME",
                     DateTime_Null = "DATETIME",
-                    Bool = "BOOL",
-                    Bool_Null = "BOOL",
+                    Bool = "BIT",
+                    Bool_Null = "BIT",
                     Int = "INT",
                     Int_Null = "INT",
                     Long = "BIGINT",
                     Long_Null = "BIGINT",
                     Float = "FLOAT",
                     Float_Null = "FLOAT",
-                    ByteArray = "BLOB",
+                    ByteArray = "VARBINARY(1024)",
                     Enum = "SMALLINT",
                     
                     GetString =  (x, y) => x == null ? "NULL" : "'" + x + "'",
@@ -83,7 +83,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 },
                 (Settings settings) => 
                 {
-                    using (var conn = new MySqlConnection(settings.MySqlConnectionString))
+                    using (var conn = new SqlConnection(settings.TSqlConnectionString))
                     {
                         conn.Open();
 
@@ -103,15 +103,15 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 (Settings settings) => new Connection(settings));
         }
 
-        public static MySqlConnection CreateMySqlConnection(Settings settings) => new MySqlConnection(settings.MySqlConnectionString + @"Database=SqlDslTestDb;");
+        public static SqlConnection CreateTSqlConnection(Settings settings) => new SqlConnection(settings.TSqlConnectionString + @"Database=SqlDslTestDb;");
 
         class Connection : IConnection
         {
-            readonly MySqlConnection _connection;
+            readonly SqlConnection _connection;
 
             public Connection(Settings settings)
             {
-                _connection = CreateMySqlConnection(settings);
+                _connection = CreateTSqlConnection(settings);
             }
 
             public void Dispose()

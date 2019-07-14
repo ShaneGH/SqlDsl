@@ -2,10 +2,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using SqlDsl.UnitTests.FullPathTests.Environment;
-using SqlDsl.UnitTests.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests.Joins
 {
+    [SqlTestAttribute(SqlType.TSql)]
     [SqlTestAttribute(SqlType.MySql)]
     [SqlTestAttribute(SqlType.Sqlite)]
     public class MappedJoinTests : FullPathTestBase

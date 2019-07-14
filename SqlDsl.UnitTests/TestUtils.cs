@@ -21,6 +21,9 @@ namespace SqlDsl.UnitTests
                     
                 case SqlType.MySql:
                     return Sql.Query.MySql<TResult>(strictJoins, BuildMySqlSettings());
+                    
+                case SqlType.TSql:
+                    return Sql.Query.TSql<TResult>(strictJoins);
 
                 default:
                     throw new Exception($"Invalid sql type {testType}");
@@ -36,6 +39,9 @@ namespace SqlDsl.UnitTests
                     
                 case SqlType.MySql:
                     return Sql.Query.MySql<TArgs, TResult>(strictJoins, BuildMySqlSettings());
+                    
+                case SqlType.TSql:
+                    return Sql.Query.TSql<TArgs, TResult>(strictJoins);
 
                 default:
                     throw new Exception($"Invalid sql type {testType}");

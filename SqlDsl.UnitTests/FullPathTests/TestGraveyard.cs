@@ -11,6 +11,7 @@ namespace SqlDsl.UnitTests.FullPathTests
     /// <summary>
     /// This is a place to put tests that don't really make sense anymore, rather than delete them.
     /// </summary>
+    [SqlTestAttribute(SqlType.TSql)]
     [SqlTestAttribute(SqlType.MySql)]
     [SqlTestAttribute(SqlType.Sqlite)]
     public class TestGraveyard : FullPathTestBase

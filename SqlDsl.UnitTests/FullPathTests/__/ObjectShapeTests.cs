@@ -861,9 +861,9 @@ namespace SqlDsl.UnitTests.FullPathTests
         [Test]
         public async Task QueryWithJoinsInWrongOrder_ExecutesSuccessfully()
         {
-            if (SqlType == SqlType.MySql)
+            if (SqlType != SqlType.Sqlite)
             {
-                Assert.Pass("TODO is this a case we should support in mysql");
+                Assert.Pass("TODO is this a case we should support in other sqls");
             }
 
             // arrange

@@ -40,6 +40,7 @@ namespace SqlDsl.UnitTests.Utils
     {
         public Environments Environments { get; set;}
         public string MySqlConnectionString { get; set; }
+        public string TSqlConnectionString { get; set; }
         public bool MySqlV8 { get; set; }
     }
 
@@ -47,5 +48,6 @@ namespace SqlDsl.UnitTests.Utils
     {
         public bool Sqlite { get; set; } = true;
         public bool MySql { get; set; } = true;
+        public bool TSql { get; set; } = true;
     }
 }

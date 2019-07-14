@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using Microsoft.Data.Sqlite;
 using MySql.Data.MySqlClient;
@@ -8,6 +9,7 @@ using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
 using SqlDsl.MySql;
 using SqlDsl.Sqlite;
+using SqlDsl.TSql;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 using SqlDsl.UnitTests.Utils;
 
@@ -24,6 +26,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
         SqliteConnection SqliteConnection;
         MySqlConnection MySqlConnection;
+        SqlConnection TSqlConnection;
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
@@ -39,6 +42,11 @@ namespace SqlDsl.UnitTests.FullPathTests
                 case SqlType.MySql:
                     MySqlConnection = InitMySqlDatabase.CreateMySqlConnection(TestSettings.Instance);
                     MySqlConnection.Open();
+                    break;
+                    
+                case SqlType.TSql:
+                    TSqlConnection = InitTSqlDatabase.CreateTSqlConnection(TestSettings.Instance);
+                    TSqlConnection.Open();
                     break;
 
                 default:
@@ -57,6 +65,10 @@ namespace SqlDsl.UnitTests.FullPathTests
                     
                 case SqlType.MySql:
                     MySqlConnection.Dispose();
+                    break;
+                    
+                case SqlType.TSql:
+                    TSqlConnection.Dispose();
                     break;
 
                 default:
@@ -80,6 +92,10 @@ namespace SqlDsl.UnitTests.FullPathTests
                     
                 case SqlType.MySql:
                     ex = new MySqlExecutor(MySqlConnection);
+                    break;
+                    
+                case SqlType.TSql:
+                    ex = new TSqlExecutor(TSqlConnection);
                     break;
 
                 default:
@@ -163,7 +179,8 @@ namespace SqlDsl.UnitTests.FullPathTests
     public enum SqlType
     {
         Sqlite,
-        MySql
+        MySql,
+        TSql
     }
 
     [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
@@ -185,6 +202,9 @@ namespace SqlDsl.UnitTests.FullPathTests
                     
                 case SqlType.MySql:
                     return Run(TestSettings.Instance.Environments.MySql);
+                    
+                case SqlType.TSql:
+                    return Run(TestSettings.Instance.Environments.TSql);
 
                 default:
                     throw new Exception($"Invalid sql type {Language}");

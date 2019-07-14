@@ -1,9 +1,8 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using TSql.Data.TSqlClient;
+using System.Data.SqlClient;
 
 namespace SqlDsl.TSql
 {
@@ -15,17 +14,11 @@ namespace SqlDsl.TSql
         /// <summary>
         /// The connection
         /// </summary>
-        public TSqlConnection Connection;
+        public SqlConnection Connection;
 
-        private static readonly Regex AllowUserVariables1 = new Regex(@"AllowUserVariables\s*=\s*True", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex AllowUserVariables2 = new Regex(@"Allow\s+User\s+Variables\s*=\s*True", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-        public TSqlExecutor(TSqlConnection connection)
+        public TSqlExecutor(SqlConnection connection)
         {
             Connection = connection ?? throw new ArgumentNullException(nameof(connection));
-
-            if (!AllowUserVariables1.IsMatch(Connection.ConnectionString) && !AllowUserVariables2.IsMatch(Connection.ConnectionString))
-                throw new InvalidOperationException("Your connection string must include \"Allow User Variables=True\".");
         }
 
         /// <inheritdoc />
@@ -47,14 +40,14 @@ namespace SqlDsl.TSql
         /// <summary>
         /// Create a sql command with the given sql and parameters
         /// </summary>
-        TSqlCommand CreateCommand(string sql, IEnumerable<(string name, object value)> paramaters)
+        SqlCommand CreateCommand(string sql, IEnumerable<(string name, object value)> paramaters)
         {
             var command = Connection.CreateCommand();
             command.CommandText = sql;
 
             foreach (var p in paramaters)
             {
-                command.Parameters.Add(new TSqlParameter(p.name, p.value ?? DBNull.Value));
+                command.Parameters.Add(new SqlParameter(p.name, p.value ?? DBNull.Value));
             }
 
             return command;
