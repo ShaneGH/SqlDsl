@@ -14,6 +14,8 @@ namespace SqlDsl.DataParser
     /// </summary>
     public static class ObjectPropertyGraphBuilder
     {
+        static readonly Regex PrimarkKeyColumn = new Regex($@"^{SqlStatementConstants.PrimaryKeyNameX}\d+$", RegexOptions.Compiled);
+
         public static RootObjectPropertyGraph Build(
             Type objectType, 
             IEnumerable<(string name, int[] primaryKeyColumnMap)> mappedTableProperties, 
@@ -138,7 +140,7 @@ namespace SqlDsl.DataParser
                         // The typedColNames check will give a false positive 
                         // and the result will be an attempt to create a complex
                         // object from something like a string or int
-                        && col.name[col.name.Length - 1] != SqlStatementConstants.PrimaryKeyName)
+                        && !PrimarkKeyColumn.IsMatch(col.name[col.name.Length - 1]))
                     {
                         // unwrap from IEnumerable    
                         var colType = 

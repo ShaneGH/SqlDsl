@@ -83,9 +83,10 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             if (ParentStatement.SelectColumns == null)
                 throw new InvalidOperationException("Column accessed before ParentStatment initialized.");
 
+            // PK0
             var alias = Alias == SqlStatementConstants.RootObjectAlias
-                ? SqlStatementConstants.PrimaryKeyName
-                : $"{Alias}.{SqlStatementConstants.PrimaryKeyName}";
+                ? SqlStatementConstants.PrimaryKeyNameX + "0"
+                : $"{Alias}.{SqlStatementConstants.PrimaryKeyNameX}0";
 
             return new CompositeKey(ParentStatement.SelectColumns[alias]);
         }

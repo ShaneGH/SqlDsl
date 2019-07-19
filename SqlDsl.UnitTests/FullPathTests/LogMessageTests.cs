@@ -57,7 +57,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"SELECT [ThePerson].[#pk] AS [ThePerson.#pk], [ThePerson].[Id] AS [ThePerson.Id], [ThePerson].[Name] AS [ThePerson.Name], [ThePerson].[Gender] AS [ThePerson.Gender], [ThePerson].[IsMember] AS [ThePerson.IsMember]") &&
+                m.Contains(@"SELECT [ThePerson].[#pk0] AS [ThePerson.#pk0], [ThePerson].[Id] AS [ThePerson.Id], [ThePerson].[Name] AS [ThePerson.Name], [ThePerson].[Gender] AS [ThePerson.Gender], [ThePerson].[IsMember] AS [ThePerson.IsMember]") &&
                 m.Contains("[SqlDsl, 20001] Executing sql:")).Count();
             Assert.True(sql > 0);
         }
@@ -75,7 +75,7 @@ namespace SqlDsl.UnitTests.FullPathTests
 
             // assert
             var sql = Logger.InfoMessages.Where(m => 
-                m.Contains(@"SELECT [ThePerson].[#pk] AS [ThePerson.#pk], [ThePerson].[Id] AS [ThePerson.Id], [ThePerson].[Name] AS [ThePerson.Name], [ThePerson].[Gender] AS [ThePerson.Gender], [ThePerson].[IsMember] AS [ThePerson.IsMember]") &&
+                m.Contains(@"SELECT [ThePerson].[#pk0] AS [ThePerson.#pk0], [ThePerson].[Id] AS [ThePerson.Id], [ThePerson].[Name] AS [ThePerson.Name], [ThePerson].[Gender] AS [ThePerson.Gender], [ThePerson].[IsMember] AS [ThePerson.IsMember]") &&
                 m.Contains("[SqlDsl, 20001] Executing sql:")).Count();
             Assert.True(sql > 0);
         }

@@ -52,7 +52,6 @@ namespace SqlDsl.UnitTests.FullPathTests
                     .On((q, pc) => q.ThePerson.TheId == pc.ThePersonId);
         }
 
-
         [Test]
         public void ClassWithTableAndColumnName_GetsCorrectData()
         {
@@ -64,7 +63,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .Skip(0)
                 .Take(1)
                 .First(Executor, logger: Logger);
-
+                
             // assert
             Assert.AreEqual(Data.People.John.Id, john.TheId);
             Assert.AreEqual(Data.People.John.Name, john.TheName);

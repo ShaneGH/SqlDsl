@@ -10,7 +10,7 @@ namespace SqlDsl.SqlBuilders
         /// <summary>
         /// The column name for table row ids
         /// </summary>
-        public const string PrimaryKeyName = "#pk";
+        public const string PrimaryKeyNameX = "#pk";
         
         /// <summary>
         /// The column name for master row id for the query

@@ -195,8 +195,8 @@ namespace SqlDsl.SqlBuilders
             }
 
             var sqlTable = primaryKey != null
-                ? SqlSyntax.GetSelectTableSqlWithPrimaryKey(joinTable, primaryKey, SqlStatementConstants.PrimaryKeyName, allColumns)
-                : SqlSyntax.GetSelectTableSqlWithRowId(joinTable, SqlStatementConstants.PrimaryKeyName, allColumns);
+                ? SqlSyntax.GetSelectTableSqlWithPrimaryKey(joinTable, primaryKey, SqlStatementConstants.PrimaryKeyNameX + "0", allColumns)
+                : SqlSyntax.GetSelectTableSqlWithRowId(joinTable, SqlStatementConstants.PrimaryKeyNameX + "0", allColumns);
 
             return new SelectTableSqlWithRowId(
                 sqlTable.SetupSql,
@@ -326,8 +326,8 @@ namespace SqlDsl.SqlBuilders
 
             // build FROM part
             var primaryTable = PrimaryTableKey != null
-                ? SqlSyntax.GetSelectTableSqlWithPrimaryKey(PrimaryTable, PrimaryTableKey, SqlStatementConstants.PrimaryKeyName, PrimaryTableColumns)
-                : SqlSyntax.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.PrimaryKeyName, PrimaryTableColumns);
+                ? SqlSyntax.GetSelectTableSqlWithPrimaryKey(PrimaryTable, PrimaryTableKey, SqlStatementConstants.PrimaryKeyNameX + "0", PrimaryTableColumns)
+                : SqlSyntax.GetSelectTableSqlWithRowId(PrimaryTable, SqlStatementConstants.PrimaryKeyNameX + "0", PrimaryTableColumns);
 
             var orderByText = (Ordering.Any() ? OrderByRowIdNameAsEnumerable : CodingConstants.Empty.String)
                 .Concat(resultStructureColumnAliases)
@@ -416,13 +416,24 @@ namespace SqlDsl.SqlBuilders
             .Where(x => !string.IsNullOrEmpty(x))
             .JoinString("\n");
 
-            var ordering = Ordering.Any()
-                ? Ordering
-                    .Select(o => (o.sql, o.direction))
-                : ($"{SqlSyntax.WrapTable(PrimaryTableAlias)}.{SqlSyntax.WrapColumn(SqlStatementConstants.PrimaryKeyName)}", OrderDirection.Ascending)
-                    .ToEnumerableStruct();
+            return SqlSyntax.AddDenseRank(selectColumns, SqlStatementConstants.OrderByRowIdName, BuildOrdering(), restOfQuery);
 
-            return SqlSyntax.AddDenseRank(selectColumns, SqlStatementConstants.OrderByRowIdName, ordering, restOfQuery);
+            IEnumerable<(string, OrderDirection)> BuildOrdering()
+            {
+                if (Ordering.Any())
+                    return Ordering.Select(o => (o.sql, o.direction));
+
+                if (PrimaryTableKey != null)
+                {
+                    // PK0
+                    var ptks = new string[] { PrimaryTableKey };
+                    return ptks.Select((k, i) => 
+                        ($"{SqlSyntax.WrapTable(PrimaryTableAlias)}.{SqlSyntax.WrapColumn(SqlStatementConstants.PrimaryKeyNameX + 1)}", OrderDirection.Ascending));
+                }
+
+                return ($"{SqlSyntax.WrapTable(PrimaryTableAlias)}.{SqlSyntax.WrapColumn(SqlStatementConstants.PrimaryKeyNameX + "0")}", OrderDirection.Ascending)
+                    .ToEnumerableStruct();
+            }
         }
 
         IEnumerable<string> GetResultStructureColumnAliases(IEnumerable<IQueryTable> mappedTables)
@@ -431,7 +442,8 @@ namespace SqlDsl.SqlBuilders
             {
                 return AddRowIds(
                     RemovePrimaryTableIfNecessary(
-                        Joins.Select(j => j.alias).Prepend(PrimaryTableAlias)));
+                        // PK0
+                        Joins.Select(j => (j.alias, 0)).Prepend((PrimaryTableAlias, 0))));
             }
 
             var allMappedTableAliases = mappedTables
@@ -439,41 +451,54 @@ namespace SqlDsl.SqlBuilders
                 .FillOutRIDSelectColumns()
                 .Select(c => c.Table.Alias)
                 .Prepend(PrimaryTableAlias)
-                .Distinct();
+                .Distinct()
+                // PK0
+                .Select(x => (x, 0));
 
             return AddRowIds(
                 RemovePrimaryTableIfNecessary(allMappedTableAliases));
 
             // TODO: assuming that if any column is ordered by it will be from the primary
             // table or in a 1 -> 1 relationship. If this rule changes there is a bug here
-            IEnumerable<string> RemovePrimaryTableIfNecessary(IEnumerable<string> tableAliases) =>
+            IEnumerable<(string, int)> RemovePrimaryTableIfNecessary(IEnumerable<(string, int)> tableAliases) =>
                 Ordering.SelectMany(o => o.queryObjectReferences).Any() || PagingSql != null
-                    ? tableAliases.Where(IsNotOneToOneWithPrimaryTable).Where(n => n != PrimaryTableAlias)
+                    ? tableAliases.Where(IsNotOneToOneWithPrimaryTable).Where(n => n.Item1 != PrimaryTableAlias)
                     : tableAliases.Where(IsNotOneToOneWithPrimaryTable);
 
-            IEnumerable<string> AddRowIds(IEnumerable<string> tableNames) => tableNames.Select(x => $"{x}.{SqlStatementConstants.PrimaryKeyName}");
+            IEnumerable<string> AddRowIds(IEnumerable<(string name, int keys)> tables)
+            {
+                foreach (var t in tables)
+                {
+                    var i = 0;
+                    do
+                    {
+                        yield return $"{t.name}.{SqlStatementConstants.PrimaryKeyNameX}{i}";
+                        i++;
+                    } while (i < t.keys);
+                }
+            }
 
             // one to one joins on the primary table do not need to be included in the 
             // structure
-            bool IsNotOneToOneWithPrimaryTable(string tableAlias)
+            bool IsNotOneToOneWithPrimaryTable((string alias, int pks) table)
             {
-                if (tableAlias == PrimaryTableAlias)
+                if (table.alias == PrimaryTableAlias)
                     return true;
 
                 var joins = Joins
-                    .Where(j => j.alias == tableAlias)
+                    .Where(j => j.alias == table.alias)
                     .ToList();
 
                 if (joins.Count == 0)
                 {
                     var joinNames = Joins.Select(j => j.alias).JoinString(", ");
-                    throw new InvalidOperationException($"Could not find join with name \"{tableAlias}\", ({joinNames}).");
+                    throw new InvalidOperationException($"Could not find join with name \"{table.alias}\", ({joinNames}).");
                 }
 
                 if (joins.Count > 1)
                 {
                     var joinNames = Joins.Select(j => j.alias).JoinString(", ");
-                    throw new InvalidOperationException($"Could not find unique join with name \"{tableAlias}\", ({joinNames}).");
+                    throw new InvalidOperationException($"Could not find unique join with name \"{table.alias}\", ({joinNames}).");
                 }
 
                 return joins[0].joinParent != JoinParent.PrimaryTableOneToOne;
@@ -517,12 +542,14 @@ namespace SqlDsl.SqlBuilders
         /// </summary>
         IEnumerable<(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)> GetRowIdSelectColumns(IEnumerable<string> selectColumnAliases = null)
         {
+            // PK0 (this whole function)
+
             // Get row id from the SELECT
             var ptAlias = PrimaryTableAlias == SqlStatementConstants.RootObjectAlias ? 
-                SqlStatementConstants.PrimaryKeyName : 
-                $"{PrimaryTableAlias}.{SqlStatementConstants.PrimaryKeyName}";
+                SqlStatementConstants.PrimaryKeyNameX + "0" : 
+                $"{PrimaryTableAlias}.{SqlStatementConstants.PrimaryKeyNameX}0";
 
-            yield return (SqlStatementConstants.PrimaryKeyName, PrimaryTableAlias, ptAlias);
+            yield return (SqlStatementConstants.PrimaryKeyNameX + "0", PrimaryTableAlias, ptAlias);
 
             var joins = _Joins.Select(j => j.alias);
             if (selectColumnAliases != null)
@@ -542,9 +569,16 @@ namespace SqlDsl.SqlBuilders
             foreach (var join in joins)
             {
                 yield return (
-                    SqlStatementConstants.PrimaryKeyName, 
+                    SqlStatementConstants.PrimaryKeyNameX + "0", 
                     join, 
-                    $"{join}.{SqlStatementConstants.PrimaryKeyName}");
+                    $"{join}.{SqlStatementConstants.PrimaryKeyNameX}0");
+            }
+        }
+
+        class PkSelectColumn
+        {
+            public PkSelectColumn(string rowIdColumnName, string tableAlias, string rowIdColumnNameAlias)
+            {
             }
         }
 
