@@ -224,27 +224,6 @@ namespace SqlDsl.Utils
         /// The sql Contains (IN) method.
         /// </summary>
         static readonly MethodInfo _Contains = GetMethod(() => Enumerable.Contains<object>(null, null)).GetGenericMethodDefinition();
-        
-        static readonly MethodInfo RowNumberMethod = GetMethod<int>(x => x.RowNumber()).GetGenericMethodDefinition();
-        
-        static readonly MethodInfo NullableRowNumberMethod = GetMethod<int>(x => x.NullableRowNumber()).GetGenericMethodDefinition();
-
-        /// <summary>
-        /// If the input expression represents a call to Sql.RowNumber() or Sql.NullableRowNumber()
-        /// </summary>
-        public static (bool isRowNumber, bool isNullable) IsRowNumber(MethodCallExpression e)
-        {
-            if (!e.Method.IsGenericMethod)
-                return (false, false);
-
-            if (e.Method.GetGenericMethodDefinition() == RowNumberMethod)
-                return (true, false);
-
-            if (e.Method.GetGenericMethodDefinition() == NullableRowNumberMethod)
-                return (true, true);
-                
-            return (false, false);
-        }
 
         /// <summary>
         /// If the input expression represents a call to Sql.OrderByRowNumber()
@@ -317,9 +296,6 @@ namespace SqlDsl.Utils
 
                 case ExpressionType.Call:
                     var call = expr as MethodCallExpression;
-                    if (IsRowNumber(call).isRowNumber)
-                        return (false, false);
-
                     if (IsOrderByRowNumber(call))
                         return (false, false);
                     
@@ -746,17 +722,6 @@ namespace SqlDsl.Utils
         }
 
         static readonly ConcurrentDictionary<Type, MethodInfo> RowNumberMethods = new ConcurrentDictionary<Type, MethodInfo>();
-        
-        public static MethodInfo GetRowNumberMethod(Type contextType)
-        {
-            if (!RowNumberMethods.TryGetValue(contextType, out MethodInfo result))
-            {
-                result = GetMethod<int>(x => x.RowNumber(), contextType);
-                RowNumberMethods.TryAdd(contextType, result);
-            }
-
-            return result;
-        }
 
         static MethodInfo OrderByRowNumberMethod;
         

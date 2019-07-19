@@ -128,10 +128,6 @@ namespace SqlDsl.Mapper
                 case ExpressionType.Call:
                     var exprMethod = expr as MethodCallExpression;
 
-                    var (isRowNumber, isRowNumberNullable) = ReflectionUtils.IsRowNumber(exprMethod);
-                    if (isRowNumber)
-                        return BuildMapForRowNumber(state, exprMethod, isRowNumberNullable, toPrefix).AddT(false);
-
                     var isOrderByRowNumber = ReflectionUtils.IsOrderByRowNumber(exprMethod);
                     if (isOrderByRowNumber)
                         return BuildMapForOrderByRowNumber(state, exprMethod, toPrefix).AddT(false);
@@ -358,41 +354,6 @@ namespace SqlDsl.Mapper
                                 to: CombineStrings(toPrefix, x.To)).ToEnumerable()),
                         m.map.tables.Select(x => new MappedTable(x.From, CombineStrings(m.memberName, x.To), x.TableresultsAreAggregated)))))
                 .AggregateTuple2();
-        }
-
-        static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForRowNumber(BuildMapState state, MethodCallExpression rowNumberExpression, bool rowNumberIsNullable, string toPrefix)
-        {
-            var rowNumberTable = rowNumberExpression.Arguments[0] == state.QueryObject && state.PrimarySelectTableAlias != SqlStatementConstants.RootObjectAlias
-                ? Expression.PropertyOrField(state.QueryObject, state.PrimarySelectTableAlias)
-                : rowNumberExpression.Arguments[0];
-
-            var (properties, tables, isConstant) = BuildMapWithErrorHandling(state, rowNumberTable, MapType.RowNumber, toPrefix);
-            if (isConstant)
-                throw BuildMappingError(state.MappingPurpose, $"Row number cannot be used on non table elements\n{rowNumberExpression}");
-
-            // if row number is not nullable, ensure that join is not a LEFT join
-            if (!rowNumberIsNullable)
-            {
-                var ps = properties.ToArray();
-                properties = ps;
-
-                if (ps.Length != 1 || !ps[0].FromParams.HasOneItemOnly)
-                    throw BuildMappingError(state.MappingPurpose, rowNumberExpression);
-
-                var (name, _) = ps[0].FromParams.First.AddRoot(state);
-                if (!string.IsNullOrEmpty(name))
-                {
-                    var join = state.WrappedSqlStatement.Tables[name];
-                    if (join.JoinType == JoinType.Left)
-                        throw BuildMappingError(state.MappingPurpose, $"Row number cannot be used on a left joined table\n{rowNumberExpression}");
-                }
-            }
-
-            return (
-                properties.Select(p => p.With(
-                    mappedPropertyType: rowNumberExpression.Type,
-                    fromParams: p.FromParams.MapParamName(x => CombineStrings(x, SqlStatementConstants.PrimaryKeyName)))),
-                tables);
         }
 
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForOrderByRowNumber(BuildMapState state, MethodCallExpression rowNumberExpression, string toPrefix)

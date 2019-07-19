@@ -36,32 +36,12 @@ namespace SqlDsl
         }
 
         /// <summary>
-        /// When used in a query expression, represents the row number of the primary table. Can be used for paging.
-        /// This method should not be used on tables joined with a left join. Use NullableRowNumber() instead.
-        /// </summary>
-        /// <param name="context">The query part (table) to get a row number from. </param>
-        public static int RowNumber<T>(this T context)
-        {
-            throw new SqlBuilderException(string.Format(InvalidMessageString, "RowNumber"));
-        }
-
-        /// <summary>
         /// When used in a query expression, represents the row number used to page and sort
-        /// records
+        /// records. For internal use only
         /// </summary>
         internal static int OrderByRowNumber()
         {
             throw new SqlBuilderException(string.Format(InvalidMessageString, "OrderByRowNumber"));
-        }
-
-        /// <summary>
-        /// When used in a query expression, represents the row number of the primary table. Can be used for paging
-        /// This method should only be used on tables joined with a left join.
-        /// </summary>
-        /// <param name="context">The query part (table) to get a row number from. </param>
-        public static int? NullableRowNumber<T>(this T context)
-        {
-            throw new SqlBuilderException(string.Format(InvalidMessageString, "NullableRowNumber"));
         }
 
         public static class Case
