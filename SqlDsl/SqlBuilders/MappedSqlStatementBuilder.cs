@@ -1,15 +1,9 @@
 using SqlDsl.Mapper;
-using SqlDsl.Query;
-using SqlDsl.SqlBuilders.SqlStatementParts;
-using SqlDsl.SqlExpressions;
 using SqlDsl.Utils;
 using SqlDsl.Utils.EqualityComparers;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace SqlDsl.SqlBuilders
 {
@@ -91,18 +85,9 @@ namespace SqlDsl.SqlBuilders
         IEnumerable<ISelectColumn> GetSelectColumns()
         {
             return AllNonParametersInAllProperties
-                .SelectMany(c => new [] { c.Column, singleCol(c.PrimaryKey) })
-                .RemoveNulls()
+                .SelectMany(c => c.PrimaryKey.Prepend(c.Column))
                 .Concat(Statement.SelectColumns.Where(c => c.IsRowNumber))
                 .Distinct();
-
-            ISelectColumn singleCol(ICompositeKey key)
-            {
-                var k = key.ToList();
-                if (k.Count != 1) throw new InvalidOperationException("#############");
-
-                return k[0];
-            }
         }
 
         IEnumerable<IQueryTable> GetMappedColumnTables()

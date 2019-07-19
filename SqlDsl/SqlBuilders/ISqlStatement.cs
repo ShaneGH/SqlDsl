@@ -31,6 +31,11 @@ namespace SqlDsl.SqlBuilders
         /// The columns in the SELECT part of the query
         /// </summary>
         ISelectColumns SelectColumns { get; }
+
+        /// <summary>
+        /// The key for this query
+        /// </summary>
+        ICompositeKey PrimaryKey { get; }
     }
 
     /// <summary>
@@ -71,6 +76,8 @@ namespace SqlDsl.SqlBuilders
     public interface ICompositeKey : IEnumerable<ISelectColumn>
     {
         IQueryTable Table { get; }
+
+        int Count { get; }
     }
 
     /// <summary>

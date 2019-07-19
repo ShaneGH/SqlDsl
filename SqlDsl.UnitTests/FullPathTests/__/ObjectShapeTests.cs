@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using SqlDsl.DataParser;
 using SqlDsl.Mapper;
 using SqlDsl.UnitTests.FullPathTests.Environment;
 
@@ -323,7 +324,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // arrange
             // act
             // assert
-            Assert.ThrowsAsync(typeof(InvalidOperationException), () => Query<QueryClass5>()
+            Assert.ThrowsAsync(typeof(ParsingException), () => Query<QueryClass5>()
                 .From(result => result.ThePerson)
                 .LeftJoinOne<PersonClass>(result => result.ThePersonClass)
                     .On((r, pc) => r.ThePerson.Id == pc.PersonId)

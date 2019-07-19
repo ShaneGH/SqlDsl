@@ -355,7 +355,7 @@ namespace SqlDsl.Mapper
                         m.map.tables.Select(x => new MappedTable(x.From, CombineStrings(m.memberName, x.To), x.TableresultsAreAggregated)))))
                 .AggregateTuple2();
         }
-        
+
         static (IEnumerable<StringBasedMappedProperty> properties, IEnumerable<MappedTable> tables) BuildMapForOrderByRowNumber(BuildMapState state, MethodCallExpression rowNumberExpression, string toPrefix)
         {
             var result = new StringBasedMappedProperty(
@@ -517,7 +517,7 @@ namespace SqlDsl.Mapper
             properties = properties.Select(arg => arg.With( 
                 fromParams: PropertyRepresentsTable(state, arg)
                     ? canSubstituteRowNumberForTable
-                        ? arg.FromParams.MapParamName(x => $"{x}.{SqlStatementConstants.PrimaryKeyNameX}0")
+                        ? arg.FromParams.MapParamName(x => $"{x}.{SqlStatementConstants.PrimaryKeyName}0")
                         : ThrowMappingError<ISqlExpression<StringBasedElement>>(state.MappingPurpose, $". Cannot apply {function.ToString()} function to table \"{enumerable}\".")
                     : arg.FromParams,
                 mappedPropertyType: typeof(int)));

@@ -110,7 +110,7 @@ namespace SqlDsl.DataParser
         {
             return rows
                 .GroupBy(r => 
-                    this.PrimaryKeyColumns.Select(i => r[i]).ToArray(), 
+                    PrimaryKeyColumns.Select(i => r[i]).ToArray(), 
                     ArrayComparer<object>.Instance)
                 .Where(g => g.Key.All(k => k != null && k != DBNull.Value));
         }

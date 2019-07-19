@@ -40,9 +40,12 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
 
         readonly ISqlStatement ParentStatement;
 
-        public QueryTable(string alias, JoinType? joinType, SqlStatementBuilder queryBuilder, IQueryTables tables, ISqlStatement parentStatement)
+        readonly int ExplicitPrimaryKeys;
+
+        public QueryTable(string alias, int explicitPrimaryKeys, JoinType? joinType, SqlStatementBuilder queryBuilder, IQueryTables tables, ISqlStatement parentStatement)
         {
             Alias = alias ?? throw new ArgumentNullException(nameof(alias));
+            ExplicitPrimaryKeys = explicitPrimaryKeys;
             JoinType = joinType;
             QueryBuilder = queryBuilder ?? throw new ArgumentNullException(nameof(queryBuilder));
             Tables = tables ?? throw new ArgumentNullException(nameof(tables));
@@ -60,8 +63,8 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
                 return CodingConstants.Empty.IQueryTable;
 
             return QueryBuilder.Joins
-                .Where(j => j.alias == Alias)
-                .Select(x => x.queryObjectReferences)
+                .Where(j => j.Alias == Alias)
+                .Select(x => x.QueryObjectReferences)
                 .FirstOrDefault()
                 ?.Select(t => Tables[t])
                 .ToArray() ?? throw new InvalidOperationException($"Cannot find join table with alias: {Alias}");
@@ -83,12 +86,20 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
             if (ParentStatement.SelectColumns == null)
                 throw new InvalidOperationException("Column accessed before ParentStatment initialized.");
 
-            // PK0
-            var alias = Alias == SqlStatementConstants.RootObjectAlias
-                ? SqlStatementConstants.PrimaryKeyNameX + "0"
-                : $"{Alias}.{SqlStatementConstants.PrimaryKeyNameX}0";
+            var pks = IEnumerableUtils.Create(
+                Math.Max(1, ExplicitPrimaryKeys),
+                GetPk);
 
-            return new CompositeKey(ParentStatement.SelectColumns[alias]);
+            return new CompositeKey(pks);
+
+            ISelectColumn GetPk(int index)
+            {
+                var alias = Alias == SqlStatementConstants.RootObjectAlias
+                    ? SqlStatementConstants.PrimaryKeyName + index
+                    : $"{Alias}.{SqlStatementConstants.PrimaryKeyName}{index}";
+
+                return ParentStatement.SelectColumns[alias];
+            }
         }
 
         ICompositeKey GetPrimaryKey()

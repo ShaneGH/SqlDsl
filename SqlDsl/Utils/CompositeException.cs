@@ -9,55 +9,42 @@ namespace SqlDsl.Utils
 {
     public abstract class CompositeException : Exception
     {
-        readonly string _invalidExpressionMessage;
-        readonly CompositeException _innerException;
-
-        public override string Message => GetExceptionMessage();
+        readonly string[] _messageParts;
 
         public CompositeException(string invalidExpressionMessage, Exception innerException)
-            : base(null, innerException is CompositeException ? null : innerException)
+            : base(BuildExceptionMessage(invalidExpressionMessage, innerException), RemoveCompositeExceptions(innerException))
         {
-            _invalidExpressionMessage = invalidExpressionMessage ?? throw new ArgumentNullException(nameof(invalidExpressionMessage));
-            _innerException = innerException as CompositeException;
+            _messageParts = BuildExceptionMessageParts(invalidExpressionMessage, innerException);
         }
 
-        private static readonly Regex NewLine = new Regex(@"(\r)?\n");
-
-        protected virtual string GetExceptionMessage()
+        private static string BuildExceptionMessage(string invalidExpressionMessage, Exception innerException)
         {
-            return GetExpressionString()
-                .SelectMany(x => NewLine.Split(x))
-                .Select((x, i) => "> " + BuildWhiteSpace(i * 2) + x)
+            return BuildExceptionMessageParts(invalidExpressionMessage, innerException)
+                .Select((p, i) => "> " + BuildWhiteSpace(i * 2) + p)
                 .JoinString(Environment.NewLine);
         }
-        
-        public IEnumerable<string> GetExpressionString()
-        {
-            if (_innerException == null)
-                return _invalidExpressionMessage.ToEnumerable();
 
-            return _innerException
-                .GetExpressionString()
-                .Append(_invalidExpressionMessage);
+        private static string[] BuildExceptionMessageParts(string invalidExpressionMessage, Exception innerException)
+        {
+            if (innerException == null)
+                return new [] { invalidExpressionMessage };
+
+            if (innerException is CompositeException ex)
+                return ex._messageParts.Append(invalidExpressionMessage).ToArray();
+
+            return new [] { innerException.Message, invalidExpressionMessage }; 
+        }
+
+        private static Exception RemoveCompositeExceptions(Exception e)
+        {
+            return e is CompositeException
+                ? RemoveCompositeExceptions(e.InnerException)
+                : e;
         }
 
         static string BuildWhiteSpace(int length)
         {
-            var chars = new char[length];
-            for (var i = 0; i < length; i++)
-                chars[i] = ' ';
-            
-            return new string(chars);
-        }
-        
-        public IEnumerable<string> GetFullExceptionString()
-        {
-            if (_innerException == null)
-                return _invalidExpressionMessage.ToEnumerable();
-
-            return _innerException
-                .GetFullExceptionString()
-                .Append(_invalidExpressionMessage);
+            return new string(IEnumerableUtils.Create(length, _ => ' ').ToArray());
         }
     }
 }

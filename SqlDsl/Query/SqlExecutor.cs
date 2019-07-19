@@ -33,7 +33,7 @@ namespace SqlDsl.Query
         /// <summary>
         /// A cache of key names for a given type
         /// </summary>
-        static readonly ConcurrentDictionary<Type, string> Keys = new ConcurrentDictionary<Type, string>();
+        static readonly ConcurrentDictionary<Type, string[]> Keys = new ConcurrentDictionary<Type, string[]>();
 
         /// <summary>
         /// The name of the member on the TResult which the primary table is appended to
@@ -170,7 +170,7 @@ namespace SqlDsl.Query
                 SqlSyntax, 
                 tableName, 
                 memberName, 
-                KeyOf(primaryTableMemberType),
+                KeysOf(primaryTableMemberType),
                 primaryTableColumns.Select(c => c.name),
                 StrictJoins);
 
@@ -181,7 +181,7 @@ namespace SqlDsl.Query
                 builder.AddJoin(
                     join.join.JoinType, 
                     join.join.TableName,
-                    KeyOf(join.join.JoinExpression.joinParam.Type), 
+                    KeysOf(join.join.JoinExpression.joinParam.Type), 
                     join.Columns.Select(c => c.name),
                     join.join.JoinExpression.rootObjectParam,
                     join.join.JoinExpression.queryArgs,
@@ -277,12 +277,12 @@ namespace SqlDsl.Query
         /// <summary>
         /// Get all of the column names for a given type
         /// </summary>
-        static string KeyOf(Type t)
+        static string[] KeysOf(Type t)
         {
             if (Keys.TryGetValue(t, out var value))
                 return value;
 
-            value = GetKey(t);
+            value = GetKeys(t).ToArray();
                 
             return Keys.GetOrAdd(t, value);
         }
@@ -302,7 +302,7 @@ namespace SqlDsl.Query
         /// <summary>
         /// Return the column name for the key, if any
         /// </summary>
-        static string GetKey(Type t)
+        static IEnumerable<string> GetKeys(Type t)
         {
             foreach (var keyColumn in GetKeyProps().Where(x => x.Item2.HasValue))
             {
@@ -316,10 +316,8 @@ namespace SqlDsl.Query
                 if (c.Count != 1)
                     throw new InvalidOperationException($"Multiple columns found for key {keyColumn.Item1}");
 
-                return c[0].name;
+                yield return c[0].name;
             }
-
-            return null;
 
             IEnumerable<(string, int?)> GetKeyProps()
             {

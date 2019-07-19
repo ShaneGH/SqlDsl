@@ -405,7 +405,7 @@ namespace SqlDsl
     public class CompiledQuery<TResult> : ICompiledQuery<TResult>
     {
         /// <summary>
-        /// Debug only and test only. Do not use this property in an application.
+        /// Debug and test only. Do not use this property in an application.
         /// </summary>
         internal RootObjectPropertyGraph PropertyGraph => (Worker as CompiledQuery<object, TResult>)?.PropertyGraph;
         

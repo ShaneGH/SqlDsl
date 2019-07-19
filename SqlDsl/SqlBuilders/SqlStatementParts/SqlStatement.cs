@@ -1,11 +1,5 @@
-using SqlDsl.Query;
-using SqlDsl.Utils;
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace SqlDsl.SqlBuilders.SqlStatementParts
 {
@@ -21,6 +15,9 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         public ISelectColumns SelectColumns { get; }
 
         /// <inheritdoc />
+        public ICompositeKey PrimaryKey { get; }
+
+        /// <inheritdoc />
         IEnumerable<(string mappedPropertyName, ICompositeKey primaryKey)> ISqlSelectStatement.MappedPropertiesToPrimaryKeys => MappedPropertiesToPrimaryKeys;
 
         static readonly IEnumerable<(string, ICompositeKey)> MappedPropertiesToPrimaryKeys = Enumerable.Empty<(string, ICompositeKey)>();
@@ -29,6 +26,7 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         {
             Tables = new QueryTables(builder, this);
             SelectColumns = new SelectColumns(builder, Tables);
+            PrimaryKey = Tables[builder.PrimaryTableAlias].PrimaryKey;
         }
     }
 }

@@ -40,7 +40,7 @@ namespace SqlDsl.ObjectBuilders
                 .Select(c => c.GetParameters().Select(p => p.ParameterType).ToArray())
                 .ToDictionary(x => x, x => x.Select(BuildValueGetter).ToArray(), ArrayComparer<Type>.Instance);
 
-            T build(ObjectGraph vals, IPropMapValueCache propMapValueCache, ILogger logger) => BuildObject(cArgGetters, propSetters, vals, propMapValueCache, logger);
+            T build(ObjectGraph vals, IPropMapValueCache propMapValueCache, ILogger logger) => BuildObjectWithExceptionHandling(cArgGetters, propSetters, vals, propMapValueCache, logger);
             return build;
         }
 
@@ -125,6 +125,27 @@ namespace SqlDsl.ObjectBuilders
         }
 
         /// <summary>
+        /// Calls "BuildObject" with exception handling
+        /// </summary>
+        static T BuildObjectWithExceptionHandling<T>(
+            Dictionary<Type[], IValueGetter[]> cArgGetters, 
+            Dictionary<string, (PropertySetter<T> setter, Type propertyType)> propSetters, 
+            ObjectGraph vals, 
+            IPropMapValueCache propMapValueCache,
+            ILogger logger)
+        {
+            try
+            {
+                return BuildObject(cArgGetters, propSetters, vals, propMapValueCache, logger);
+            }
+            catch (Exception e)
+            {
+                throw new ParsingException($"Error creating object: {typeof(T)}.", e);
+            }
+        }
+
+
+        /// <summary>
         /// Build an object
         /// </summary>
         /// <param name="propSetters">A set of objects which can set the value of a property</param>
@@ -163,7 +184,7 @@ namespace SqlDsl.ObjectBuilders
                 }
                 catch (Exception e)
                 {
-                    throw new ParsingException($"Error setting parameter: \"{prop.name}\"", e);
+                    throw new ParsingException($"Error setting parameter: \"{prop.name}\".", e);
                 }
             }
 

@@ -14,10 +14,11 @@ namespace SqlDsl.DataParser
     /// </summary>
     public static class ObjectPropertyGraphBuilder
     {
-        static readonly Regex PrimarkKeyColumn = new Regex($@"^{SqlStatementConstants.PrimaryKeyNameX}\d+$", RegexOptions.Compiled);
+        static readonly Regex PrimarkKeyColumn = new Regex($@"^{SqlStatementConstants.PrimaryKeyName}\d+$", RegexOptions.Compiled);
 
         public static RootObjectPropertyGraph Build(
             Type objectType, 
+            int[] primaryKeyColumns,
             IEnumerable<(string name, int[] primaryKeyColumnMap)> mappedTableProperties, 
             IEnumerable<(string name, int[] primaryKeyColumnMap, Type cellType, ConstructorInfo[] constructorArgInfo)> columns, 
             QueryParseType queryParseType)
@@ -26,7 +27,7 @@ namespace SqlDsl.DataParser
 
             var opg = _Build(
                 objectType, 
-                new [] { 0 },
+                primaryKeyColumns,
                 mappedTableProperties.Select(c => (c.name.Split('.'), c.primaryKeyColumnMap)),
                 columns.OrEmpty().Select((c, i) => (i, c.name.Split('.'), c.primaryKeyColumnMap, c.cellType, c.constructorArgInfo)), 
                 queryParseType);

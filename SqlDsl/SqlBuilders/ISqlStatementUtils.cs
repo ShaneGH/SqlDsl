@@ -7,16 +7,16 @@ namespace SqlDsl.SqlBuilders
 {
     public static class ISqlSelectStatementUtils
     {
-        // TODO: rename GetPrimaryKeyColumns
-        public static IEnumerable<ICompositeKey> GetRowNumberColumns(this ISqlSelectStatement sqlStatement, string columnAlias, IQueryTable context)
+        /// <summary>
+        /// Get a list of pk columns which is a chain from the "forKey" value to the "root", containing the "context"
+        /// <summary>
+        public static IEnumerable<ICompositeKey> SupplimentPrimaryKeyColumns(this ISqlSelectStatement sqlStatement, ICompositeKey forKey, IQueryTable context)
         {
-            var pk = sqlStatement.SelectColumns[columnAlias].PrimaryKey;
-
             // if the piece is a parameter, Table will be null
-            if (pk == null)
+            if (forKey == null)
                 return Enumerable.Empty<ICompositeKey>();
 
-            var path = pk.Table
+            var path = forKey.Table
                 .GetPrimaryKeyColumns(context)
                 .ToArray();
 
@@ -25,7 +25,28 @@ namespace SqlDsl.SqlBuilders
                 
             // in this case a column is being used in the
             // context of one of its child properties
-            return context.GetPrimaryKeyColumns(pk.Table);
+            return context.GetPrimaryKeyColumns(forKey.Table);
+        }
+        
+        /// <summary>
+        /// Get a list of pk columns for the "columnAlias" containing the "context"
+        /// <summary>
+        public static IEnumerable<ICompositeKey> GetPrimaryKeyColumns(this ISqlSelectStatement sqlStatement, string columnAlias, IQueryTable context)
+        {
+            return sqlStatement.SupplimentPrimaryKeyColumns(
+                sqlStatement.SelectColumns[columnAlias].PrimaryKey,
+                context);
+        }
+
+        /// <summary>
+        /// Get a list of pk columns for the primary table
+        /// <summary>        
+        public static IEnumerable<int> GetPrimaryTableKeyColumnIndexes(this ISqlSelectStatement sqlStatement)
+        {
+            foreach (var k in sqlStatement.PrimaryKey)
+            {
+                yield return sqlStatement.SelectColumns.IndexOf(k);
+            }
         }
 
         /// <summary>
@@ -61,18 +82,30 @@ namespace SqlDsl.SqlBuilders
         
         public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlSelectStatement sqlStatement, string columnAlias, IQueryTable context)
         {
-            var result = sqlStatement
-                .GetRowNumberColumns(columnAlias, context)
-                .Select(GetIndex);
+            return sqlStatement.GetRowNumberColumnIndexes(sqlStatement.GetPrimaryKeyColumns(columnAlias, context));
+        }
+        
+        public static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlSelectStatement sqlStatement, ICompositeKey key, IQueryTable context)
+        {
+            return sqlStatement.GetRowNumberColumnIndexes(sqlStatement.SupplimentPrimaryKeyColumns(key, context));
+        }
 
-            return RemoveTrailingMinusOnes(result, columnAlias);
+        static IEnumerable<int> GetRowNumberColumnIndexes(this ISqlSelectStatement sqlStatement, IEnumerable<ICompositeKey> keys)
+        {
+            keys = keys.Enumerate();
+            return RemoveTrailingMinusOnes(
+                keys.SelectMany(GetIndexes), 
+                keys
+                    .SelectMany(k => k
+                        .Select(c => c.Alias))
+                    .JoinString(", "));
 
-            int GetIndex(ICompositeKey key)
+            IEnumerable<int> GetIndexes(ICompositeKey key)
             {
-                var k = key.ToList();
-                if (k.Count != 1) throw new InvalidOperationException("#############");
-
-                return sqlStatement.SelectColumns.IndexOf(k[0]);
+                foreach (var k in key)
+                {
+                    yield return sqlStatement.SelectColumns.IndexOf(k);
+                }
             }
         }
 
@@ -101,7 +134,7 @@ namespace SqlDsl.SqlBuilders
         //     throw new InvalidOperationException($"Tables {tableAlias1} and {tableAlias2} are unrelated.");
         // }
         
-        static IEnumerable<int>  RemoveTrailingMinusOnes(IEnumerable<int> result, string columnAlias)
+        static IEnumerable<int>  RemoveTrailingMinusOnes(IEnumerable<int> result, string columnIdentifierForException)
         {
             int i;
             var r = result.ToArray();
@@ -114,7 +147,7 @@ namespace SqlDsl.SqlBuilders
             for (var j = i - 1; j >= 0; j--)
             {
                 if (r[i] == -1)
-                    throw new InvalidOperationException($"Could not find row id column for column: {columnAlias}");
+                    throw new InvalidOperationException($"Could not find row id column for column: {columnIdentifierForException}");
             }
 
             return i == r.Length - 1 ? r : r.Take(i + 1);

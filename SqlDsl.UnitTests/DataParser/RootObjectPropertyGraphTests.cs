@@ -1042,7 +1042,7 @@ namespace SqlDsl.UnitTests.DataParser
                 }, 
                 new[] { 0 });
 
-            Compare(expected, actual);
+            CompareAndDisplayAllObjsOnFailure(expected, actual);
         }
 
         [Test]

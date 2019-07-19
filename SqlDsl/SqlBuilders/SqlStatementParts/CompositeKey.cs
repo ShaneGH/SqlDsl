@@ -1,21 +1,45 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using SqlDsl.Utils;
 
 namespace SqlDsl.SqlBuilders.SqlStatementParts
 {
     class CompositeKey : ICompositeKey
     {
-        readonly IEnumerable<ISelectColumn> _columns;
+        readonly ReadOnlyCollection<ISelectColumn> _columns;
+        bool _tableVerified;
 
-        // hack. may have stack overflow
-        public IQueryTable Table => _columns.Single().IsRowNumberForTable;
+        public IQueryTable Table => GetQueryTable();
 
-        public CompositeKey(ISelectColumn column)
+        public int Count => _columns.Count;
+
+        public CompositeKey(IEnumerable<ISelectColumn> columns)
         {
-            _columns = new[] { column };
-            //Table = column.IsRowNumberForTable ?? throw new Exception($"Column {column.Alias} is not part of a primary key");
+            _tableVerified = false;
+            _columns = columns?.ToList().AsReadOnly();
+
+            if (_columns.Count == 0)
+                throw new InvalidOperationException("You must specify at least one key column");
+        }
+
+        IQueryTable GetQueryTable()
+        {
+            if (_tableVerified)
+                return _columns[0].IsRowNumberForTable;;
+
+            var tables = _columns
+                .Select(x => x.IsRowNumberForTable)
+                .Distinct()
+                .ToList();
+
+            if (tables.Count != 1)
+                throw new InvalidOperationException($"Composite keys must come from the same table. Tables: {tables.Select(t => t.Alias).JoinString(", ")}.");
+
+            _tableVerified = true;
+            return GetQueryTable();
         }
 
         public IEnumerator<ISelectColumn> GetEnumerator() => _columns.GetEnumerator();

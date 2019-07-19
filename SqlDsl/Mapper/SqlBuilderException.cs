@@ -10,6 +10,7 @@ namespace SqlDsl.Mapper
     public class SqlBuilderException : CompositeException
     {
         readonly MappingPurpose? _mappingPurpose;
+        public override string Message => GetExceptionMessage();
 
         public SqlBuilderException(MappingPurpose mappingPurpose, Expression invalidExpression, Exception innerException = null)
             : this(mappingPurpose, invalidExpression?.ToString(), innerException)
@@ -32,13 +33,16 @@ namespace SqlDsl.Mapper
             _mappingPurpose = mappingPurpose;
         }
         
-        protected override string GetExceptionMessage()
+        protected string GetExceptionMessage()
         {
+            if (!_mappingPurpose.HasValue || InnerException is SqlBuilderException)
+                return base.Message;
+ 
             return (
                 _mappingPurpose.HasValue
                     ? $"Error in {_mappingPurpose} expression:" + Environment.NewLine
                     : "")
-                + base.GetExceptionMessage();
+                + base.Message;
         }
     }
 }

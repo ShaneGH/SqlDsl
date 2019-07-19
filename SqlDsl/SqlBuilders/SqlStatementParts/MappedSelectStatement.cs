@@ -20,10 +20,14 @@ namespace SqlDsl.SqlBuilders.SqlStatementParts
         /// <inheritdoc />
         public ISelectColumns SelectColumns { get; }
 
+        /// <inheritdoc />
+        public ICompositeKey PrimaryKey { get; }
+
         public MappedSelectStatement(IEnumerable<QueryElementBasedMappedProperty> properties, IEnumerable<StrongMappedTable> tables, ICompositeKey primaryTableKey)
         {
             SelectColumns = new SqlSelectColumns(properties, tables, primaryTableKey);
             MappedPropertiesToPrimaryKeys = GetMappedPropertiesToRowNumbers(tables).Enumerate();
+            PrimaryKey = primaryTableKey ?? throw new ArgumentNullException(nameof(primaryTableKey));
         }
 
         /// <summary>

@@ -1,10 +1,7 @@
 using SqlDsl.Query;
 using SqlDsl.Utils;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace SqlDsl.SqlBuilders
 {
@@ -131,11 +128,12 @@ namespace SqlDsl.SqlBuilders
         }
 
         /// <inheritdoc />
-        public virtual SelectTableSqlWithRowId GetSelectTableSqlWithPrimaryKey(string tableName, string primaryKeyColumn, string rowIdAlias, IEnumerable<string> otherColumnNames)
+        public virtual SelectTableSqlWithRowId GetSelectTableSqlWithPrimaryKey(string tableName, IEnumerable<(string col, string alias)> primaryKeyColumns, IEnumerable<string> otherColumnNames)
         {
-            var cols = otherColumnNames
-                .Select(WrapColumn)
-                .Prepend(BuildAlias(WrapColumn(primaryKeyColumn), WrapAlias(rowIdAlias)))
+            var cols = primaryKeyColumns
+                .Select(x => BuildAlias(WrapColumn(x.col), WrapAlias(x.alias)))
+                .Concat(otherColumnNames
+                    .Select(WrapColumn))
                 .JoinString(",");
 
             return new SelectTableSqlWithRowId(

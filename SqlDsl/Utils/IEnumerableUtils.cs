@@ -39,6 +39,15 @@ namespace SqlDsl.Utils
             string.Join(separator, xs);
         
         /// <summary>
+        /// Alias for string.Join(...)
+        /// </summary>
+        public static IEnumerable<T> Create<T>(int amount, Func<int, T> value)
+        {
+            for (var i = 0; i < amount; i++)
+                yield return value(i);
+        }
+        
+        /// <summary>
         /// Alias for .Where(x => x != null)
         /// </summary>
         public static IEnumerable<T> RemoveNulls<T>(this IEnumerable<T> xs)
