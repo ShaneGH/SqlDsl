@@ -112,5 +112,39 @@ namespace SqlDsl.UnitTests.FullPathTests
                     Data.PersonClasses.Where(p => p.PersonId == r.Pc1.PersonId));
             }
         }
+
+        [Test]
+        public void ClassWithCompositeKeyAndJoin_AndMapping_GetsCorrectData()
+        {
+            // arrange
+            // act
+            var results = Query<Q>()
+                .From(x => x.Pc1)
+                .InnerJoinMany(x => x.Pc2).On((q, x) => q.Pc1.PersonId == x.PersonId)
+                .Map(x => new
+                {
+                    Pc1 = x.Pc1,
+                    Pc2 = x.Pc2
+                })
+                .ToList(Executor, logger: Logger);
+                
+            // assert
+            // NOTE: actual/expected are reversed here for equivelancy reasons
+            CollectionAssert.AreEquivalent(
+                results.Select(x => x.Pc1), 
+                new [] 
+                {
+                    Data.PersonClasses.JohnArchery,
+                    Data.PersonClasses.JohnTennis,
+                    Data.PersonClasses.MaryTennis
+                });
+
+            foreach (var r in results)
+            {
+                CollectionAssert.AreEquivalent(
+                    r.Pc2,
+                    Data.PersonClasses.Where(p => p.PersonId == r.Pc1.PersonId));
+            }
+        }
     }
 }
