@@ -1,17 +1,11 @@
-using SqlDsl.DataParser;
-using SqlDsl.Utils;
-using SqlDsl.Utils.EqualityComparers;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SqlDsl.Utils.ObjectCaches
 {
     /// <summary>
     /// Object which can be re-used via Dispose and Init methods
     /// </summary>
-    public abstract class ReusableObject<TInput> : IDisposable
+    public abstract class ReusableObject : IDisposable
     {
         /// <summary>
         /// The cache that this object belongs to. Calling dispose will return this object to it's cache

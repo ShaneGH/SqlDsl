@@ -12,7 +12,7 @@ namespace SqlDsl.ObjectBuilders
     /// <summary>
     /// A generic object graph which can be converted into a concrete class
     /// </summary>
-    public class ObjectGraph : ReusableObject<(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> objects)>
+    public class ObjectGraph : ReusableObject
     {
         /// <summary>
         /// The type of the constructor args to be used with this object

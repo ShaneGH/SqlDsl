@@ -3,7 +3,7 @@ using SqlDsl.Utils.ObjectCaches;
 
 namespace SqlDsl.Mapper
 {
-    internal class PropMapValue<T> : ReusableObject<T>
+    internal class PropMapValue<T> : ReusableObject
     {
         public T Value;
 
