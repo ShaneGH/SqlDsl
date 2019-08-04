@@ -11,8 +11,8 @@ namespace SqlDsl.UnitTests.FullPathTests
     [SqlTestAttribute(SqlType.Sqlite)]
     public class CompositeKeyTests : FullPathTestBase
     {
-        public CompositeKeyTests(SqlType mySql)
-            : base(mySql)
+        public CompositeKeyTests(SqlType sql)
+            : base(sql)
         {
         }
     
