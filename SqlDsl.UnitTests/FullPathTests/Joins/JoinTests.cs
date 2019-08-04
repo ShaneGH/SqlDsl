@@ -164,6 +164,37 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
         }
 
         [Test]
+        public async Task MappedQuery_WithLeftJoinReturns0_MapsCorrectly()
+        {
+            // arrange
+            // act
+            var data = await Query<QueryContainer>()
+                .From(x => x.ThePerson)
+                .LeftJoinOne(q => q.ThePersonsData)
+                    .On((q, pc) => q.ThePerson.Id == pc.PersonId)
+                .LeftJoinMany<PersonClass>(q => q.ThePersonClasses)
+                    .On((q, pc) => q.ThePerson.Id == pc.ClassId)
+                .LeftJoinMany<Class>(q => q.TheClasses)
+                    .On((q, c) => q.ThePersonClasses.One().ClassId == c.Id)
+                .OrderBy(x => x.ThePerson.Id)
+                .Map(x => new
+                {
+                    person = x.ThePerson.Name,
+                    classes = x.TheClasses.Select(c => new 
+                    {
+                        className = c.Name
+                    }).ToList()
+                })
+                .ToListAsync(Executor, logger: Logger);
+
+            // assert
+            Assert.AreEqual("John", data[0].person);
+            Assert.AreEqual(0, data[0].classes.Count);
+            Assert.AreEqual("Mary", data[1].person);
+            Assert.AreEqual(0, data[1].classes.Count);
+        }
+
+        [Test]
         public async Task Select_JoinOnNonTable_ReturnsCorrectValues1()
         {
             // arrange
