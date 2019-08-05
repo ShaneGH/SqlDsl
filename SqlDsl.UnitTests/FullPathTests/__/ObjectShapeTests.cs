@@ -892,6 +892,24 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .ToListAsync(Executor);
         }
 
+        [Test]
+        public async Task NestedEnums()
+        {
+            // arrange
+            // act
+            var data = await Query<(ClassTag ct, IEnumerable<Class> cls, IEnumerable<PersonClass> pc, IEnumerable<Person> p)>()
+                .From(x => x.ct)
+                .InnerJoinMany(x => x.cls).On((q, x) => x.Id == q.ct.ClassId)
+                .InnerJoinMany(x => x.pc).On((q, x) => x.ClassId == q.cls.One().Id)
+                .InnerJoinMany(x => x.p).On((q, x) => x.Id == q.pc.One().Gender)
+                .Map(x => x.cls.Select(y => x.pc.Select(z => x.p.Select(p => p.Gender).ToArray())).ToArray())
+                .ToListAsync(Executor);
+
+            // assert
+            JsonConvert.SerializeObject(data);
+            Assert.AreEqual(1111, data.Count);
+        }
+
         /// <summary>
         /// This is meant as a smoke test for other things
         /// </summary>

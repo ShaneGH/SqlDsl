@@ -81,9 +81,24 @@ namespace SqlDsl.ObjectBuilders
         /// </param>
         /// <param name="collectionValues">If not null, the output builder will initialize the collection with these values
         /// </param>
+        /// <param name="reuseCollectionIfPossible">If true, and the input collection is the right type, return it</param>
         /// <returns>(isCollection: the collectionType is valid, Expression: an expression to build the collection. null if isCollection == false)
         /// </returns>
-        public static (bool isCollection, Expression builder) CreateCollectionExpression(Type collectionType, Expression collectionValues = null)
+        public static (bool isCollection, Expression builder) CreateCollectionExpression(Type collectionType, Expression collectionValues = null, bool reuseCollectionIfPossible = false)
+        {
+            var (ok, valueCreator) = CreateCollectionExpressionWithoutReuse(collectionType, collectionValues);
+            if (!ok || !reuseCollectionIfPossible || collectionValues == null)
+                return (ok, valueCreator);
+
+            return (
+                ok,
+                Expression.IfThenElse(
+                    Expression.TypeIs(collectionValues, collectionType),
+                    collectionValues,
+                    valueCreator));
+        }
+        
+        private static (bool isCollection, Expression builder) CreateCollectionExpressionWithoutReuse(Type collectionType, Expression collectionValues)
         {
             if (collectionType.IsConstructedGenericType)
             {
