@@ -193,8 +193,40 @@ namespace SqlDsl
         /// <inheritdoc />
         public IEnumerable<TResult> ToIEnumerable(IExecutor executor, TArgs args, ILogger logger = null) 
         {
-            return LoadData(executor, args, logger)
-                .Parse<TResult>(PropertyGraph, logger, RequiresSimpleValueUnwrap);
+            var (sql, teardown) = BuildSql(args);
+            if (logger.CanLogInfo(LogMessages.ExecutingQuery))
+                logger.LogInfo($"Executing sql:{Environment.NewLine}{sql}", LogMessages.ExecutingQuery);
+
+            var timer = new Timer(true);
+
+            using (var dbReader = executor.ExecuteDataReader(sql, BuildParameters(args)))
+            {
+                var parser = new TheMoFoParser<TResult>(dbReader, PropertyGraph);
+                while (true)
+                {
+                    var (ok, result) = parser.Next();
+                    if (!ok) break;
+
+                    yield return result;
+                }
+            }
+            
+            // // execute and get all rows
+            // IEnumerable<object[]> results;
+            // using (var reader = executor.ExecuteDebug(sql, BuildParameters(args), SelectColumns))
+            //     results = reader.GetRows().Enumerate();
+
+            // if (!string.IsNullOrWhiteSpace(teardown))
+            //     executor.ExecuteCommand(teardown, CodingConstants.Empty.StringObject);
+            
+            // if (logger.CanLogInfo(LogMessages.ExecutedQuery))
+            //     logger.LogInfo($"Executed sql in {timer.SplitString()}", LogMessages.ExecutedQuery);
+
+            // return results;
+
+
+            // return LoadData(executor, args, logger)
+            //     .Parse<TResult>(PropertyGraph, logger, RequiresSimpleValueUnwrap);
         }
 
         /// <inheritdoc />

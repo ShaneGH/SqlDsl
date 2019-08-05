@@ -2,6 +2,7 @@
 using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Threading.Tasks;
 
 namespace SqlDsl.Sqlite
@@ -28,6 +29,10 @@ namespace SqlDsl.Sqlite
         /// <inheritdoc />
         public IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters) =>
             new SqliteReader(CreateCommand(sql, paramaters).ExecuteReader());
+
+        /// <inheritdoc />
+        public DbDataReader ExecuteDataReader(string sql, IEnumerable<(string name, object value)> paramaters) =>
+            CreateCommand(sql, paramaters).ExecuteReader();
 
         /// <inheritdoc />
         public Task ExecuteCommandAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>

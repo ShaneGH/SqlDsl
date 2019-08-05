@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
+using System.Data.Common;
 
 namespace SqlDsl.TSql
 {
@@ -28,6 +29,10 @@ namespace SqlDsl.TSql
         /// <inheritdoc />
         public IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters) =>
             new TSqlReader(CreateCommand(sql, paramaters).ExecuteReader());
+
+        /// <inheritdoc />
+        public DbDataReader ExecuteDataReader(string sql, IEnumerable<(string name, object value)> paramaters) =>
+            CreateCommand(sql, paramaters).ExecuteReader();
 
         /// <inheritdoc />
         public Task ExecuteCommandAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>

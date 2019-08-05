@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
-using NUnit.Framework;
-using SqlDsl.UnitTests.FullPathTests.Environment;
 using SqlDsl.Utils;
 
 namespace SqlDsl.UnitTests.FullPathTests.Environment
@@ -20,6 +19,10 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             Executor = executor;
             this._sqlType = sqlType;
         }
+
+        /// <inheritdoc />
+        public DbDataReader ExecuteDataReader(string sql, IEnumerable<(string name, object value)> paramaters) =>
+            Executor.ExecuteDataReader(sql, paramaters);
 
         public async Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters, string[] colNames)
         {
