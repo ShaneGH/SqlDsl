@@ -111,6 +111,10 @@ namespace SqlDsl.ObjectBuilders
         /// </summary>
         public static object GetConvertor(Type convertType, bool cellTypeIsEnumerable)
         {
+            var key = Tuple.Create(convertType, cellTypeIsEnumerable);
+            if (Convertors.TryGetValue(key, out object convertor))
+                return convertor;
+
             return ReflectionUtils
                 .GetMethod(() => GetConvertor<object>(true), convertType)
                 .Invoke(null, new[] { cellTypeIsEnumerable ? TrueObject : FalseObject });
