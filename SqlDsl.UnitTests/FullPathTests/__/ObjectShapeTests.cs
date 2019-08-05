@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using SqlDsl.DataParser;
 using SqlDsl.Mapper;
@@ -9,12 +10,11 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(SqlType.MySql)]
-    [SqlTestAttribute(SqlType.Sqlite)]
+    [TestFixture]
     public class MappingObjectShapeTests : FullPathTestBase
     {
-        public MappingObjectShapeTests(SqlType testFlavour)
-            : base(testFlavour)
+        public MappingObjectShapeTests()
+            : base(SqlType.Sqlite)
         {
         }
 
@@ -940,13 +940,12 @@ namespace SqlDsl.UnitTests.FullPathTests
         /// This is meant as a smoke test for other things
         /// </summary>
         [Test]
-        public async Task The_Gold_Standard_WithValues()
+        public void The_Gold_Standard_WithValuesXX()
         {
             // arrange
             // act
-            var data = await TestUtils
+            var data = TestUtils
                 .FullyJoinedQuery(SqlType)
-                .Where(x => x.ThePerson.Id == 1)
                 .OrderBy(x => x.ThePersonsData.PersonId + x.ThePerson.Id)
                 .Map(x => new
                 {
@@ -957,7 +956,9 @@ namespace SqlDsl.UnitTests.FullPathTests
                         tags = x.TheTags.Select(t => t.Name).ToList()
                     }).ToList()
                 })
-                .ToListAsync(Executor);
+                .ToList(Executor);
+
+            Console.WriteLine(JsonConvert.SerializeObject(data));
 
             // assert
             Assert.AreEqual(1, data.Count);
