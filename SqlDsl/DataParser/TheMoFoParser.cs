@@ -8,7 +8,7 @@ namespace SqlDsl.DataParser
         bool _hasData;
 
         public TheMoFoParser(DbDataReader reader, ObjectPropertyGraph objectPropertyGraph)
-            : base (reader, objectPropertyGraph)
+            : base (reader, new SonOfTheMoFoBitchParser<T>(objectPropertyGraph))
         {             
             _reader = reader;
             _hasData = _reader.Read();

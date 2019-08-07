@@ -2,10 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using SqlDsl.ObjectBuilders;
 using SqlDsl.Utils;
 
 namespace SqlDsl.DataParser
@@ -16,37 +12,35 @@ namespace SqlDsl.DataParser
         private readonly IDataRecord _reader;
         private List<T> _results = new List<T>(4);
         readonly IEnumerable[] _constructorArgs;
-        List<(int, ITheMoFoBitchParser)> _cArgParsers = new List<(int, ITheMoFoBitchParser)>();
-        readonly ConstructorInfo _constructor;
-        readonly (int index, int argIndex, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType)[] _simpleConstructorArgs;
         public T ___LastResult => _results[_results.Count - 1];
+        List<(int, ITheMoFoBitchParser)> _cArgParsers = new List<(int, ITheMoFoBitchParser)>();
+        readonly SonOfTheMoFoBitchParser<T> _objectBuilder;
 
-        public TheMoFoBitchParser(IDataRecord reader, ObjectPropertyGraph objectPropertyGraph)
+        public TheMoFoBitchParser(IDataRecord reader, SonOfTheMoFoBitchParser<T> objectBuilder)
         {             
-            _keyMonitor = new KeyMonitor(reader, objectPropertyGraph.PrimaryKeyColumns);
+            _keyMonitor = new KeyMonitor(reader, objectBuilder.PrimaryKeyColumns);
             _reader = reader;
-            _constructor = GetConstructor(objectPropertyGraph);
-            _constructorArgs = new IEnumerable<object>[objectPropertyGraph.SimpleConstructorArgs.Count() + objectPropertyGraph.ComplexConstructorArgs.Count()];
-            _simpleConstructorArgs = objectPropertyGraph.SimpleConstructorArgs.Where(x => x.primaryKeyColumns.Length == 0).ToArray();
+            _constructorArgs = new IEnumerable<object>[objectBuilder.ConstructorArgLength];
+            _objectBuilder = objectBuilder;
 
-            foreach (var constructorArg in objectPropertyGraph.ComplexConstructorArgs)
+            foreach (var constructorArg in objectBuilder.ComplexCArgParsers)
             {
                 var parserType = typeof(TheMoFoBitchParser<>)
-                    .MakeGenericType(ReflectionUtils.GetIEnumerableType(constructorArg.value.ObjectType) ?? constructorArg.value.ObjectType);
+                    .MakeGenericType(ReflectionUtils.GetIEnumerableType(constructorArg.value.ForType) ?? constructorArg.value.ForType);
 
                 _cArgParsers.Add((
-                    constructorArg.argIndex,
+                    constructorArg.cArgIndex,
                     (ITheMoFoBitchParser)Activator.CreateInstance(parserType, new object[] { reader, constructorArg.value })));
             }
 
-            foreach (var constructorArg in objectPropertyGraph.SimpleConstructorArgs.Where(x => x.primaryKeyColumns.Length > 0))
+            foreach (var constructorArg in objectBuilder.ListCArgParsers)
             {
                 var parserType = typeof(TheMiniParser<>)
-                    .MakeGenericType(constructorArg.dataCellType);
+                    .MakeGenericType(constructorArg.forType);
 
                 _cArgParsers.Add((
-                    constructorArg.argIndex,
-                    (ITheMoFoBitchParser)Activator.CreateInstance(parserType, new object[] { reader, constructorArg.index, constructorArg.primaryKeyColumns })));
+                    constructorArg.cArgIndex,
+                    (ITheMoFoBitchParser)Activator.CreateInstance(parserType, new object[] { reader, constructorArg.colIndex, constructorArg.primaryKeyColumns })));
             }
         }
 
@@ -85,20 +79,9 @@ namespace SqlDsl.DataParser
 
             // record is first in this set
             if (first && changed)
-                BuildSimpleConstructorArgs();
+                _objectBuilder.SetSimpleConstructorArgs(_constructorArgs, _reader);
             
             return result;
-        }
-
-        public void BuildSimpleConstructorArgs()
-        {
-            foreach (var simple in _simpleConstructorArgs)
-            {
-                // TODO: can I reuse these arrays?
-                var arr = Array.CreateInstance(simple.dataCellType, 1);
-                arr.SetValue(_reader.GetValue(simple.index), 0);
-                _constructorArgs[simple.argIndex] = arr;
-            }
         }
 
         public bool BuildObject()
@@ -107,45 +90,10 @@ namespace SqlDsl.DataParser
             if (!_keyMonitor.AtLeastOneRecordFound)
                 return false;
 
-            foreach (var complexCArg in _cArgParsers)
-                _constructorArgs[complexCArg.Item1] = complexCArg.Item2.Flush();
-
-            var cArgsNonEnumerable = _constructorArgs
-                .Select((x, i) =>
-                {
-                    var arg = _constructor.GetParameters()[i];
-                    var (isEnum, tBuilder) = Enumerables.CreateCollectionExpression(arg.ParameterType, Expression.Constant(x));
-                    if (!isEnum)
-                        return x.Cast<object>().SingleOrDefault();   // TODO: left join on 1 -> 1
-
-                    return Expression
-                        .Lambda(tBuilder, Enumerable.Empty<ParameterExpression>())
-                        .Compile()
-                        .DynamicInvoke();
-                })
-                .Select(result => DBNull.Value.Equals(result)
-                    ? null
-                    : result);
-
-            _results.Add((T)_constructor.Invoke(cArgsNonEnumerable.ToArray()));
+            var result = _objectBuilder.BuildObject(_constructorArgs, _cArgParsers);
+            _results.Add(result);
             _keyMonitor.Reset();
             return true;
-        }
-        
-        static ConstructorInfo GetConstructor(ObjectPropertyGraph objectPropertyGraph)
-        {
-            var args = new Type[objectPropertyGraph.SimpleConstructorArgs.Count() + objectPropertyGraph.ComplexConstructorArgs.Count()];
-            foreach (var x in objectPropertyGraph.ComplexConstructorArgs)
-            {
-                args[x.argIndex] = x.constuctorArgType;
-            }
-            
-            foreach (var x in objectPropertyGraph.SimpleConstructorArgs)
-            {
-                args[x.argIndex] = objectPropertyGraph.ConstructorArgTypes[x.argIndex];
-            }
-
-            return typeof(T).GetConstructor(args);
         }
     }
 }
