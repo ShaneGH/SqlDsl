@@ -58,12 +58,12 @@ namespace SqlDsl.UnitTests.DataParser
                 var x_ = expected.SimpleProps.ElementAt(i);
                 var y_ = actual.SimpleProps.ElementAt(i);
 
-                Assert.AreEqual(x_.index, y_.index, "Simple prop " + i + " index");
-                Assert.AreEqual(x_.name, y_.name, "Simple prop " + i + " name");
-                Assert.AreEqual(x_.resultPropertyType, y_.resultPropertyType, "Simple prop " + i + " resultPropertyType");
-                Assert.AreEqual(x_.dataCellType, y_.dataCellType, "Simple prop " + i + " dataCellType");
+                Assert.AreEqual(x_.Index, y_.Index, "Simple prop " + i + " index");
+                Assert.AreEqual(x_.Name, y_.Name, "Simple prop " + i + " name");
+                Assert.AreEqual(x_.ResultPropertyType, y_.ResultPropertyType, "Simple prop " + i + " resultPropertyType");
+                Assert.AreEqual(x_.DataCellType, y_.DataCellType, "Simple prop " + i + " dataCellType");
 
-                CollectionAssert.AreEqual(x_.primaryKeyColumns, y_.primaryKeyColumns, ErrMessage("Simple prop " + i));
+                CollectionAssert.AreEqual(x_.PrimaryKeyColumns, y_.PrimaryKeyColumns, ErrMessage("Simple prop " + i));
             }
 
             if (expected.ComplexProps.Count() != actual.ComplexProps.Count()) Fail("Complex props count");
@@ -72,10 +72,10 @@ namespace SqlDsl.UnitTests.DataParser
                 var x_ = expected.ComplexProps.ElementAt(i);
                 var y_ = actual.ComplexProps.ElementAt(i);
 
-                if (x_.name != y_.name)
+                if (x_.Name != y_.Name)
                     Fail("Complex prop " + i + " name");
 
-                Compare(x_.value, y_.value);
+                Compare(x_.Value, y_.Value);
             }
 
             if (expected.SimpleConstructorArgs.Count() != actual.SimpleConstructorArgs.Count()) Fail("Simple c args count");
@@ -84,11 +84,11 @@ namespace SqlDsl.UnitTests.DataParser
                 var x_ = expected.SimpleConstructorArgs.ElementAt(i);
                 var y_ = actual.SimpleConstructorArgs.ElementAt(i);
                 
-                Assert.AreEqual(x_.index, y_.index, "Simple cArg " + i + " index");
-                Assert.AreEqual(x_.argIndex, y_.argIndex, "Simple cArg " + i + " argIndex");
-                Assert.AreEqual(x_.resultPropertyType, y_.resultPropertyType, "Simple cArg " + i + " resultPropertyType");
-                Assert.AreEqual(x_.dataCellType, y_.dataCellType, "Simple cArg " + i + " dataCellType");
-                CollectionAssert.AreEqual(x_.primaryKeyColumns, y_.primaryKeyColumns, ErrMessage("Simple cArg " + i));
+                Assert.AreEqual(x_.Index, y_.Index, "Simple cArg " + i + " index");
+                Assert.AreEqual(x_.ArgIndex, y_.ArgIndex, "Simple cArg " + i + " argIndex");
+                Assert.AreEqual(x_.ResultPropertyType, y_.ResultPropertyType, "Simple cArg " + i + " resultPropertyType");
+                Assert.AreEqual(x_.DataCellType, y_.DataCellType, "Simple cArg " + i + " dataCellType");
+                CollectionAssert.AreEqual(x_.PrimaryKeyColumns, y_.PrimaryKeyColumns, ErrMessage("Simple cArg " + i));
             }
 
             if (expected.ComplexConstructorArgs.Count() != actual.ComplexConstructorArgs.Count()) Fail("Complex cArgs count");
@@ -97,9 +97,9 @@ namespace SqlDsl.UnitTests.DataParser
                 var x_ = expected.ComplexConstructorArgs.ElementAt(i);
                 var y_ = actual.ComplexConstructorArgs.ElementAt(i);
                 
-                Assert.AreEqual(x_.argIndex, y_.argIndex, "Complex prop " + i + " index");
-                Assert.AreEqual(x_.constuctorArgType, y_.constuctorArgType, "Complex prop " + i + " constructor arg type");
-                Compare(x_.value, y_.value);
+                Assert.AreEqual(x_.ArgIndex, y_.ArgIndex, "Complex prop " + i + " index");
+                Assert.AreEqual(x_.ConstuctorArgType, y_.ConstuctorArgType, "Complex prop " + i + " constructor arg type");
+                Compare(x_.Value, y_.Value);
             }
 
             string ErrMessage(string message = null) 
@@ -133,10 +133,10 @@ namespace SqlDsl.UnitTests.DataParser
                 var x_ = expected.ComplexProps.ElementAt(i);
                 var y_ = actual.ComplexProps.ElementAt(i);
 
-                if (x_.name != y_.name)
+                if (x_.Name != y_.Name)
                     Fail("Complex prop " + i + " name");
 
-                ComparePrimaryKeyColumns(x_.value, y_.value);
+                ComparePrimaryKeyColumns(x_.Value, y_.Value);
             }
 
             string ErrMessage(string message = null) 
@@ -168,23 +168,23 @@ namespace SqlDsl.UnitTests.DataParser
                 null, 
                 new[]
                 {
-                    ("PersonClasses", new ObjectPropertyGraph(
+                    new ComplexProp("PersonClasses", new ObjectPropertyGraph(
                         typeof(PersonClass),
                         new[]
                         {
-                            (2, "PersonId", new int[0], typeof(long), typeof(long)),
-                            (3, "ClassId", new int[0], typeof(long), typeof(long))
+                            new SimpleProp(2, "PersonId", new int[0], typeof(long), typeof(long)),
+                            new SimpleProp(3, "ClassId", new int[0], typeof(long), typeof(long))
                         }, 
                         null, 
                         new[]{1})),
-                    ("ThePerson", new ObjectPropertyGraph(
+                    new ComplexProp("ThePerson", new ObjectPropertyGraph(
                         typeof(Person),
                         new[]
                         {
-                            (4, "Id", new int[0], typeof(long), typeof(long)),
-                            (5, "Name", new int[0], typeof(string), typeof(string)),
-                            (6, "Gender", new int[0], typeof(Gender), typeof(Gender)),
-                            (7, "IsMember", new int[0], typeof(bool), typeof(bool))
+                            new SimpleProp(4, "Id", new int[0], typeof(long), typeof(long)),
+                            new SimpleProp(5, "Name", new int[0], typeof(string), typeof(string)),
+                            new SimpleProp(6, "Gender", new int[0], typeof(Gender), typeof(Gender)),
+                            new SimpleProp(7, "IsMember", new int[0], typeof(bool), typeof(bool))
                         }, 
                         null, 
                         null))
@@ -211,59 +211,59 @@ namespace SqlDsl.UnitTests.DataParser
                 null, 
                 new[]
                 {
-                    ("ThePersonsData", new ObjectPropertyGraph(
+                    new ComplexProp("ThePersonsData", new ObjectPropertyGraph(
                         typeof(PersonsData),
                         new[]
                         {
-                            (6, "PersonId", new int[0], typeof(long), typeof(long)),
-                            (7, "Data", new int[0], typeof(byte[]), typeof(byte[]))
+                            new SimpleProp(6, "PersonId", new int[0], typeof(long), typeof(long)),
+                            new SimpleProp(7, "Data", new int[0], typeof(byte[]), typeof(byte[]))
                         }, 
                         null, 
                         new[]{1})),
-                    ("ThePersonClasses", new ObjectPropertyGraph(
+                    new ComplexProp("ThePersonClasses", new ObjectPropertyGraph(
                         typeof(PersonClass),
                         new[]
                         {
-                            (8, "PersonId", new int[0], typeof(long), typeof(long)),
-                            (9, "ClassId", new int[0], typeof(long), typeof(long))
+                            new SimpleProp(8, "PersonId", new int[0], typeof(long), typeof(long)),
+                            new SimpleProp(9, "ClassId", new int[0], typeof(long), typeof(long))
                         }, 
                         null, 
                         new[]{2})),
-                    ("TheClasses", new ObjectPropertyGraph(
+                    new ComplexProp("TheClasses", new ObjectPropertyGraph(
                         typeof(Class),
                         new[]
                         {
-                            (10, "Id", new int[0], typeof(long), typeof(long)),
-                            (11, "Name", new int[0], typeof(string), typeof(string))
+                            new SimpleProp(10, "Id", new int[0], typeof(long), typeof(long)),
+                            new SimpleProp(11, "Name", new int[0], typeof(string), typeof(string))
                         }, 
                         null, 
                         new[]{3})),
-                    ("TheClassTags", new ObjectPropertyGraph(
+                    new ComplexProp("TheClassTags", new ObjectPropertyGraph(
                         typeof(ClassTag),
                         new[]
                         {
-                            (12, "ClassId", new int[0], typeof(long), typeof(long)),
-                            (13, "TagId", new int[0], typeof(long), typeof(long))
+                            new SimpleProp(12, "ClassId", new int[0], typeof(long), typeof(long)),
+                            new SimpleProp(13, "TagId", new int[0], typeof(long), typeof(long))
                         }, 
                         null, 
                         new[]{4})),
-                    ("TheTags", new ObjectPropertyGraph(
+                    new ComplexProp("TheTags", new ObjectPropertyGraph(
                         typeof(Tag),
                         new[]
                         {
-                            (14, "Id", new int[0], typeof(long), typeof(long)),
-                            (15, "Name", new int[0], typeof(string), typeof(string))
+                            new SimpleProp(14, "Id", new int[0], typeof(long), typeof(long)),
+                            new SimpleProp(15, "Name", new int[0], typeof(string), typeof(string))
                         }, 
                         null, 
                         new[]{5})),
-                    ("ThePerson", new ObjectPropertyGraph(
+                    new ComplexProp("ThePerson", new ObjectPropertyGraph(
                         typeof(Person),
                         new[]
                         {
-                            (16, "Id", new int[0], typeof(long), typeof(long)),
-                            (17, "Name", new int[0], typeof(string), typeof(string)),
-                            (18, "Gender", new int[0], typeof(Gender), typeof(Gender)),
-                            (19, "IsMember", new int[0], typeof(bool), typeof(bool))
+                            new SimpleProp(16, "Id", new int[0], typeof(long), typeof(long)),
+                            new SimpleProp(17, "Name", new int[0], typeof(string), typeof(string)),
+                            new SimpleProp(18, "Gender", new int[0], typeof(Gender), typeof(Gender)),
+                            new SimpleProp(19, "IsMember", new int[0], typeof(bool), typeof(bool))
                         }, 
                         null, 
                         null))
@@ -303,7 +303,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(MappedVersion),
                 new[]
                 {
-                    (1, "PersonName", new int[0], typeof(string), typeof(string))
+                    new SimpleProp(1, "PersonName", new int[0], typeof(string), typeof(string))
                 },
                 null, 
                 new[] { 0 });
@@ -334,15 +334,15 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(MappedVersion),
                 new[]
                 {
-                    (3, "PersonName", new int[0], typeof(string), typeof(string))
+                    new SimpleProp(3, "PersonName", new int[0], typeof(string), typeof(string))
                 },
                 new[]
                 {
-                    ("MappedClasses", new ObjectPropertyGraph(
+                    new ComplexProp("MappedClasses", new ObjectPropertyGraph(
                         typeof(MappedClass),
                         new[]
                         {
-                            (4, "ClassName", new int[0], typeof(string), typeof(string))
+                            new SimpleProp(4, "ClassName", new int[0], typeof(string), typeof(string))
                         }, 
                         null, 
                         new[]{1, 2}))
@@ -379,16 +379,16 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(MappedVersion),
                 new[]
                 {
-                    (5, "PersonName", new int[0], typeof(string), typeof(string))
+                    new SimpleProp(5, "PersonName", new int[0], typeof(string), typeof(string))
                 },
                 new[]
                 {
-                    ("MappedClasses", new ObjectPropertyGraph(
+                    new ComplexProp("MappedClasses", new ObjectPropertyGraph(
                         typeof(MappedClass),
                         new[]
                         {
-                            (6, "ClassName", new int[0], typeof(string), typeof(string)),
-                            (7, "TagNames", new int[]{3,4}, typeof(IEnumerable<string>), typeof(string))
+                            new SimpleProp(6, "ClassName", new int[0], typeof(string), typeof(string)),
+                            new SimpleProp(7, "TagNames", new int[]{3,4}, typeof(IEnumerable<string>), typeof(string))
                         }, 
                         null, 
                         new[]{1,2}))
@@ -441,23 +441,23 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(MappedVersion2),
                 new[]
                 {
-                    (5, "PersonName", new int[0], typeof(string), typeof(string))
+                    new SimpleProp(5, "PersonName", new int[0], typeof(string), typeof(string))
                 },
                 new[]
                 {
-                    ("MappedClasses", new ObjectPropertyGraph(
+                    new ComplexProp("MappedClasses", new ObjectPropertyGraph(
                         typeof(MappedClass2),
                         new[]
                         {
-                            (6, "ClassName", new int[0], typeof(string), typeof(string))
+                            new SimpleProp(6, "ClassName", new int[0], typeof(string), typeof(string))
                         }, 
                         new[]
                         {
-                            ("Tags", new ObjectPropertyGraph(
+                            new ComplexProp("Tags", new ObjectPropertyGraph(
                                 typeof(Tag2),
                                 new[]
                                 {
-                                    (7, "TagName", new int[0], typeof(string), typeof(string))
+                                    new SimpleProp(7, "TagName", new int[0], typeof(string), typeof(string))
                                 }, 
                                 null, 
                                 new[]{3,4}))
@@ -505,11 +505,11 @@ namespace SqlDsl.UnitTests.DataParser
                 null,
                 new[]
                 {
-                    ("FavouriteClasses", new ObjectPropertyGraph(
+                    new ComplexProp("FavouriteClasses", new ObjectPropertyGraph(
                         typeof(DifficultScenarioInner),
                         new[]
                         {
-                            (4, "TagIds", new int[]{3}, typeof(long[]), typeof(long))
+                            new SimpleProp(4, "TagIds", new int[]{3}, typeof(long[]), typeof(long))
                         }, 
                         null, 
                         new[]{1,2}))
@@ -544,7 +544,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(DifficultScenario2),
                 new []
                 {
-                    (4, "TagIds", new int[]{1,2,3}, typeof(long[]), typeof(long))
+                    new SimpleProp(4, "TagIds", new int[]{1,2,3}, typeof(long[]), typeof(long))
                 },
                 null,
                 new[] { 0 });
@@ -596,23 +596,23 @@ namespace SqlDsl.UnitTests.DataParser
                 null,
                 new []
                 {
-                    ("Inner", new ObjectPropertyGraph(
+                    new ComplexProp("Inner", new ObjectPropertyGraph(
                         typeof(DeepJoinedClass),
                         null,
                         new []
                         {
-                            ("Inner", new ObjectPropertyGraph
+                            new ComplexProp("Inner", new ObjectPropertyGraph
                             (
                                 typeof(DeepJoinedClass),
                                 null,
                                 new []
                                 {
-                                    ("FavouriteClasses", new ObjectPropertyGraph
+                                    new ComplexProp("FavouriteClasses", new ObjectPropertyGraph
                                     (
                                         typeof(DeepJoinedClassData),
                                         new[] 
                                         {
-                                            (4, "TagIds", new int[]{3}, typeof(long[]), typeof(long))
+                                            new SimpleProp(4, "TagIds", new int[]{3}, typeof(long[]), typeof(long))
                                         },
                                         null,
                                         new[]{1, 2}
@@ -646,23 +646,23 @@ namespace SqlDsl.UnitTests.DataParser
                 null, 
                 new[]
                 {
-                    ("PersonClasses", new ObjectPropertyGraph(
+                    new ComplexProp("PersonClasses", new ObjectPropertyGraph(
                         typeof(PersonClass),
                         new[]
                         {
-                            (2, "PersonId", new int[0], typeof(long), typeof(long)),
-                            (3, "ClassId", new int[0], typeof(long), typeof(long))
+                            new SimpleProp(2, "PersonId", new int[0], typeof(long), typeof(long)),
+                            new SimpleProp(3, "ClassId", new int[0], typeof(long), typeof(long))
                         }, 
                         null, 
                         new[]{1})),
-                    ("ThePerson", new ObjectPropertyGraph(
+                    new ComplexProp("ThePerson", new ObjectPropertyGraph(
                         typeof(Person),
                         new[]
                         {
-                            (4, "Id", new int[0], typeof(long), typeof(long)),
-                            (5, "Name", new int[0], typeof(string), typeof(string)),
-                            (6, "Gender", new int[0], typeof(Gender), typeof(Gender)),
-                            (7, "IsMember", new int[0], typeof(bool), typeof(bool))
+                            new SimpleProp(4, "Id", new int[0], typeof(long), typeof(long)),
+                            new SimpleProp(5, "Name", new int[0], typeof(string), typeof(string)),
+                            new SimpleProp(6, "Gender", new int[0], typeof(Gender), typeof(Gender)),
+                            new SimpleProp(7, "IsMember", new int[0], typeof(bool), typeof(bool))
                         }, 
                         null, 
                         null))
@@ -713,8 +713,8 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(DataCellTypeIsArray1Result),
                 new[]
                 {
-                    (3, "TheData", new [] {1}, typeof(byte[]), typeof(byte[])),
-                    (4, "TheClassIds", new [] {2}, typeof(long[]), typeof(long))
+                    new SimpleProp(3, "TheData", new [] {1}, typeof(byte[]), typeof(byte[])),
+                    new SimpleProp(4, "TheClassIds", new [] {2}, typeof(long[]), typeof(long))
                 }, 
                 null, 
                 new[] { 0 });
@@ -765,8 +765,8 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(DataCellTypeIsArray2Result),
                 new[]
                 {
-                    (3, "Data", new [] {1}, typeof(byte[][]), typeof(byte[])),
-                    (4, "ClassIds", new [] {2}, typeof(long[]), typeof(long))
+                    new SimpleProp(3, "Data", new [] {1}, typeof(byte[][]), typeof(byte[])),
+                    new SimpleProp(4, "ClassIds", new [] {2}, typeof(long[]), typeof(long))
                 }, 
                 null, 
                 new[] { 0 });
@@ -800,24 +800,24 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(SemiPerson),
                 new[]
                 {
-                    (0, "#pk0", new int[0], (Type)null, (Type)null)
+                    new SimpleProp(0, "#pk0", new int[0], (Type)null, (Type)null)
                 }, 
                 null, 
                 new[] { 0 },
                 simpleConstructorArgs: new[]
                 {
-                    (5, 1, new int[0], typeof(Gender), typeof(Gender))
+                    new SimpleConstructorArg(5, 1, new int[0], typeof(Gender), typeof(Gender))
                 },
                 complexConstructorArgs: new [] 
                 {
-                    (0, typeof(Person), new ObjectPropertyGraph(
+                    new ComplexConstructorArg(0, typeof(Person), new ObjectPropertyGraph(
                         typeof(Person),
                         new[]
                         {
-                            (1, "Id", new int[0], typeof(long), typeof(long)),
-                            (2, "Name", new int[0], typeof(string), typeof(string)),
-                            (3, "Gender", new int[0], typeof(Gender), typeof(Gender)),
-                            (4, "IsMember", new int[0], typeof(bool), typeof(bool))
+                            new SimpleProp(1, "Id", new int[0], typeof(long), typeof(long)),
+                            new SimpleProp(2, "Name", new int[0], typeof(string), typeof(string)),
+                            new SimpleProp(3, "Gender", new int[0], typeof(Gender), typeof(Gender)),
+                            new SimpleProp(4, "IsMember", new int[0], typeof(bool), typeof(bool))
                         }, 
                         null, 
                         null))
@@ -878,17 +878,17 @@ namespace SqlDsl.UnitTests.DataParser
                 null, 
                 new[]
                 {
-                    ("classes1", new ObjectPropertyGraph(
+                    new ComplexProp("classes1", new ObjectPropertyGraph(
                         typeof(Inner),
                         null,
                         new[] 
                         {
-                            ("classes2", new ObjectPropertyGraph(
+                            new ComplexProp("classes2", new ObjectPropertyGraph(
                                 typeof(Class),
                                 new[] 
                                 {
-                                    (3, "Id", new int[0], typeof(long), typeof(long)),
-                                    (4, "Name", new int[0], typeof(string), typeof(string))
+                                    new SimpleProp(3, "Id", new int[0], typeof(long), typeof(long)),
+                                    new SimpleProp(4, "Name", new int[0], typeof(string), typeof(string))
                                 },
                                 null,
                                 new[]{2}
@@ -922,19 +922,19 @@ namespace SqlDsl.UnitTests.DataParser
                 new[] { 0 },
                 complexConstructorArgs: new[]
                 {
-                    (0, typeof(Inner[]), new ObjectPropertyGraph(
+                    new ComplexConstructorArg(0, typeof(Inner[]), new ObjectPropertyGraph(
                         typeof(Inner),
                         null,
                         null,
                         new[]{1},
                         complexConstructorArgs: new[] 
                         {
-                            (0, typeof(Class[]), new ObjectPropertyGraph(
+                            new ComplexConstructorArg(0, typeof(Class[]), new ObjectPropertyGraph(
                                 typeof(Class),
                                 new[] 
                                 {
-                                    (3, "Id", new int[0], typeof(long), typeof(long)),
-                                    (4, "Name", new int[0], typeof(string), typeof(string))
+                                    new SimpleProp(3, "Id", new int[0], typeof(long), typeof(long)),
+                                    new SimpleProp(4, "Name", new int[0], typeof(string), typeof(string))
                                 },
                                 null,
                                 new[]{2}
@@ -967,11 +967,11 @@ namespace SqlDsl.UnitTests.DataParser
                 null,
                 new []
                 {
-                    ("Value", new ObjectPropertyGraph(
+                    new ComplexProp("Value", new ObjectPropertyGraph(
                         typeof(AnotherDifficultCase),
                         new []
                         {
-                            (2, "ClassId", new int[0], typeof(long), typeof(long)),   
+                            new SimpleProp(2, "ClassId", new int[0], typeof(long), typeof(long)),   
                         },
                         null, 
                         new int[] { 1 }))
@@ -997,14 +997,14 @@ namespace SqlDsl.UnitTests.DataParser
                 null,
                 new []
                 {
-                    ("Value", new ObjectPropertyGraph(
+                    new ComplexProp("Value", new ObjectPropertyGraph(
                         typeof(Person),
                         new []
                         {
-                            (1, "Id", new int[0], typeof(long), typeof(long)),
-                            (2, "Name", new int[0], typeof(string), typeof(string)),
-                            (3, "Gender", new int[0], typeof(Gender), typeof(Gender)),
-                            (4, "IsMember", new int[0], typeof(bool), typeof(bool))
+                            new SimpleProp(1, "Id", new int[0], typeof(long), typeof(long)),
+                            new SimpleProp(2, "Name", new int[0], typeof(string), typeof(string)),
+                            new SimpleProp(3, "Gender", new int[0], typeof(Gender), typeof(Gender)),
+                            new SimpleProp(4, "IsMember", new int[0], typeof(bool), typeof(bool))
                         },
                         null, 
                         new int[0]))
@@ -1030,12 +1030,12 @@ namespace SqlDsl.UnitTests.DataParser
                 null,
                 new []
                 {
-                    ("Value", new ObjectPropertyGraph(
+                    new ComplexProp("Value", new ObjectPropertyGraph(
                         typeof(PersonClass),
                         new []
                         {
-                            (2, "PersonId", new int[0], typeof(long), typeof(long)),   
-                            (3, "ClassId", new int[0], typeof(long), typeof(long))   
+                            new SimpleProp(2, "PersonId", new int[0], typeof(long), typeof(long)),   
+                            new SimpleProp(3, "ClassId", new int[0], typeof(long), typeof(long))   
                         },
                         null, 
                         new[] { 1 }))
@@ -1060,7 +1060,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(PropMapValue<string>),
                 new []
                 {
-                    (1, "Value", new int[0], typeof(string), typeof(string))
+                    new SimpleProp(1, "Value", new int[0], typeof(string), typeof(string))
                 },
                 null, 
                 new[] { 0 });
@@ -1083,7 +1083,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(PropMapValue<IEnumerable<string>>),
                 new []
                 {
-                    (3, "Value", new[] { 1, 2 }, typeof(IEnumerable<string>), typeof(string))
+                    new SimpleProp(3, "Value", new[] { 1, 2 }, typeof(IEnumerable<string>), typeof(string))
                 },
                 null, 
                 new[] { 0 });
@@ -1116,8 +1116,8 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(CountAndGroupClass),
                 new []
                 {
-                    (1, "person", new int[0], typeof(string), typeof(string)),   
-                    (2, "classes", new int[0], typeof(int), typeof(int))   
+                    new SimpleProp(1, "person", new int[0], typeof(string), typeof(string)),   
+                    new SimpleProp(2, "classes", new int[0], typeof(int), typeof(int))   
                 },
                 null, 
                 new[] { 0 });
@@ -1144,8 +1144,8 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(CountAndGroupClass),
                 new []
                 {
-                    (1, "person", new int[0], typeof(string), typeof(string)),   
-                    (2, "classes", new int[0], typeof(int), typeof(int))   
+                    new SimpleProp(1, "person", new int[0], typeof(string), typeof(string)),   
+                    new SimpleProp(2, "classes", new int[0], typeof(int), typeof(int))   
                 },
                 null, 
                 new[] { 0 });
@@ -1177,9 +1177,9 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(PersonWithAttributes),
                 new []
                 {
-                    (0, "#pk0", new int[0], (Type)null, (Type)null),
-                    (1, "TheId", new int[0], typeof(long), typeof(long)),   
-                    (2, "TheName", new int[0], typeof(string), typeof(string))   
+                    new SimpleProp(0, "#pk0", new int[0], (Type)null, (Type)null),
+                    new SimpleProp(1, "TheId", new int[0], typeof(long), typeof(long)),   
+                    new SimpleProp(2, "TheName", new int[0], typeof(string), typeof(string))   
                 },
                 null, 
                 new[] { 0 });
@@ -1237,16 +1237,16 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(SimpleMapOn1Table_WithMultipleResultsResult),
                 new []
                 {
-                    (4, "ThePerson", new int[0], typeof(string), typeof(string))
+                    new SimpleProp(4, "ThePerson", new int[0], typeof(string), typeof(string))
                 },
                 new []
                 {
-                    ("TheClasses", new ObjectPropertyGraph(
+                    new ComplexProp("TheClasses", new ObjectPropertyGraph(
                         typeof(SimpleMapOn1Table_WithMultipleResultsClassResult),
                         new []
                         {
-                            (5, "Name", new int[0], typeof(string), typeof(string)),   
-                            (6, "Prices", new int[] { 3 }, typeof(float[]), typeof(float))   
+                            new SimpleProp(5, "Name", new int[0], typeof(string), typeof(string)),   
+                            new SimpleProp(6, "Prices", new int[] { 3 }, typeof(float[]), typeof(float))   
                         },
                         null, 
                         new[] { 1 ,2 }))
@@ -1298,11 +1298,11 @@ namespace SqlDsl.UnitTests.DataParser
                 new[] { 0 },
                 complexConstructorArgs: new []
                 {
-                    (0, typeof(IEnumerable<ClassesByTagResult>), new ObjectPropertyGraph(
+                    new ComplexConstructorArg(0, typeof(IEnumerable<ClassesByTagResult>), new ObjectPropertyGraph(
                         typeof(ClassesByTagResult),
                         new []
                         {
-                            (3, "name", new int[0], typeof(string), typeof(string))
+                            new SimpleProp(3, "name", new int[0], typeof(string), typeof(string))
                         },
                         null, 
                         new[] { 1, 2 }))
@@ -1333,11 +1333,11 @@ namespace SqlDsl.UnitTests.DataParser
                 null,
                 new []
                 {
-                    ("Value", new ObjectPropertyGraph(
+                    new ComplexProp("Value", new ObjectPropertyGraph(
                         typeof(ClassesByTagResult),
                         new []
                         {
-                            (3, "name", new int[0], typeof(string), typeof(string))
+                            new SimpleProp(3, "name", new int[0], typeof(string), typeof(string))
                         },
                         null, 
                         new[] { 1, 2 }))
@@ -1373,7 +1373,7 @@ namespace SqlDsl.UnitTests.DataParser
                 typeof(PropMapValue<IEnumerable<string>>),
                 new []
                 {
-                    (3, "Value", new int[] { 1, 2 }, typeof(IEnumerable<string>), typeof(string))
+                    new SimpleProp(3, "Value", new int[] { 1, 2 }, typeof(IEnumerable<string>), typeof(string))
                 },
                 null, 
                 new[] { 0 });
@@ -1414,15 +1414,15 @@ namespace SqlDsl.UnitTests.DataParser
                 null,
                 new []
                 {
-                    ("Value", new ObjectPropertyGraph(
+                    new ComplexProp("Value", new ObjectPropertyGraph(
                         typeof(DontCompareType),
                         null,
                         null, 
                         new[] { 1, 2 },
                         simpleConstructorArgs: new []
                         {
-                            (3, 0, new int[0], typeof(string), typeof(string)),
-                            (4, 1, new int[0], typeof(int), typeof(int))
+                            new SimpleConstructorArg(3, 0, new int[0], typeof(string), typeof(string)),
+                            new SimpleConstructorArg(4, 1, new int[0], typeof(int), typeof(int))
                         }))
                 }, 
                 new[] { 0 });
@@ -1459,8 +1459,8 @@ namespace SqlDsl.UnitTests.DataParser
                 new [] { 0 },
                 simpleConstructorArgs: new[]
                 {
-                    (2, 0, new int[0], typeof(string), typeof(string)),
-                    (3, 1, new [] { 1 }, typeof(long[]), typeof(long))
+                    new SimpleConstructorArg(2, 0, new int[0], typeof(string), typeof(string)),
+                    new SimpleConstructorArg(3, 1, new [] { 1 }, typeof(long[]), typeof(long))
                 });
 
             CompareAndDisplayAllObjsOnFailure(expected, actual);
@@ -1492,7 +1492,7 @@ namespace SqlDsl.UnitTests.DataParser
         //         null,
         //         new []
         //         {
-        //             ("AnotherPreMapped", new ObjectPropertyGraph(
+        //             new ComplexProp("AnotherPreMapped", new ObjectPropertyGraph(
         //                 typeof(List<PreMapped>),
         //                 null,
         //                 null, 

@@ -61,9 +61,9 @@ namespace SqlDsl.DataParser
             IEnumerable<(int index, string[] name, int[] primaryKeyColumnMap, Type cellType, ConstructorInfo[] constructorArgInfo)> columns, 
             QueryParseType queryParseType)
         {
-            var simpleProps = new List<(int index, string propertyName, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType)>();
+            var simpleProps = new List<SimpleProp>();
             var complexProps = new List<(int index, string propertyName, string[] subPropName, int[] subPropPrimaryKeyColumns, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)>();
-            var simpleCArgs = new List<(int index, int argIndex, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType)>();
+            var simpleCArgs = new List<SimpleConstructorArg>();
             var complexCArgs = new List<(int index, int argIndex, string[] subPropName, int[] subPropPrimaryKeyColumns, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)>();
 
             // if mappedTableProperties are invalid
@@ -91,7 +91,7 @@ namespace SqlDsl.DataParser
                         if (typedConstructorArgs.Length <= index)
                             throw new InvalidOperationException($"Expected constructor with at least {index} arguments.");
 
-                        simpleCArgs.Add((
+                        simpleCArgs.Add(new SimpleConstructorArg(
                             col.index, 
                             index, 
                             FilterPrimaryKeyColumns(
@@ -106,7 +106,7 @@ namespace SqlDsl.DataParser
                             typedColNames[col.name[0]] :
                             null;
 
-                        simpleProps.Add((
+                        simpleProps.Add(new SimpleProp(
                             col.index, 
                             col.name[0], 
                             FilterPrimaryKeyColumns(
@@ -183,7 +183,7 @@ namespace SqlDsl.DataParser
             string PropertyName((int, string propertyName, string[], int[], Type, Type, ConstructorInfo[]) value) => value.propertyName;
             int ArgIndex((int, int argIndex, string[], int[], Type, Type, ConstructorInfo[]) value) => value.argIndex;
 
-            (string, ObjectPropertyGraph) BuildComplexProp(IEnumerable<(int index, string propertyName, string[] subPropName, int[] subPropPrimaryKeyColumns, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)> values)
+            ComplexProp BuildComplexProp(IEnumerable<(int index, string propertyName, string[] subPropName, int[] subPropPrimaryKeyColumns, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)> values)
             {
                 values = values.Enumerate();
                 var propertyName = values.First().propertyName;
@@ -206,7 +206,7 @@ namespace SqlDsl.DataParser
                         .ToArray();
                 }
 
-                return (
+                return new ComplexProp(
                     propertyName,
                     _Build(
                         values.First().propertyType,
@@ -216,7 +216,7 @@ namespace SqlDsl.DataParser
                         queryParseType));
             }
 
-            (int, Type, ObjectPropertyGraph) BuildComplexCArg(IEnumerable<(int index, int argIndex, string[] subPropName, int[] subPropPrimaryKeyColumns, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)> values)
+            ComplexConstructorArg BuildComplexCArg(IEnumerable<(int index, int argIndex, string[] subPropName, int[] subPropPrimaryKeyColumns, Type propertyType, Type dataCellType, ConstructorInfo[] constructorArgInfo)> values)
             {
                 values = values.Enumerate();
                 var argIndex = values.First().argIndex;
@@ -245,7 +245,7 @@ namespace SqlDsl.DataParser
                         .ToArray();
                 }
 
-                return (
+                return new ComplexConstructorArg(
                     argIndex,
                     constructorInfo.GetParameters()[argIndex].ParameterType,
                     _Build(

@@ -10,7 +10,7 @@ namespace SqlDsl.DataParser
     /// </summary>
     public class RootObjectPropertyGraph : ObjectPropertyGraph
     {
-        private static readonly (int, string, IEnumerable<int>, Type, Type)[] DefaultSimpleProps = new (int, string, IEnumerable<int>, Type, Type)[0];
+        private static readonly SimpleProp[] DefaultSimpleProps = new SimpleProp[0];
 
         /// <summary>
         /// The column names that this graph is based on
@@ -51,11 +51,11 @@ namespace SqlDsl.DataParser
         public RootObjectPropertyGraph(
             Type objectType,
             IEnumerable<string> colNames,
-            (int index, string name, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType)[] simpleProps, 
-            (string name, ObjectPropertyGraph value)[] complexProps, 
+            SimpleProp[] simpleProps, 
+            ComplexProp[] complexProps, 
             int[] primaryKeyColumns,
-            (int index, int argIndex, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType)[] simpleConstructorArgs = null,
-            (int argIndex, Type constructorArgType, ObjectPropertyGraph value)[] complexConstructorArgs = null)
+            SimpleConstructorArg[] simpleConstructorArgs = null,
+            ComplexConstructorArg[] complexConstructorArgs = null)
             : base(objectType, simpleProps, complexProps, primaryKeyColumns, simpleConstructorArgs, complexConstructorArgs)
         {
             ColumnNames = colNames.ToArray();
