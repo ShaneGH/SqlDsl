@@ -25,6 +25,16 @@ namespace SqlDsl.Utils
         /// </summary>
         public static MethodInfo GetMethod(Expression<Action> methodCall, params Type[] replaceGenerics) =>
             GetMethod(methodCall.Body, replaceGenerics);
+            
+        /// <summary>
+        /// Get the FieldInfo or PropertyInfo object from an accessor.
+        /// </summary>
+        public static MemberInfo GetFieldOrProperty<TRoot, TValue>(Expression<Func<TRoot, TValue>> accessor) => GetFieldOrProperty(accessor.Body);
+               
+        /// <summary>
+        /// Get the FieldInfo or PropertyInfo object from an accessor.
+        /// </summary>
+        public static MemberInfo GetFieldOrProperty<TValue>(Expression<Func<TValue>> accessor) => GetFieldOrProperty(accessor.Body);
         
         /// <summary>
         /// Get the MethodInfo object from a method call.
@@ -44,6 +54,19 @@ namespace SqlDsl.Utils
             return replaceGenerics == null || replaceGenerics.Length == 0 ?
                 method :
                 ReplaceMethodGenerics(method, replaceGenerics);
+        }
+        
+        /// <summary>
+        /// Get the FieldInfo or PropertyInfo object from an expression.
+        /// </summary>
+        static MemberInfo GetFieldOrProperty(Expression propertyBody)
+        {
+            // ignore implicit/explicit casting
+            while (propertyBody.NodeType == ExpressionType.Convert)
+                propertyBody = (propertyBody as UnaryExpression).Operand;
+                
+            return (propertyBody as MemberExpression)?.Member
+                ?? throw new InvalidOperationException($"Input expression must be a field or property access: {propertyBody}");
         }
 
         /// <summary>

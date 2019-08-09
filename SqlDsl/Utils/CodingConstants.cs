@@ -20,6 +20,8 @@ namespace SqlDsl.Utils
                 
             public static readonly ConstructorInfo[] ConstructorInfo = Array.Empty<ConstructorInfo>();
                 
+            public static readonly Type[] Type = Array.Empty<Type>();
+                
             public static readonly int[] Int = Array.Empty<int>();
                 
             public static readonly IQueryTable[] IQueryTable = Array.Empty<IQueryTable>();
