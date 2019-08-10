@@ -50,7 +50,7 @@ namespace SqlDsl.ObjectBuilders
 
             // xs => (IEnumerable<T>)xs.Enumerate()
             return Expression.Lambda<Func<IEnumerable<T>, TCollection>>(
-                Expression.Convert(
+                ReflectionUtils.Convert(
                     Expression.Call(
                         ReflectionUtils.GetMethod<IEnumerable<object>>(xs => xs.Enumerate(), enumerableType),
                         builder.Body),

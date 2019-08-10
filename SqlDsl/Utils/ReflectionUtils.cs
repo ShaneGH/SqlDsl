@@ -766,33 +766,42 @@ namespace SqlDsl.Utils
         }
 
         /// <summary>
+        /// A flag to enable a debug version of Expression.Convert
+        /// </summary>
+        public const bool DebugConvert = false;
+
+        /// <summary>
         /// Proxy to Expression.Convert. This function is convenient for debugging as it can optionally add console.log statements
         /// </summary>
         public static Expression Convert(Expression from, Type t)
         {
-            // Func<Expression, Expression, Expression> stringConcat = (x, y) =>
-            //     Expression.Call(
-            //         GetMethod(() => string.Concat("", "")),
-            //         x,
-            //         y);
+            // warning Unreachable code detected (CS0162) [SqlDsl]
+            #pragma warning disable 0162
+            if (!DebugConvert)
+                return Expression.Convert(from, t);
 
-            // var fromTypeName = Expression.Call(
-            //     GetMethod(() => GetTypeString(null)),
-            //     Expression.Convert(from, typeof(object)));
+            Func<Expression, Expression, Expression> stringConcat = (x, y) =>
+                Expression.Call(
+                    GetMethod(() => string.Concat("", "")),
+                    x,
+                    y);
 
-            // var message = stringConcat(
-            //     Expression.Constant("Attempting to cast from ["),
-            //     stringConcat(
-            //         fromTypeName,
-            //         Expression.Constant($"] to [{t.FullName}].")));
+            var fromTypeName = Expression.Call(
+                GetMethod(() => GetTypeString(null)),
+                Expression.Convert(from, typeof(object)));
 
-            // var log = Expression.Call(
-            //     GetMethod(() => Console.WriteLine("")),
-            //     message);
+            var message = stringConcat(
+                Expression.Constant("Attempting to cast from ["),
+                stringConcat(
+                    fromTypeName,
+                    Expression.Constant($"] to [{t.FullName}].")));
 
-            // return Expression.Block(log, Expression.Convert(from, t));
+            var log = Expression.Call(
+                GetMethod(() => Console.WriteLine("")),
+                message);
 
-            return Expression.Convert(from, t);
+            return Expression.Block(log, Expression.Convert(from, t));
+            #pragma warning restore 0162
         }
 
         public static string GetTypeString(object obj)

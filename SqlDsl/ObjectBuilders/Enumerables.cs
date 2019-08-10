@@ -122,7 +122,8 @@ namespace SqlDsl.ObjectBuilders
             else if (collectionType.IsArray)
             {
                 // build a valid Array
-                return (true, BuildArray(ReflectionUtils.GetIEnumerableType(collectionType), collectionValues));
+                var arrayOfType = ReflectionUtils.GetIEnumerableType(collectionType);
+                return (true, BuildArray(arrayOfType, collectionValues));
             }
 
             // collection cannot be built

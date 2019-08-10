@@ -5,28 +5,29 @@ using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using SqlDsl.Utils;
+using SqlDsl.Utils.EqualityComparers;
 
 namespace SqlDsl.DataParser
 {
     public class ConstructorArgPopulator
     {
-        public bool[] Booleans;
-        public byte[] Bytes;
-        public char[] Chars;
-        public DateTime[] DateTimes;
-        public decimal[] Decimals;
-        public double[] Doubles;
-        public float[] Floats;
-        public Guid[] Guids;
-        public short[] Int16s;
-        public int[] Int32s;
-        public long[] Int64s;
+        public bool[] BooleanCArgs;
+        public byte[] ByteCArgs;
+        public char[] CharCArgs;
+        public DateTime[] DateTimeCArgs;
+        public decimal[] DecimalCArgs;
+        public double[] DoubleCArgs;
+        public float[] FloatCArgs;
+        public Guid[] GuidCArgs;
+        public short[] Int16CArgs;
+        public int[] Int32CArgs;
+        public long[] Int64CArgs;
 
         // todo: use this as a fallback for types which
         // cannot be parsed by other means
         public object[] ReferenceObjects;
 
-        static readonly Dictionary<Type, TypeWorker> _collectionInitializers = BuildCollectionInitializers();
+        static readonly Dictionary<Type, CollectionInitializer> _collectionInitializers = BuildCollectionInitializers();
         readonly Action<IDataRecord, ConstructorArgPopulator> _rowParser;
 
         public ConstructorArgPopulator(ObjectPropertyGraph propertyGraph)
@@ -34,8 +35,7 @@ namespace SqlDsl.DataParser
             var cParams = propertyGraph.ConstructorArgTypes;
             for (int arrayLength = cParams.Length; arrayLength > 0; arrayLength--)
             {
-                var i = arrayLength - 1;
-                if (_collectionInitializers.TryGetValue(cParams[i], out var setter))
+                if (_collectionInitializers.TryGetValue(cParams[arrayLength - 1], out var setter))
                     setter.InitializeCArg(this, arrayLength);
                 else
                     InitializeReferenceObjects(this, arrayLength);
@@ -46,7 +46,8 @@ namespace SqlDsl.DataParser
 
         public void ParseRow(IDataRecord data) => _rowParser(data, this);
 
-        static ConcurrentDictionary<Tuple<int, int, Type, Type>[], Action<IDataRecord, ConstructorArgPopulator>> _simpleConstructorArgPopulators = new ConcurrentDictionary<Tuple<int, int, Type, Type>[], Action<IDataRecord, ConstructorArgPopulator>>();
+        static ConcurrentDictionary<Tuple<int, int, Type, Type>[], Action<IDataRecord, ConstructorArgPopulator>> _simpleConstructorArgPopulators = 
+            new ConcurrentDictionary<Tuple<int, int, Type, Type>[], Action<IDataRecord, ConstructorArgPopulator>>(ArrayComparer<Tuple<int, int, Type, Type>>.Instance);
         static Action<IDataRecord, ConstructorArgPopulator> GetRowParser(SimpleConstructorArg[] simpleConstructorArgs)
         {
             var key = simpleConstructorArgs
@@ -77,11 +78,18 @@ namespace SqlDsl.DataParser
 
             Expression BuildArg(SimpleConstructorArg arg)
             {
-                if (!_collectionInitializers.TryGetValue(arg.DataCellType, out var setter))
-                    throw new NotImplementedException();
+                var key = arg.DataCellType.IsEnum
+                    ? Enum.GetUnderlyingType(arg.DataCellType)
+                    : arg.DataCellType;
+
+                if (!_collectionInitializers.TryGetValue(key, out var setter))
+                {
+                    // TODO: some kind of warning for boxing custom structs
+                    setter = _collectionInitializers[typeof(object)];
+                }
 
                 return Expression.Assign(
-                    Expression.ArrayIndex(
+                    Expression.ArrayAccess(
                         Expression.PropertyOrField(
                             args,
                             setter.PropertyName),
@@ -94,89 +102,89 @@ namespace SqlDsl.DataParser
             }
         }
 
-        static Dictionary<Type, TypeWorker> BuildCollectionInitializers()
+        static Dictionary<Type, CollectionInitializer> BuildCollectionInitializers()
         {
-            return new Dictionary<Type, TypeWorker>
+            return new Dictionary<Type, CollectionInitializer>
             {
-                { typeof(bool), new TypeWorker(InitializeBooleans, nameof(Booleans), nameof(IDataReader.GetBoolean)) },
-                { typeof(byte), new TypeWorker(InitializeBytes, nameof(Bytes), nameof(IDataReader.GetByte)) },
-                { typeof(char), new TypeWorker(InitializeChars, nameof(Chars), nameof(IDataReader.GetChar)) },
-                { typeof(DateTime), new TypeWorker(InitializeDateTimes, nameof(DateTimes), nameof(IDataReader.GetDateTime)) },
-                { typeof(decimal), new TypeWorker(InitializeDecimals, nameof(Decimals), nameof(IDataReader.GetDecimal)) },
-                { typeof(double), new TypeWorker(InitializeDoubles, nameof(Doubles), nameof(IDataReader.GetDouble)) },
-                { typeof(float), new TypeWorker(InitializeFloats, nameof(Floats), nameof(IDataReader.GetFloat)) },
-                { typeof(Guid), new TypeWorker(InitializeGuids, nameof(Guids), nameof(IDataReader.GetGuid)) },
-                { typeof(short), new TypeWorker(InitializeInt16s, nameof(Int16s), nameof(IDataReader.GetInt16)) },
-                { typeof(int), new TypeWorker(InitializeInt32s, nameof(Int32s), nameof(IDataReader.GetInt32)) },
-                { typeof(long), new TypeWorker(InitializeInt64s, nameof(Int64s), nameof(IDataReader.GetInt64)) },
-                { typeof(object), new TypeWorker(InitializeReferenceObjects, nameof(ReferenceObjects), nameof(IDataReader.GetValue)) }
+                { typeof(bool), new CollectionInitializer(InitializeBooleans, nameof(BooleanCArgs), nameof(IDataReader.GetBoolean)) },
+                { typeof(byte), new CollectionInitializer(InitializeBytes, nameof(ByteCArgs), nameof(IDataReader.GetByte)) },
+                { typeof(char), new CollectionInitializer(InitializeChars, nameof(CharCArgs), nameof(IDataReader.GetChar)) },
+                { typeof(DateTime), new CollectionInitializer(InitializeDateTimes, nameof(DateTimeCArgs), nameof(IDataReader.GetDateTime)) },
+                { typeof(decimal), new CollectionInitializer(InitializeDecimals, nameof(DecimalCArgs), nameof(IDataReader.GetDecimal)) },
+                { typeof(double), new CollectionInitializer(InitializeDoubles, nameof(DoubleCArgs), nameof(IDataReader.GetDouble)) },
+                { typeof(float), new CollectionInitializer(InitializeFloats, nameof(FloatCArgs), nameof(IDataReader.GetFloat)) },
+                { typeof(Guid), new CollectionInitializer(InitializeGuids, nameof(GuidCArgs), nameof(IDataReader.GetGuid)) },
+                { typeof(short), new CollectionInitializer(InitializeInt16s, nameof(Int16CArgs), nameof(IDataReader.GetInt16)) },
+                { typeof(int), new CollectionInitializer(InitializeInt32s, nameof(Int32CArgs), nameof(IDataReader.GetInt32)) },
+                { typeof(long), new CollectionInitializer(InitializeInt64s, nameof(Int64CArgs), nameof(IDataReader.GetInt64)) },
+                { typeof(object), new CollectionInitializer(InitializeReferenceObjects, nameof(ReferenceObjects), nameof(IDataReader.GetValue)) }
             };
         }
 
         static void InitializeBooleans(ConstructorArgPopulator onObject, int length)
         {
-            if (onObject.Booleans != null) return;
-            onObject.Booleans = new bool[length];
+            if (onObject.BooleanCArgs != null) return;
+            onObject.BooleanCArgs = new bool[length];
         }
 
         static void InitializeBytes(ConstructorArgPopulator onObject, int length)
         {
-            if (onObject.Bytes != null) return;
-            onObject.Bytes = new byte[length];
+            if (onObject.ByteCArgs != null) return;
+            onObject.ByteCArgs = new byte[length];
         }
 
         static void InitializeChars(ConstructorArgPopulator onObject, int length)
         {
-            if (onObject.Chars != null) return;
-            onObject.Chars = new char[length];
+            if (onObject.CharCArgs != null) return;
+            onObject.CharCArgs = new char[length];
         }
 
         static void InitializeDateTimes(ConstructorArgPopulator onObject, int length)
         {
-            if (onObject.DateTimes != null) return;
-            onObject.DateTimes = new DateTime[length];
+            if (onObject.DateTimeCArgs != null) return;
+            onObject.DateTimeCArgs = new DateTime[length];
         }
 
         static void InitializeDecimals(ConstructorArgPopulator onObject, int length)
         {
-            if (onObject.Decimals != null) return;
-            onObject.Decimals = new decimal[length];
+            if (onObject.DecimalCArgs != null) return;
+            onObject.DecimalCArgs = new decimal[length];
         }
 
         static void InitializeDoubles(ConstructorArgPopulator onObject, int length)
         {
-            if (onObject.Doubles != null) return;
-            onObject.Doubles = new double[length];
+            if (onObject.DoubleCArgs != null) return;
+            onObject.DoubleCArgs = new double[length];
         }
 
         static void InitializeFloats(ConstructorArgPopulator onObject, int length)
         {
-            if (onObject.Floats != null) return;
-            onObject.Floats = new float[length];
+            if (onObject.FloatCArgs != null) return;
+            onObject.FloatCArgs = new float[length];
         }
 
         static void InitializeGuids(ConstructorArgPopulator onObject, int length)
         {
-            if (onObject.Guids != null) return;
-            onObject.Guids = new Guid[length];
+            if (onObject.GuidCArgs != null) return;
+            onObject.GuidCArgs = new Guid[length];
         }
 
         static void InitializeInt16s(ConstructorArgPopulator onObject, int length)
         {
-            if (onObject.Int16s != null) return;
-            onObject.Int16s = new short[length];
+            if (onObject.Int16CArgs != null) return;
+            onObject.Int16CArgs = new short[length];
         }
 
         static void InitializeInt32s(ConstructorArgPopulator onObject, int length)
         {
-            if (onObject.Int32s != null) return;
-            onObject.Int32s = new int[length];
+            if (onObject.Int32CArgs != null) return;
+            onObject.Int32CArgs = new int[length];
         }
 
         static void InitializeInt64s(ConstructorArgPopulator onObject, int length)
         {
-            if (onObject.Int64s != null) return;
-            onObject.Int64s = new long[length];
+            if (onObject.Int64CArgs != null) return;
+            onObject.Int64CArgs = new long[length];
         }
 
         static void InitializeReferenceObjects(ConstructorArgPopulator onObject, int length)
@@ -185,13 +193,13 @@ namespace SqlDsl.DataParser
             onObject.ReferenceObjects = new object[length];
         }
 
-        private class TypeWorker
+        private class CollectionInitializer
         {
             public Action<ConstructorArgPopulator, int> InitializeCArg { get; }
             public string PropertyName { get; }
             public string ParserMethodName { get; }
 
-            public TypeWorker(Action<ConstructorArgPopulator, int> initializeCArg, string propertyName, string parserMethodName)
+            public CollectionInitializer(Action<ConstructorArgPopulator, int> initializeCArg, string propertyName, string parserMethodName)
             {
                 InitializeCArg = initializeCArg;
                 PropertyName = propertyName;

@@ -25,6 +25,7 @@ namespace SqlDsl.DataParser
 
             foreach (var constructorArg in objectBuilder.ComplexCArgParsers)
             {
+                // TODO: cache
                 var parserType = typeof(TheMoFoBitchParser<>)
                     .MakeGenericType(ReflectionUtils.GetIEnumerableType(constructorArg.value.ForType) ?? constructorArg.value.ForType);
 
@@ -35,12 +36,9 @@ namespace SqlDsl.DataParser
 
             foreach (var constructorArg in objectBuilder.ListCArgParsers)
             {
-                var parserType = typeof(TheMiniParser<>)
-                    .MakeGenericType(constructorArg.DataCellType);
-
                 _cArgParsers.Add((
                     constructorArg.ArgIndex,
-                    (ITheMoFoBitchParser)Activator.CreateInstance(parserType, new object[] { reader, constructorArg.Index, constructorArg.PrimaryKeyColumns })));
+                    TheMiniParser.Build(constructorArg.DataCellType, reader, constructorArg.Index, constructorArg.PrimaryKeyColumns)));
             }
         }
 

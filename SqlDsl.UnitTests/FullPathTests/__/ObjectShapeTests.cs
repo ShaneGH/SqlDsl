@@ -901,7 +901,7 @@ namespace SqlDsl.UnitTests.FullPathTests
                 .From(x => x.ct)
                 .InnerJoinMany(x => x.cls).On((q, x) => x.Id == q.ct.ClassId)
                 .InnerJoinMany(x => x.pc).On((q, x) => x.ClassId == q.cls.One().Id)
-                .InnerJoinMany(x => x.p).On((q, x) => x.Id == q.pc.One().Gender)
+                .InnerJoinMany(x => x.p).On((q, x) => x.Id == q.pc.One().PersonId)
                 .Map(x => x.cls.Select(y => x.pc.Select(z => x.p.Select(p => p.Gender).ToArray())).ToArray())
                 .ToListAsync(Executor);
 

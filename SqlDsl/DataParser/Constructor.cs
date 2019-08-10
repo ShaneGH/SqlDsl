@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using SqlDsl.ObjectBuilders;
 using SqlDsl.Utils;
+using SqlDsl.Utils.EqualityComparers;
 
 namespace SqlDsl.DataParser
 {
@@ -12,6 +14,8 @@ namespace SqlDsl.DataParser
         readonly Func<ConstructorArgPopulator, T> _build;
 
         static readonly Dictionary<Type, string> _propertyNames = BuildPropertyNames();
+        static readonly ConcurrentDictionary<Type[], Func<ConstructorArgPopulator, T>> _constructorCache = 
+            new ConcurrentDictionary<Type[], Func<ConstructorArgPopulator, T>>(ArrayComparer<Type>.Instance);
 
         public Constructor(ObjectPropertyGraph objectPropertyGraph)
             : base (objectPropertyGraph)
@@ -19,19 +23,30 @@ namespace SqlDsl.DataParser
             if (!typeof(T).IsAssignableFrom(objectPropertyGraph.ObjectType))
                 throw new InvalidOperationException($"{typeof(T)} is not assignable from {objectPropertyGraph.ObjectType}.");
 
-            _build = BuildBuilder(objectPropertyGraph);
+            _build = BuildBuilder(objectPropertyGraph.ConstructorArgTypes);
         }
 
-        public T Build() => _build(this);
+        public virtual T Build() => _build(this);
 
-        static Func<ConstructorArgPopulator, T> BuildBuilder(ObjectPropertyGraph objectPropertyGraph)
+        static Func<ConstructorArgPopulator, T> GetBuilder(Type[] constructorArgTypes)
         {
-            var constructor = objectPropertyGraph.ObjectType.GetConstructor(
-                objectPropertyGraph.ConstructorArgTypes);
+            if (!_constructorCache.TryGetValue(constructorArgTypes, out var result))
+            {
+                var key = new Type[constructorArgTypes.Length];
+                Array.Copy(constructorArgTypes, key, key.Length);
+                result = BuildBuilder(constructorArgTypes);
+                _constructorCache.TryAdd(key, result);
+            }
+
+            return result;
+        }
+
+        static Func<ConstructorArgPopulator, T> BuildBuilder(Type[] constructorArgTypes)
+        {
+            var constructor = typeof(T).GetConstructor(constructorArgTypes);
 
             var args = Expression.Parameter(typeof(ConstructorArgPopulator));
-            var parameters = objectPropertyGraph.ConstructorArgTypes
-                .Select(BuildParamGetter);
+            var parameters = constructorArgTypes.Select(BuildParamGetter);
 
             return Expression
                 .Lambda<Func<ConstructorArgPopulator, T>>(
@@ -41,33 +56,57 @@ namespace SqlDsl.DataParser
 
             Expression BuildParamGetter(Type type, int index)
             {
-                var iEnumerableType = ReflectionUtils.GetIEnumerableType(type);
-                if (iEnumerableType != null)
-                {
-                    
-                }
-
                 if (type.IsEnum)
                 {
                     var rawValue = BuildParamGetter(
                         Enum.GetUnderlyingType(type), index);
 
-                    return Expression.Convert(rawValue, type);
+                    return ReflectionUtils.Convert(rawValue, type);
                 }
 
-                if (_propertyNames.TryGetValue(type, out var property))
-                {
+                if (!_propertyNames.TryGetValue(type, out var property))
                     property = nameof(ReferenceObjects);
-                }
                 
-                var accessor = Expression.ArrayIndex(
-                    Expression.PropertyOrField(args, property),
-                    Expression.Constant(index));
-                    
-                var (isEnum, tBuilder) = Enumerables.CreateCollectionExpression(type, accessor);
-                return isEnum
-                    ? tBuilder
-                    : accessor;
+                return EnsureCorrectType(
+                    Expression.ArrayIndex(
+                        Expression.PropertyOrField(args, property),
+                        Expression.Constant(index)),
+                    type);
+            }
+
+            Expression EnsureCorrectType(Expression accessor, Type expectedType)
+            {
+                if (expectedType.IsEnum)
+                    return ReflectionUtils.Convert(accessor, expectedType);
+
+                var expectedInner = ReflectionUtils.GetIEnumerableType(expectedType);
+                if (expectedInner == null)
+                {
+                    return expectedType == accessor.Type
+                        ? accessor
+                        : ReflectionUtils.Convert(accessor, expectedType);
+                }
+
+                // TODO: is this cast dangerous? Does it cast 1 by 1?
+                accessor = ReflectionUtils.Convert(accessor, typeof(IEnumerable<object>));
+                var funcParam = Expression.Parameter(typeof(object));
+                var mapper = Expression
+                    .Lambda(
+                        EnsureCorrectType(funcParam, expectedInner),
+                        funcParam);
+
+                accessor = Expression.Call(
+                    ReflectionUtils.GetMethod<IEnumerable<object>>(
+                        xs => xs.Select(x => 1),
+                        new [] { typeof(object), expectedInner }),
+                    accessor, mapper);
+                
+                var (isColl, tBuilder) = Enumerables.CreateCollectionExpression(expectedType, accessor);
+                if (!isColl)
+                    // should not occur
+                    throw new InvalidOperationException($"Types {expectedType} and {accessor.Type} are not compatible.");
+
+                return tBuilder;
             }
         }
 
@@ -75,17 +114,17 @@ namespace SqlDsl.DataParser
         {
             return new Dictionary<Type, string>
             {
-                { typeof(bool), nameof(Booleans) },
-                { typeof(byte), nameof(Bytes) },
-                { typeof(char), nameof(Chars) },
-                { typeof(DateTime), nameof(DateTimes) },
-                { typeof(decimal), nameof(Decimals) },
-                { typeof(double), nameof(Doubles) },
-                { typeof(float), nameof(Floats) },
-                { typeof(Guid), nameof(Guids) },
-                { typeof(short), nameof(Int16s) },
-                { typeof(int), nameof(Int32s) },
-                { typeof(long), nameof(Int64s) },
+                { typeof(bool), nameof(BooleanCArgs) },
+                { typeof(byte), nameof(ByteCArgs) },
+                { typeof(char), nameof(CharCArgs) },
+                { typeof(DateTime), nameof(DateTimeCArgs) },
+                { typeof(decimal), nameof(DecimalCArgs) },
+                { typeof(double), nameof(DoubleCArgs) },
+                { typeof(float), nameof(FloatCArgs) },
+                { typeof(Guid), nameof(GuidCArgs) },
+                { typeof(short), nameof(Int16CArgs) },
+                { typeof(int), nameof(Int32CArgs) },
+                { typeof(long), nameof(Int64CArgs) },
                 { typeof(object), nameof(ReferenceObjects) }
             };
         }
