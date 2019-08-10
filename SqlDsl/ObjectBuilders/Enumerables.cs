@@ -86,20 +86,6 @@ namespace SqlDsl.ObjectBuilders
         /// </returns>
         public static (bool isCollection, Expression builder) CreateCollectionExpression(Type collectionType, Expression collectionValues = null, bool reuseCollectionIfPossible = false)
         {
-            var (ok, valueCreator) = CreateCollectionExpressionWithoutReuse(collectionType, collectionValues);
-            if (!ok || !reuseCollectionIfPossible || collectionValues == null)
-                return (ok, valueCreator);
-
-            return (
-                ok,
-                Expression.IfThenElse(
-                    Expression.TypeIs(collectionValues, collectionType),
-                    collectionValues,
-                    valueCreator));
-        }
-        
-        private static (bool isCollection, Expression builder) CreateCollectionExpressionWithoutReuse(Type collectionType, Expression collectionValues)
-        {
             if (collectionType.IsConstructedGenericType)
             {
                 // convert List<T> into List<>

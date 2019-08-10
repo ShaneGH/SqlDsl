@@ -11,7 +11,7 @@ namespace SqlDsl.DataParser
         private readonly KeyMonitor _keyMonitor;
         private readonly IDataRecord _reader;
         private List<T> _results = new List<T>(4);
-        readonly IEnumerable[] _constructorArgs;
+        readonly Constructor<T> _constructor;
         public T ___LastResult => _results[_results.Count - 1];
         List<(int, ITheMoFoBitchParser)> _cArgParsers = new List<(int, ITheMoFoBitchParser)>();
         readonly SonOfTheMoFoBitchParser<T> _objectBuilder;
@@ -20,7 +20,7 @@ namespace SqlDsl.DataParser
         {             
             _keyMonitor = new KeyMonitor(reader, objectBuilder.PrimaryKeyColumns);
             _reader = reader;
-            _constructorArgs = new IEnumerable<object>[objectBuilder.ConstructorArgLength];
+            _constructor = new Constructor<T>(objectBuilder.ObjectPropertyGraph);
             _objectBuilder = objectBuilder;
 
             foreach (var constructorArg in objectBuilder.ComplexCArgParsers)
@@ -36,11 +36,11 @@ namespace SqlDsl.DataParser
             foreach (var constructorArg in objectBuilder.ListCArgParsers)
             {
                 var parserType = typeof(TheMiniParser<>)
-                    .MakeGenericType(constructorArg.forType);
+                    .MakeGenericType(constructorArg.DataCellType);
 
                 _cArgParsers.Add((
-                    constructorArg.cArgIndex,
-                    (ITheMoFoBitchParser)Activator.CreateInstance(parserType, new object[] { reader, constructorArg.colIndex, constructorArg.primaryKeyColumns })));
+                    constructorArg.ArgIndex,
+                    (ITheMoFoBitchParser)Activator.CreateInstance(parserType, new object[] { reader, constructorArg.Index, constructorArg.PrimaryKeyColumns })));
             }
         }
 
@@ -79,7 +79,7 @@ namespace SqlDsl.DataParser
 
             // record is first in this set
             if (first && changed)
-                _objectBuilder.SetSimpleConstructorArgs(_constructorArgs, _reader);
+                _constructor.ParseRow(_reader);
             
             return result;
         }
@@ -90,7 +90,10 @@ namespace SqlDsl.DataParser
             if (!_keyMonitor.AtLeastOneRecordFound)
                 return false;
 
-            var result = _objectBuilder.BuildObject(_constructorArgs, _cArgParsers);
+            foreach (var argParser in _cArgParsers)
+                _constructor.ReferenceObjects[argParser.Item1] = argParser.Item2.Flush();
+
+            var result = _constructor.Build();
             _results.Add(result);
             _keyMonitor.Reset();
             return true;

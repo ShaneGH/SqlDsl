@@ -22,6 +22,8 @@ namespace SqlDsl.Utils
                 
             public static readonly int[] Int = Array.Empty<int>();
                 
+            public static readonly Type[] Type = Array.Empty<Type>();
+                
             public static readonly IQueryTable[] IQueryTable = Array.Empty<IQueryTable>();
 
             internal static readonly MappedTable[] MappedTable = Array.Empty<MappedTable>();

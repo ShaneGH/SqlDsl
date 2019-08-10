@@ -15,24 +15,24 @@ namespace SqlDsl.DataParser
     {
         static readonly Type _forType = typeof(T);
         public Type ForType => _forType;
+        public readonly ObjectPropertyGraph ObjectPropertyGraph;
         public readonly ReadOnlyCollection<(int cArgIndex, ISonOfTheTheMoFoBitchParser value)> ComplexCArgParsers;
-        public readonly ReadOnlyCollection<(int colIndex, int cArgIndex, int[] primaryKeyColumns, Type forType)> ListCArgParsers;
+        public readonly ReadOnlyCollection<SimpleConstructorArg> ListCArgParsers;
+        public readonly ReadOnlyCollection<SimpleConstructorArg> SimpleConstructorArgs;
         public readonly ConstructorInfo Constructor;
-        public readonly SimpleConstructorArg[] SimpleConstructorArgs;
         public readonly int[] PrimaryKeyColumns;
-
-        // TODO: delete this prop
         public readonly int ConstructorArgLength;
         
         public SonOfTheMoFoBitchParser(ObjectPropertyGraph objectPropertyGraph)
         {             
+            ObjectPropertyGraph = objectPropertyGraph;
             Constructor = GetConstructor(objectPropertyGraph);
-            SimpleConstructorArgs = objectPropertyGraph.SimpleConstructorArgs.Where(x => x.PrimaryKeyColumns.Length == 0).ToArray();
+            SimpleConstructorArgs = objectPropertyGraph.SimpleConstructorArgs.Where(x => x.PrimaryKeyColumns.Length == 0).ToList().AsReadOnly();
+            ListCArgParsers = objectPropertyGraph.SimpleConstructorArgs.Where(x => x.PrimaryKeyColumns.Length > 0).ToList().AsReadOnly();
             PrimaryKeyColumns = objectPropertyGraph.PrimaryKeyColumns;
             ConstructorArgLength = objectPropertyGraph.SimpleConstructorArgs.Count() + objectPropertyGraph.ComplexConstructorArgs.Count();
 
             var complexCargParsers = new List<(int, ISonOfTheTheMoFoBitchParser)>();
-            var listCargParsers = new List<(int index, int, int[] primaryKeyColumns, Type)>();
             foreach (var constructorArg in objectPropertyGraph.ComplexConstructorArgs)
             {
                 var parserType = typeof(SonOfTheMoFoBitchParser<>)
@@ -43,13 +43,7 @@ namespace SqlDsl.DataParser
                     (ISonOfTheTheMoFoBitchParser)Activator.CreateInstance(parserType, new object[] { constructorArg.Value })));
             }
 
-            foreach (var constructorArg in objectPropertyGraph.SimpleConstructorArgs.Where(x => x.PrimaryKeyColumns.Length > 0))
-            {
-                listCargParsers.Add((constructorArg.Index, constructorArg.ArgIndex, constructorArg.PrimaryKeyColumns, constructorArg.DataCellType));
-            }
-
             ComplexCArgParsers = complexCargParsers.AsReadOnly();
-            ListCArgParsers = listCargParsers.AsReadOnly();
         }
         
         static ConstructorInfo GetConstructor(ObjectPropertyGraph objectPropertyGraph)
@@ -94,15 +88,15 @@ namespace SqlDsl.DataParser
         }
 
 
-        public void SetSimpleConstructorArgs(IEnumerable[] values, IDataRecord reader)
-        {
-            foreach (var simple in SimpleConstructorArgs)
-            {
-                // TODO: can I reuse these arrays?
-                var arr = Array.CreateInstance(simple.DataCellType, 1);
-                arr.SetValue(reader.GetValue(simple.Index), 0);
-                values[simple.ArgIndex] = arr;
-            }
-        }
+        // public void SetSimpleConstructorArgs(IEnumerable[] values, IDataRecord reader)
+        // {
+        //     foreach (var simple in SimpleConstructorArgs)
+        //     {
+        //         // TODO: can I reuse these arrays?
+        //         var arr = Array.CreateInstance(simple.DataCellType, 1);
+        //         arr.SetValue(reader.GetValue(simple.Index), 0);
+        //         values[simple.ArgIndex] = arr;
+        //     }
+        // }
     }
 }

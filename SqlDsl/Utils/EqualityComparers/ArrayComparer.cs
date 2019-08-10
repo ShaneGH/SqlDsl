@@ -1,9 +1,4 @@
-using SqlDsl.ObjectBuilders;
-using SqlDsl.SqlBuilders;
-using SqlDsl.Utils;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SqlDsl.Utils.EqualityComparers
 {
