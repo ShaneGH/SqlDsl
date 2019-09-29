@@ -698,6 +698,32 @@ namespace SqlDsl.Utils
                     .Select(p => (name: p.Name, type: p.PropertyType, readOnly: p.GetSetMethod() == null)));
         }
 
+        public static Expression CatchBlock(Expression e, Action<object[]> catchBlock)
+        {
+            if (e is MethodCallExpression mc)
+            {
+                var ex = Expression.Parameter(typeof(Exception));
+                var argArray = new Expression[]
+                {
+                    ex, 
+                    Expression.Constant(mc.Method.Name),
+                    mc.Object
+                }
+                .Concat(mc.Arguments)
+                .Select(x => Expression.Convert(x, typeof(object)));
+                
+                var args = Expression.NewArrayInit(typeof(object), argArray);
+                var body = Expression.Block(
+                    Expression.Invoke(Expression.Constant(catchBlock), args),
+                    Expression.Throw(ex));
+
+                return Expression.TryCatch(
+                    e, Expression.MakeCatchBlock(typeof(Exception), ex, body, Expression.Constant(true)));
+            }
+
+            throw new NotImplementedException("This is a debug only method");
+        }
+
         /// <summary>
         /// Get the public instance fields and properties from a class
         /// </summary>
@@ -768,7 +794,7 @@ namespace SqlDsl.Utils
         /// <summary>
         /// A flag to enable a debug version of Expression.Convert
         /// </summary>
-        public const bool DebugConvert = false;
+        public const bool DebugConvert = true;
 
         /// <summary>
         /// Proxy to Expression.Convert. This function is convenient for debugging as it can optionally add console.log statements
@@ -797,11 +823,16 @@ namespace SqlDsl.Utils
                     Expression.Constant($"] to [{t.FullName}].")));
 
             var log = Expression.Call(
-                GetMethod(() => Console.WriteLine("")),
+                GetMethod(() => WriteLine("")),
                 message);
 
             return Expression.Block(log, Expression.Convert(from, t));
             #pragma warning restore 0162
+        }
+
+        static void WriteLine(string input)
+        {
+            Console.WriteLine(input);
         }
 
         public static string GetTypeString(object obj)

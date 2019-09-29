@@ -10,13 +10,20 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(SqlType.TSql)]
+    [SqlTestAttribute(SqlType.MySql)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class MappingObjectShapeTests : FullPathTestBase
     {
-        public MappingObjectShapeTests()
-            : base(SqlType.Sqlite)
+        public MappingObjectShapeTests(SqlType sqlType)
+            : base(sqlType)
         {
         }
+        
+        // public MappingObjectShapeTests()
+        //     : base(SqlType.Sqlite)
+        // {
+        // }
 
         public class TableWithOneColumnMapper1
         {
@@ -946,6 +953,7 @@ namespace SqlDsl.UnitTests.FullPathTests
             // act
             var data = TestUtils
                 .FullyJoinedQuery(SqlType)
+                .Where(x => x.ThePerson.Name == "John")
                 .OrderBy(x => x.ThePersonsData.PersonId + x.ThePerson.Id)
                 .Map(x => new
                 {

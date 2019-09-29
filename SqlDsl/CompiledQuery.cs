@@ -201,7 +201,10 @@ namespace SqlDsl
 
             using (var dbReader = executor.ExecuteDataReader(sql, BuildParameters(args)))
             {
-                var parser = new TheMoFoParser<TResult>(dbReader, PropertyGraph);
+                var parser = RequiresSimpleValueUnwrap
+                    ? (IParser<TResult>)new PropMapValueParser<TResult>(dbReader, PropertyGraph)
+                    : new __NewParser<TResult>(dbReader, PropertyGraph);
+
                 while (true)
                 {
                     var (ok, result) = parser.Next();

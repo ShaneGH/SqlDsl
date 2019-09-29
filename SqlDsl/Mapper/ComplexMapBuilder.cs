@@ -48,6 +48,7 @@ namespace SqlDsl.Mapper
             var (isConstant, requiresArgs) = ReflectionUtils.IsConstant(expr, state.ArgsObject);
             if (isConstant)
             {
+                // TODO: this refelction is called during compile map
                 var result = requiresArgs ?
                     QueryArgAccessor.Create(state.ArgsObject, expr) :
                     ReflectionUtils.ExecuteExpression(expr);

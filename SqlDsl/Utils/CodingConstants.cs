@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using SqlDsl.Mapper;
 using SqlDsl.SqlBuilders;
@@ -11,6 +12,11 @@ namespace SqlDsl.Utils
         public static readonly MethodInfo GenericSelectMethod = ReflectionUtils
             .GetMethod(() => new int[0].Select(x => x))
             .GetGenericMethodDefinition();
+
+        public class Expr
+        {
+            public static readonly Expression Null = Expression.Constant(null);
+        }
         
         public class Empty
         {

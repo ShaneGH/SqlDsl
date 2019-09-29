@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 using SqlDsl.Utils;
 using SqlDsl.Utils.EqualityComparers;
 
-namespace SqlDsl.DataParser
+namespace SqlDsl.DataParser.DPP
 {
     public class ConstructorArgPopulator
     {
@@ -25,7 +25,7 @@ namespace SqlDsl.DataParser
 
         // todo: use this as a fallback for types which
         // cannot be parsed by other means
-        public object[] ReferenceObjects;
+        public object[] ReferenceObjectCArgs;
 
         static readonly Dictionary<Type, CollectionInitializer> _collectionInitializers = BuildCollectionInitializers();
         readonly Action<IDataRecord, ConstructorArgPopulator> _rowParser;
@@ -44,10 +44,11 @@ namespace SqlDsl.DataParser
             _rowParser = GetRowParser(propertyGraph.SimpleConstructorArgs);
         }
 
-        public void ParseRow(IDataRecord data) => _rowParser(data, this);
+        public virtual void ParseRow(IDataRecord data) => _rowParser(data, this);
 
         static ConcurrentDictionary<Tuple<int, int, Type, Type>[], Action<IDataRecord, ConstructorArgPopulator>> _simpleConstructorArgPopulators = 
             new ConcurrentDictionary<Tuple<int, int, Type, Type>[], Action<IDataRecord, ConstructorArgPopulator>>(ArrayComparer<Tuple<int, int, Type, Type>>.Instance);
+        
         static Action<IDataRecord, ConstructorArgPopulator> GetRowParser(SimpleConstructorArg[] simpleConstructorArgs)
         {
             var key = simpleConstructorArgs
@@ -76,6 +77,7 @@ namespace SqlDsl.DataParser
                     args)
                 .Compile();
 
+            // args[cArgIndex] = dataRecord.GetInt32(colIndex);
             Expression BuildArg(SimpleConstructorArg arg)
             {
                 var key = arg.DataCellType.IsEnum
@@ -117,7 +119,7 @@ namespace SqlDsl.DataParser
                 { typeof(short), new CollectionInitializer(InitializeInt16s, nameof(Int16CArgs), nameof(IDataReader.GetInt16)) },
                 { typeof(int), new CollectionInitializer(InitializeInt32s, nameof(Int32CArgs), nameof(IDataReader.GetInt32)) },
                 { typeof(long), new CollectionInitializer(InitializeInt64s, nameof(Int64CArgs), nameof(IDataReader.GetInt64)) },
-                { typeof(object), new CollectionInitializer(InitializeReferenceObjects, nameof(ReferenceObjects), nameof(IDataReader.GetValue)) }
+                { typeof(object), new CollectionInitializer(InitializeReferenceObjects, nameof(ReferenceObjectCArgs), nameof(IDataReader.GetValue)) }
             };
         }
 
@@ -189,8 +191,8 @@ namespace SqlDsl.DataParser
 
         static void InitializeReferenceObjects(ConstructorArgPopulator onObject, int length)
         {
-            if (onObject.ReferenceObjects != null) return;
-            onObject.ReferenceObjects = new object[length];
+            if (onObject.ReferenceObjectCArgs != null) return;
+            onObject.ReferenceObjectCArgs = new object[length];
         }
 
         private class CollectionInitializer

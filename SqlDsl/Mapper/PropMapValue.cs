@@ -7,7 +7,7 @@ namespace SqlDsl.Mapper
     {
         public T Value;
 
-        internal PropMapValue(ICache cache)
+        public PropMapValue(ICache cache)
             : base(cache)
         {
             if (cache is BadCache)
