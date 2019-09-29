@@ -6,11 +6,13 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [TestFixture]
+    [SqlTestAttribute(SqlType.TSql)]
+    [SqlTestAttribute(SqlType.MySql)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class CompositeKeyTests : FullPathTestBase
     {
-        public CompositeKeyTests()
-            : base(SqlType.MySql)
+        public CompositeKeyTests(SqlType mySql)
+            : base(mySql)
         {
         }
     
