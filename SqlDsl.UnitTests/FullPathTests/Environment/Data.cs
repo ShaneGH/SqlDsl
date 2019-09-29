@@ -57,7 +57,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                         personClasses: Data.PersonClasses,
                         classTags: Data.ClassTags,
                         purchases: Data.Purchases,
-                        tablesWithOneColumn: Data.TablesWithOneRowAndOneColumn);
+                        tablesWithOneColumn: Data.TablesWithOneRowAndOneColumn,
+                        testData: new [] { TestDataTables.DataTypeTestNotNulled, TestDataTables.DataTypeTestNulled });
                     break;
                     
                 case SqlType.MySql:
@@ -69,7 +70,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                         personClasses: Data.PersonClasses,
                         classTags: Data.ClassTags,
                         purchases: Data.Purchases,
-                        tablesWithOneColumn: Data.TablesWithOneRowAndOneColumn);
+                        tablesWithOneColumn: Data.TablesWithOneRowAndOneColumn,
+                        testData: new [] { TestDataTables.DataTypeTestNotNulled, TestDataTables.DataTypeTestNulled });
                     break;
                     
                 case SqlType.TSql:
@@ -81,7 +83,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                         personClasses: Data.PersonClasses,
                         classTags: Data.ClassTags,
                         purchases: Data.Purchases,
-                        tablesWithOneColumn: Data.TablesWithOneRowAndOneColumn);
+                        tablesWithOneColumn: Data.TablesWithOneRowAndOneColumn,
+                        testData: new [] { TestDataTables.DataTypeTestNotNulled, TestDataTables.DataTypeTestNulled });
                     break;
 
                 default:

@@ -144,7 +144,6 @@ namespace SqlDsl.ObjectBuilders
             }
         }
 
-
         /// <summary>
         /// Build an object
         /// </summary>

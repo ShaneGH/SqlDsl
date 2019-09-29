@@ -1,15 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
-using Newtonsoft.Json;
 using SqlDsl.Sqlite;
 using SqlDsl.Utils;
 
@@ -26,7 +20,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             IEnumerable<Tag> tags = null,
             IEnumerable<Purchase> purchases = null,
             IEnumerable<TableWithOneRowAndOneColumn> tablesWithOneColumn = null,
-            IEnumerable<DataDump> dataDump = null)
+            IEnumerable<DataDump> dataDump = null,
+            IEnumerable<TestDataTable> testData = null)
             : base(
                 BuildDependenciesTypes(),
                 people,
@@ -37,7 +32,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 tags,
                 purchases,
                 tablesWithOneColumn,
-                dataDump)
+                dataDump,
+                testData)
         {
         }
 
@@ -59,25 +55,28 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                     Float = "REAL",
                     Float_Null = "REAL",
                     ByteArray = "BLOB",
+                    Byte = "INTEGER",
+                    Byte_Null = "INTEGER",
+                    SByte = "INTEGER",
+                    SByte_Null = "INTEGER",
+                    Short = "INTEGER",
+                    Short_Null = "INTEGER",
+                    UShort = "INTEGER",
+                    UShort_Null = "INTEGER",
+                    UInt = "INTEGER",
+                    UInt_Null = "INTEGER",
+                    ULong = "INTEGER",
+                    ULong_Null = "INTEGER",
+                    Double = "REAL",
+                    Double_Null = "REAL",
+                    Decimal = "REAL",
+                    Decimal_Null = "REAL",
+                    Char = "TEXT",
+                    Char_Null = "TEXT",
+                    Guid = "BLOB",
+                    Guid_Null = "BLOG",
                     Enum = "INTEGER",
-                    
-                    GetString =  (x, y) => x == null ? "NULL" : "'" + x + "'",
-                    GetDateTime = (x, y) => x.Ticks.ToString(),
-                    GetDateTime_Null = (x, y) => x == null ? "NULL" : x.Value.Ticks.ToString(),
-                    GetBool = (x, y) => x ? "1" : "0",
-                    GetBool_Null = (x, y) => x == null ? "NULL" : x.Value ? "1" : "0",
-                    GetInt = (x, y) => x.ToString(),
-                    GetInt_Null = (x, y) => x == null ? "NULL" : x.ToString(),
-                    GetLong = (x, y) => x.ToString(),
-                    GetLong_Null = (x, y) => x == null ? "NULL" : x.ToString(),
-                    GetFloat = (x, y) => x.ToString(),
-                    GetFloat_Null = (x, y) => x == null ? "NULL" : x.ToString(),
-                    GetByteArray = (x, y) => 
-                    {
-                        y.Add(x);
-                        return "@p" + (y.Count - 1);   
-                    },
-                    GetEnum = (x, y) => x.ToString()
+                    Enum_Null = "INTEGER"
                 },
                 _ => 
                 {

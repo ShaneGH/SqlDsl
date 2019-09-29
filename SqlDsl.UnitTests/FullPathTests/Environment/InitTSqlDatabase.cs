@@ -18,7 +18,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             IEnumerable<Tag> tags = null,
             IEnumerable<Purchase> purchases = null,
             IEnumerable<TableWithOneRowAndOneColumn> tablesWithOneColumn = null,
-            IEnumerable<DataDump> dataDump = null)
+            IEnumerable<DataDump> dataDump = null,
+            IEnumerable<TestDataTable> testData = null)
             : base(
                 BuildDependenciesTypes(),
                 people,
@@ -29,7 +30,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                 tags,
                 purchases,
                 tablesWithOneColumn,
-                dataDump)
+                dataDump,
+                testData)
         {
         }
 
@@ -51,35 +53,26 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                     Float = "FLOAT",
                     Float_Null = "FLOAT",
                     ByteArray = "VARBINARY(1024)",
+                    Byte = "INT",
+                    Byte_Null = "INT",
+                    SByte = "INT",
+                    SByte_Null = "INT",
+                    Short = "INT",
+                    Short_Null = "INT",
+                    UShort = "INT",
+                    UShort_Null = "INT",
+                    UInt = "INT",
+                    UInt_Null = "INT",
+                    ULong = "INT",
+                    ULong_Null = "INT",
+                    Double = "INT",
+                    Double_Null = "INT",
+                    Decimal = "INT",
+                    Decimal_Null = "INT",
+                    Guid = "UNIQUEIDENTIFIER",
+                    Guid_Null = "UNIQUEIDENTIFIER",
                     Enum = "SMALLINT",
-                    
-                    GetString =  (x, y) => x == null ? "NULL" : "'" + x + "'",
-                    GetDateTime = (x, y) => 
-                    {
-                        y.Add(x);
-                        return "@p" + (y.Count - 1);   
-                    },
-                    GetDateTime_Null = (x, y) => 
-                    {
-                        if (x == null) return "NULL";
-
-                        y.Add(x);
-                        return "@p" + (y.Count - 1);   
-                    },
-                    GetBool = (x, y) => x ? "1" : "0",
-                    GetBool_Null = (x, y) => x == null ? "NULL" : x.Value ? "1" : "0",
-                    GetInt = (x, y) => x.ToString(),
-                    GetInt_Null = (x, y) => x == null ? "NULL" : x.ToString(),
-                    GetLong = (x, y) => x.ToString(),
-                    GetLong_Null = (x, y) => x == null ? "NULL" : x.ToString(),
-                    GetFloat = (x, y) => x.ToString(),
-                    GetFloat_Null = (x, y) => x == null ? "NULL" : x.ToString(),
-                    GetByteArray = (x, y) => 
-                    {
-                        y.Add(x);
-                        return "@p" + (y.Count - 1);   
-                    },
-                    GetEnum = (x, y) => x.ToString()
+                    Enum_Null = "SMALLINT"
                 },
                 (Settings settings) => 
                 {

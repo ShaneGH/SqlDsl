@@ -1,15 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
-using Newtonsoft.Json;
 using SqlDsl.SqlBuilders;
 using SqlDsl.UnitTests.Utils;
 using SqlDsl.Utils;
@@ -30,21 +21,28 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         public string Float { get; set; }
         public string Float_Null { get; set; }
         public string ByteArray { get; set; }
+        public string Byte { get; set; }
+        public string Byte_Null { get; set; }
+        public string SByte { get; set; }
+        public string SByte_Null { get; set; }
+        public string Short { get; set; }
+        public string Short_Null { get; set; }
+        public string UShort { get; set; }
+        public string UShort_Null { get; set; }
+        public string UInt { get; set; }
+        public string UInt_Null { get; set; }
+        public string ULong { get; set; }
+        public string ULong_Null { get; set; }
+        public string Double { get; set; }
+        public string Double_Null { get; set; }
+        public string Decimal { get; set; }
+        public string Decimal_Null { get; set; }
+        public string Char { get; set; }
+        public string Char_Null { get; set; }
+        public string Guid { get; set; }
+        public string Guid_Null { get; set; }
         public string Enum { get; set; }
-        
-        public Func<string, List<object>, string> GetString { get; set; }
-        public Func<DateTime, List<object>, string> GetDateTime { get; set; }
-        public Func<DateTime?, List<object>, string> GetDateTime_Null { get; set; }
-        public Func<bool, List<object>, string> GetBool { get; set; }
-        public Func<bool?, List<object>, string> GetBool_Null { get; set; }
-        public Func<int, List<object>, string> GetInt { get; set; }
-        public Func<int?, List<object>, string> GetInt_Null { get; set; }
-        public Func<long, List<object>, string> GetLong { get; set; }
-        public Func<long?, List<object>, string> GetLong_Null { get; set; }
-        public Func<float, List<object>, string> GetFloat { get; set; }
-        public Func<float?, List<object>, string> GetFloat_Null { get; set; }
-        public Func<byte[], List<object>, string> GetByteArray { get; set; }
-        public Func<int, List<object>, string> GetEnum { get; set; }
+        public string Enum_Null { get; set; }
     }
 
     public class Dependencies
@@ -85,6 +83,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         readonly IEnumerable<Purchase> Purchases;
         readonly IEnumerable<TableWithOneRowAndOneColumn> TablesWithOneColumn;
         readonly IEnumerable<DataDump> DataDump;
+        readonly IEnumerable<TestDataTable> TestData;
 
         public InitDatabaseBase(
             Dependencies dependencies,
@@ -96,7 +95,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             IEnumerable<Tag> tags,
             IEnumerable<Purchase> purchases,
             IEnumerable<TableWithOneRowAndOneColumn> tablesWithOneColumn,
-            IEnumerable<DataDump> dataDump)
+            IEnumerable<DataDump> dataDump,
+            IEnumerable<TestDataTable> testData)
         {
             Dependencies = dependencies;
             People = people;
@@ -108,6 +108,7 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             Purchases = purchases;
             TablesWithOneColumn = tablesWithOneColumn;
             DataDump = dataDump;
+            TestData = testData;
         }
 
         public void Execute(Settings settings)
@@ -128,7 +129,8 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
                     PopulatedTableSql(ClassTags.OrEmpty(), paramaters),
                     PopulatedTableSql(Purchases.OrEmpty(), paramaters),
                     PopulatedTableSql(TablesWithOneColumn.OrEmpty(), paramaters),
-                    PopulatedTableSql(DataDump.OrEmpty(), paramaters)
+                    PopulatedTableSql(DataDump.OrEmpty(), paramaters),
+                    PopulatedTableSql(TestData.OrEmpty(), paramaters)
                 }.JoinString("\n");
                 
                 Console.WriteLine($" * Adding data");
@@ -153,15 +155,19 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
 
             var props = typeof(T)
                 .GetProperties()
+                .Select(x => new { x.Name, x.PropertyType, Get = (Func<T, object>)(e => x.GetMethod.Invoke(e, new object[0])) })
+                .Concat(typeof(T)
+                    .GetFields()
+                    .Select(x => new { x.Name, PropertyType = x.FieldType, Get = (Func<T, object>)(e => x.GetValue(e)) }))
                 .ToList();
 
             var columns = props
-                .Select(prop => $"{prop.Name} {GetColType(prop.PropertyType)} {GetPrimaryKey(prop.Name)} {GetNullable(prop.PropertyType)}");
+                .Select(prop => $"`{prop.Name}` {GetColType(prop.PropertyType)} {GetPrimaryKey(prop.Name)} {GetNullable(prop.PropertyType)}");
 
             var data = entities
                 .Select(e => props
                     .Select(p => 
-                        SqlValue(p.GetMethod.Invoke(e, new object[0]), p.PropertyType, paramaters)).JoinString(", "))
+                        SqlValue(p.Get(e), p.PropertyType, paramaters)).JoinString(", "))
                 .Select(v => $"INSERT INTO {Dependencies.SqlSyntax.WrapTable(typeof(T).Name)}\nVALUES ({v});");
 
             return new [] 
@@ -186,33 +192,88 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             if (t == typeof(long?)) return Dependencies.DataTypes.Long_Null;
             if (t == typeof(float)) return Dependencies.DataTypes.Float;
             if (t == typeof(float?)) return Dependencies.DataTypes.Float_Null;
+            if (t == typeof(byte)) return Dependencies.DataTypes.Byte;
+            if (t == typeof(byte?)) return Dependencies.DataTypes.Byte_Null;
+            if (t == typeof(sbyte)) return Dependencies.DataTypes.SByte;
+            if (t == typeof(sbyte?)) return Dependencies.DataTypes.SByte_Null;
+            if (t == typeof(short)) return Dependencies.DataTypes.Short;
+            if (t == typeof(short?)) return Dependencies.DataTypes.Short_Null;
+            if (t == typeof(ushort)) return Dependencies.DataTypes.UShort;
+            if (t == typeof(ushort?)) return Dependencies.DataTypes.UShort_Null;
+            if (t == typeof(uint)) return Dependencies.DataTypes.UInt;
+            if (t == typeof(uint?)) return Dependencies.DataTypes.UInt_Null;
+            if (t == typeof(ulong)) return Dependencies.DataTypes.ULong;
+            if (t == typeof(ulong?)) return Dependencies.DataTypes.ULong_Null;
+            if (t == typeof(double)) return Dependencies.DataTypes.Double;
+            if (t == typeof(double?)) return Dependencies.DataTypes.Double_Null;
+            if (t == typeof(decimal)) return Dependencies.DataTypes.Decimal;
+            if (t == typeof(decimal?)) return Dependencies.DataTypes.Decimal_Null;
+            if (t == typeof(char)) return Dependencies.DataTypes.Char;
+            if (t == typeof(char?)) return Dependencies.DataTypes.Char_Null;
+            if (t == typeof(Guid)) return Dependencies.DataTypes.Guid;
+            if (t == typeof(Guid?)) return Dependencies.DataTypes.Guid_Null;
+            if (t == typeof(IEnumerable<char>)) return Dependencies.DataTypes.String;
+            if (t == typeof(List<char>)) return Dependencies.DataTypes.String;
+            if (t == typeof(char[])) return Dependencies.DataTypes.String;
+            if (t == typeof(IEnumerable<byte>)) return Dependencies.DataTypes.ByteArray;
+            if (t == typeof(List<byte>)) return Dependencies.DataTypes.ByteArray;
             if (t == typeof(byte[])) return Dependencies.DataTypes.ByteArray;
             if (t.IsEnum) return Dependencies.DataTypes.Enum;
+            if (TryGetNullableType(t)?.IsEnum ?? false) return Dependencies.DataTypes.Enum_Null;
 
             throw new NotSupportedException($"Invalid database data type: {t}");
+        }
+
+        Type TryGetNullableType(Type t)
+        {
+            if (t.IsGenericType &&
+                t.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                return t.GetGenericArguments()[0];
+            }
+
+            return null;
         }
 
         string GetPrimaryKey(string name) => name.ToLowerInvariant() == "id" ? " PRIMARY KEY" : "";
 
         string SqlValue(object val, Type t, List<object> parameters)
         {
-            if (t == typeof(string)) return Dependencies.DataTypes.GetString((string)val, parameters);
-            if (t == typeof(DateTime)) return Dependencies.DataTypes.GetDateTime((DateTime)val, parameters);
-            if (t == typeof(DateTime?)) return Dependencies.DataTypes.GetDateTime_Null((DateTime?)val, parameters);
-            if (t == typeof(bool)) return Dependencies.DataTypes.GetBool((bool)val, parameters);
-            if (t == typeof(bool?)) return Dependencies.DataTypes.GetBool_Null((bool?)val, parameters);
-            if (t == typeof(int)) return Dependencies.DataTypes.GetInt((int)val, parameters);
-            if (t == typeof(int?)) return Dependencies.DataTypes.GetInt_Null((int?)val, parameters);
-            if (t == typeof(long)) return Dependencies.DataTypes.GetLong((long)val, parameters);
-            if (t == typeof(long?)) return Dependencies.DataTypes.GetLong_Null((long?)val, parameters);
-            if (t == typeof(float)) return Dependencies.DataTypes.GetFloat((float)val, parameters);
-            if (t == typeof(float?)) return Dependencies.DataTypes.GetFloat_Null((float?)val, parameters);
-            if (t == typeof(byte[])) return Dependencies.DataTypes.GetByteArray((byte[])val, parameters);
-            if (t.IsEnum) return Dependencies.DataTypes.GetEnum((int)val, parameters);
+            if (val == null) return "NULL";
 
-            throw new NotSupportedException($"Unsupported sql value {val}, {t}");
+            if (t == typeof(IEnumerable<char>) ||
+                t == typeof(char[]) || 
+                t == typeof(List<char>))
+            {
+                return SqlValue(new string((val as IEnumerable<char>).ToArray()), typeof(string), parameters);
+            }
+
+            if (t == typeof(char) || t == typeof(char?))
+            {
+                return SqlValue(val?.ToString(), typeof(string), parameters);
+            }
+
+            if (t == typeof(IEnumerable<byte>) ||
+                t == typeof(List<byte>))
+            {
+                return SqlValue((val as IEnumerable<byte>).ToArray(), typeof(byte[]), parameters);
+            }
+
+            if (t == typeof(Guid?))
+            {
+                // value will not be null (see above)
+                return SqlValue(((Guid?)val).Value, typeof(Guid), parameters);
+            }
+
+            if (t == typeof(Guid))
+            {
+                return SqlValue(((Guid)val).ToByteArray(), typeof(byte[]), parameters);
+            }
+
+            parameters.Add(val);
+            return $"@p{parameters.Count - 1}";
         }
 
-        string GetNullable(Type t) => t.IsClass || t.FullName.StartsWith("System.Nullable`1[") ? " NULL" : " NOT NULL";
+        string GetNullable(Type t) => t.IsClass || t.IsInterface || t.FullName.StartsWith("System.Nullable`1[") ? " NULL" : " NOT NULL";
     }
 }

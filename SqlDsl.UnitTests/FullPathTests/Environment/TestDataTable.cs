@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SqlDsl.UnitTests.SqlFlavours
+namespace SqlDsl.UnitTests.FullPathTests.Environment
 {    
     public class TestDataTable
     {
@@ -57,8 +57,49 @@ namespace SqlDsl.UnitTests.SqlFlavours
         public TestEnum TestEnum;
         public TestEnum? TestEnum_N;
 
-        public object NullableValueTypeAsObject;
-        public object ReferenceTypeAsObject;
+        public static void Compare(TestDataTable expected, TestDataTable actual)
+        {
+            Assert.AreEqual(expected.PrimaryKey, actual.PrimaryKey);
+            Assert.AreEqual(expected.Bool, actual.Bool);
+            Assert.AreEqual(expected.Bool_N, actual.Bool_N);
+            Assert.AreEqual(expected.Byte, actual.Byte);
+            Assert.AreEqual(expected.Byte_N, actual.Byte_N);
+            Assert.AreEqual(expected.ByteArray, actual.ByteArray);
+            Assert.AreEqual(expected.ByteEnumerable, actual.ByteEnumerable);
+            Assert.AreEqual(expected.ByteList, actual.ByteList);
+            Assert.AreEqual(expected.Char, actual.Char);
+            Assert.AreEqual(expected.Char_N, actual.Char_N);
+            Assert.AreEqual(expected.CharArray, actual.CharArray);
+            Assert.AreEqual(expected.CharEnumerable, actual.CharEnumerable);
+            Assert.AreEqual(expected.CharList, actual.CharList);
+            Assert.AreEqual(expected.DateTime, actual.DateTime);
+            Assert.AreEqual(expected.DateTime_N, actual.DateTime_N);
+            Assert.AreEqual(expected.Decimal, actual.Decimal);
+            Assert.AreEqual(expected.Decimal_N, actual.Decimal_N);
+            Assert.AreEqual(expected.Double, actual.Double);
+            Assert.AreEqual(expected.Double_N, actual.Double_N);
+            Assert.AreEqual(expected.Float, actual.Float);
+            Assert.AreEqual(expected.Float_N, actual.Float_N);
+            Assert.AreEqual(expected.Guid, actual.Guid);
+            Assert.AreEqual(expected.Guid_N, actual.Guid_N);
+            Assert.AreEqual(expected.Int, actual.Int);
+            Assert.AreEqual(expected.Int_N, actual.Int_N);
+            Assert.AreEqual(expected.Long, actual.Long);
+            Assert.AreEqual(expected.Long_N, actual.Long_N);
+            Assert.AreEqual(expected.SByte, actual.SByte);
+            Assert.AreEqual(expected.SByte_N, actual.SByte_N);
+            Assert.AreEqual(expected.Short, actual.Short);
+            Assert.AreEqual(expected.Short_N, actual.Short_N);
+            Assert.AreEqual(expected.String, actual.String);
+            Assert.AreEqual(expected.TestEnum, actual.TestEnum);
+            Assert.AreEqual(expected.TestEnum_N, actual.TestEnum_N);
+            Assert.AreEqual(expected.UInt, actual.UInt);
+            Assert.AreEqual(expected.UInt_N, actual.UInt_N);
+            Assert.AreEqual(expected.ULong, actual.ULong);
+            Assert.AreEqual(expected.ULong_N, actual.ULong_N);
+            Assert.AreEqual(expected.UShort, actual.UShort);
+            Assert.AreEqual(expected.UShort_N, actual.UShort_N);
+        }
     }
 
     public enum TestEnum
@@ -119,10 +160,7 @@ namespace SqlDsl.UnitTests.SqlFlavours
             ByteList = new List<byte> { 29, 30 },
 
             TestEnum = TestEnum.Option1,
-            TestEnum_N = TestEnum.Option2,
-
-            NullableValueTypeAsObject = 123,
-            ReferenceTypeAsObject = "j"
+            TestEnum_N = TestEnum.Option2
         };
         
         public static readonly TestDataTable DataTypeTestNulled = new TestDataTable
@@ -143,9 +181,10 @@ namespace SqlDsl.UnitTests.SqlFlavours
             Int_N = null,
             Long_N = null,
 
-            UShort = 12,
-            UInt = 13,
-            ULong = 14,
+            UShort = ((ushort)short.MaxValue) + 2,
+            UInt = ((uint)int.MaxValue) + 2,
+            // TODO: convert to ((ulong)long.MaxValue) + 2,  and test on SQLITE
+            ULong = ((ulong)long.MaxValue) - 2,
             UShort_N = null,
             UInt_N = null,
             ULong_N = null,
@@ -175,10 +214,7 @@ namespace SqlDsl.UnitTests.SqlFlavours
             ByteList = null,
 
             TestEnum = TestEnum.Option1,
-            TestEnum_N = null,
-
-            NullableValueTypeAsObject = 123,
-            ReferenceTypeAsObject = "j"
+            TestEnum_N = null
         };
     }
 }
