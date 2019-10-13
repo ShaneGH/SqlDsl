@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using System.Threading.Tasks;
 
 namespace SqlDsl
@@ -11,11 +13,11 @@ namespace SqlDsl
         /// <summary>
         /// Execute a sql query and return a reader to read results
         /// </summary>
-        Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters, string[] columnNames);
+        Task<DbDataReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters, string[] columnNames);
         
         /// <summary>
         /// Execute a sql query and return a reader to read results
         /// </summary>
-        IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters, string[] columnNames);
+        DbDataReader Execute(string sql, IEnumerable<(string name, object value)> paramaters, string[] columnNames);
     }
 }

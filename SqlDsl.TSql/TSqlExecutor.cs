@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
+using System.Data.Common;
 
 namespace SqlDsl.TSql
 {
@@ -22,12 +23,12 @@ namespace SqlDsl.TSql
         }
 
         /// <inheritdoc />
-        public async Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>
-            new TSqlReader(await CreateCommand(sql, paramaters).ExecuteReaderAsync().ConfigureAwait(false));
+        public async Task<DbDataReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>
+            await CreateCommand(sql, paramaters).ExecuteReaderAsync().ConfigureAwait(false);
 
         /// <inheritdoc />
-        public IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters) =>
-            new TSqlReader(CreateCommand(sql, paramaters).ExecuteReader());
+        public DbDataReader Execute(string sql, IEnumerable<(string name, object value)> paramaters) =>
+            CreateCommand(sql, paramaters).ExecuteReader();
 
         /// <inheritdoc />
         public Task ExecuteCommandAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>

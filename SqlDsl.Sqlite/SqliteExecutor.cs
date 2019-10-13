@@ -2,6 +2,7 @@
 using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Threading.Tasks;
 
 namespace SqlDsl.Sqlite
@@ -22,12 +23,12 @@ namespace SqlDsl.Sqlite
         }
 
         /// <inheritdoc />
-        public async Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>
-            new SqliteReader(await CreateCommand(sql, paramaters).ExecuteReaderAsync().ConfigureAwait(false));
+        public async Task<DbDataReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>
+            await CreateCommand(sql, paramaters).ExecuteReaderAsync().ConfigureAwait(false);
 
         /// <inheritdoc />
-        public IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters) =>
-            new SqliteReader(CreateCommand(sql, paramaters).ExecuteReader());
+        public DbDataReader Execute(string sql, IEnumerable<(string name, object value)> paramaters) =>
+            CreateCommand(sql, paramaters).ExecuteReader();
 
         /// <inheritdoc />
         public Task ExecuteCommandAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>

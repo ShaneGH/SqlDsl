@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
@@ -29,12 +30,12 @@ namespace SqlDsl.MySql
         }
 
         /// <inheritdoc />
-        public async Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>
-            new MySqlReader(await CreateCommand(sql, paramaters).ExecuteReaderAsync().ConfigureAwait(false));
+        public async Task<DbDataReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>
+            await CreateCommand(sql, paramaters).ExecuteReaderAsync().ConfigureAwait(false);
 
         /// <inheritdoc />
-        public IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters) =>
-            new MySqlReader(CreateCommand(sql, paramaters).ExecuteReader());
+        public DbDataReader Execute(string sql, IEnumerable<(string name, object value)> paramaters) =>
+            CreateCommand(sql, paramaters).ExecuteReader();
 
         /// <inheritdoc />
         public Task ExecuteCommandAsync(string sql, IEnumerable<(string name, object value)> paramaters) =>

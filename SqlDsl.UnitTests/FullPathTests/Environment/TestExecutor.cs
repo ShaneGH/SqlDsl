@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -21,13 +22,13 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             this._sqlType = sqlType;
         }
 
-        public async Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters, string[] colNames)
+        public async Task<DbDataReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters, string[] colNames)
         {
             AddSqlStatement(sql, paramaters, colNames);
             return new TestReader(this, await Executor.ExecuteAsync(sql, paramaters), SqlStatements.Count - 1);
         }
 
-        public Task<IReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters)
+        public Task<DbDataReader> ExecuteAsync(string sql, IEnumerable<(string name, object value)> paramaters)
         {
             throw new NotImplementedException("Code should use overload with colNames");
         }
@@ -85,13 +86,13 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
             SqlStatements[index].results.Add(row);
         }
 
-        public IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters, string[] columnNames)
+        public DbDataReader Execute(string sql, IEnumerable<(string name, object value)> paramaters, string[] columnNames)
         {
             AddSqlStatement(sql, paramaters, columnNames);
             return new TestReader(this, Executor.Execute(sql, paramaters), SqlStatements.Count - 1);
         }
 
-        public IReader Execute(string sql, IEnumerable<(string name, object value)> paramaters)
+        public DbDataReader Execute(string sql, IEnumerable<(string name, object value)> paramaters)
         {
             throw new NotImplementedException("Use async method with columnNames");
         }
@@ -106,43 +107,6 @@ namespace SqlDsl.UnitTests.FullPathTests.Environment
         {
             AddSqlStatement(sql, paramaters, new string[0]);
             Executor.ExecuteCommand(sql, paramaters);
-        }
-    }
-
-    class TestReader : IReader
-    {
-        TestExecutor Executor;
-        IReader Reader;
-        int Index;
-
-        public TestReader(TestExecutor executor, IReader reader, int index)
-        {
-            Executor = executor;
-            Reader = reader;
-            Index = index;
-        }
-
-        public void Dispose()
-        {
-            Reader.Dispose();
-        }
-
-        public (bool hasRow, object[] row) GetRow()
-        {
-            var row = Reader.GetRow();
-            if (row.hasRow)
-                Executor.RecordRow(Index, row.row);
-
-            return row;
-        }
-
-        public async Task<(bool hasRow, object[] row)> GetRowAsync()
-        {
-            var row = await Reader.GetRowAsync();
-            if (row.hasRow)
-                Executor.RecordRow(Index, row.row);
-
-            return row;
         }
     }
 }
