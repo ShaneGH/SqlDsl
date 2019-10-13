@@ -61,7 +61,7 @@ namespace SqlDsl.ObjectBuilders
         /// </summary>
         public virtual IEnumerable<(string name, IEnumerable<ObjectGraph> value)> GetComplexProps() =>
             PropertyGraph.ComplexProps
-                .Select(p => (p.name, CreateObject(p.value, Objects)));
+                .Select(p => (p.Name, CreateObject(p.Value, Objects)));
 
         /// <summary>
         /// Simple constructor args such as int, string, List&lt;int>, List&lt;string> etc...
@@ -74,19 +74,18 @@ namespace SqlDsl.ObjectBuilders
         /// </summary>
         public virtual IEnumerable<(int argIndex, IEnumerable<ObjectGraph> value)> GetComplexConstructorArgs() =>
             PropertyGraph.ComplexConstructorArgs
-                .Select(p => (p.argIndex, CreateObject(p.value, Objects)));
+                .Select(p => (p.ArgIndex, CreateObject(p.Value, Objects)));
 
-        (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleCArg(
-                    (int index, int argIndex, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType) p)
+        (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleCArg(SimpleConstructorArg p)
         {
-            var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.primaryKeyColumns, p.dataCellType);
-            return (p.argIndex, data, cellEnumType != null);
+            var (data, cellEnumType) = GetSimpleDataAndType(p.Index, p.PrimaryKeyColumns, p.DataCellType);
+            return (p.ArgIndex, data, cellEnumType != null);
         }
 
-        (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp((int index, string name, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType) p)
+        (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp(SimpleProp p)
         {
-            var (data, cellEnumType) = GetSimpleDataAndType(p.index, p.primaryKeyColumns, p.dataCellType);
-            return (p.name, data, cellEnumType != null);
+            var (data, cellEnumType) = GetSimpleDataAndType(p.Index, p.PrimaryKeyColumns, p.DataCellType);
+            return (p.Name, data, cellEnumType != null);
         }
 
         (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, int[] primaryKeyColumns, Type dataCellType)

@@ -51,11 +51,11 @@ namespace SqlDsl.DataParser
         public RootObjectPropertyGraph(
             Type objectType,
             IEnumerable<string> colNames,
-            (int index, string name, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType)[] simpleProps, 
-            (string name, ObjectPropertyGraph value)[] complexProps, 
+            SimpleProp[] simpleProps, 
+            ComplexProp[] complexProps, 
             int[] primaryKeyColumns,
-            (int index, int argIndex, int[] primaryKeyColumns, Type resultPropertyType, Type dataCellType)[] simpleConstructorArgs = null,
-            (int argIndex, Type constructorArgType, ObjectPropertyGraph value)[] complexConstructorArgs = null)
+            SimpleConstructorArg[] simpleConstructorArgs = null,
+            ComplexConstructorArg[] complexConstructorArgs = null)
             : base(objectType, simpleProps, complexProps, primaryKeyColumns, simpleConstructorArgs, complexConstructorArgs)
         {
             ColumnNames = colNames.ToArray();
