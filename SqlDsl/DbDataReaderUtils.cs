@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
+using SqlDsl.DataParser.DataRow;
 
 namespace SqlDsl
 {
@@ -15,7 +17,15 @@ namespace SqlDsl
 
             (bool, object[]) row;
             while ((row = await reader.GetRowAsync().ConfigureAwait(false)).Item1)
+            {
+                var types = new Type[reader.FieldCount];
+                for (var i = 0; i < reader.FieldCount; i++)
+                {
+                    types[i] = reader.GetFieldType(i);
+                }
+
                 rows.Add(row.Item2);
+            }
 
             return rows;
         }

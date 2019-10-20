@@ -9,12 +9,18 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    [SqlTestAttribute(SqlType.MySql)]
-    [SqlTestAttribute(SqlType.Sqlite)]
+    // [SqlTestAttribute(SqlType.MySql)]
+    // [SqlTestAttribute(SqlType.Sqlite)]
+    [TestFixture]
     public class MappingObjectShapeTests : FullPathTestBase
     {
-        public MappingObjectShapeTests(SqlType testFlavour)
-            : base(testFlavour)
+        // public MappingObjectShapeTests(SqlType testFlavour)
+        //     : base(testFlavour)
+        // {
+        // }
+        
+        public MappingObjectShapeTests()
+            : base(SqlType .Sqlite)
         {
         }
 
@@ -924,6 +930,8 @@ namespace SqlDsl.UnitTests.FullPathTests
         [Test]
         public async Task The_Gold_Standard_WithValues()
         {
+            PrintStatusOnFailure = false;
+
             // arrange
             // act
             var data = await TestUtils
