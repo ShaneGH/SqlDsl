@@ -37,7 +37,7 @@ namespace SqlDsl.DataParser.DataRow
         {
             if (!Reference.TryGetValue(type, out var types))
             {
-                throw new IndexOutOfRangeException($"Invalid dynamic type {type}");
+                throw new InvalidOperationException($"Invalid dynamic type {type}");
             }
 
             if (types.Length <= typeIndex)
@@ -45,7 +45,7 @@ namespace SqlDsl.DataParser.DataRow
                 throw new IndexOutOfRangeException($"{typeIndex} is out of range");
             }
 
-            throw new Exception($"Value {typeIndex} is a {types[typeIndex]}");
+            throw new InvalidOperationException($"Value {typeIndex} is a {types[typeIndex]}");
         }
 
         async Task<Type> _Compile(Type[] rowTypes)

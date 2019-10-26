@@ -16,11 +16,6 @@ namespace SqlDsl.DataParser.DataRow
     {
         private static readonly ReadOnlyCollection<MethodInfo> ValueObjectReadMethods = 
             new ReadOnlyCollection<MethodInfo>(GetValueObjectReadMethods().ToList());
-            
-        static MethodAttributes GetAttrs()
-        {
-            return MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.Public;
-        }
 
         public static void ImplementIDataRow(TypeBuilder toType, FieldInfo[] fields)
         {
@@ -63,6 +58,45 @@ namespace SqlDsl.DataParser.DataRow
             return label;
         }
 
+        private static HashSet<Type> Numerics = new HashSet<Type>
+        {
+            typeof(Byte),
+            typeof(SByte),
+            typeof(Decimal),
+            typeof(Double),
+            typeof(float),
+            typeof(Int16),
+            typeof(UInt16),
+            typeof(Int32),
+            typeof(UInt32),
+            typeof(Int64),
+            typeof(UInt64)
+        };
+
+        static int OrderField(FieldInfo field, MethodInfo forMethod)
+        {
+            if (field.FieldType == forMethod.ReturnType)
+                return 0;
+                
+            if (Numerics.Contains(forMethod.ReturnType) &&
+                Numerics.Contains(field.FieldType))
+            {
+                return 1;
+            }
+                
+            if (forMethod.ReturnType.IsValueType &&
+                field.FieldType.IsValueType &&
+                forMethod.ReturnType != typeof(Guid) &&
+                field.FieldType != typeof(Guid) &&
+                forMethod.ReturnType != typeof(DateTime) &&
+                field.FieldType != typeof(DateTime))
+            {
+                return 2;
+            }
+
+            return 3;
+        }
+
         static void BuildFieldGetMethod(TypeBuilder type, MethodInfo method, List<(int i, FieldInfo field)> fieldGetters)
         {
             var attributes = MethodAttributes.Public |
@@ -75,15 +109,12 @@ namespace SqlDsl.DataParser.DataRow
                 .DefineMethod(method.Name, attributes, method.ReturnType, new Type[] { typeof(int) })
                 .GetILGenerator();
 
-            methodBody.Emit(OpCodes.Nop);
-            methodBody.Emit(OpCodes.Ldarg_1);
-            methodBody.Emit(OpCodes.Stloc_0);
-
             bool first = true;
             List<(Label, FieldInfo)> caseResults = new List<(Label, FieldInfo)>();
-            foreach (var (i, field) in fieldGetters)
+            foreach (var (i, field) in fieldGetters
+                .OrderBy(x => OrderField(x.field, method)))
             {
-                methodBody.Emit(OpCodes.Ldloc_0);
+                methodBody.Emit(OpCodes.Ldarg_0);
                 if (first)
                     methodBody.Emit(OpCodes.Ldc_I4_S, i);
                 else
@@ -94,17 +125,31 @@ namespace SqlDsl.DataParser.DataRow
                 caseResults.Add((
                     methodBody.BranchTo(OpCodes.Beq_S),
                     field));
-                var nextCaseStart = methodBody.BranchTo(OpCodes.Br_S);
-                methodBody.MarkLabel(nextCaseStart);
             }
 
             Label returnLabel = methodBody.DefineLabel();
             foreach (var (startLabel, field) in caseResults)
             {
+                MethodInfo convert = null;
+                if (field.FieldType != method.ReturnType)
+                {
+                    convert = GetConvertMethod(field.FieldType, method.ReturnType);
+                }
+
                 methodBody.MarkLabel(startLabel);
                 methodBody.Emit(OpCodes.Ldarg_0);
                 methodBody.Emit(OpCodes.Ldfld, field);
-                methodBody.Emit(OpCodes.Stloc_1);
+
+                // reference types are stored as objects anyway
+                if (field.FieldType != method.ReturnType && !field.FieldType.IsClass && !field.FieldType.IsClass)
+                {
+                    var convertMethod = GetConvertMethod(field.FieldType, method.ReturnType);
+                    if (convertMethod != null)
+                        methodBody.Emit(OpCodes.Call, convertMethod);
+                    else
+                        throw new InvalidOperationException($"Cannot convert from type {field.FieldType} to type {method.ReturnType}.");
+                }
+
                 methodBody.Emit(OpCodes.Br_S, returnLabel);
             }
 
@@ -113,101 +158,23 @@ namespace SqlDsl.DataParser.DataRow
 
             methodBody.Emit(OpCodes.Ldarg_0);
             methodBody.Emit(OpCodes.Call, ReflectionUtils.GetMethod<object>(x => x.GetType()));
+
             methodBody.Emit(OpCodes.Ldarg_1);
             methodBody.Emit(OpCodes.Call, throwMethod);
-            methodBody.Emit(OpCodes.Stloc_1);
             methodBody.Emit(OpCodes.Br_S, returnLabel);
             methodBody.MarkLabel(returnLabel);
-            methodBody.Emit(OpCodes.Ldloc_1);
             methodBody.Emit(OpCodes.Ret);
-            
-    // IL_0039: ldarg.0
-    // IL_003a: call instance [netstandard]System.Type [netstandard]System.Object::GetType()
-    // IL_003f: ldarg.1
-    // IL_0040: call mvar il.TypeHolder::Throw([netstandard]System.Type, int32)
-    // IL_0045: stloc.1
-    // IL_0046: br.s     IL_0048
-    // IL_0048: ldloc.1
-    // IL_0049: ret
+        }
 
-
-            // // // // methodBody.Emit(OpCodes.Ldloc_0);
-            // // // // methodBody.Emit(OpCodes.Ldc_I4_S, 111);
-            // // // // var IL_001e = methodBody.BranchTo(OpCodes.Beq_S);
-            // // // // var IL_000a = methodBody.BranchTo(OpCodes.Br_S);
-            
-            // // // // methodBody.MarkLabel(IL_000a);
-            // // // // methodBody.Emit(OpCodes.Ldloc_0);
-            // // // // methodBody.Emit(OpCodes.Ldc_I4, 222);
-            // // // // var IL_0027 = methodBody.BranchTo(OpCodes.Beq_S);
-            // // // // var IL_0014 = methodBody.BranchTo(OpCodes.Br_S);
-            
-            // // // // methodBody.MarkLabel(IL_0014);
-            // // // // methodBody.Emit(OpCodes.Ldloc_0);
-            // // // // methodBody.Emit(OpCodes.Ldc_I4, 333);
-            // // // // var IL_0030 = methodBody.BranchTo(OpCodes.Beq_S);
-            // // // // var IL_0039 = methodBody.BranchTo(OpCodes.Br_S);
-            
-            // // // // methodBody.MarkLabel(IL_001e);
-            // // // // methodBody.Emit(OpCodes.Ldarg_0);
-            // // // // methodBody.Emit(OpCodes.Ldfld, F111);
-            // // // // methodBody.Emit(OpCodes.Stloc_1);
-            // // // // var IL_0094 = methodBody.BranchTo(OpCodes.Br_S);
-
-            // // // // methodBody.MarkLabel(IL_0027);
-            // // // // methodBody.Emit(OpCodes.Ldarg_0);
-            // // // // methodBody.Emit(OpCodes.Ldfld, F222);
-            // // // // methodBody.Emit(OpCodes.Stloc_1);
-            // // // // methodBody.Emit(OpCodes.Br_S, IL_0094);
-            
-            // // // // methodBody.MarkLabel(IL_0030);
-            // // // // methodBody.Emit(OpCodes.Ldarg_0);
-            // // // // methodBody.Emit(OpCodes.Ldfld, F333);
-            // // // // methodBody.Emit(OpCodes.Stloc_1);
-            // // // // methodBody.Emit(OpCodes.Br_S, IL_0094);
-            
-            // if (nextCaseStart != null)
-            //     methodBody.MarkLabel(nextCaseStart.Value);
-
-            // methodBody.Emit(OpCodes.Ldarg_0);
-            // methodBody.Emit(OpCodes.Call, ReflectionUtils.GetMethod<object>(x => x.GetType()));
-            // methodBody.Emit(OpCodes.Call, GetTypesMethod);
-
-            // methodBody.Emit(OpCodes.Ldlen);
-            // methodBody.Emit(OpCodes.Conv_I4);
-            // methodBody.Emit(OpCodes.Ldarg_1);
-            // methodBody.Emit(OpCodes.Cgt);
-            // methodBody.Emit(OpCodes.Ldc_I4_0);
-            // methodBody.Emit(OpCodes.Ceq);
-            // methodBody.Emit(OpCodes.Stloc_2);
-            // methodBody.Emit(OpCodes.Ldloc_2);
-            // var IL_006c = methodBody.BranchTo(OpCodes.Brfalse_S);
-            // methodBody.Emit(OpCodes.Nop);
-            // methodBody.Emit(OpCodes.Ldstr, "{0} is out of range.");
-            // methodBody.Emit(OpCodes.Ldarg_1);
-            // methodBody.Emit(OpCodes.Box, typeof(int));
-            // methodBody.Emit(OpCodes.Call, ReflectionUtils.GetMethod(() => string.Format("", 4)));
-            // methodBody.Emit(OpCodes.Newobj, typeof(IndexOutOfRangeException).GetConstructor(new[]{typeof(string)}));
-            // methodBody.Emit(OpCodes.Throw);
-            // methodBody.MarkLabel(IL_006c);
-            // methodBody.Emit(OpCodes.Ldstr, "Value {0} is a {1}.");
-            // methodBody.Emit(OpCodes.Ldarg_1);
-            // methodBody.Emit(OpCodes.Box, typeof(int));
-            
-            // methodBody.Emit(OpCodes.Ldarg_0);
-            // methodBody.Emit(OpCodes.Call, ReflectionUtils.GetMethod<object>(x => x.GetType()));
-            // methodBody.Emit(OpCodes.Call, GetTypesMethod);
-            // methodBody.Emit(OpCodes.Ldarg_1);
-            // methodBody.Emit(OpCodes.Ldelem_Ref);
-            // methodBody.Emit(OpCodes.Call, ReflectionUtils.GetMethod(() => string.Format("", 4, 4)));
-            // methodBody.Emit(OpCodes.Newobj, typeof(InvalidOperationException).GetConstructor(new[]{typeof(string)}));
-            // methodBody.Emit(OpCodes.Throw);
-            
-            // if (retrunLabel != null)
-            //     methodBody.MarkLabel(retrunLabel.Value);
-
-            // methodBody.Emit(OpCodes.Ldloc_1);
-            // methodBody.Emit(OpCodes.Ret);
+        static MethodInfo GetConvertMethod(Type from, Type to)
+        {
+            return typeof(Convert)
+                .GetMethods()
+                .Where(m => m.IsStatic && m.IsPublic)
+                .Where(m => m.ReturnType == to)
+                .Where(m => m.Name == "To" + to.Name)
+                .Where(m => m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == from)
+                .FirstOrDefault();
         }
 
         static IEnumerable<MethodInfo> GetValueObjectReadMethods()

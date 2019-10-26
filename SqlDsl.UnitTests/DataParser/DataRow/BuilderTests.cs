@@ -10,17 +10,84 @@ namespace SqlDsl.UnitTests.DataParser.DataWor
     public class BuilderTests
     {
         [Test]
-        public async Task Build_WithInt32Value_RetudnsValue()
+        public async Task Build_ConstructorSmokeTest()
+        {
+            // arrange
+            var constructor = await Builder.Build(new Type[0]);
+            
+            // act
+            // assert
+            var subject = constructor(new TestDataReader());
+        }
+
+        [Test]
+        public async Task Build_ArgumentOutOfRange_ThrowsCorrectException()
+        {
+            // arrange
+            var constructor = await Builder.Build(new Type[0]);
+            
+            // act
+            var subject = constructor(new TestDataReader());
+
+            // assert
+            Assert.Throws<IndexOutOfRangeException>(() => subject.GetInt32(10));
+        }
+
+        [Test]
+        public async Task Build_InvalidType_ThrowsCorrectException()
         {
             // arrange
             var constructor = await Builder.Build(new Type[] { typeof(int) });
-            var subject = constructor(new TestDataReader(33));
-
+            
             // act
-            var intValue = subject.GetInt32(0);
+            var subject = constructor(new TestDataReader(44));
 
             // assert
-            Assert.AreEqual(33, intValue);
+            Assert.Throws<InvalidOperationException>(() => subject.GetDateTime(0));
+        }
+        
+        [Test, TestCaseSource("DataTypeCases")]
+        public async Task Build_WithAllValueTypes_ReturnsCorrectValues(TestCase testCase)
+        {
+            // arrange
+            var constructor = await Builder.Build(new Type[] { testCase.DataType });
+            var subject = constructor(new TestDataReader(testCase.Value));
+
+            // act
+            var parseValue = testCase.Invoke(subject, 0);
+
+            // assert
+            Assert.AreEqual(testCase.Value, parseValue);
+        }
+
+        public static TestCase[] DataTypeCases = new TestCase[]
+        {
+            new TestCase(typeof(int), 33, (x, y) => x.GetInt32(y)),
+            new TestCase(typeof(long), 33L, (x, y) => x.GetInt64(y)),
+            new TestCase(typeof(bool), true, (x, y) => x.GetBoolean(y)),
+            new TestCase(typeof(byte), (byte)33, (x, y) => x.GetByte(y)),
+            new TestCase(typeof(char), 'x', (x, y) => x.GetChar(y)),
+            new TestCase(typeof(DateTime), DateTime.Now, (x, y) => x.GetDateTime(y)),
+            new TestCase(typeof(decimal), 33M, (x, y) => x.GetDecimal(y)),
+            new TestCase(typeof(double), 33D, (x, y) => x.GetDouble(y)),
+            new TestCase(typeof(float), 33F, (x, y) => x.GetFloat(y)),
+            new TestCase(typeof(Guid), Guid.NewGuid(), (x, y) => x.GetGuid(y)),
+            new TestCase(typeof(Int16), (short)33, (x, y) => x.GetInt16(y)),
+            new TestCase(typeof(string), "hello", (x, y) => x.GetValue(y))
+        };
+
+        public class TestCase
+        {
+            public TestCase(Type dataType, object value, Func<IDataRow, int, object> invoke)
+            {
+                DataType = dataType;
+                Value = value;
+                Invoke = invoke;
+            }
+
+            public Type DataType { get; }
+            public object Value { get; }
+            public Func<IDataRow, int, object> Invoke { get; }
         }
 
         private class TestDataReader : IDataReader
