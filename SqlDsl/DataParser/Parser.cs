@@ -1,10 +1,7 @@
+using SqlDsl.DataParser.DataRow;
 using SqlDsl.Mapper;
 using SqlDsl.ObjectBuilders;
-using SqlDsl.SqlBuilders;
-using SqlDsl.Utils;
-using SqlDsl.Utils.EqualityComparers;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -20,7 +17,7 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
-        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger, bool requiresSimpleValueUnwrap)
+        internal static IEnumerable<TResult> Parse<TResult>(this IEnumerable<IDataRow> rows, RootObjectPropertyGraph propertyGraph, ILogger logger, bool requiresSimpleValueUnwrap)
         {
             return requiresSimpleValueUnwrap ?
                 ParseSimple<TResult>(rows, propertyGraph, logger) :
@@ -32,7 +29,7 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
-        static IEnumerable<TResult> ParseSimple<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
+        static IEnumerable<TResult> ParseSimple<TResult>(this IEnumerable<IDataRow> rows, RootObjectPropertyGraph propertyGraph, ILogger logger)
         {
             var propMapBuilder = new PropMapValueCache<TResult>(logger);
             foreach (var value in rows.ParseComplex<PropMapValue<TResult>>(propertyGraph, logger, propMapBuilder))
@@ -47,7 +44,7 @@ namespace SqlDsl.DataParser
         /// </summary>
         /// <param name="rows">The query results</param>
         /// <param name="propertyGraph">The query columns mapped to an object graph</param>
-        static IEnumerable<TResult> ParseComplex<TResult>(this IEnumerable<object[]> rows, RootObjectPropertyGraph propertyGraph, ILogger logger, IPropMapValueCache propMapBuilder)
+        static IEnumerable<TResult> ParseComplex<TResult>(this IEnumerable<IDataRow> rows, RootObjectPropertyGraph propertyGraph, ILogger logger, IPropMapValueCache propMapBuilder)
         {   
             var objectGraphCache = new ObjectGraphCache(logger);
             var builder = Builders.GetBuilder<TResult>();
@@ -63,7 +60,7 @@ namespace SqlDsl.DataParser
         /// Map a group of rows to an object property graph to an object graph with properties
         /// </summary>
         /// <param name="objects">A raw block of data, which has not been grouped into objects</param>
-        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<object[]> rows, ILogger logger)
+        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<IDataRow> rows, ILogger logger)
         {
             var objectsData = propertyGraph.GroupAndFilterData(rows);
             return CreateObject(propertyGraph, objectGraphCache, objectsData, logger);
@@ -73,7 +70,7 @@ namespace SqlDsl.DataParser
         /// Map a group of rows to an object property graph to an object graph with properties
         /// </summary>
         /// <param name="objects">An enumerable of objects. Each object can span multiple rows (corresponding to sub properties which are enumerable)</param>
-        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<IEnumerable<object[]>> objects, ILogger logger)
+        static IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, ObjectGraphCache objectGraphCache, IEnumerable<IEnumerable<IDataRow>> objects, ILogger logger)
         {
             foreach (var objectData in objects)
             {

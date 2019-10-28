@@ -1,3 +1,4 @@
+using SqlDsl.DataParser.DataRow;
 using SqlDsl.Utils;
 using SqlDsl.Utils.EqualityComparers;
 using System;
@@ -48,6 +49,10 @@ namespace SqlDsl.DataParser
         /// The type of the object
         /// </summary>
         public readonly Type ObjectType;
+
+        private readonly IDataRowKeyComparer KeyComparer;
+
+        private static readonly Func<IDataRow, IDataRow> ReturnInput = x => x;
         
         /// <summary>
         /// Build an object graph
@@ -71,6 +76,7 @@ namespace SqlDsl.DataParser
             SimpleConstructorArgs = simpleConstructorArgs ?? Array.Empty<SimpleConstructorArg>();
             ComplexConstructorArgs = complexConstructorArgs ?? Array.Empty<ComplexConstructorArg>();
             ConstructorArgTypes = CompileConstructorArgTypes(SimpleConstructorArgs, ComplexConstructorArgs).ToArray();
+            KeyComparer = new IDataRowKeyComparer(PrimaryKeyColumns);
         }
 
         /// <summary>
@@ -101,13 +107,53 @@ namespace SqlDsl.DataParser
         /// Group the data into individual objects, where an object has multiple rows (for sub properties which are enumerable).
         /// Also, remove invalid data which might have been returned as part of an outer join
         /// </summary>
-        public IEnumerable<IGrouping<object[], object[]>> GroupAndFilterData(IEnumerable<object[]> rows)
+        public IEnumerable<IGrouping<IDataRow, IDataRow>> GroupAndFilterData(IEnumerable<IDataRow> rows)
         {
             return rows
-                .GroupBy(r => 
-                    PrimaryKeyColumns.Select(i => r[i]).ToArray(), 
-                    ArrayComparer<object>.Instance)
-                .Where(g => g.Key.All(k => k != null && k != DBNull.Value));
+                .GroupBy(ReturnInput, KeyComparer)
+                .Where(g => KeyComparer.AllKeysHaveValue(g.Key));
+        }
+
+        private class IDataRowKeyComparer : IEqualityComparer<IDataRow>
+        {
+            private int[] _keys;
+
+            public IDataRowKeyComparer(int[] keys)
+            {
+                _keys = keys;
+            }
+
+            public bool AllKeysHaveValue(IDataRow row)
+            {
+                for (var i = 0; i < _keys.Length; i++)
+                {
+                    if (!row.HasValue(_keys[i]))
+                        return false;
+                }
+
+                return true;
+            }
+
+            public bool Equals(IDataRow x, IDataRow y)
+            {
+                if (x == y)
+                    return true;
+
+                if (x == null || y == null)
+                    return false;
+
+                for (var i = 0; i < _keys.Length; i++)
+                {
+                    if (!x.ValueIsEqual(y, _keys[i]))
+                        return false;
+                }
+
+                return true;        
+            }
+
+            // TODO: a GetHashCodeOfFirstColumn function would do well here
+            // as first column is always the first primary key value
+            public int GetHashCode(IDataRow obj) => 1;
         }
 
         /// <summary>
@@ -126,7 +172,7 @@ namespace SqlDsl.DataParser
         /// <summary>
         /// Get the rows for a simple property, given it's row number column ids
         /// </summary>
-        public IEnumerable<object[]> GetDataRowsForSimpleProperty(IEnumerable<object[]> rows, int[] simplePropPrimaryKeyColumns)
+        public IEnumerable<IDataRow> GetDataRowsForSimpleProperty(IEnumerable<IDataRow> rows, int[] simplePropPrimaryKeyColumns)
         {
             var dataIsFromSameTableAsObjectContext = simplePropPrimaryKeyColumns.Length > 0;
 
@@ -139,8 +185,8 @@ namespace SqlDsl.DataParser
             // run a "Distinct" on the primary keys
             return rs
                 // remove empty data created by OUTER JOINs
-                .Where(r => simplePropPrimaryKeyColumns.All(x => r[x] != null && r[x] != DBNull.Value))
-                .GroupBy(d => GetUniqueIdForSimpleProp(d, simplePropPrimaryKeyColumns))
+                .Where(r => simplePropPrimaryKeyColumns.All(x => r.ToObj()[x] != null && r.ToObj()[x] != DBNull.Value))
+                .GroupBy(d => GetUniqueIdForSimpleProp(d.ToObj(), simplePropPrimaryKeyColumns))
                 .Select(Enumerable.First);
         }
 

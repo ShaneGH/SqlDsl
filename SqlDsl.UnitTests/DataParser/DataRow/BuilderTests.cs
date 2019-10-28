@@ -59,34 +59,98 @@ namespace SqlDsl.UnitTests.DataParser.DataWor
             // assert
             Assert.AreEqual(testCase.Value, parseValue);
         }
+        
+        [Test, TestCaseSource("DataTypeCases")]
+        public async Task ValueIsEqual_WithSameValues_ReturnsTrue(TestCase testCase)
+        {
+            // arrange
+            var constructor = await Builder.Build(new Type[] { testCase.DataType });
+            var val1 = constructor(new TestDataReader(testCase.Value));
+            var val2 = constructor(new TestDataReader(testCase.Value));
+
+            // act
+            var result = val1.ValueIsEqual(val2, 0);
+
+            // assert
+            Assert.True(result);
+        }
+        
+        [Test, TestCaseSource("DataTypeCases")]
+        public async Task ValueIsEqual_WithDifferentValues_ReturnsFalse(TestCase testCase)
+        {
+            // arrange
+            var constructor = await Builder.Build(new Type[] { testCase.DataType });
+            var val1 = constructor(new TestDataReader(testCase.Value));
+            var val2 = constructor(new TestDataReader(testCase.AnotherValue));
+
+            // act
+            var result = val1.ValueIsEqual(val2, 0);
+
+            // assert
+            Assert.False(result, testCase.DataType.Name);
+        }
+        
+        [Test]
+        public async Task ValueIsEqual_WithDifferentDataRowTypes_ReturnsFalse()
+        {
+            // arrange
+            var constructor1 = await Builder.Build(new Type[] { typeof(int) });
+            var constructor2 = await Builder.Build(new Type[] { typeof(int), typeof(long) });
+            var val1 = constructor1(new TestDataReader(1));
+            var val2 = constructor2(new TestDataReader(1, 4L));
+
+            // act
+            var result = val1.ValueIsEqual(val2, 0);
+
+            // assert
+            Assert.False(result);
+        }
+        
+        [Test]
+        public async Task ValueIsEqual_WithDifferentDataRowTypes2_ReturnsFalse()
+        {
+            // arrange
+            var constructor1 = await Builder.Build(new Type[] { typeof(int) });
+            var constructor2 = await Builder.Build(new Type[] { typeof(long) });
+            var val1 = constructor1(new TestDataReader(1));
+            var val2 = constructor2(new TestDataReader(1L));
+
+            // act
+            var result = val1.ValueIsEqual(val2, 0);
+
+            // assert
+            Assert.False(result);
+        }
 
         public static TestCase[] DataTypeCases = new TestCase[]
         {
-            new TestCase(typeof(int), 33, (x, y) => x.GetInt32(y)),
-            new TestCase(typeof(long), 33L, (x, y) => x.GetInt64(y)),
-            new TestCase(typeof(bool), true, (x, y) => x.GetBoolean(y)),
-            new TestCase(typeof(byte), (byte)33, (x, y) => x.GetByte(y)),
-            new TestCase(typeof(char), 'x', (x, y) => x.GetChar(y)),
-            new TestCase(typeof(DateTime), DateTime.Now, (x, y) => x.GetDateTime(y)),
-            new TestCase(typeof(decimal), 33M, (x, y) => x.GetDecimal(y)),
-            new TestCase(typeof(double), 33D, (x, y) => x.GetDouble(y)),
-            new TestCase(typeof(float), 33F, (x, y) => x.GetFloat(y)),
-            new TestCase(typeof(Guid), Guid.NewGuid(), (x, y) => x.GetGuid(y)),
-            new TestCase(typeof(Int16), (short)33, (x, y) => x.GetInt16(y)),
-            new TestCase(typeof(string), "hello", (x, y) => x.GetValue(y))
+            new TestCase(typeof(int), 33, 44, (x, y) => x.GetInt32(y)),
+            new TestCase(typeof(long), 33L, 44L, (x, y) => x.GetInt64(y)),
+            new TestCase(typeof(bool), true, false, (x, y) => x.GetBoolean(y)),
+            new TestCase(typeof(byte), (byte)33, (byte)44, (x, y) => x.GetByte(y)),
+            new TestCase(typeof(char), 'x', 'y', (x, y) => x.GetChar(y)),
+            new TestCase(typeof(DateTime), DateTime.Now, DateTime.Now.AddDays(1), (x, y) => x.GetDateTime(y)),
+            new TestCase(typeof(decimal), 33M, 44M, (x, y) => x.GetDecimal(y)),
+            new TestCase(typeof(double), 33D, 44D, (x, y) => x.GetDouble(y)),
+            new TestCase(typeof(float), 33F, 44F, (x, y) => x.GetFloat(y)),
+            new TestCase(typeof(Guid), Guid.NewGuid(), Guid.NewGuid(), (x, y) => x.GetGuid(y)),
+            new TestCase(typeof(Int16), (short)33, (short)44, (x, y) => x.GetInt16(y)),
+            new TestCase(typeof(string), "hello", "not hello", (x, y) => x.GetValue(y))
         };
 
         public class TestCase
         {
-            public TestCase(Type dataType, object value, Func<IDataRow, int, object> invoke)
+            public TestCase(Type dataType, object value, object anotherValue, Func<IDataRow, int, object> invoke)
             {
                 DataType = dataType;
                 Value = value;
+                AnotherValue = anotherValue;
                 Invoke = invoke;
             }
 
             public Type DataType { get; }
             public object Value { get; }
+            public object AnotherValue { get; }
             public Func<IDataRow, int, object> Invoke { get; }
         }
 

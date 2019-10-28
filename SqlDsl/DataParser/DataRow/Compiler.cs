@@ -45,7 +45,7 @@ namespace SqlDsl.DataParser.DataRow
                 throw new IndexOutOfRangeException($"{typeIndex} is out of range");
             }
 
-            throw new InvalidOperationException($"Value {typeIndex} is a {types[typeIndex]}");
+            throw new InvalidOperationException($"Value at column index {typeIndex} is a {types[typeIndex]}");
         }
 
         async Task<Type> _Compile(Type[] rowTypes)
@@ -79,8 +79,8 @@ namespace SqlDsl.DataParser.DataRow
 
             void Compile()
             {
-                try
-                {
+                // try
+                // {
                     var built = BuildType(rowTypes);
                     lock (Compiling)
                     {
@@ -88,11 +88,11 @@ namespace SqlDsl.DataParser.DataRow
                         Reference.Add(built, rowTypes);
                         Compiling.Remove(rowTypes);
                     }
-                }
-                catch (Exception e)
-                {
-                    throw new CompilerException(rowTypes, e);
-                }
+                // }
+                // catch (Exception e)
+                // {
+                //     throw new CompilerException(rowTypes, e);
+                // }
             }
         }
 
@@ -115,9 +115,13 @@ namespace SqlDsl.DataParser.DataRow
             var fields = new FieldInfo[rowTypes.Length];
             for (var i = 0; i < rowTypes.Length; i++)
             {
+                var fieldType = rowTypes[i].IsClass
+                    ? rowTypes[i]
+                    : typeof(Nullable<>).MakeGenericType(rowTypes[i]);
+
                 fields[i] = type.DefineField(
                     $"Cell{i}", 
-                    rowTypes[i],
+                    fieldType,
                     FieldAttributes.NotSerialized | FieldAttributes.Public | FieldAttributes.InitOnly);
             }
 

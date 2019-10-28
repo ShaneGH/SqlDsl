@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SqlDsl.DataParser;
+using SqlDsl.DataParser.DataRow;
 using SqlDsl.Dsl;
 using SqlDsl.Query;
 using SqlDsl.SqlBuilders;
@@ -65,7 +66,7 @@ namespace SqlDsl
                 .Select(p => (p.name, p.value ?? DBNull.Value));
         }
 
-        async Task<IEnumerable<object[]>> LoadDataAsync(IExecutor executor, TArgs args, ILogger logger)
+        async Task<IEnumerable<IDataRow>> LoadDataAsync(IExecutor executor, TArgs args, ILogger logger)
         {                    
             var (sql, teardown) = BuildSql(args);
             if (logger.CanLogInfo(LogMessages.ExecutingQuery))
@@ -74,13 +75,14 @@ namespace SqlDsl
             var timer = new Timer(true);
 
             // execute and get all rows
-            IEnumerable<object[]> results;
+            IEnumerable<IDataRow> results;
             using (var reader = await executor
                 .ExecuteDebugAsync(sql, BuildParameters(args), SelectColumns)
                 .ConfigureAwait(false))
             {
-                results = await reader
-                    .GetRowsAsync()
+                var constructor = await Builder.Build(reader.GetFieldTypes());
+                results = await constructor
+                    .GetRowsAsync(reader)
                     .ConfigureAwait(false);
 
                 results = results.Enumerate();
@@ -98,7 +100,7 @@ namespace SqlDsl
             return results;
         }
 
-        IEnumerable<object[]> LoadData(IExecutor executor, TArgs args, ILogger logger)
+        IEnumerable<IDataRow> LoadData(IExecutor executor, TArgs args, ILogger logger)
         {
             var (sql, teardown) = BuildSql(args);
             if (logger.CanLogInfo(LogMessages.ExecutingQuery))
@@ -107,9 +109,14 @@ namespace SqlDsl
             var timer = new Timer(true);
             
             // execute and get all rows
-            IEnumerable<object[]> results;
+            IEnumerable<IDataRow> results;
             using (var reader = executor.ExecuteDebug(sql, BuildParameters(args), SelectColumns))
-                results = reader.GetRows().Enumerate();
+            {
+                var constructor = Builder.Build(reader.GetFieldTypes());
+                constructor.Wait();
+
+                results = constructor.Result.GetRows(reader).Enumerate();
+            }
 
             if (!string.IsNullOrWhiteSpace(teardown))
                 executor.ExecuteCommand(teardown, CodingConstants.Empty.StringObject);

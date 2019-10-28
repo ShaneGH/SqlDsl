@@ -1,4 +1,5 @@
 using SqlDsl.DataParser;
+using SqlDsl.DataParser.DataRow;
 using SqlDsl.Utils;
 using SqlDsl.Utils.EqualityComparers;
 using SqlDsl.Utils.ObjectCaches;
@@ -21,7 +22,7 @@ namespace SqlDsl.ObjectBuilders
 
         public ObjectPropertyGraph PropertyGraph { get; private set; }
 
-        public IEnumerable<object[]> Objects { get; private set; }
+        public IEnumerable<IDataRow> Objects { get; private set; }
 
         internal readonly IReleasableCache<ObjectGraph> Cache;
 
@@ -31,7 +32,7 @@ namespace SqlDsl.ObjectBuilders
             Cache = cache;
         }
         
-        public void Init(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> objects)
+        public void Init(ObjectPropertyGraph propertyGraph, IEnumerable<IDataRow> objects)
         {
             PropertyGraph = propertyGraph ?? throw new ArgumentNullException(nameof(propertyGraph));
             Objects = objects ?? throw new ArgumentNullException(nameof(objects));
@@ -93,7 +94,7 @@ namespace SqlDsl.ObjectBuilders
             var dataRowsForProp = PropertyGraph.GetDataRowsForSimpleProperty(Objects, primaryKeyColumns);
 
             var data = dataRowsForProp
-                .Select(o => o[index])
+                .Select(o => o.ToObj()[index])
                 .ToArray();
 
             var cellEnumType = dataCellType == null ?
@@ -103,7 +104,7 @@ namespace SqlDsl.ObjectBuilders
             return (data, cellEnumType);
         }
 
-        IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, IEnumerable<object[]> rows)
+        IEnumerable<ObjectGraph> CreateObject(ObjectPropertyGraph propertyGraph, IEnumerable<IDataRow> rows)
         {
             var objectsData = propertyGraph.GroupAndFilterData(rows);
 

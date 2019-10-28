@@ -19,21 +19,168 @@ namespace SqlDsl.DataParser.DataRow
 
         public static void ImplementIDataRow(TypeBuilder toType, FieldInfo[] fields)
         {
-            var flds = new List<(int, FieldInfo)>(fields.Length);
-            flds.AddRange(fields.Select((x, i) => (i, x)));
+            var buildGetMethodFields = new List<(int, FieldInfo)>(fields.Length);
+            var otherMethodFields = new List<(int, FieldInfo)>(fields.Length);
+            buildGetMethodFields.AddRange(fields.Select((x, i) => (i, x)));
+            otherMethodFields.AddRange(fields.Select((x, i) => (i, x)));
 
             foreach (var readMethod in ValueObjectReadMethods)
             {
-                var typedFields = flds
+                var typedFields = buildGetMethodFields
                     .Where(f => f.Item2.FieldType == readMethod.ReturnType)
                     .ToList();
 
-                typedFields.ForEach(x => flds.Remove(x));
+                typedFields.ForEach(x => buildGetMethodFields.Remove(x));
                 BuildFieldGetMethod(toType, readMethod, typedFields);
             }
 
             var refObjectMethod = ReflectionUtils.GetMethod<IDataRow>(x => x.GetValue(0));
-            BuildFieldGetMethod(toType, refObjectMethod, flds);
+            BuildFieldGetMethod(toType, refObjectMethod, buildGetMethodFields);
+            BuildValueIsEqualMethod(toType, otherMethodFields);
+            BuildHasValueMethod(toType, otherMethodFields);
+        }
+
+        private static void BuildHasValueMethod(TypeBuilder type, List<(int i, FieldInfo field)> fieldGetters)
+        {            
+            var attributes = MethodAttributes.Public |
+                MethodAttributes.HideBySig |
+                MethodAttributes.NewSlot |
+                MethodAttributes.Virtual |
+                MethodAttributes.Final;
+
+            var methodBody = type
+                .DefineMethod(nameof(IDataRow.HasValue), attributes, typeof(bool), new Type[] { typeof(int) })
+                .GetILGenerator();
+
+            List<(Label, FieldInfo)> caseResults = new List<(Label, FieldInfo)>();
+            foreach (var (i, field) in fieldGetters.OrderBy(x => x.i))
+            {
+                methodBody.Emit(OpCodes.Ldarg_0);
+                methodBody.Emit(OpCodes.Ldc_I4, i);
+                caseResults.Add((
+                    methodBody.BranchTo(OpCodes.Beq),
+                    field));
+            }
+
+            Label returnLabel = methodBody.DefineLabel();
+            foreach (var (startLabel, field) in caseResults)
+            {
+                methodBody.MarkLabel(startLabel);  
+                if (field.FieldType.IsClass)
+                {
+                    methodBody.Emit(OpCodes.Ldarg_0);
+                    methodBody.Emit(OpCodes.Ldfld, field);
+                    methodBody.Emit(OpCodes.Ldnull);
+                    methodBody.Emit(OpCodes.Ceq);
+                }
+                else if (field.FieldType.IsConstructedGenericType && 
+                    field.FieldType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    methodBody.Emit(OpCodes.Ldc_I4_1);
+                    // methodBody.Emit(OpCodes.Ldarg_0);
+                    // methodBody.Emit(OpCodes.Ldfld, field);
+                    // methodBody.Emit(OpCodes.Ldnull);
+                    // methodBody.Emit(
+                    //     OpCodes.Call, 
+                    //     ReflectionUtils.GetMethod(() => CompareStructs<int>(1, 1), field.FieldType.GetGenericArguments()[0]));
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Type {field.FieldType.IsConstructedGenericType} must be nullable");
+                }
+                
+                methodBody.Emit(OpCodes.Br, returnLabel);
+            }
+
+            var throwMethod = ReflectionUtils
+                .GetMethod(() => Compiler.ThrowExceptionForDynamicTypeIndex<object>(null, 0), typeof(bool));
+
+            methodBody.Emit(OpCodes.Ldarg_0);
+            methodBody.Emit(OpCodes.Call, ReflectionUtils.GetMethod<object>(x => x.GetType()));
+
+            methodBody.Emit(OpCodes.Ldarg_1);
+            methodBody.Emit(OpCodes.Call, throwMethod);
+            methodBody.Emit(OpCodes.Br, returnLabel);
+            methodBody.MarkLabel(returnLabel);
+            methodBody.Emit(OpCodes.Ret);
+        }
+
+        private static void BuildValueIsEqualMethod(TypeBuilder type, List<(int i, FieldInfo field)> fieldGetters)
+        {            
+            var attributes = MethodAttributes.Public |
+                MethodAttributes.HideBySig |
+                MethodAttributes.NewSlot |
+                MethodAttributes.Virtual |
+                MethodAttributes.Final;
+
+            var methodBody = type
+                .DefineMethod(nameof(IDataRow.ValueIsEqual), attributes, typeof(bool), new Type[] { typeof(IDataRow), typeof(int) })
+                .GetILGenerator();
+                                
+            Label returnLabel = methodBody.DefineLabel();
+            Label switchLabel = methodBody.DefineLabel();
+            methodBody.Emit(OpCodes.Ldarg_1);
+            methodBody.Emit(OpCodes.Isinst, type);
+            methodBody.Emit(OpCodes.Ldnull);
+            methodBody.Emit(OpCodes.Ceq);
+            methodBody.Emit(OpCodes.Brfalse, switchLabel);
+            
+            methodBody.Emit(OpCodes.Ldc_I4_0);
+            methodBody.Emit(OpCodes.Br, returnLabel);
+
+            methodBody.MarkLabel(switchLabel);
+
+            List<(Label, FieldInfo)> caseResults = new List<(Label, FieldInfo)>();
+            foreach (var (i, field) in fieldGetters)
+            {
+                methodBody.Emit(OpCodes.Ldarg_2);
+                methodBody.Emit(OpCodes.Ldc_I4, i);
+                caseResults.Add((
+                    methodBody.BranchTo(OpCodes.Beq),
+                    field));
+            }
+
+            foreach (var (startLabel, field) in caseResults)
+            {
+                methodBody.MarkLabel(startLabel);  
+                if (field.FieldType.IsClass)
+                {
+                    methodBody.Emit(OpCodes.Ldarg_0);
+                    methodBody.Emit(OpCodes.Ldfld, field);
+                    methodBody.Emit(OpCodes.Ldarg_1);
+                    methodBody.Emit(OpCodes.Ldfld, field);
+                    methodBody.Emit(OpCodes.Ceq);
+                }
+                else if (field.FieldType.IsConstructedGenericType && 
+                    field.FieldType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    methodBody.Emit(OpCodes.Ldarg_0);
+                    methodBody.Emit(OpCodes.Ldfld, field);
+                    methodBody.Emit(OpCodes.Ldarg_1);
+                    methodBody.Emit(OpCodes.Ldfld, field);
+                    methodBody.Emit(
+                        OpCodes.Call, 
+                        ReflectionUtils.GetMethod(() => CompareStructs<int>(1, 1), field.FieldType.GetGenericArguments()[0]));
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Type {field.FieldType.IsConstructedGenericType} must be nullable");
+                }
+                
+                methodBody.Emit(OpCodes.Br, returnLabel);
+            }
+
+            var throwMethod = ReflectionUtils
+                .GetMethod(() => Compiler.ThrowExceptionForDynamicTypeIndex<object>(null, 0), typeof(bool));
+
+            methodBody.Emit(OpCodes.Ldarg_0);
+            methodBody.Emit(OpCodes.Call, ReflectionUtils.GetMethod<object>(x => x.GetType()));
+
+            methodBody.Emit(OpCodes.Ldarg_2);
+            methodBody.Emit(OpCodes.Call, throwMethod);
+            methodBody.Emit(OpCodes.Br, returnLabel);
+            methodBody.MarkLabel(returnLabel);
+            methodBody.Emit(OpCodes.Ret);
         }
 
         /*
@@ -49,6 +196,9 @@ namespace SqlDsl.DataParser.DataRow
                     return Compiler.ThrowExceptionForDynamicTypeIndex<T>(GetType(), index);
             }
         */
+
+        public static bool CompareStructs<T>(T? val1, T? val2)
+            where T: struct => val1.Equals(val2);
 
         private static Label BranchTo(this ILGenerator generator, OpCode opCode)
         {
@@ -109,21 +259,14 @@ namespace SqlDsl.DataParser.DataRow
                 .DefineMethod(method.Name, attributes, method.ReturnType, new Type[] { typeof(int) })
                 .GetILGenerator();
 
-            bool first = true;
             List<(Label, FieldInfo)> caseResults = new List<(Label, FieldInfo)>();
             foreach (var (i, field) in fieldGetters
                 .OrderBy(x => OrderField(x.field, method)))
             {
                 methodBody.Emit(OpCodes.Ldarg_0);
-                if (first)
-                    methodBody.Emit(OpCodes.Ldc_I4_S, i);
-                else
-                    methodBody.Emit(OpCodes.Ldc_I4, i);
-
-                first = false;
-
+                methodBody.Emit(OpCodes.Ldc_I4, i);
                 caseResults.Add((
-                    methodBody.BranchTo(OpCodes.Beq_S),
+                    methodBody.BranchTo(OpCodes.Beq),
                     field));
             }
 
@@ -150,7 +293,7 @@ namespace SqlDsl.DataParser.DataRow
                         throw new InvalidOperationException($"Cannot convert from type {field.FieldType} to type {method.ReturnType}.");
                 }
 
-                methodBody.Emit(OpCodes.Br_S, returnLabel);
+                methodBody.Emit(OpCodes.Br, returnLabel);
             }
 
             var throwMethod = ReflectionUtils
@@ -161,7 +304,7 @@ namespace SqlDsl.DataParser.DataRow
 
             methodBody.Emit(OpCodes.Ldarg_1);
             methodBody.Emit(OpCodes.Call, throwMethod);
-            methodBody.Emit(OpCodes.Br_S, returnLabel);
+            methodBody.Emit(OpCodes.Br, returnLabel);
             methodBody.MarkLabel(returnLabel);
             methodBody.Emit(OpCodes.Ret);
         }

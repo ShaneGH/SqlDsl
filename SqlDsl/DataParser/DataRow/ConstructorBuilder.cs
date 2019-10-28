@@ -45,7 +45,7 @@ namespace SqlDsl.DataParser.DataRow
             methodBody.Emit(OpCodes.Ldarg_0);
             methodBody.Emit(OpCodes.Ldarg_1);
             methodBody.Emit(OpCodes.Ldc_I4, index);
-            methodBody.Emit(OpCodes.Callvirt, GetParseMethod(field.FieldType));
+            methodBody.Emit(OpCodes.Call, GetParseMethod(field.FieldType));
             methodBody.Emit(OpCodes.Stfld, field);
         }
 
@@ -61,18 +61,42 @@ namespace SqlDsl.DataParser.DataRow
 
         static IEnumerable<MethodInfo> BuildReadMethods()
         {
-            yield return ReflectionUtils.GetMethod<IDataRecord>(x => x.GetBoolean(0));
-            yield return ReflectionUtils.GetMethod<IDataRecord>(x => x.GetByte(0));
-            yield return ReflectionUtils.GetMethod<IDataRecord>(x => x.GetChar(0));
-            yield return ReflectionUtils.GetMethod<IDataRecord>(x => x.GetDateTime(0));
-            yield return ReflectionUtils.GetMethod<IDataRecord>(x => x.GetDecimal(0));
-            yield return ReflectionUtils.GetMethod<IDataRecord>(x => x.GetDouble(0));
-            yield return ReflectionUtils.GetMethod<IDataRecord>(x => x.GetFloat(0));
-            yield return ReflectionUtils.GetMethod<IDataRecord>(x => x.GetGuid(0));
-            yield return ReflectionUtils.GetMethod<IDataRecord>(x => x.GetInt16(0));
-            yield return ReflectionUtils.GetMethod<IDataRecord>(x => x.GetInt32(0));
-            yield return ReflectionUtils.GetMethod<IDataRecord>(x => x.GetInt64(0));
-            yield return ReflectionUtils.GetMethod<IDataRecord>(x => x.GetValue(0));
+            yield return ReflectionUtils.GetMethod(() => GetBooleanNullable(null, 0));
+            yield return ReflectionUtils.GetMethod(() => GetByteNullable(null, 0));
+            yield return ReflectionUtils.GetMethod(() => GetCharNullable(null, 0));
+            yield return ReflectionUtils.GetMethod(() => GetDateTimeNullable(null, 0));
+            yield return ReflectionUtils.GetMethod(() => GetDecimalNullable(null, 0));
+            yield return ReflectionUtils.GetMethod(() => GetDoubleNullable(null, 0));
+            yield return ReflectionUtils.GetMethod(() => GetFloatNullable(null, 0));
+            yield return ReflectionUtils.GetMethod(() => GetGuidNullable(null, 0));
+            yield return ReflectionUtils.GetMethod(() => GetInt16Nullable(null, 0));
+            yield return ReflectionUtils.GetMethod(() => GetInt32Nullable(null, 0));
+            yield return ReflectionUtils.GetMethod(() => GetInt64Nullable(null, 0));
+            yield return ReflectionUtils.GetMethod(() => GetValue(null, 0));
         }
+
+        public static bool? GetBooleanNullable(IDataRecord data, int index) => data.IsDBNull(index) ? new bool?() : data.GetBoolean(index);
+
+        public static char? GetCharNullable(IDataRecord data, int index) => data.IsDBNull(index) ? new char?() : data.GetChar(index);
+
+        public static byte? GetByteNullable(IDataRecord data, int index) => data.IsDBNull(index) ? new byte?() : data.GetByte(index);
+
+        public static DateTime? GetDateTimeNullable(IDataRecord data, int index) => data.IsDBNull(index) ? new DateTime?() : data.GetDateTime(index);
+
+        public static decimal? GetDecimalNullable(IDataRecord data, int index) => data.IsDBNull(index) ? new decimal?() : data.GetDecimal(index);
+
+        public static double? GetDoubleNullable(IDataRecord data, int index) => data.IsDBNull(index) ? new double?() : data.GetDouble(index);
+
+        public static float? GetFloatNullable(IDataRecord data, int index) => data.IsDBNull(index) ? new float?() : data.GetFloat(index);
+
+        public static Guid? GetGuidNullable(IDataRecord data, int index) => data.IsDBNull(index) ? new Guid?() : data.GetGuid(index);
+
+        public static Int16? GetInt16Nullable(IDataRecord data, int index) => data.IsDBNull(index) ? new short?() : data.GetInt16(index);
+
+        public static int? GetInt32Nullable(IDataRecord data, int index) => data.IsDBNull(index) ? new int?() : data.GetInt32(index);
+
+        public static long? GetInt64Nullable(IDataRecord data, int index) => data.IsDBNull(index) ? new long?() : data.GetInt64(index);
+
+        public static object GetValue(IDataRecord data, int index) => data.GetValue(index);
     }
 }
