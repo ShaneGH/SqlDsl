@@ -417,3 +417,105 @@ namespace SqlDsl.DataParser.DataRow
         }
     }
 }
+
+/*using System;
+using System.Collections.Generic;
+using System.Data;
+
+namespace il
+{
+    public class TypeHolder
+    {
+        //dotnet build; dotnet ildasm "C:\Dev\Messing\il\bin\Debug\netstandard2.0\il.dll"
+        public static readonly Dictionary<Type, Type[]> Types = new Dictionary<Type, Type[]>
+        {
+        };
+        
+        public static Type[] GetTypes(Type type)
+        {
+            throw new InvalidCastException();
+        }
+        
+        public static T Throw<T>(Type type, int x)
+        {
+            throw new InvalidCastException();
+        }
+    }
+
+    public class MyC : III
+    {
+        private readonly int typeKey;
+        public int? MyProp1;
+        public int? MyProp2;
+        public long? MyProp3;
+        public object MyProp4;
+
+        public MyC(IDataRecord data, int typeKey)
+        {
+            MyProp1 = data.GetInt32(111);
+            MyProp2 = data.GetInt32(222);
+            MyProp3 = data.GetInt32(333);
+            this.typeKey = typeKey;
+        }
+
+        public int? GetInt(int index)
+        {
+            switch (index)
+            {
+                case 111:
+                    return MyProp1;
+                case 222:
+                    return MyProp2;
+                case 333:
+                    return Convert.ToInt32(MyProp3);
+                default:
+                    return TypeHolder.Throw<int>(null, index);
+            }
+        }
+
+        public bool HasValue(int index)
+        {
+            switch (index)
+            {
+                case 111:
+                    return CompareStructs(MyProp1, default(int?));
+                case 222:
+                    return CompareStructs(MyProp2, default(int?));
+                case 333:
+                    return CompareStructs(MyProp3, default(int?));
+                case 444:
+                    return MyProp4 != null;
+                default:
+                    return TypeHolder.Throw<bool>(null, index);
+            }
+        }
+
+        public static bool CompareStructs<T>(T? i1, T? i2) where T: struct => true;
+
+        public bool ValueIsEqual(III otherRow, int index)
+        {
+            if (!(otherRow is MyC x))
+                return false;
+
+            switch (index)
+            {
+                case 111:
+                    return MyProp1 == x.MyProp1;
+                case 222:
+                    return MyProp2 == x.MyProp2;
+                case 333:
+                    return MyProp3 == x.MyProp3;
+                case 444:
+                    return MyProp4 == x.MyProp4;
+                default:
+                    return TypeHolder.Throw<bool>(null, index);
+            }
+        }
+    }
+
+    public interface III
+    {
+        int? GetInt(int index);
+    }
+}
+*/
