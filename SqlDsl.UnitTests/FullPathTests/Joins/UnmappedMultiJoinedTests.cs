@@ -6,15 +6,20 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.Joins
 {
-    [SqlTestAttribute(SqlType.TSql)]
-    [SqlTestAttribute(SqlType.MySql)]
-    [SqlTestAttribute(SqlType.Sqlite)]
+    // [SqlTestAttribute(SqlType.TSql)]
+    // [SqlTestAttribute(SqlType.MySql)]
+    // [SqlTestAttribute(SqlType.Sqlite)]
+    [TestFixture]
     public class UnmappedMultiJoinedTests : FullPathTestBase
     {
-        public UnmappedMultiJoinedTests(SqlType testFlavour)
-            : base(testFlavour)
+        public UnmappedMultiJoinedTests()
+            : base(SqlType.Sqlite)
         {
         }
+        // public UnmappedMultiJoinedTests(SqlType testFlavour)
+        //     : base(testFlavour)
+        // {
+        // }
         
         class JoinedQueryClass : QueryContainer
         {
@@ -23,9 +28,12 @@ namespace SqlDsl.UnitTests.FullPathTests.Joins
 
         Dsl.IQuery<JoinedQueryClass> FullyJoinedQuery()
         {
-            return SqlDsl.UnitTests.TestUtils.FullyJoinedQuery<JoinedQueryClass>(SqlType)
+            return SqlDsl.UnitTests.TestUtils
+                .FullyJoinedQuery<JoinedQueryClass>(SqlType)
                 .LeftJoinMany<Purchase>(q => q.ThePurchasesByClass)
-                    .On((q, t) => q.ThePerson.Id == t.PersonId && q.ThePerson.Id == t.PurchaedForPersonId && q.TheClasses.One().Id == t.ClassId);
+                    .On((q, p) => q.ThePerson.Id == p.PersonId 
+                        && q.ThePerson.Id == p.PurchaedForPersonId 
+                        && q.TheClasses.One().Id == p.ClassId);
         }
 
         [Test]

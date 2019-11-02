@@ -134,14 +134,14 @@ namespace SqlDsl.ObjectBuilders
             IPropMapValueCache propMapValueCache,
             ILogger logger)
         {
-            try
-            {
+            // try
+            // {
                 return BuildObject(cArgGetters, propSetters, vals, propMapValueCache, logger);
-            }
-            catch (Exception e)
-            {
-                throw new ParsingException($"Error creating object: {typeof(T)}.", e);
-            }
+            // }
+            // catch (Exception e)
+            // {
+            //     throw new ParsingException($"Error creating object: {typeof(T)}.", e);
+            // }
         }
 
         /// <summary>

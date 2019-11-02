@@ -111,7 +111,10 @@ namespace SqlDsl.DataParser
         {
             return rows
                 .GroupBy(ReturnInput, KeyComparer)
-                .Where(g => KeyComparer.AllKeysHaveValue(g.Key));
+                .Where(AllKeysHaveValue);
+
+            bool AllKeysHaveValue(IGrouping<IDataRow, IDataRow> row) =>
+                KeyComparer.AllKeysHaveValue(row.Key);
         }
 
         private class IDataRowKeyComparer : IEqualityComparer<IDataRow>

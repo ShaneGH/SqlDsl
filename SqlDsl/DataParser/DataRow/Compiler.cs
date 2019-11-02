@@ -120,7 +120,7 @@ namespace SqlDsl.DataParser.DataRow
                     : typeof(Nullable<>).MakeGenericType(rowTypes[i]);
 
                 fields[i] = type.DefineField(
-                    $"Cell{i}", 
+                    $"Cell{ToString(i)}", 
                     fieldType,
                     FieldAttributes.NotSerialized | FieldAttributes.Public | FieldAttributes.InitOnly);
             }
@@ -129,6 +129,13 @@ namespace SqlDsl.DataParser.DataRow
             IDataRowImplementer.ImplementIDataRow(type, fields);
 
             return type.CreateTypeInfo();
+        }
+
+        static string ToString(int i)
+        {
+            
+            if (i < 10) return $"0{i}";
+            return i.ToString();
         }
     }
 }
