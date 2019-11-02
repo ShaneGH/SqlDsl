@@ -32,7 +32,7 @@ namespace SqlDsl.DataParser.DataRow
                     .ToList();
 
                 typedFields.ForEach(x => buildGetMethodFields.Remove(x));
-                BuildFieldGetMethod(toType, readMethod, typedFields);
+                BuildFieldGetMethod(toType, methods.GetMethod, typedFields);
             }
 
             var refObjectMethod = ReflectionUtils.GetMethod<IDataRow>(x => x.GetValue(0));
@@ -77,54 +77,11 @@ namespace SqlDsl.DataParser.DataRow
                 else if (field.FieldType.IsConstructedGenericType && 
                     field.FieldType.GetGenericTypeDefinition() == typeof(Nullable<>))
                 {
-//  .method public hidebysig instance boolean HasValue(int32 index) cil managed
-//   {
-//     // Code size 141
-//     .maxstack 2
-//     .locals init(int32 V_0, genericinstance V_1, boolean V_2, genericinstance V_3)
-//     IL_0000: nop
-//     IL_0001: ldarg.1
-//     IL_0002: stloc.0
-//     IL_0003: ldloc.0
-//     IL_0004: ldc.i4 222
-//     IL_0009: bgt.s     IL_001c
-//     IL_000b: ldloc.0
-//     IL_000c: ldc.i4.s 111
-//     IL_000e: beq.s     IL_0030
-//     IL_0010: br.s     IL_0012
-//     IL_0012: ldloc.0
-//     IL_0013: ldc.i4 222
-//     IL_0018: beq.s     IL_0047
-//     IL_001a: br.s     IL_0081
-//     IL_001c: ldloc.0
-//     IL_001d: ldc.i4 333
-//     IL_0022: beq.s     IL_005e
-//     IL_0024: br.s     IL_0026
-//     IL_0026: ldloc.0
-//     IL_0027: ldc.i4 444
-//     IL_002c: beq.s     IL_0075
-//     IL_002e: br.s     IL_0081
-//     IL_0030: ldarg.0
-//     IL_0031: ldfld genericinstance il.MyC::MyProp1
-//     IL_0036: ldloca.s V_1
-//     IL_0038: initobj System.Nullable`1<System.Int32>
-//     IL_003e: ldloc.1
-//     IL_003f: call boolean il.MyC::CompareStructs(genericinstance, genericinstance)
-//     IL_0044: stloc.2
-//     IL_0045: br.s     IL_008b
-//     IL_0047: ldarg.0
-//     IL_0048: ldfld genericinstance il.MyC::MyProp2
-
-
-
+                    var hasValue = field.FieldType.GetProperty(nameof(Nullable<int>.HasValue)).GetMethod;
 
                     methodBody.Emit(OpCodes.Ldarg_0);
-                    methodBody.Emit(OpCodes.Ldfld, field);
-                    methodBody.Emit(OpCodes.Initobj, field.FieldType);
-                    methodBody.Emit(OpCodes.Ldloc_1);
-                    methodBody.Emit(
-                        OpCodes.Call, 
-                        ReflectionUtils.GetMethod(() => CompareStructs<int>(1, 1), field.FieldType.GetGenericArguments()[0]));
+                    methodBody.Emit(OpCodes.Ldflda, field);
+                    methodBody.Emit(OpCodes.Call, hasValue);
                 }
                 else
                 {
