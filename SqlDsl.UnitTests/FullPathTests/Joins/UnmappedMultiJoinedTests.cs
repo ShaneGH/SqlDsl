@@ -6,20 +6,20 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests.Joins
 {
-    // [SqlTestAttribute(SqlType.TSql)]
-    // [SqlTestAttribute(SqlType.MySql)]
-    // [SqlTestAttribute(SqlType.Sqlite)]
-    [TestFixture]
+    [SqlTestAttribute(SqlType.TSql)]
+    [SqlTestAttribute(SqlType.MySql)]
+    [SqlTestAttribute(SqlType.Sqlite)]
     public class UnmappedMultiJoinedTests : FullPathTestBase
     {
-        public UnmappedMultiJoinedTests()
-            : base(SqlType.Sqlite)
-        {
-        }
-        // public UnmappedMultiJoinedTests(SqlType testFlavour)
-        //     : base(testFlavour)
+        // public UnmappedMultiJoinedTests()
+        //     : base(SqlType.Sqlite)
         // {
         // }
+        
+        public UnmappedMultiJoinedTests(SqlType testFlavour)
+            : base(testFlavour)
+        {
+        }
         
         class JoinedQueryClass : QueryContainer
         {

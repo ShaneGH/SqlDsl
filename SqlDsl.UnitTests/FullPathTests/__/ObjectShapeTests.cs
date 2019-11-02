@@ -9,20 +9,20 @@ using SqlDsl.UnitTests.FullPathTests.Environment;
 
 namespace SqlDsl.UnitTests.FullPathTests
 {
-    // [SqlTestAttribute(SqlType.MySql)]
-    // [SqlTestAttribute(SqlType.Sqlite)]
-    [TestFixture]
+    [SqlTestAttribute(SqlType.MySql)]
+    [SqlTestAttribute(SqlType.Sqlite)]
+    [SqlTestAttribute(SqlType.TSql)]
     public class MappingObjectShapeTests : FullPathTestBase
     {
-        // public MappingObjectShapeTests(SqlType testFlavour)
-        //     : base(testFlavour)
-        // {
-        // }
-        
-        public MappingObjectShapeTests()
-            : base(SqlType .Sqlite)
+        public MappingObjectShapeTests(SqlType testFlavour)
+            : base(testFlavour)
         {
         }
+        
+        // public MappingObjectShapeTests()
+        //     : base(SqlType .Sqlite)
+        // {
+        // }
 
         public class TableWithOneColumnMapper1
         {

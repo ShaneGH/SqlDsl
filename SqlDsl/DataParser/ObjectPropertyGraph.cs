@@ -188,7 +188,7 @@ namespace SqlDsl.DataParser
             // run a "Distinct" on the primary keys
             return rs
                 // remove empty data created by OUTER JOINs
-                .Where(r => simplePropPrimaryKeyColumns.All(x => r.ToObj()[x] != null && r.ToObj()[x] != DBNull.Value))
+                .Where(r => simplePropPrimaryKeyColumns.All(x => r.HasValue(x)))
                 .GroupBy(d => GetUniqueIdForSimpleProp(d.ToObj(), simplePropPrimaryKeyColumns))
                 .Select(Enumerable.First);
         }

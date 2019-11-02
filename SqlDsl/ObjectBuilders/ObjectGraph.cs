@@ -54,7 +54,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Simple properties such as int, string, List&lt;int>, List&lt;string> etc...
         /// </summary>
-        public virtual IEnumerable<(string name, IEnumerable<object> value, bool isEnumerableDataCell)> GetSimpleProps() =>
+        public virtual IEnumerable<(string name, IEnumerable<DataRowValue> value, bool isEnumerableDataCell)> GetSimpleProps() =>
             PropertyGraph.SimpleProps.Select(GetSimpleProp);
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// Simple constructor args such as int, string, List&lt;int>, List&lt;string> etc...
         /// </summary>
-        public virtual IEnumerable<(int argIndex, IEnumerable<object> value, bool isEnumerableDataCell)> GetSimpleConstructorArgs() =>
+        public virtual IEnumerable<(int argIndex, IEnumerable<DataRowValue> value, bool isEnumerableDataCell)> GetSimpleConstructorArgs() =>
             PropertyGraph.SimpleConstructorArgs.Select(GetSimpleCArg);
 
         /// <summary>
@@ -77,24 +77,24 @@ namespace SqlDsl.ObjectBuilders
             PropertyGraph.ComplexConstructorArgs
                 .Select(p => (p.ArgIndex, CreateObject(p.Value, Objects)));
 
-        (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleCArg(SimpleConstructorArg p)
+        (int argIndex, IEnumerable<DataRowValue> value, bool isEnumerableDataCell) GetSimpleCArg(SimpleConstructorArg p)
         {
             var (data, cellEnumType) = GetSimpleDataAndType(p.Index, p.PrimaryKeyColumns, p.DataCellType);
             return (p.ArgIndex, data, cellEnumType != null);
         }
 
-        (string name, IEnumerable<object> value, bool isEnumerableDataCell) GetSimpleProp(SimpleProp p)
+        (string name, IEnumerable<DataRowValue> value, bool isEnumerableDataCell) GetSimpleProp(SimpleProp p)
         {
             var (data, cellEnumType) = GetSimpleDataAndType(p.Index, p.PrimaryKeyColumns, p.DataCellType);
             return (p.Name, data, cellEnumType != null);
         }
 
-        (IEnumerable<object> value, Type cellEnumType) GetSimpleDataAndType(int index, int[] primaryKeyColumns, Type dataCellType)
+        (IEnumerable<DataRowValue> value, Type cellEnumType) GetSimpleDataAndType(int index, int[] primaryKeyColumns, Type dataCellType)
         {
             var dataRowsForProp = PropertyGraph.GetDataRowsForSimpleProperty(Objects, primaryKeyColumns);
 
             var data = dataRowsForProp
-                .Select(o => o.ToObj()[index])
+                .Select(o => new DataRowValue(o, (short)index))
                 .ToArray();
 
             var cellEnumType = dataCellType == null ?

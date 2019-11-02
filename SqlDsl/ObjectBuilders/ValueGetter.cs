@@ -1,13 +1,6 @@
-using SqlDsl.Utils;
-using SqlDsl.Utils.EqualityComparers;
 using System;
-using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 
 namespace SqlDsl.ObjectBuilders
 {
@@ -39,9 +32,11 @@ namespace SqlDsl.ObjectBuilders
             throw new InvalidOperationException("Cannot use this object to get values for a property with an enumerable cell type.");
         }
 
+        object IValueGetter.Get(IEnumerable<DataRowValue> values, ILogger logger) => Get(values.Select(x => x.ToObj()), logger);
+
         object IValueGetter.Get(IEnumerable<object> values, ILogger logger) => Get(values, logger);
 
-        object IValueGetter.GetEnumerable(IEnumerable<object> values, ILogger logger) => GetEnumerable(values, logger);
+        object IValueGetter.GetEnumerable(IEnumerable<DataRowValue> values, ILogger logger) => GetEnumerable(values.Select(x => x.ToObj()), logger);
     }
     
     /// <summary>
@@ -52,11 +47,16 @@ namespace SqlDsl.ObjectBuilders
         /// <summary>
         /// A getter for data which is not an enumerable data cell type (e.g. int, string)
         /// </summary>
+        object Get(IEnumerable<DataRowValue> values, ILogger logger);
+        
+        /// <summary>
+        /// A getter for data which is not an enumerable data cell type (e.g. int, string)
+        /// </summary>
         object Get(IEnumerable<object> values, ILogger logger);
         
         /// <summary>
         /// A getter for data which is an enumerable data cell type (e.g. BLOB (byte[]))
         /// </summary>
-        object GetEnumerable(IEnumerable<object> values, ILogger logger);
+        object GetEnumerable(IEnumerable<DataRowValue> values, ILogger logger);
     }
 }

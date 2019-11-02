@@ -117,7 +117,7 @@ namespace SqlDsl.ObjectBuilders
                 constructorArgTypes, 
                 cargs.ToArray());
 
-            (int i, object v) SimpleConstructorArg((int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) arg) =>
+            (int i, object v) SimpleConstructorArg((int argIndex, IEnumerable<DataRowValue> value, bool isEnumerableDataCell) arg) =>
                 GetSimpleConstructorArg(constructor, arg, logger);
 
             (int i, object v) BuildAndDisposeofComplexConstructorArg((int argIndex, IEnumerable<ObjectGraph> value) arg) =>
@@ -134,14 +134,14 @@ namespace SqlDsl.ObjectBuilders
             IPropMapValueCache propMapValueCache,
             ILogger logger)
         {
-            // try
-            // {
+            try
+            {
                 return BuildObject(cArgGetters, propSetters, vals, propMapValueCache, logger);
-            // }
-            // catch (Exception e)
-            // {
-            //     throw new ParsingException($"Error creating object: {typeof(T)}.", e);
-            // }
+            }
+            catch (Exception e)
+            {
+                throw new ParsingException($"Error creating object: {typeof(T)}.", e);
+            }
         }
 
         /// <summary>
@@ -174,10 +174,10 @@ namespace SqlDsl.ObjectBuilders
                     switch (prop.isEnumerableDataCell)
                     {
                         case true:
-                            setter.setter.SetEnumerable(obj, prop.value, logger);
+                            setter.setter.SetEnumerable(obj, prop.value.Select(x => x.ToObj()), logger);
                             break;
                         case false:
-                            setter.setter.Set(obj, prop.value, logger);
+                            setter.setter.Set(obj, prop.value.Select(x => x.ToObj()), logger);
                             break;
                     }
                 }
@@ -221,7 +221,7 @@ namespace SqlDsl.ObjectBuilders
             return obj;
         }
 
-        static (int index, object value) GetSimpleConstructorArg(IValueGetter[] argGetters, (int argIndex, IEnumerable<object> value, bool isEnumerableDataCell) arg, ILogger logger)
+        static (int index, object value) GetSimpleConstructorArg(IValueGetter[] argGetters, (int argIndex, IEnumerable<DataRowValue> value, bool isEnumerableDataCell) arg, ILogger logger)
         {
             var getter = argGetters[arg.argIndex];
             var value = arg.isEnumerableDataCell ?
