@@ -56,7 +56,7 @@ namespace SqlDsl.DataParser.DataRow
             List<(Label, FieldInfo)> caseResults = new List<(Label, FieldInfo)>();
             foreach (var (i, field) in fieldGetters.OrderBy(x => x.i))
             {
-                methodBody.Emit(OpCodes.Ldarg_0);
+                methodBody.Emit(OpCodes.Ldarg_1);
                 methodBody.Emit(OpCodes.Ldc_I4, i);
                 caseResults.Add((
                     methodBody.BranchTo(OpCodes.Beq),
@@ -72,7 +72,7 @@ namespace SqlDsl.DataParser.DataRow
                     methodBody.Emit(OpCodes.Ldarg_0);
                     methodBody.Emit(OpCodes.Ldfld, field);
                     methodBody.Emit(OpCodes.Ldnull);
-                    methodBody.Emit(OpCodes.Ceq);
+                    methodBody.Emit(OpCodes.Cgt_Un);
                 }
                 else if (field.FieldType.IsConstructedGenericType && 
                     field.FieldType.GetGenericTypeDefinition() == typeof(Nullable<>))
@@ -85,7 +85,7 @@ namespace SqlDsl.DataParser.DataRow
                 }
                 else
                 {
-                    throw new InvalidOperationException($"Type {field.FieldType.IsConstructedGenericType} must be nullable");
+                    throw new InvalidOperationException($"Type {field.FieldType} must be nullable");
                 }
                 
                 methodBody.Emit(OpCodes.Br, returnLabel);
