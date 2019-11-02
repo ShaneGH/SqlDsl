@@ -204,7 +204,7 @@ namespace SqlDsl.ObjectBuilders
 
                 // recurse to get actual values
                 var builder = Builders.GetBuilder(singlePropertyType);
-                var values = prop.value.Select(BuildAndDisposeofComplexProp);
+                var values = prop.value.Select(BuildAndDisposeofComplexProp).ToList();
 
                 // set the value of the property
                 setter.setter.Set(obj, values, logger);
