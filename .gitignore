@@ -3,5 +3,6 @@ obj/
 .vscode/
 /Messing/data.db
 testSettings.user.json
+DebugTests.cs
 .ionide/
 .vs/
